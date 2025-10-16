@@ -1,42 +1,46 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-- Root: Qt project file `T_DESIGNER.pro`, sources `.cpp/.h` 与 UI 表单 `.ui` 分布在根目录与子目录。
-- Modules: `widget/`（自定义控件与对话框）、`BO/`（业务对象）、`DO/`（数据对象）。
-- Resources: `image.qrc` 与图标（如 `T_DESIGNER.ico`）。
-- Data/Tools: `Model.db`（示例数据），`generate_file_tree.py`（开发辅助脚本）。
+- Root: `T_DESIGNER.pro`; sources (`.cpp/.h`) and Qt UI forms (`.ui`) live in root and subfolders.
+- Modules: `widget/` (custom controls & dialogs), `BO/` (business objects), `DO/` (data objects).
+- Resources: `image.qrc`, icons (e.g., `T_DESIGNER.ico`).
+- Data/Tools: `Model.db` (sample data), `generate_file_tree.py` (dev helper).
+- Tests: add under `tests/` when introduced (see below).
 
 ## Build, Test, and Development Commands
-- Out-of-source build（Windows, MinGW 示例）:
-  - `mkdir build && cd build`
-  - `qmake ..\T_DESIGNER.pro`
-  - `mingw32-make -j`
-- MSVC 工具链: 将 `mingw32-make` 替换为 `nmake`。
-- Qt Creator: 直接打开 `T_DESIGNER.pro`，选择 Kit，`Run`。
-- Run: 生成的可执行位于 `build\debug\` 或 `build\release\`（视 Kit 而定）。
-- Clean: 在构建目录执行 `make clean` 或直接删除 `build/`。
+- Out-of-source build (Windows, MinGW):
+  ```bat
+  mkdir build && cd build
+  qmake ..\T_DESIGNER.pro
+  mingw32-make -j
+  ```
+- MSVC toolchain: replace `mingw32-make` with `nmake`.
+- Qt Creator: open `T_DESIGNER.pro`, choose Kit, then Run.
+- Run: exe appears in `build\debug\` or `build\release\`.
+- Clean: from the build dir run `make clean` or delete `build/`.
 
 ## Coding Style & Naming Conventions
-- 语言/框架: C++(Qt 5/6)。缩进 4 空格，UTF-8；保持现有换行风格（Windows 可 CRLF）。
-- 命名: 类采用 PascalCase（如 `DialogConnectAttr`），方法/变量 lowerCamelCase，宏/常量 ALL_CAPS。
-- 文件: 头/源文件同名（`.h`/`.cpp`）；UI 命名与类名对应（如 `dialogconnectattr.ui`）。
-- 格式化: 建议使用 `clang-format`（Qt/Google 风格均可，保持一致）。
+- Language: C++ (Qt 5/6). Indentation 4 spaces, UTF-8; preserve existing line endings (CRLF on Windows is fine).
+- Naming: Classes PascalCase (e.g., `DialogConnectAttr`); methods/variables lowerCamelCase; macros/constants ALL_CAPS.
+- Files: header/source paired and same base name; UI files mirror class (e.g., `dialogconnectattr.ui`).
+- Formatting: use `clang-format` (Qt or Google style); keep consistent across files.
 
 ## Testing Guidelines
-- 当前未内置测试框架。建议在 `tests/` 引入 Qt Test（文件命名 `*_test.cpp`）。
-- 覆盖关键业务逻辑与自定义控件交互；将测试目标加入 `.pro` 后在本地构建运行。
+- Framework: Qt Test. Place tests in `tests/` with names like `something_test.cpp`.
+- Scope: cover key business logic and interactions of custom widgets.
+- Run: add test target(s) to `.pro`, build, then execute produced test binaries.
 
 ## Commit & Pull Request Guidelines
-- 提交信息: 支持中文/英文，推荐 Conventional Commits：`feat(scope): summary`，
-  如 `feat(widget): add codecheckdialog`、`fix(BO): null check in worker`。
-- PR 要求: 清晰描述、关联 Issue、涉及 UI 变更附截图；说明构建方式与验证步骤。
-
-## Agent-Specific Instructions
-- 本文件作用域为仓库全局；遵循“小改动、可回退”原则，避免无关重构。
-- 不手动编辑生成文件（如 `ui_*.h`）；新增/移除源文件请同步更新 `T_DESIGNER.pro`。
-- 大改动请分 PR（按模块：`widget/`、`BO/`、`DO/`）。需要脚本/工具，放入 `tools/` 或根目录并注明用途。
+- Commits: Conventional Commits recommended, e.g., `feat(widget): add codecheckdialog`, `fix(BO): null check in worker`.
+- PRs: clear description, link issues, include screenshots for UI changes, and list build/verification steps.
 
 ## Security & Configuration Tips
-- 不提交敏感配置或本地路径；`Model.db` 仅用于开发演示，避免破坏性写入。
-- 运行时依赖 Qt、SQLite（`sqlitedatabase.*`）与可能的 Z3（`z3solverthread.*`）；确保相关 DLL 在 `PATH` 中。
+- Do not commit sensitive config or local paths. `Model.db` is demo-only; avoid destructive writes.
+- Runtime deps: Qt, SQLite (`sqlitedatabase.*`), optional Z3 (`z3solverthread.*`). Ensure required DLLs are in `PATH`.
+
+## Agent-Specific Instructions
+- Scope: this file applies repo-wide. Prefer small, reversible changes; avoid unrelated refactors.
+- Do not edit generated files (e.g., `ui_*.h`).
+- When adding/removing sources, update `T_DESIGNER.pro` accordingly.
+- Put helper scripts in `tools/` or repo root and document purpose.
 
