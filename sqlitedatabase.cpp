@@ -197,7 +197,7 @@ bool SQliteDatabase::updateModel(model& model)
     sql_query.bindValue(":testDiscription",model.getTestDiscription());
     sql_query.bindValue(":connectNodes",model.getConnectNodes());
     sql_query.bindValue(":functionDescription",model.getFunctionDiscription());
-    //QMessageBox::information(nullptr, QStringLiteral("模型名称及系统描述"), model.getName()+"\n"+model.getSystemDescription(), QStringLiteral("确定"));
+    //QMessageBox::information(nullptr, QString("模型名称及系统描述"), model.getName()+"\n"+model.getSystemDescription(), QString("确定"));
     return sql_query.exec();
 }
 

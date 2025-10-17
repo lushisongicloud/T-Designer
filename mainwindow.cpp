@@ -5,6 +5,12 @@
 #include <QTimer>
 #include <QFileInfo>
 #include <QStringList>
+#include <QMenu>
+#include <QSet>
+#include <QInputDialog>
+#include "BO/containerrepository.h"
+#include "widget/containertreedialog.h"
+#include "DO/containerentity.h"
 bool isPenetrativeSolve=true;
 QMap<QString, QStringList> obsTemplates = {
     {"AC380_3P_u", {"AC380.u", "( 0 , 0 , 0 )", "( 380 , 0 , 0 )", "( 0 , 380 , 0 )", "( 0 , 0 , 380 )", "( 380 , 380 , 0 )", "( 380 , 0 , 380 )", "( 0 , 380 , 380 )", "( 380 , 380 , 380 )"}},
@@ -31,6 +37,151 @@ QDebug operator<<(QDebug dbg, const QList<TestItem>& list) {
     }
     dbg.nospace() << "]";
     return dbg.space();
+}
+
+namespace {
+
+QString containerTypeTextZh(ContainerType type)
+{
+    switch (type) {
+    case ContainerType::System: return QString("系统");
+    case ContainerType::Subsystem: return QString("子系统");
+    case ContainerType::LRU: return QString("LRU");
+    case ContainerType::SRU: return QString("SRU");
+    case ContainerType::Module: return QString("模块");
+    case ContainerType::Submodule: return QString("子模块");
+    case ContainerType::Component: return QString("元件");
+    }
+    return {};
+}
+
+QString containerTypeTextEn(ContainerType type)
+{
+    switch (type) {
+    case ContainerType::System: return QString("System");
+    case ContainerType::Subsystem: return QString("Subsystem");
+    case ContainerType::LRU: return QString("LRU");
+    case ContainerType::SRU: return QString("SRU");
+    case ContainerType::Module: return QString("Module");
+    case ContainerType::Submodule: return QString("Submodule");
+    case ContainerType::Component: return QString("Component");
+    }
+    return {};
+}
+
+QList<ContainerType> parentCandidateTypes(ContainerType child)
+{
+    QList<ContainerType> result;
+    for (int value = 0; value < static_cast<int>(child); ++value)
+        result.append(static_cast<ContainerType>(value));
+    return result;
+}
+
+QList<ContainerType> childCandidateTypes(ContainerType parent)
+{
+    QList<ContainerType> result;
+    for (int value = static_cast<int>(parent) + 1; value <= static_cast<int>(ContainerType::Submodule); ++value)
+        result.append(static_cast<ContainerType>(value));
+    return result;
+}
+
+struct EquipmentMetadata {
+    QString dt;
+    QString type;
+    QString name;
+};
+
+EquipmentMetadata fetchEquipmentMetadata(int equipmentId)
+{
+    EquipmentMetadata meta;
+    QSqlQuery query(T_ProjectDatabase);
+    query.prepare("SELECT DT,Type,Name FROM Equipment WHERE Equipment_ID=:id");
+    query.bindValue(":id", equipmentId);
+    if (query.exec() && query.next()) {
+        meta.dt = query.value(0).toString().trimmed();
+        meta.type = query.value(1).toString().trimmed();
+        meta.name = query.value(2).toString().trimmed();
+    }
+    return meta;
+}
+
+QString defaultContainerName(const EquipmentMetadata &meta, int equipmentId)
+{
+    if (!meta.dt.isEmpty()) return meta.dt;
+    if (!meta.name.isEmpty()) return meta.name;
+    return QString("Component-%1").arg(equipmentId);
+}
+
+QStringList collectComponentNames(ContainerRepository &repo, int containerId, int &total)
+{
+    QStringList displayNames;
+    QList<ContainerEntity> stack = repo.fetchChildren(containerId);
+    while (!stack.isEmpty()) {
+        ContainerEntity entity = stack.takeFirst();
+        if (entity.type() == ContainerType::Component) {
+            ++total;
+            if (displayNames.size() < 10) displayNames.append(entity.name());
+        } else {
+            const auto children = repo.fetchChildren(entity.id());
+            for (const auto &child : children) stack.append(child);
+        }
+    }
+    return displayNames;
+}
+
+QString describeContainer(ContainerRepository &repo, const ContainerEntity &entity)
+{
+    const QString typeZh = containerTypeTextZh(entity.type());
+    if (entity.type() == ContainerType::Component) {
+        return QString("%1：%2").arg(typeZh, entity.name());
+    }
+
+    int total = 0;
+    QStringList componentNames = collectComponentNames(repo, entity.id(), total);
+    QString suffix = containerTypeTextEn(entity.type());
+    if (!componentNames.isEmpty()) {
+        suffix += QString("-") + componentNames.join(",");
+        if (total > componentNames.size()) {
+            suffix += QString("...等共%1项").arg(total);
+        }
+    }
+    QString value = suffix;
+    if (!entity.name().trimmed().isEmpty()) {
+        value = entity.name().trimmed() + QString("-") + suffix;
+    }
+    return QString("%1：%2").arg(typeZh, value);
+}
+
+int ensureComponentContainer(ContainerRepository &repo, int equipmentId)
+{
+    EquipmentMetadata meta = fetchEquipmentMetadata(equipmentId);
+    const QString displayName = defaultContainerName(meta, equipmentId);
+    int existing = repo.componentContainerIdForEquipment(equipmentId);
+    if (existing != 0) {
+        ContainerEntity entity = repo.getById(existing);
+        bool modified = false;
+        if (entity.name() != displayName && !displayName.isEmpty()) {
+            entity.setName(displayName);
+            modified = true;
+        }
+        if (entity.equipmentId() != equipmentId) {
+            entity.setEquipmentId(equipmentId);
+            modified = true;
+        }
+        if (entity.equipmentType() != meta.type) {
+            entity.setEquipmentType(meta.type);
+            modified = true;
+        }
+        if (entity.equipmentName() != meta.name) {
+            entity.setEquipmentName(meta.name);
+            modified = true;
+        }
+        if (modified) repo.update(entity);
+        return existing;
+    }
+    return repo.createComponentContainerForEquipment(equipmentId, displayName, meta.type, meta.name);
+}
+
 }
 
 QSqlDatabase  T_ProjectDatabase;
@@ -2544,6 +2695,135 @@ void MainWindow::ShowtreeViewUnitsPopMenu(const QPoint &pos)
         if(!QuerySearch.next()) actPasteSpur.setEnabled(false);
         tree_menu.addAction(&actPasteSpur);
         connect(&actPasteSpur,SIGNAL(triggered()),this,SLOT(PasteSpur()));
+
+        tree_menu.addSeparator();
+
+        QAction actAddComponentContainers(QString("为实体元件添加元件层容器"), this);
+        tree_menu.addAction(&actAddComponentContainers);
+        connect(&actAddComponentContainers, &QAction::triggered, this, &MainWindow::actionAddComponentContainers);
+
+        QAction actRemoveComponentContainers(QString("删除元件层容器"), this);
+        tree_menu.addAction(&actRemoveComponentContainers);
+        connect(&actRemoveComponentContainers, &QAction::triggered, this, &MainWindow::actionRemoveComponentContainers);
+
+        QAction actAttachToHigher(QString("将实体元件层添加到高层级容器"), this);
+        tree_menu.addAction(&actAttachToHigher);
+        connect(&actAttachToHigher, &QAction::triggered, this, &MainWindow::actionAttachComponentsToHigher);
+
+        ContainerRepository repo(T_ProjectDatabase);
+        repo.ensureTables();
+
+        QMenu *levelMenu = tree_menu.addMenu(QString("层级：无"));
+        QModelIndex contextIndex = ui->treeViewUnits->indexAt(pos);
+        int equipmentId = contextIndex.data(Qt::UserRole).toInt();
+        int componentContainerId = repo.componentContainerIdForEquipment(equipmentId);
+        if (componentContainerId != 0) {
+            QList<int> chainIds = repo.ancestorChainIds(componentContainerId);
+            if (!chainIds.isEmpty()) {
+                ContainerEntity topEntity = repo.getById(chainIds.first());
+                if (topEntity.id() != 0)
+                    levelMenu->setTitle(QString("层级：%1").arg(describeContainer(repo, topEntity)));
+
+                for (int id : chainIds) {
+                    ContainerEntity entity = repo.getById(id);
+                    if (entity.id() == 0) continue;
+                    QString description = describeContainer(repo, entity);
+                    if (entity.type() == ContainerType::Component) {
+                        QAction *componentInfo = levelMenu->addAction(description);
+                        componentInfo->setEnabled(false);
+                        continue;
+                    }
+
+                    QMenu *subMenu = levelMenu->addMenu(description);
+
+                    QAction *renameAct = subMenu->addAction(QString("重命名当前容器"));
+                    connect(renameAct, &QAction::triggered, this, [this, entityId = entity.id()]() {
+                        ContainerRepository repoLocal(T_ProjectDatabase);
+                        if (!repoLocal.ensureTables()) return;
+                        ContainerEntity current = repoLocal.getById(entityId);
+                        bool ok = false;
+                        QString newName = QInputDialog::getText(this, tr("重命名容器"), tr("名称"), QLineEdit::Normal, current.name(), &ok);
+                        if (!ok) return;
+                        newName = newName.trimmed();
+                        if (newName.isEmpty()) return;
+                        current.setName(newName);
+                        repoLocal.update(current);
+                    });
+
+                    QList<ContainerType> childTypes = childCandidateTypes(entity.type());
+                    QAction *addChildAct = subMenu->addAction(QString("添加低层级容器"));
+                    if (childTypes.isEmpty()) {
+                        addChildAct->setEnabled(false);
+                    } else {
+                        connect(addChildAct, &QAction::triggered, this, [this, entityId = entity.id(), childTypes]() {
+                            ContainerRepository repoLocal(T_ProjectDatabase);
+                            if (!repoLocal.ensureTables()) return;
+                            ContainerEntity parentEntity = repoLocal.getById(entityId);
+                            if (parentEntity.id() == 0) return;
+                            bool ok = false;
+                            QString name = QInputDialog::getText(this, tr("新建子容器"), tr("名称"), QLineEdit::Normal, QString(), &ok);
+                            if (!ok) return;
+                            name = name.trimmed();
+                            if (name.isEmpty()) return;
+
+                            ContainerType chosenType = childTypes.first();
+                            if (childTypes.size() > 1) {
+                                QStringList options;
+                                for (auto type : childTypes) options << containerTypeTextZh(type);
+                                bool okType = false;
+                                QString picked = QInputDialog::getItem(this, tr("选择类型"), tr("类型"), options, 0, false, &okType);
+                                if (!okType) return;
+                                chosenType = childTypes.at(options.indexOf(picked));
+                            }
+
+                            ContainerEntity newEntity;
+                            newEntity.setName(name);
+                            newEntity.setType(chosenType);
+                            newEntity.setParentId(entityId);
+                            newEntity.setOrderIndex(repoLocal.fetchChildren(entityId).size());
+                            if (!repoLocal.insert(newEntity)) {
+                                QMessageBox::warning(this, tr("错误"), tr("新增容器失败"));
+                            }
+                        });
+                    }
+
+                    QAction *removeAct = subMenu->addAction(QString("从中删除容器"));
+                    connect(removeAct, &QAction::triggered, this, [this, entityId = entity.id()]() {
+                        if (QMessageBox::question(this, tr("确认"), tr("是否删除当前容器及其子层级？")) != QMessageBox::Yes)
+                            return;
+                        ContainerRepository repoLocal(T_ProjectDatabase);
+                        if (!repoLocal.ensureTables()) return;
+                        repoLocal.remove(entityId);
+                    });
+
+                    QList<ContainerType> parentTypes = parentCandidateTypes(entity.type());
+                    QAction *attachAct = subMenu->addAction(QString("将当前层级添加到高层级容器"));
+                    if (parentTypes.isEmpty()) {
+                        attachAct->setEnabled(false);
+                    } else {
+                        connect(attachAct, &QAction::triggered, this, [this, entityId = entity.id(), entityType = entity.type(), parentTypes]() {
+                            ContainerRepository repoLocal(T_ProjectDatabase);
+                            if (!repoLocal.ensureTables()) return;
+                            ContainerTreeDialog dialog(this);
+                            dialog.setDatabase(T_ProjectDatabase);
+                            dialog.setMode(ContainerTreeDialog::Mode::Select);
+                            dialog.setAllowedTypes(parentTypes);
+                            if (dialog.exec() != QDialog::Accepted) return;
+                            ContainerEntity target = dialog.selectedEntity();
+                            if (target.id() == 0) return;
+                            if (!ContainerRepository::canContain(target.type(), entityType)) {
+                                QMessageBox::warning(this, tr("错误"), tr("所选容器层级不符合要求"));
+                                return;
+                            }
+                            if (!repoLocal.attachToParent(entityId, target.id())) {
+                                QMessageBox::warning(this, tr("错误"), tr("加入高层级容器失败"));
+                            }
+                        });
+                    }
+                }
+            }
+        }
+
         tree_menu.exec(QCursor::pos());
     }
     else if(ui->treeViewUnits->indexAt(pos).data(Qt::WhatsThisRole).toString()=="功能子块")
@@ -2628,6 +2908,146 @@ void MainWindow::ShowtreeViewUnitsPopMenu(const QPoint &pos)
         connect(&actGetLinkRoad,SIGNAL(triggered()),this,SLOT(GetLinkRoad()));
         tree_menu.exec(QCursor::pos());
     }
+}
+
+void MainWindow::on_Btn_ContainerTree_clicked()
+{
+    ContainerTreeDialog dialog(this);
+    dialog.setDatabase(T_ProjectDatabase);
+    dialog.setModal(true);
+    dialog.exec();
+}
+
+void MainWindow::actionAddComponentContainers()
+{
+    ContainerRepository repo(T_ProjectDatabase);
+    if (!repo.ensureTables()) {
+        QMessageBox::warning(this, tr("错误"), tr("数据库不可用"));
+        return;
+    }
+
+    if (!ui->treeViewUnits->selectionModel()) return;
+    const QModelIndexList indexes = ui->treeViewUnits->selectionModel()->selectedIndexes();
+    QSet<int> equipmentIds;
+    for (const QModelIndex &index : indexes) {
+        if (index.column() != 0) continue;
+        if (index.data(Qt::WhatsThisRole).toString() != "元件") continue;
+        equipmentIds.insert(index.data(Qt::UserRole).toInt());
+    }
+
+    if (equipmentIds.isEmpty()) {
+        QMessageBox::information(this, tr("提示"), tr("请选择需要处理的元件"));
+        return;
+    }
+
+    int created = 0;
+    int skipped = 0;
+    int failed = 0;
+
+    for (int equipmentId : equipmentIds) {
+        int before = repo.componentContainerIdForEquipment(equipmentId);
+        int cid = ensureComponentContainer(repo, equipmentId);
+        if (cid == 0) {
+            ++failed;
+            continue;
+        }
+        if (before == 0)
+            ++created;
+        else
+            ++skipped;
+    }
+
+    QMessageBox::information(this, tr("完成"),
+                             tr("新增%1，已存在%2，失败%3").arg(created).arg(skipped).arg(failed));
+}
+
+void MainWindow::actionRemoveComponentContainers()
+{
+    ContainerRepository repo(T_ProjectDatabase);
+    if (!repo.ensureTables()) {
+        QMessageBox::warning(this, tr("错误"), tr("数据库不可用"));
+        return;
+    }
+
+    if (!ui->treeViewUnits->selectionModel()) return;
+    const QModelIndexList indexes = ui->treeViewUnits->selectionModel()->selectedIndexes();
+    QSet<int> equipmentIds;
+    for (const QModelIndex &index : indexes) {
+        if (index.column() != 0) continue;
+        if (index.data(Qt::WhatsThisRole).toString() != "元件") continue;
+        equipmentIds.insert(index.data(Qt::UserRole).toInt());
+    }
+
+    if (equipmentIds.isEmpty()) {
+        QMessageBox::information(this, tr("提示"), tr("请选择需要处理的元件"));
+        return;
+    }
+
+    int removed = 0;
+    int skipped = 0;
+    for (int equipmentId : equipmentIds) {
+        int cid = repo.componentContainerIdForEquipment(equipmentId);
+        if (cid == 0) {
+            ++skipped;
+            continue;
+        }
+        if (repo.deleteComponentContainerForEquipment(equipmentId))
+            ++removed;
+        else
+            ++skipped;
+    }
+
+    QMessageBox::information(this, tr("完成"), tr("删除%1，跳过%2").arg(removed).arg(skipped));
+}
+
+void MainWindow::actionAttachComponentsToHigher()
+{
+    ContainerRepository repo(T_ProjectDatabase);
+    if (!repo.ensureTables()) {
+        QMessageBox::warning(this, tr("错误"), tr("数据库不可用"));
+        return;
+    }
+
+    if (!ui->treeViewUnits->selectionModel()) return;
+    const QModelIndexList indexes = ui->treeViewUnits->selectionModel()->selectedIndexes();
+    QSet<int> containerIds;
+    for (const QModelIndex &index : indexes) {
+        if (index.column() != 0) continue;
+        if (index.data(Qt::WhatsThisRole).toString() != "元件") continue;
+        int equipmentId = index.data(Qt::UserRole).toInt();
+        int cid = ensureComponentContainer(repo, equipmentId);
+        if (cid != 0) containerIds.insert(cid);
+    }
+
+    if (containerIds.isEmpty()) {
+        QMessageBox::information(this, tr("提示"), tr("请选择需要处理的元件"));
+        return;
+    }
+
+    QList<ContainerType> allowedParents = parentCandidateTypes(ContainerType::Component);
+    ContainerTreeDialog dialog(this);
+    dialog.setDatabase(T_ProjectDatabase);
+    dialog.setMode(ContainerTreeDialog::Mode::Select);
+    dialog.setAllowedTypes(allowedParents);
+    if (dialog.exec() != QDialog::Accepted) return;
+
+    ContainerEntity target = dialog.selectedEntity();
+    if (target.id() == 0) return;
+    if (!ContainerRepository::canContain(target.type(), ContainerType::Component)) {
+        QMessageBox::warning(this, tr("错误"), tr("所选容器层级不符合要求"));
+        return;
+    }
+
+    int attached = 0;
+    int skipped = 0;
+    for (int cid : containerIds) {
+        if (repo.attachToParent(cid, target.id()))
+            ++attached;
+        else
+            ++skipped;
+    }
+
+    QMessageBox::information(this, tr("完成"), tr("添加到高层级：%1，跳过：%2").arg(attached).arg(skipped));
 }
 
 void MainWindow::ShowtreeViewPagePopMenu(const QPoint &pos)

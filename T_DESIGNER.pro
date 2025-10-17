@@ -88,6 +88,9 @@ SOURCES += \
     widget/mycombobox.cpp \
     widget/mygraphicsview.cpp \
     widget/selectfunctiondialog.cpp \
+    widget/containermodel.cpp \
+    widget/containertreedialog.cpp \
+    BO/containerrepository.cpp \
     BO/componententity.cpp \
     BO/systementity.cpp \
     BO/worker.cpp \
@@ -160,6 +163,9 @@ HEADERS += \
     widget/mycombobox.h \
     widget/mygraphicsview.h \
     widget/selectfunctiondialog.h \
+    widget/containermodel.h \
+    widget/containertreedialog.h \
+    BO/containerrepository.h \
     BO/componententity.h \
     BO/systementity.h \
     BO/worker.h \
@@ -167,6 +173,7 @@ HEADERS += \
     DO/diagnosisgraph.h \
     DO/model.h \
     DO/parameter.h \
+    DO/containerentity.h \
     sqlitedatabase.h \
     mythread.h \
     solverrunnable.h \
@@ -217,7 +224,8 @@ FORMS += \
     dialogtestreport.ui \
     dialogmultilib.ui \
     dialogtag.ui \
-    widget/selectfunctiondialog.ui
+    widget/selectfunctiondialog.ui \
+    widget/containertreedialog.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
