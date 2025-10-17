@@ -20,7 +20,7 @@
 - Clean: from the build dir run `make clean` or delete `build/`.
 
 ## Coding Style & Naming Conventions
-- Language: C++ (Qt 5/6). Indentation 4 spaces, UTF-8; preserve existing line endings (CRLF on Windows is fine).
+- Language: C++ (Qt 5). Indentation 4 spaces, UTF-8 with BOM; preserve existing line endings (CRLF on Windows is fine).
 - Naming: Classes PascalCase (e.g., `DialogConnectAttr`); methods/variables lowerCamelCase; macros/constants ALL_CAPS.
 - Files: header/source paired and same base name; UI files mirror class (e.g., `dialogconnectattr.ui`).
 - Formatting: use `clang-format` (Qt or Google style); keep consistent across files.
@@ -43,4 +43,9 @@
 - Do not edit generated files (e.g., `ui_*.h`).
 - When adding/removing sources, update `T_DESIGNER.pro` accordingly.
 - Put helper scripts in `tools/` or repo root and document purpose.
+- All project source files use **UTF-8 with BOM** encoding format
+- When using Chinese text in code:
+  - **Do not use** `tr()` or `QStringLiteral` macros
+  - Use double-quoted string literals directly, e.g., `"中文文本"`
+  - Or use `QString("中文文本")` constructor
 
