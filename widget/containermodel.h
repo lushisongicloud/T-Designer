@@ -27,6 +27,9 @@ public:
     QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
     Qt::ItemFlags flags(const QModelIndex &index) const override;
     bool setData(const QModelIndex &index, const QVariant &value, int role) override;
+    void sort(int column, Qt::SortOrder order) override;
+    int sortColumn() const { return m_sortColumn; }
+    Qt::SortOrder sortOrder() const { return m_sortOrder; }
 
     void setDatabase(const QSqlDatabase &db);
     void reload();
@@ -40,6 +43,8 @@ private:
 
     ContainerRepository m_repo;
     ContainerNode *m_root;
+    int m_sortColumn;
+    Qt::SortOrder m_sortOrder;
 };
 
 #endif // CONTAINERMODEL_H

@@ -2,6 +2,7 @@
 #define CONTAINERTREEDIALOG_H
 
 #include <QDialog>
+#include <QSqlDatabase>
 #include "widget/containermodel.h"
 
 namespace Ui { class ContainerTreeDialog; }
@@ -25,6 +26,7 @@ private slots:
     void onRemove();
     void onRefresh();
     void acceptSelection();
+    void showContextMenu(const QPoint &pos);
 
 private:
     void refreshTypeCombo();
@@ -35,6 +37,7 @@ private:
     QList<ContainerType> m_allowedTypes;
     QVector<ContainerType> m_comboTypes;
     ContainerEntity m_selected;
+    QSqlDatabase m_db;
 };
 
 #endif // CONTAINERTREEDIALOG_H

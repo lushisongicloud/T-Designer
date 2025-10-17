@@ -90,6 +90,7 @@ SOURCES += \
     widget/selectfunctiondialog.cpp \
     widget/containermodel.cpp \
     widget/containertreedialog.cpp \
+    widget/containerhierarchyutils.cpp \
     BO/containerrepository.cpp \
     BO/componententity.cpp \
     BO/systementity.cpp \
@@ -165,6 +166,7 @@ HEADERS += \
     widget/selectfunctiondialog.h \
     widget/containermodel.h \
     widget/containertreedialog.h \
+    widget/containerhierarchyutils.h \
     BO/containerrepository.h \
     BO/componententity.h \
     BO/systementity.h \

@@ -25,6 +25,8 @@ ContainerModel::ContainerModel(QObject *parent)
     : QAbstractItemModel(parent)
     , m_repo(QSqlDatabase::database())
     , m_root(new ContainerNode{})
+    , m_sortColumn(1)
+    , m_sortOrder(Qt::AscendingOrder)
 {
     m_repo.ensureTables();
     buildTree();
@@ -63,6 +65,26 @@ void ContainerModel::buildTree()
         populate(rootNode);
         m_root->children.append(rootNode);
     }
+
+    std::function<void(ContainerNode*)> sortNode = [&](ContainerNode *node) {
+        if (node->children.isEmpty()) return;
+        auto comparator = [&](ContainerNode *a, ContainerNode *b) {
+            if (m_sortColumn == 1) {
+                int lhs = static_cast<int>(a->entity.type());
+                int rhs = static_cast<int>(b->entity.type());
+                if (lhs == rhs) {
+                    int cmp = QString::localeAwareCompare(a->entity.name(), b->entity.name());
+                    return m_sortOrder == Qt::AscendingOrder ? cmp < 0 : cmp > 0;
+                }
+                return m_sortOrder == Qt::AscendingOrder ? lhs < rhs : lhs > rhs;
+            }
+            int cmp = QString::localeAwareCompare(a->entity.name(), b->entity.name());
+            return m_sortOrder == Qt::AscendingOrder ? cmp < 0 : cmp > 0;
+        };
+        std::sort(node->children.begin(), node->children.end(), comparator);
+        for (ContainerNode *child : node->children) sortNode(child);
+    };
+    sortNode(m_root);
     endResetModel();
 }
 
@@ -141,6 +163,14 @@ bool ContainerModel::setData(const QModelIndex &index, const QVariant &value, in
 
 void ContainerModel::reload()
 {
+    buildTree();
+}
+
+void ContainerModel::sort(int column, Qt::SortOrder order)
+{
+    if (m_sortColumn == column && m_sortOrder == order) return;
+    m_sortColumn = column;
+    m_sortOrder = order;
     buildTree();
 }
 

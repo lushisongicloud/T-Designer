@@ -107,6 +107,7 @@ SOURCES       = ..\main.cpp \
 		..\widget\selectfunctiondialog.cpp \
 		..\widget\containermodel.cpp \
 		..\widget\containertreedialog.cpp \
+		..\widget\containerhierarchyutils.cpp \
 		..\BO\containerrepository.cpp \
 		..\BO\componententity.cpp \
 		..\BO\systementity.cpp \
@@ -239,6 +240,7 @@ OBJECTS       = release\main.obj \
 		release\selectfunctiondialog.obj \
 		release\containermodel.obj \
 		release\containertreedialog.obj \
+		release\containerhierarchyutils.obj \
 		release\containerrepository.obj \
 		release\componententity.obj \
 		release\systementity.obj \
@@ -373,6 +375,7 @@ DIST          =  ..\mainwindow.h \
 		..\widget\selectfunctiondialog.h \
 		..\widget\containermodel.h \
 		..\widget\containertreedialog.h \
+		..\widget\containerhierarchyutils.h \
 		..\BO\containerrepository.h \
 		..\BO\componententity.h \
 		..\BO\systementity.h \
@@ -447,6 +450,7 @@ DIST          =  ..\mainwindow.h \
 		..\widget\selectfunctiondialog.cpp \
 		..\widget\containermodel.cpp \
 		..\widget\containertreedialog.cpp \
+		..\widget\containerhierarchyutils.cpp \
 		..\BO\containerrepository.cpp \
 		..\BO\componententity.cpp \
 		..\BO\systementity.cpp \
@@ -598,9 +602,9 @@ all: Makefile.Release  release\T-DESIGNER.exe
 release\T-DESIGNER.exe: D:\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5AxContainer.lib D:\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5AxBase.lib D:\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5Charts.lib D:\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5WebEngineWidgets.lib D:\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5PrintSupport.lib D:\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5Widgets.lib D:\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5WebEngineCore.lib D:\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5Quick.lib D:\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5Gui.lib D:\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5Sql.lib D:\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5WebChannel.lib D:\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5Qml.lib D:\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5Network.lib D:\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5Positioning.lib D:\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5Concurrent.lib D:\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5Xml.lib D:\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5Core.lib D:\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\qtmain.lib ui_mainwindow.h ui_formaxwidget.h ui_dialognewproject.h ui_dialogloadsymbol.h ui_dialogsymbolattribute.h ui_dialogmodifyptermial.h ui_dialogsymbols.h ui_dialogsymbolsort.h ui_dialogBranchAttr.h ui_dialogunitmanage.h ui_dialogfuncdefine.h ui_dialogpageattr.h ui_dialogpagenameset.h ui_dialogUnitAttr.h ui_dialogterminalattr.h ui_dialoggenerate.h ui_dialogmultiline.h ui_dialoglinedefine.h ui_dialogcabledefine.h ui_dialogconnectattr.h ui_dialoglinkedit.h ui_dialogsingletermattr.h ui_dialognewspur.h ui_dialognewlib.h ui_dialogattrdefset.h ui_dialogfactorymanage.h ui_dialogfactoryedit.h ui_dialognewfunc.h ui_dialogtermbatchmark.h ui_dialogdiagnoseui.h ui_dialogfunctionmanage.h ui_dialog_select_another_test.h ui_dialog_wait.h ui_dialogflurunit.h ui_dialogsettestpreference.h ui_dialogusertest.h ui_dialogaddcondition.h ui_dialogdiagusertest.h ui_dialogaddterminal.h ui_dialogtestreport.h ui_dialogmultilib.h ui_dialogtag.h ui_selectfunctiondialog.h ui_containertreedialog.h $(OBJECTS) release\T-DESIGNER_resource.res
 	$(LINKER) $(LFLAGS) /MANIFEST:embed /OUT:$(DESTDIR_TARGET) @<<
 release\main.obj release\mainwindow.obj release\common.obj release\mxdrawxlib.obj release\qxlabel.obj release\DrawStyle.obj release\formaxwidget.obj release\dialognewproject.obj release\dialogloadsymbol.obj release\dialogsymbolattribute.obj release\dialogmodifyptermial.obj release\dialogsymbols.obj release\dialogsymbolsort.obj release\dialogBranchAttr.obj release\dialogunitmanage.obj release\dialogfuncdefine.obj release\dialogpageattr.obj release\dialogpagenameset.obj release\dialogUnitAttr.obj release\dialogterminalattr.obj release\dialoggenerate.obj release\dialogmultiline.obj release\dialoglinedefine.obj release\dialogcabledefine.obj release\dialogconnectattr.obj release\dialoglinkedit.obj release\dialogsingletermattr.obj release\dialognewspur.obj release\dialognewlib.obj release\dialogattrdefset.obj release\dialogfactorymanage.obj release\dialogfactoryedit.obj release\dialognewfunc.obj release\qscilexercppattach.obj release\dialogtermbatchmark.obj release\graphadjlist.obj
-release\dialogdiagnoseui.obj release\dialogfunctionmanage.obj release\qxcombobox.obj release\dialog_select_another_test.obj release\dialog_wait.obj release\dialogflurunit.obj release\dialogsettestpreference.obj release\dialogusertest.obj release\dialogaddcondition.obj release\dialogdiagusertest.obj release\dialogaddterminal.obj release\dialogtestreport.obj release\dialogmultilib.obj release\bpointitem.obj release\bqgraphicsitem.obj release\bqgraphicsscene.obj release\bqgraphicsview.obj release\dialogtag.obj release\codecheckdialog.obj release\mycombobox.obj release\mygraphicsview.obj release\selectfunctiondialog.obj release\containermodel.obj release\containertreedialog.obj release\containerrepository.obj release\componententity.obj release\systementity.obj release\worker.obj release\component.obj release\diagnosisgraph.obj release\model.obj release\parameter.obj release\sqlitedatabase.obj release\mythread.obj release\solverrunnable.obj release\z3solverthread.obj release\combotree.obj
-release\cutthread.obj release\qrc_image.obj release\moc_mainwindow.obj release\moc_qxlabel.obj release\moc_formaxwidget.obj release\moc_dialognewproject.obj release\moc_dialogloadsymbol.obj release\moc_dialogsymbolattribute.obj release\moc_dialogmodifyptermial.obj release\moc_dialogsymbols.obj release\moc_dialogsymbolsort.obj release\moc_dialogBranchAttr.obj release\moc_dialogunitmanage.obj release\moc_dialogfuncdefine.obj release\moc_dialogpageattr.obj release\moc_dialogpagenameset.obj release\moc_dialogUnitAttr.obj release\moc_dialogterminalattr.obj release\moc_dialoggenerate.obj release\moc_dialogmultiline.obj release\moc_dialoglinedefine.obj release\moc_dialogcabledefine.obj release\moc_dialogconnectattr.obj release\moc_dialoglinkedit.obj release\moc_dialogsingletermattr.obj release\moc_dialognewspur.obj release\moc_dialognewlib.obj release\moc_dialogattrdefset.obj release\moc_dialogfactorymanage.obj release\moc_dialogfactoryedit.obj release\moc_dialognewfunc.obj
-release\moc_dialogtermbatchmark.obj release\moc_dialogdiagnoseui.obj release\moc_dialogfunctionmanage.obj release\moc_qxcombobox.obj release\moc_dialog_select_another_test.obj release\moc_dialog_wait.obj release\moc_dialogflurunit.obj release\moc_dialogsettestpreference.obj release\moc_dialogusertest.obj release\moc_dialogaddcondition.obj release\moc_dialogdiagusertest.obj release\moc_dialogaddterminal.obj release\moc_dialogtestreport.obj release\moc_dialogmultilib.obj release\moc_bpointitem.obj release\moc_bqgraphicsitem.obj release\moc_bqgraphicsscene.obj release\moc_dialogtag.obj release\moc_codecheckdialog.obj release\moc_mycombobox.obj release\moc_mygraphicsview.obj release\moc_selectfunctiondialog.obj release\moc_containermodel.obj release\moc_containertreedialog.obj release\moc_systementity.obj release\moc_worker.obj release\moc_mythread.obj release\moc_z3solverthread.obj release\moc_cutthread.obj
+release\dialogdiagnoseui.obj release\dialogfunctionmanage.obj release\qxcombobox.obj release\dialog_select_another_test.obj release\dialog_wait.obj release\dialogflurunit.obj release\dialogsettestpreference.obj release\dialogusertest.obj release\dialogaddcondition.obj release\dialogdiagusertest.obj release\dialogaddterminal.obj release\dialogtestreport.obj release\dialogmultilib.obj release\bpointitem.obj release\bqgraphicsitem.obj release\bqgraphicsscene.obj release\bqgraphicsview.obj release\dialogtag.obj release\codecheckdialog.obj release\mycombobox.obj release\mygraphicsview.obj release\selectfunctiondialog.obj release\containermodel.obj release\containertreedialog.obj release\containerhierarchyutils.obj release\containerrepository.obj release\componententity.obj release\systementity.obj release\worker.obj release\component.obj release\diagnosisgraph.obj release\model.obj release\parameter.obj release\sqlitedatabase.obj release\mythread.obj release\solverrunnable.obj
+release\z3solverthread.obj release\combotree.obj release\cutthread.obj release\qrc_image.obj release\moc_mainwindow.obj release\moc_qxlabel.obj release\moc_formaxwidget.obj release\moc_dialognewproject.obj release\moc_dialogloadsymbol.obj release\moc_dialogsymbolattribute.obj release\moc_dialogmodifyptermial.obj release\moc_dialogsymbols.obj release\moc_dialogsymbolsort.obj release\moc_dialogBranchAttr.obj release\moc_dialogunitmanage.obj release\moc_dialogfuncdefine.obj release\moc_dialogpageattr.obj release\moc_dialogpagenameset.obj release\moc_dialogUnitAttr.obj release\moc_dialogterminalattr.obj release\moc_dialoggenerate.obj release\moc_dialogmultiline.obj release\moc_dialoglinedefine.obj release\moc_dialogcabledefine.obj release\moc_dialogconnectattr.obj release\moc_dialoglinkedit.obj release\moc_dialogsingletermattr.obj release\moc_dialognewspur.obj release\moc_dialognewlib.obj release\moc_dialogattrdefset.obj release\moc_dialogfactorymanage.obj release\moc_dialogfactoryedit.obj
+release\moc_dialognewfunc.obj release\moc_dialogtermbatchmark.obj release\moc_dialogdiagnoseui.obj release\moc_dialogfunctionmanage.obj release\moc_qxcombobox.obj release\moc_dialog_select_another_test.obj release\moc_dialog_wait.obj release\moc_dialogflurunit.obj release\moc_dialogsettestpreference.obj release\moc_dialogusertest.obj release\moc_dialogaddcondition.obj release\moc_dialogdiagusertest.obj release\moc_dialogaddterminal.obj release\moc_dialogtestreport.obj release\moc_dialogmultilib.obj release\moc_bpointitem.obj release\moc_bqgraphicsitem.obj release\moc_bqgraphicsscene.obj release\moc_dialogtag.obj release\moc_codecheckdialog.obj release\moc_mycombobox.obj release\moc_mygraphicsview.obj release\moc_selectfunctiondialog.obj release\moc_containermodel.obj release\moc_containertreedialog.obj release\moc_systementity.obj release\moc_worker.obj release\moc_mythread.obj release\moc_z3solverthread.obj release\moc_cutthread.obj
 $(LIBS)
 <<
 
@@ -613,11 +617,11 @@ qmake: FORCE
 qmake_all: FORCE
 
 dist:
-	$(ZIP) T-DESIGNER.zip $(SOURCES) $(DIST) ..\..\T_DESIGNER.pro ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\spec_pre.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\common\angle.conf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\win32\windows_vulkan_sdk.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\common\windows-vulkan.conf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\common\msvc-desktop.conf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\qconfig.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3danimation.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3danimation_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dcore.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dcore_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dextras.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dextras_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dinput.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dinput_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dlogic.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dlogic_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dquick.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dquick_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dquickanimation.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dquickanimation_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dquickextras.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dquickextras_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dquickinput.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dquickinput_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dquickrender.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dquickrender_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dquickscene2d.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dquickscene2d_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3drender.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3drender_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_accessibility_support_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_axbase.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_axbase_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_axcontainer.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_axcontainer_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_axserver.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_axserver_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_bluetooth.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_bluetooth_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_bootstrap_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_charts.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_charts_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_concurrent.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_concurrent_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_core.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_core_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_datavisualization.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_datavisualization_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_dbus.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_dbus_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_designer.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_designer_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_designercomponents_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_devicediscovery_support_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_edid_support_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_egl_support_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_eventdispatcher_support_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_fb_support_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_fontdatabase_support_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_gamepad.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_gamepad_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_gui.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_gui_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_help.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_help_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_location.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_location_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_multimedia.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_multimedia_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_multimediawidgets.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_multimediawidgets_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_network.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_network_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_networkauth.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_networkauth_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_nfc.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_nfc_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_opengl.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_opengl_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_openglextensions.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_openglextensions_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_packetprotocol_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_platformcompositor_support_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_positioning.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_positioning_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_positioningquick.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_positioningquick_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_printsupport.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_printsupport_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_purchasing.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_purchasing_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_qml.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_qml_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_qmldebug_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_qmldevtools_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_qmltest.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_qmltest_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_qtmultimediaquicktools_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_quick.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_quick_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_quickcontrols2.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_quickcontrols2_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_quickparticles_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_quickshapes_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_quicktemplates2.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_quicktemplates2_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_quickwidgets.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_quickwidgets_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_remoteobjects.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_remoteobjects_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_repparser.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_repparser_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_scxml.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_scxml_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_sensors.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_sensors_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_serialbus.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_serialbus_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_serialport.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_serialport_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_sql.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_sql_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_svg.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_svg_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_testlib.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_testlib_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_texttospeech.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_texttospeech_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_theme_support_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_uiplugin.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_uitools.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_uitools_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_virtualkeyboard.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_virtualkeyboard_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_vulkan_support_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_webchannel.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_webchannel_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_webengine.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_webengine_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_webenginecore.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_webenginecore_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_webenginecoreheaders_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_webenginewidgets.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_webenginewidgets_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_websockets.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_websockets_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_webview.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_webview_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_widgets.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_widgets_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_windowsuiautomation_support_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_winextras.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_winextras_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_xml.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_xml_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_xmlpatterns.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_xmlpatterns_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_zlib_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\qt_functions.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\qt_config.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\win32-msvc\qmake.conf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\spec_post.prf ..\.qmake.stash ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\exclusive_builds.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\common\msvc-version.conf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\toolchain.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\default_pre.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\win32\default_pre.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\resolve_config.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\exclusive_builds_post.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\default_post.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\build_pass.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\qscintilla2.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\resources.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\qtquickcompiler.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\precompile_header.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\warn_on.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\qt.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\moc.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\win32\opengl.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\uic.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\win32\dumpcpp.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\qmake_use.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\file_copies.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\win32\windows.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\testcase_targets.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\exceptions.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\yacc.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\lex.prf ..\T_DESIGNER.pro ..\image.qrc ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5AxContainer.prl ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5AxBase.prl ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5Charts.prl ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5WebEngineWidgets.prl ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5PrintSupport.prl ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5Widgets.prl ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5WebEngineCore.prl ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5Quick.prl ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5Gui.prl ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5Sql.prl ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5WebChannel.prl ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5Qml.prl ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5Network.prl ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5Positioning.prl ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5Concurrent.prl ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5Xml.prl ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5Core.prl ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\qtmain.prl  ..\image.qrc    ..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\data\dummy.cpp  ..\mainwindow.h ..\common.h ..\mxdrawxlib.h ..\qxlabel.h ..\DrawStyle.h ..\formaxwidget.h ..\dialognewproject.h ..\dialogloadsymbol.h ..\dialogsymbolattribute.h ..\dialogmodifyptermial.h ..\dialogsymbols.h ..\dialogsymbolsort.h ..\dialogBranchAttr.h ..\dialogunitmanage.h ..\dialogfuncdefine.h ..\dialogpageattr.h ..\dialogpagenameset.h ..\dialogUnitAttr.h ..\dialogterminalattr.h ..\dialoggenerate.h ..\dialogmultiline.h ..\dialoglinedefine.h ..\dialogcabledefine.h ..\dialogconnectattr.h ..\dialoglinkedit.h ..\dialogsingletermattr.h ..\dialognewspur.h ..\dialognewlib.h ..\dialogattrdefset.h ..\dialogfactorymanage.h ..\dialogfactoryedit.h ..\dialognewfunc.h ..\qscilexercppattach.h ..\dialogtermbatchmark.h ..\graphadjlist.h ..\graphlisthead.h ..\dialogdiagnoseui.h ..\dialogfunctionmanage.h ..\qxcombobox.h ..\dialog_select_another_test.h ..\dialog_wait.h ..\dialogflurunit.h ..\dialogsettestpreference.h ..\dialogusertest.h ..\dialogaddcondition.h ..\dialogdiagusertest.h ..\dialogaddterminal.h ..\dialogtestreport.h ..\dialogmultilib.h ..\bpointitem.h ..\bqgraphicsitem.h ..\bqgraphicsscene.h ..\bqgraphicsview.h ..\dialogtag.h ..\widget\codecheckdialog.h ..\widget\mycombobox.h ..\widget\mygraphicsview.h ..\widget\selectfunctiondialog.h ..\widget\containermodel.h ..\widget\containertreedialog.h ..\BO\containerrepository.h ..\BO\componententity.h ..\BO\systementity.h ..\BO\worker.h ..\DO\component.h ..\DO\diagnosisgraph.h ..\DO\model.h ..\DO\parameter.h ..\DO\containerentity.h ..\sqlitedatabase.h ..\mythread.h ..\solverrunnable.h ..\z3solverthread.h ..\combotree.h ..\cutthread.h   ..\main.cpp ..\mainwindow.cpp ..\common.cpp ..\mxdrawxlib.cpp ..\qxlabel.cpp ..\DrawStyle.cpp ..\formaxwidget.cpp ..\dialognewproject.cpp ..\dialogloadsymbol.cpp ..\dialogsymbolattribute.cpp ..\dialogmodifyptermial.cpp ..\dialogsymbols.cpp ..\dialogsymbolsort.cpp ..\dialogBranchAttr.cpp ..\dialogunitmanage.cpp ..\dialogfuncdefine.cpp ..\dialogpageattr.cpp ..\dialogpagenameset.cpp ..\dialogUnitAttr.cpp ..\dialogterminalattr.cpp ..\dialoggenerate.cpp ..\dialogmultiline.cpp ..\dialoglinedefine.cpp ..\dialogcabledefine.cpp ..\dialogconnectattr.cpp ..\dialoglinkedit.cpp ..\dialogsingletermattr.cpp ..\dialognewspur.cpp ..\dialognewlib.cpp ..\dialogattrdefset.cpp ..\dialogfactorymanage.cpp ..\dialogfactoryedit.cpp ..\dialognewfunc.cpp ..\qscilexercppattach.cpp ..\dialogtermbatchmark.cpp ..\graphadjlist.cpp ..\dialogdiagnoseui.cpp ..\dialogfunctionmanage.cpp ..\qxcombobox.cpp ..\dialog_select_another_test.cpp ..\dialog_wait.cpp ..\dialogflurunit.cpp ..\dialogsettestpreference.cpp ..\dialogusertest.cpp ..\dialogaddcondition.cpp ..\dialogdiagusertest.cpp ..\dialogaddterminal.cpp ..\dialogtestreport.cpp ..\dialogmultilib.cpp ..\bpointitem.cpp ..\bqgraphicsitem.cpp ..\bqgraphicsscene.cpp ..\bqgraphicsview.cpp ..\dialogtag.cpp ..\widget\codecheckdialog.cpp ..\widget\mycombobox.cpp ..\widget\mygraphicsview.cpp ..\widget\selectfunctiondialog.cpp ..\widget\containermodel.cpp ..\widget\containertreedialog.cpp ..\BO\containerrepository.cpp ..\BO\componententity.cpp ..\BO\systementity.cpp ..\BO\worker.cpp ..\DO\component.cpp ..\DO\diagnosisgraph.cpp ..\DO\model.cpp ..\DO\parameter.cpp ..\sqlitedatabase.cpp ..\mythread.cpp ..\solverrunnable.cpp ..\z3solverthread.cpp ..\combotree.cpp ..\cutthread.cpp ..\mainwindow.ui ..\formaxwidget.ui ..\dialognewproject.ui ..\dialogloadsymbol.ui ..\dialogsymbolattribute.ui ..\dialogmodifyptermial.ui ..\dialogsymbols.ui ..\dialogsymbolsort.ui ..\dialogBranchAttr.ui ..\dialogunitmanage.ui ..\dialogfuncdefine.ui ..\dialogpageattr.ui ..\dialogpagenameset.ui ..\dialogUnitAttr.ui ..\dialogterminalattr.ui ..\dialoggenerate.ui ..\dialogmultiline.ui ..\dialoglinedefine.ui ..\dialogcabledefine.ui ..\dialogconnectattr.ui ..\dialoglinkedit.ui ..\dialogsingletermattr.ui ..\dialognewspur.ui ..\dialognewlib.ui ..\dialogattrdefset.ui ..\dialogfactorymanage.ui ..\dialogfactoryedit.ui ..\dialognewfunc.ui ..\dialogtermbatchmark.ui ..\dialogdiagnoseui.ui ..\dialogfunctionmanage.ui ..\dialog_select_another_test.ui ..\dialog_wait.ui ..\dialogflurunit.ui ..\dialogsettestpreference.ui ..\dialogusertest.ui ..\dialogaddcondition.ui ..\dialogdiagusertest.ui ..\dialogaddterminal.ui ..\dialogtestreport.ui ..\dialogmultilib.ui ..\dialogtag.ui ..\widget\selectfunctiondialog.ui ..\widget\containertreedialog.ui    
+	$(ZIP) T-DESIGNER.zip $(SOURCES) $(DIST) ..\T_DESIGNER.pro ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\spec_pre.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\common\angle.conf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\win32\windows_vulkan_sdk.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\common\windows-vulkan.conf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\common\msvc-desktop.conf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\qconfig.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3danimation.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3danimation_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dcore.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dcore_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dextras.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dextras_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dinput.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dinput_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dlogic.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dlogic_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dquick.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dquick_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dquickanimation.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dquickanimation_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dquickextras.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dquickextras_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dquickinput.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dquickinput_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dquickrender.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dquickrender_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dquickscene2d.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3dquickscene2d_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3drender.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_3drender_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_accessibility_support_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_axbase.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_axbase_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_axcontainer.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_axcontainer_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_axserver.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_axserver_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_bluetooth.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_bluetooth_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_bootstrap_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_charts.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_charts_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_concurrent.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_concurrent_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_core.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_core_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_datavisualization.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_datavisualization_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_dbus.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_dbus_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_designer.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_designer_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_designercomponents_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_devicediscovery_support_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_edid_support_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_egl_support_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_eventdispatcher_support_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_fb_support_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_fontdatabase_support_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_gamepad.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_gamepad_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_gui.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_gui_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_help.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_help_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_location.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_location_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_multimedia.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_multimedia_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_multimediawidgets.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_multimediawidgets_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_network.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_network_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_networkauth.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_networkauth_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_nfc.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_nfc_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_opengl.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_opengl_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_openglextensions.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_openglextensions_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_packetprotocol_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_platformcompositor_support_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_positioning.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_positioning_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_positioningquick.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_positioningquick_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_printsupport.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_printsupport_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_purchasing.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_purchasing_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_qml.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_qml_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_qmldebug_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_qmldevtools_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_qmltest.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_qmltest_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_qtmultimediaquicktools_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_quick.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_quick_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_quickcontrols2.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_quickcontrols2_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_quickparticles_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_quickshapes_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_quicktemplates2.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_quicktemplates2_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_quickwidgets.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_quickwidgets_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_remoteobjects.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_remoteobjects_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_repparser.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_repparser_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_scxml.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_scxml_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_sensors.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_sensors_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_serialbus.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_serialbus_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_serialport.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_serialport_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_sql.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_sql_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_svg.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_svg_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_testlib.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_testlib_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_texttospeech.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_texttospeech_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_theme_support_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_uiplugin.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_uitools.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_uitools_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_virtualkeyboard.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_virtualkeyboard_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_vulkan_support_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_webchannel.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_webchannel_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_webengine.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_webengine_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_webenginecore.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_webenginecore_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_webenginecoreheaders_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_webenginewidgets.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_webenginewidgets_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_websockets.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_websockets_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_webview.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_webview_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_widgets.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_widgets_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_windowsuiautomation_support_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_winextras.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_winextras_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_xml.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_xml_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_xmlpatterns.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_xmlpatterns_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\modules\qt_lib_zlib_private.pri ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\qt_functions.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\qt_config.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\win32-msvc\qmake.conf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\spec_post.prf ..\.qmake.stash ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\exclusive_builds.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\common\msvc-version.conf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\toolchain.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\default_pre.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\win32\default_pre.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\resolve_config.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\exclusive_builds_post.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\default_post.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\build_pass.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\qscintilla2.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\resources.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\qtquickcompiler.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\precompile_header.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\warn_on.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\qt.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\moc.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\win32\opengl.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\uic.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\win32\dumpcpp.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\qmake_use.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\file_copies.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\win32\windows.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\testcase_targets.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\exceptions.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\yacc.prf ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\lex.prf ..\T_DESIGNER.pro ..\image.qrc ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5AxContainer.prl ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5AxBase.prl ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5Charts.prl ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5WebEngineWidgets.prl ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5PrintSupport.prl ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5Widgets.prl ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5WebEngineCore.prl ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5Quick.prl ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5Gui.prl ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5Sql.prl ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5WebChannel.prl ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5Qml.prl ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5Network.prl ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5Positioning.prl ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5Concurrent.prl ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5Xml.prl ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\Qt5Core.prl ..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\lib\qtmain.prl  ..\image.qrc    ..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\mkspecs\features\data\dummy.cpp  ..\mainwindow.h ..\common.h ..\mxdrawxlib.h ..\qxlabel.h ..\DrawStyle.h ..\formaxwidget.h ..\dialognewproject.h ..\dialogloadsymbol.h ..\dialogsymbolattribute.h ..\dialogmodifyptermial.h ..\dialogsymbols.h ..\dialogsymbolsort.h ..\dialogBranchAttr.h ..\dialogunitmanage.h ..\dialogfuncdefine.h ..\dialogpageattr.h ..\dialogpagenameset.h ..\dialogUnitAttr.h ..\dialogterminalattr.h ..\dialoggenerate.h ..\dialogmultiline.h ..\dialoglinedefine.h ..\dialogcabledefine.h ..\dialogconnectattr.h ..\dialoglinkedit.h ..\dialogsingletermattr.h ..\dialognewspur.h ..\dialognewlib.h ..\dialogattrdefset.h ..\dialogfactorymanage.h ..\dialogfactoryedit.h ..\dialognewfunc.h ..\qscilexercppattach.h ..\dialogtermbatchmark.h ..\graphadjlist.h ..\graphlisthead.h ..\dialogdiagnoseui.h ..\dialogfunctionmanage.h ..\qxcombobox.h ..\dialog_select_another_test.h ..\dialog_wait.h ..\dialogflurunit.h ..\dialogsettestpreference.h ..\dialogusertest.h ..\dialogaddcondition.h ..\dialogdiagusertest.h ..\dialogaddterminal.h ..\dialogtestreport.h ..\dialogmultilib.h ..\bpointitem.h ..\bqgraphicsitem.h ..\bqgraphicsscene.h ..\bqgraphicsview.h ..\dialogtag.h ..\widget\codecheckdialog.h ..\widget\mycombobox.h ..\widget\mygraphicsview.h ..\widget\selectfunctiondialog.h ..\widget\containermodel.h ..\widget\containertreedialog.h ..\widget\containerhierarchyutils.h ..\BO\containerrepository.h ..\BO\componententity.h ..\BO\systementity.h ..\BO\worker.h ..\DO\component.h ..\DO\diagnosisgraph.h ..\DO\model.h ..\DO\parameter.h ..\DO\containerentity.h ..\sqlitedatabase.h ..\mythread.h ..\solverrunnable.h ..\z3solverthread.h ..\combotree.h ..\cutthread.h   ..\main.cpp ..\mainwindow.cpp ..\common.cpp ..\mxdrawxlib.cpp ..\qxlabel.cpp ..\DrawStyle.cpp ..\formaxwidget.cpp ..\dialognewproject.cpp ..\dialogloadsymbol.cpp ..\dialogsymbolattribute.cpp ..\dialogmodifyptermial.cpp ..\dialogsymbols.cpp ..\dialogsymbolsort.cpp ..\dialogBranchAttr.cpp ..\dialogunitmanage.cpp ..\dialogfuncdefine.cpp ..\dialogpageattr.cpp ..\dialogpagenameset.cpp ..\dialogUnitAttr.cpp ..\dialogterminalattr.cpp ..\dialoggenerate.cpp ..\dialogmultiline.cpp ..\dialoglinedefine.cpp ..\dialogcabledefine.cpp ..\dialogconnectattr.cpp ..\dialoglinkedit.cpp ..\dialogsingletermattr.cpp ..\dialognewspur.cpp ..\dialognewlib.cpp ..\dialogattrdefset.cpp ..\dialogfactorymanage.cpp ..\dialogfactoryedit.cpp ..\dialognewfunc.cpp ..\qscilexercppattach.cpp ..\dialogtermbatchmark.cpp ..\graphadjlist.cpp ..\dialogdiagnoseui.cpp ..\dialogfunctionmanage.cpp ..\qxcombobox.cpp ..\dialog_select_another_test.cpp ..\dialog_wait.cpp ..\dialogflurunit.cpp ..\dialogsettestpreference.cpp ..\dialogusertest.cpp ..\dialogaddcondition.cpp ..\dialogdiagusertest.cpp ..\dialogaddterminal.cpp ..\dialogtestreport.cpp ..\dialogmultilib.cpp ..\bpointitem.cpp ..\bqgraphicsitem.cpp ..\bqgraphicsscene.cpp ..\bqgraphicsview.cpp ..\dialogtag.cpp ..\widget\codecheckdialog.cpp ..\widget\mycombobox.cpp ..\widget\mygraphicsview.cpp ..\widget\selectfunctiondialog.cpp ..\widget\containermodel.cpp ..\widget\containertreedialog.cpp ..\widget\containerhierarchyutils.cpp ..\BO\containerrepository.cpp ..\BO\componententity.cpp ..\BO\systementity.cpp ..\BO\worker.cpp ..\DO\component.cpp ..\DO\diagnosisgraph.cpp ..\DO\model.cpp ..\DO\parameter.cpp ..\sqlitedatabase.cpp ..\mythread.cpp ..\solverrunnable.cpp ..\z3solverthread.cpp ..\combotree.cpp ..\cutthread.cpp ..\mainwindow.ui ..\formaxwidget.ui ..\dialognewproject.ui ..\dialogloadsymbol.ui ..\dialogsymbolattribute.ui ..\dialogmodifyptermial.ui ..\dialogsymbols.ui ..\dialogsymbolsort.ui ..\dialogBranchAttr.ui ..\dialogunitmanage.ui ..\dialogfuncdefine.ui ..\dialogpageattr.ui ..\dialogpagenameset.ui ..\dialogUnitAttr.ui ..\dialogterminalattr.ui ..\dialoggenerate.ui ..\dialogmultiline.ui ..\dialoglinedefine.ui ..\dialogcabledefine.ui ..\dialogconnectattr.ui ..\dialoglinkedit.ui ..\dialogsingletermattr.ui ..\dialognewspur.ui ..\dialognewlib.ui ..\dialogattrdefset.ui ..\dialogfactorymanage.ui ..\dialogfactoryedit.ui ..\dialognewfunc.ui ..\dialogtermbatchmark.ui ..\dialogdiagnoseui.ui ..\dialogfunctionmanage.ui ..\dialog_select_another_test.ui ..\dialog_wait.ui ..\dialogflurunit.ui ..\dialogsettestpreference.ui ..\dialogusertest.ui ..\dialogaddcondition.ui ..\dialogdiagusertest.ui ..\dialogaddterminal.ui ..\dialogtestreport.ui ..\dialogmultilib.ui ..\dialogtag.ui ..\widget\selectfunctiondialog.ui ..\widget\containertreedialog.ui    
 
 clean: compiler_clean 
-	-$(DEL_FILE) release\main.obj release\mainwindow.obj release\common.obj release\mxdrawxlib.obj release\qxlabel.obj release\DrawStyle.obj release\formaxwidget.obj release\dialognewproject.obj release\dialogloadsymbol.obj release\dialogsymbolattribute.obj release\dialogmodifyptermial.obj release\dialogsymbols.obj release\dialogsymbolsort.obj release\dialogBranchAttr.obj release\dialogunitmanage.obj release\dialogfuncdefine.obj release\dialogpageattr.obj release\dialogpagenameset.obj release\dialogUnitAttr.obj release\dialogterminalattr.obj release\dialoggenerate.obj release\dialogmultiline.obj release\dialoglinedefine.obj release\dialogcabledefine.obj release\dialogconnectattr.obj release\dialoglinkedit.obj release\dialogsingletermattr.obj release\dialognewspur.obj release\dialognewlib.obj release\dialogattrdefset.obj release\dialogfactorymanage.obj release\dialogfactoryedit.obj release\dialognewfunc.obj release\qscilexercppattach.obj release\dialogtermbatchmark.obj release\graphadjlist.obj release\dialogdiagnoseui.obj release\dialogfunctionmanage.obj release\qxcombobox.obj release\dialog_select_another_test.obj release\dialog_wait.obj release\dialogflurunit.obj release\dialogsettestpreference.obj release\dialogusertest.obj release\dialogaddcondition.obj release\dialogdiagusertest.obj release\dialogaddterminal.obj release\dialogtestreport.obj release\dialogmultilib.obj release\bpointitem.obj release\bqgraphicsitem.obj release\bqgraphicsscene.obj release\bqgraphicsview.obj release\dialogtag.obj release\codecheckdialog.obj release\mycombobox.obj release\mygraphicsview.obj release\selectfunctiondialog.obj release\containermodel.obj release\containertreedialog.obj release\containerrepository.obj release\componententity.obj release\systementity.obj release\worker.obj release\component.obj release\diagnosisgraph.obj release\model.obj release\parameter.obj release\sqlitedatabase.obj release\mythread.obj release\solverrunnable.obj release\z3solverthread.obj release\combotree.obj release\cutthread.obj release\qrc_image.obj
-	-$(DEL_FILE) release\moc_mainwindow.obj release\moc_qxlabel.obj release\moc_formaxwidget.obj release\moc_dialognewproject.obj release\moc_dialogloadsymbol.obj release\moc_dialogsymbolattribute.obj release\moc_dialogmodifyptermial.obj release\moc_dialogsymbols.obj release\moc_dialogsymbolsort.obj release\moc_dialogBranchAttr.obj release\moc_dialogunitmanage.obj release\moc_dialogfuncdefine.obj release\moc_dialogpageattr.obj release\moc_dialogpagenameset.obj release\moc_dialogUnitAttr.obj release\moc_dialogterminalattr.obj release\moc_dialoggenerate.obj release\moc_dialogmultiline.obj release\moc_dialoglinedefine.obj release\moc_dialogcabledefine.obj release\moc_dialogconnectattr.obj release\moc_dialoglinkedit.obj release\moc_dialogsingletermattr.obj release\moc_dialognewspur.obj release\moc_dialognewlib.obj release\moc_dialogattrdefset.obj release\moc_dialogfactorymanage.obj release\moc_dialogfactoryedit.obj release\moc_dialognewfunc.obj release\moc_dialogtermbatchmark.obj release\moc_dialogdiagnoseui.obj release\moc_dialogfunctionmanage.obj release\moc_qxcombobox.obj release\moc_dialog_select_another_test.obj release\moc_dialog_wait.obj release\moc_dialogflurunit.obj release\moc_dialogsettestpreference.obj release\moc_dialogusertest.obj release\moc_dialogaddcondition.obj release\moc_dialogdiagusertest.obj release\moc_dialogaddterminal.obj release\moc_dialogtestreport.obj release\moc_dialogmultilib.obj release\moc_bpointitem.obj release\moc_bqgraphicsitem.obj release\moc_bqgraphicsscene.obj release\moc_dialogtag.obj release\moc_codecheckdialog.obj release\moc_mycombobox.obj release\moc_mygraphicsview.obj release\moc_selectfunctiondialog.obj release\moc_containermodel.obj release\moc_containertreedialog.obj release\moc_systementity.obj release\moc_worker.obj release\moc_mythread.obj release\moc_z3solverthread.obj release\moc_cutthread.obj
+	-$(DEL_FILE) release\main.obj release\mainwindow.obj release\common.obj release\mxdrawxlib.obj release\qxlabel.obj release\DrawStyle.obj release\formaxwidget.obj release\dialognewproject.obj release\dialogloadsymbol.obj release\dialogsymbolattribute.obj release\dialogmodifyptermial.obj release\dialogsymbols.obj release\dialogsymbolsort.obj release\dialogBranchAttr.obj release\dialogunitmanage.obj release\dialogfuncdefine.obj release\dialogpageattr.obj release\dialogpagenameset.obj release\dialogUnitAttr.obj release\dialogterminalattr.obj release\dialoggenerate.obj release\dialogmultiline.obj release\dialoglinedefine.obj release\dialogcabledefine.obj release\dialogconnectattr.obj release\dialoglinkedit.obj release\dialogsingletermattr.obj release\dialognewspur.obj release\dialognewlib.obj release\dialogattrdefset.obj release\dialogfactorymanage.obj release\dialogfactoryedit.obj release\dialognewfunc.obj release\qscilexercppattach.obj release\dialogtermbatchmark.obj release\graphadjlist.obj release\dialogdiagnoseui.obj release\dialogfunctionmanage.obj release\qxcombobox.obj release\dialog_select_another_test.obj release\dialog_wait.obj release\dialogflurunit.obj release\dialogsettestpreference.obj release\dialogusertest.obj release\dialogaddcondition.obj release\dialogdiagusertest.obj release\dialogaddterminal.obj release\dialogtestreport.obj release\dialogmultilib.obj release\bpointitem.obj release\bqgraphicsitem.obj release\bqgraphicsscene.obj release\bqgraphicsview.obj release\dialogtag.obj release\codecheckdialog.obj release\mycombobox.obj release\mygraphicsview.obj release\selectfunctiondialog.obj release\containermodel.obj release\containertreedialog.obj release\containerhierarchyutils.obj release\containerrepository.obj release\componententity.obj release\systementity.obj release\worker.obj release\component.obj release\diagnosisgraph.obj release\model.obj release\parameter.obj release\sqlitedatabase.obj release\mythread.obj release\solverrunnable.obj release\z3solverthread.obj release\combotree.obj
+	-$(DEL_FILE) release\cutthread.obj release\qrc_image.obj release\moc_mainwindow.obj release\moc_qxlabel.obj release\moc_formaxwidget.obj release\moc_dialognewproject.obj release\moc_dialogloadsymbol.obj release\moc_dialogsymbolattribute.obj release\moc_dialogmodifyptermial.obj release\moc_dialogsymbols.obj release\moc_dialogsymbolsort.obj release\moc_dialogBranchAttr.obj release\moc_dialogunitmanage.obj release\moc_dialogfuncdefine.obj release\moc_dialogpageattr.obj release\moc_dialogpagenameset.obj release\moc_dialogUnitAttr.obj release\moc_dialogterminalattr.obj release\moc_dialoggenerate.obj release\moc_dialogmultiline.obj release\moc_dialoglinedefine.obj release\moc_dialogcabledefine.obj release\moc_dialogconnectattr.obj release\moc_dialoglinkedit.obj release\moc_dialogsingletermattr.obj release\moc_dialognewspur.obj release\moc_dialognewlib.obj release\moc_dialogattrdefset.obj release\moc_dialogfactorymanage.obj release\moc_dialogfactoryedit.obj release\moc_dialognewfunc.obj release\moc_dialogtermbatchmark.obj release\moc_dialogdiagnoseui.obj release\moc_dialogfunctionmanage.obj release\moc_qxcombobox.obj release\moc_dialog_select_another_test.obj release\moc_dialog_wait.obj release\moc_dialogflurunit.obj release\moc_dialogsettestpreference.obj release\moc_dialogusertest.obj release\moc_dialogaddcondition.obj release\moc_dialogdiagusertest.obj release\moc_dialogaddterminal.obj release\moc_dialogtestreport.obj release\moc_dialogmultilib.obj release\moc_bpointitem.obj release\moc_bqgraphicsitem.obj release\moc_bqgraphicsscene.obj release\moc_dialogtag.obj release\moc_codecheckdialog.obj release\moc_mycombobox.obj release\moc_mygraphicsview.obj release\moc_selectfunctiondialog.obj release\moc_containermodel.obj release\moc_containertreedialog.obj release\moc_systementity.obj release\moc_worker.obj release\moc_mythread.obj release\moc_z3solverthread.obj release\moc_cutthread.obj
 	-$(DEL_FILE) release\T-DESIGNER_resource.res
 
 distclean: clean 
@@ -16976,16 +16980,16 @@ release\moc_containertreedialog.cpp: ..\widget\containertreedialog.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qfiledevice.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qvector2d.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtouchdevice.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtSql\QSqlDatabase \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtSql\qsqldatabase.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtSql\qtsqlglobal.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtSql\qtsql-config.h \
 		..\widget\containermodel.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QAbstractItemModel \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qabstractitemmodel.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVector \
 		..\BO\containerrepository.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\QList \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtSql\QSqlDatabase \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtSql\qsqldatabase.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtSql\qtsqlglobal.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtSql\qtsql-config.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtSql\QSqlQuery \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtSql\qsqlquery.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtSql\QSqlError \
@@ -20353,29 +20357,14 @@ release\mainwindow.obj: ..\mainwindow.cpp ..\mainwindow.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QRunnable \
 		..\solverrunnable.h \
 		ui_mainwindow.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\ActiveQt\QAxWidget \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDateEdit \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDateTimeEdit \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QFrame \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGridLayout \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGroupBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHBoxLayout \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHeaderView \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QMdiArea \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QRadioButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QSpacerItem \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QStackedWidget \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QTabWidget \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QTextEdit \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QToolButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QTreeView \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\ActiveQt\QAxObject \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\ActiveQt\QAxWidget \
 		..\BO\containerrepository.h \
 		..\DO\containerentity.h \
 		..\widget\containertreedialog.h \
 		..\widget\containermodel.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QAbstractItemModel
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QAbstractItemModel \
+		..\widget\containerhierarchyutils.h
 
 release\common.obj: ..\common.cpp ..\common.h \
 		..\mxdrawxlib.h \
@@ -21366,15 +21355,7 @@ release\formaxwidget.obj: ..\formaxwidget.cpp ..\formaxwidget.h \
 		..\dialogaddterminal.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QListWidget \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlistwidget.h \
-		ui_formaxwidget.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\ActiveQt\QAxWidget \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QFrame \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHBoxLayout
+		ui_formaxwidget.h
 
 release\dialognewproject.obj: ..\dialognewproject.cpp ..\dialognewproject.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDialog \
@@ -21701,18 +21682,7 @@ release\dialognewproject.obj: ..\dialognewproject.cpp ..\dialognewproject.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlayout.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlayoutitem.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgridlayout.h \
-		ui_dialognewproject.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QLineEdit \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlineedit.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextcursor.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextformat.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QPushButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qpushbutton.h
+		ui_dialognewproject.h
 
 release\dialogloadsymbol.obj: ..\dialogloadsymbol.cpp ..\dialogloadsymbol.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDialog \
@@ -22049,26 +22019,7 @@ release\dialogloadsymbol.obj: ..\dialogloadsymbol.cpp ..\dialogloadsymbol.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\QDropEvent \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\QDrag \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qdrag.h \
-		ui_dialogloadsymbol.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QFrame \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHBoxLayout \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHeaderView \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qheaderview.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QLineEdit \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlineedit.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextcursor.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextformat.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QPushButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qpushbutton.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QStackedWidget \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qstackedwidget.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QTreeView \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qtreeview.h
+		ui_dialogloadsymbol.h
 
 release\dialogsymbolattribute.obj: ..\dialogsymbolattribute.cpp ..\dialogsymbolattribute.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDialog \
@@ -22401,23 +22352,7 @@ release\dialogsymbolattribute.obj: ..\dialogsymbolattribute.cpp ..\dialogsymbola
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\QDropEvent \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\QDrag \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qdrag.h \
-		ui_dialogsymbolattribute.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QComboBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGroupBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgroupbox.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHeaderView \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qheaderview.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QLineEdit \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlineedit.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextcursor.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextformat.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QPushButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qpushbutton.h
+		ui_dialogsymbolattribute.h
 
 release\dialogmodifyptermial.obj: ..\dialogmodifyptermial.cpp ..\dialogmodifyptermial.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDialog \
@@ -22749,23 +22684,7 @@ release\dialogmodifyptermial.obj: ..\dialogmodifyptermial.cpp ..\dialogmodifypte
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\QDropEvent \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\QDrag \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qdrag.h \
-		ui_dialogmodifyptermial.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QComboBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGroupBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgroupbox.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHeaderView \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qheaderview.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QLineEdit \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlineedit.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextcursor.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextformat.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QPushButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qpushbutton.h
+		ui_dialogmodifyptermial.h
 
 release\dialogsymbols.obj: ..\dialogsymbols.cpp ..\dialogsymbols.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDialog \
@@ -23131,21 +23050,7 @@ release\dialogsymbols.obj: ..\dialogsymbols.cpp ..\dialogsymbols.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QPair \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\Qsci\qsciabstractapis.h \
 		..\qscilexercppattach.h \
-		ui_dialogsymbols.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QFrame \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGridLayout \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHBoxLayout \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHeaderView \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qheaderview.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QPushButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qpushbutton.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QTreeView \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qtreeview.h
+		ui_dialogsymbols.h
 
 release\dialogsymbolsort.obj: ..\dialogsymbolsort.cpp ..\dialogsymbolsort.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDialog \
@@ -23482,21 +23387,7 @@ release\dialogsymbolsort.obj: ..\dialogsymbolsort.cpp ..\dialogsymbolsort.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\QDropEvent \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\QDrag \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qdrag.h \
-		ui_dialogsymbolsort.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QLineEdit \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlineedit.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextcursor.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextformat.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QListView \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QPushButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qpushbutton.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QToolButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qtoolbutton.h
+		ui_dialogsymbolsort.h
 
 release\dialogBranchAttr.obj: ..\dialogBranchAttr.cpp ..\dialogBranchAttr.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDialog \
@@ -23827,27 +23718,7 @@ release\dialogBranchAttr.obj: ..\dialogBranchAttr.cpp ..\dialogBranchAttr.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QComboBox \
 		..\dialogtag.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QWidget \
-		ui_dialogBranchAttr.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QFrame \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGridLayout \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGroupBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgroupbox.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHeaderView \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qheaderview.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QLineEdit \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlineedit.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextcursor.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextformat.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QPushButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qpushbutton.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QSpacerItem \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QToolButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qtoolbutton.h
+		ui_dialogBranchAttr.h
 
 release\dialogunitmanage.obj: ..\dialogunitmanage.cpp ..\dialogunitmanage.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDialog \
@@ -24230,27 +24101,7 @@ release\dialogunitmanage.obj: ..\dialogunitmanage.cpp ..\dialogunitmanage.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QRegExp \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QSet \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QStack \
-		ui_dialogunitmanage.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QFrame \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGridLayout \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGroupBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgroupbox.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHBoxLayout \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHeaderView \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qheaderview.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QRadioButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qradiobutton.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QStackedWidget \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qstackedwidget.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QTabWidget \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QTextEdit \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QTreeView \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qtreeview.h
+		ui_dialogunitmanage.h
 
 release\dialogfuncdefine.obj: ..\dialogfuncdefine.cpp ..\dialogfuncdefine.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDialog \
@@ -24603,24 +24454,7 @@ release\dialogfuncdefine.obj: ..\dialogfuncdefine.cpp ..\dialogfuncdefine.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QPair \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\Qsci\qsciabstractapis.h \
 		..\qscilexercppattach.h \
-		ui_dialogfuncdefine.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QComboBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHeaderView \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qheaderview.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QPushButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qpushbutton.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QRadioButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qradiobutton.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QStackedWidget \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qstackedwidget.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QTreeView \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qtreeview.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QWidget
+		ui_dialogfuncdefine.h
 
 release\dialogpageattr.obj: ..\dialogpageattr.cpp ..\dialogpageattr.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDialog \
@@ -24950,22 +24784,7 @@ release\dialogpageattr.obj: ..\dialogpageattr.cpp ..\dialogpageattr.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlayout.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlayoutitem.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgridlayout.h \
-		ui_dialogpageattr.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGroupBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgroupbox.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHeaderView \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qheaderview.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QLineEdit \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlineedit.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextcursor.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextformat.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QPushButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qpushbutton.h
+		ui_dialogpageattr.h
 
 release\dialogpagenameset.obj: ..\dialogpagenameset.cpp ..\dialogpagenameset.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDialog \
@@ -25293,22 +25112,7 @@ release\dialogpagenameset.obj: ..\dialogpagenameset.cpp ..\dialogpagenameset.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlayout.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlayoutitem.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgridlayout.h \
-		ui_dialogpagenameset.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGridLayout \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHeaderView \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qheaderview.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QLineEdit \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlineedit.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextcursor.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextformat.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QPushButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qpushbutton.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QSpacerItem
+		ui_dialogpagenameset.h
 
 release\dialogUnitAttr.obj: ..\dialogUnitAttr.cpp ..\dialogUnitAttr.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDialog \
@@ -25693,22 +25497,7 @@ release\dialogUnitAttr.obj: ..\dialogUnitAttr.cpp ..\dialogUnitAttr.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QRegExp \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QSet \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QStack \
-		ui_dialogUnitAttr.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QFrame \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGridLayout \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGroupBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgroupbox.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHBoxLayout \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHeaderView \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qheaderview.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QSpacerItem \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QTabWidget \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QTextEdit
+		ui_dialogUnitAttr.h
 
 release\dialogterminalattr.obj: ..\dialogterminalattr.cpp ..\dialogterminalattr.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDialog \
@@ -26093,18 +25882,7 @@ release\dialogterminalattr.obj: ..\dialogterminalattr.cpp ..\dialogterminalattr.
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QRegExp \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QSet \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QStack \
-		ui_dialogterminalattr.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGridLayout \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGroupBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgroupbox.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHeaderView \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qheaderview.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QTabWidget
+		ui_dialogterminalattr.h
 
 release\dialoggenerate.obj: ..\dialoggenerate.cpp ..\dialoggenerate.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDialog \
@@ -26432,22 +26210,7 @@ release\dialoggenerate.obj: ..\dialoggenerate.cpp ..\dialoggenerate.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlayout.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlayoutitem.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgridlayout.h \
-		ui_dialoggenerate.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGridLayout \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHeaderView \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qheaderview.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QLineEdit \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlineedit.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextcursor.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextformat.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QPushButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qpushbutton.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QSpacerItem
+		ui_dialoggenerate.h
 
 release\dialogmultiline.obj: ..\dialogmultiline.cpp ..\dialogmultiline.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDialog \
@@ -26554,29 +26317,7 @@ release\dialogmultiline.obj: ..\dialogmultiline.cpp ..\dialogmultiline.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qfiledevice.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qvector2d.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtouchdevice.h \
-		ui_dialogmultiline.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qcoreapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qeventloop.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qdesktopwidget.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QLabel \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlabel.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qframe.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QPushButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qpushbutton.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qabstractbutton.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qicon.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QRadioButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qradiobutton.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QSpinBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qspinbox.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qabstractspinbox.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qvalidator.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qregularexpression.h
+		ui_dialogmultiline.h
 
 release\dialoglinedefine.obj: ..\dialoglinedefine.cpp ..\dialoglinedefine.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDialog \
@@ -26903,21 +26644,7 @@ release\dialoglinedefine.obj: ..\dialoglinedefine.cpp ..\dialoglinedefine.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlayout.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlayoutitem.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgridlayout.h \
-		ui_dialoglinedefine.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QComboBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGroupBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgroupbox.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QLineEdit \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlineedit.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextcursor.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextformat.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QPushButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qpushbutton.h
+		ui_dialoglinedefine.h
 
 release\dialogcabledefine.obj: ..\dialogcabledefine.cpp ..\dialogcabledefine.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDialog \
@@ -27246,21 +26973,7 @@ release\dialogcabledefine.obj: ..\dialogcabledefine.cpp ..\dialogcabledefine.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgridlayout.h \
 		..\dialogpagenameset.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QComboBox \
-		ui_dialogcabledefine.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGridLayout \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGroupBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgroupbox.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QLineEdit \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlineedit.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextcursor.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextformat.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QPushButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qpushbutton.h
+		ui_dialogcabledefine.h
 
 release\dialogconnectattr.obj: ..\dialogconnectattr.cpp ..\dialogconnectattr.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDialog \
@@ -27587,19 +27300,7 @@ release\dialogconnectattr.obj: ..\dialogconnectattr.cpp ..\dialogconnectattr.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlayout.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlayoutitem.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgridlayout.h \
-		ui_dialogconnectattr.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGridLayout \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGroupBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgroupbox.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QPushButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qpushbutton.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QRadioButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qradiobutton.h
+		ui_dialogconnectattr.h
 
 release\dialoglinkedit.obj: ..\dialoglinkedit.cpp ..\dialoglinkedit.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDialog \
@@ -27928,18 +27629,7 @@ release\dialoglinkedit.obj: ..\dialoglinkedit.cpp ..\dialoglinkedit.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgridlayout.h \
 		..\dialogpagenameset.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QComboBox \
-		ui_dialoglinkedit.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QLineEdit \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlineedit.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextcursor.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextformat.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QPushButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qpushbutton.h
+		ui_dialoglinkedit.h
 
 release\dialogsingletermattr.obj: ..\dialogsingletermattr.cpp ..\dialogsingletermattr.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDialog \
@@ -28324,17 +28014,7 @@ release\dialogsingletermattr.obj: ..\dialogsingletermattr.cpp ..\dialogsingleter
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QRegExp \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QSet \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QStack \
-		ui_dialogsingletermattr.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGridLayout \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGroupBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgroupbox.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHeaderView \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qheaderview.h
+		ui_dialogsingletermattr.h
 
 release\dialognewspur.obj: ..\dialognewspur.cpp ..\dialognewspur.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDialog \
@@ -28661,27 +28341,7 @@ release\dialognewspur.obj: ..\dialognewspur.cpp ..\dialognewspur.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlayout.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlayoutitem.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgridlayout.h \
-		ui_dialognewspur.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGroupBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgroupbox.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHBoxLayout \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHeaderView \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qheaderview.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QLineEdit \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlineedit.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextcursor.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextformat.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QPushButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qpushbutton.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QSpinBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qspinbox.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QTreeView \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qtreeview.h
+		ui_dialognewspur.h
 
 release\dialognewlib.obj: ..\dialognewlib.cpp ..\dialognewlib.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDialog \
@@ -29035,17 +28695,7 @@ release\dialognewlib.obj: ..\dialognewlib.cpp ..\dialognewlib.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QPair \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\Qsci\qsciabstractapis.h \
 		..\qscilexercppattach.h \
-		ui_dialognewlib.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QComboBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QPushButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qpushbutton.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QRadioButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qradiobutton.h
+		ui_dialognewlib.h
 
 release\dialogattrdefset.obj: ..\dialogattrdefset.cpp ..\dialogattrdefset.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDialog \
@@ -29372,19 +29022,7 @@ release\dialogattrdefset.obj: ..\dialogattrdefset.cpp ..\dialogattrdefset.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlayout.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlayoutitem.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgridlayout.h \
-		ui_dialogattrdefset.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QComboBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QLineEdit \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlineedit.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextcursor.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextformat.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QPushButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qpushbutton.h
+		ui_dialogattrdefset.h
 
 release\dialogfactorymanage.obj: ..\dialogfactorymanage.cpp ..\dialogfactorymanage.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDialog \
@@ -29712,23 +29350,7 @@ release\dialogfactorymanage.obj: ..\dialogfactorymanage.cpp ..\dialogfactorymana
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlayoutitem.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgridlayout.h \
 		..\dialogfactoryedit.h \
-		ui_dialogfactorymanage.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGroupBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgroupbox.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHeaderView \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qheaderview.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QLineEdit \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlineedit.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextcursor.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextformat.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QPushButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qpushbutton.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QWidget
+		ui_dialogfactorymanage.h
 
 release\dialogfactoryedit.obj: ..\dialogfactoryedit.cpp ..\dialogfactoryedit.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDialog \
@@ -30055,22 +29677,7 @@ release\dialogfactoryedit.obj: ..\dialogfactoryedit.cpp ..\dialogfactoryedit.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlayout.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlayoutitem.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgridlayout.h \
-		ui_dialogfactoryedit.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGridLayout \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGroupBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgroupbox.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QLineEdit \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlineedit.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextcursor.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextformat.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QPushButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qpushbutton.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QWidget
+		ui_dialogfactoryedit.h
 
 release\dialognewfunc.obj: ..\dialognewfunc.cpp ..\dialognewfunc.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDialog \
@@ -30415,23 +30022,7 @@ release\dialognewfunc.obj: ..\dialognewfunc.cpp ..\dialognewfunc.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QPair \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\Qsci\qsciabstractapis.h \
 		..\qscilexercppattach.h \
-		ui_dialognewfunc.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QComboBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QFrame \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QLineEdit \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlineedit.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextcursor.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextformat.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QPushButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qpushbutton.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QRadioButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qradiobutton.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QWidget
+		ui_dialognewfunc.h
 
 release\qscilexercppattach.obj: ..\qscilexercppattach.cpp ..\qscilexercppattach.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QObject \
@@ -30619,39 +30210,7 @@ release\dialogtermbatchmark.obj: ..\dialogtermbatchmark.cpp ..\dialogtermbatchma
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qfiledevice.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qvector2d.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtouchdevice.h \
-		ui_dialogtermbatchmark.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qcoreapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qeventloop.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qdesktopwidget.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QCheckBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qcheckbox.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qabstractbutton.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qicon.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGroupBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgroupbox.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qframe.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QLabel \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlabel.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QLineEdit \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlineedit.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextcursor.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextformat.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qpen.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextoption.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QPushButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qpushbutton.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QRadioButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qradiobutton.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QSpinBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qspinbox.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qabstractspinbox.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qvalidator.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qregularexpression.h
+		ui_dialogtermbatchmark.h
 
 release\graphadjlist.obj: ..\graphadjlist.cpp ..\graphadjlist.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QString \
@@ -31359,24 +30918,7 @@ release\dialogdiagnoseui.obj: ..\dialogdiagnoseui.cpp ..\dialogdiagnoseui.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCharts\QChartView \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\QMouseEvent \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGraphicsSimpleTextItem \
-		ui_dialogdiagnoseui.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\QIcon \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDateEdit \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDateTimeEdit \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QFrame \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGridLayout \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGroupBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHBoxLayout \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHeaderView \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QLineEdit \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QPushButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QRadioButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QSpacerItem \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QStackedWidget \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QTabWidget \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QTextEdit \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QToolButton
+		ui_dialogdiagnoseui.h
 
 release\dialogfunctionmanage.obj: ..\dialogfunctionmanage.cpp ..\dialogfunctionmanage.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDialog \
@@ -31710,29 +31252,6 @@ release\dialogfunctionmanage.obj: ..\dialogfunctionmanage.cpp ..\dialogfunctionm
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qformlayout.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QLayout \
 		ui_dialogfunctionmanage.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\QIcon \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGridLayout \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGroupBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgroupbox.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHBoxLayout \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHeaderView \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qheaderview.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QLineEdit \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlineedit.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextcursor.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextformat.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QPushButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qpushbutton.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QSpacerItem \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QTabWidget \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QTextEdit \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qtextedit.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextdocument.h \
 		..\dialogusertest.h
 
 release\qxcombobox.obj: ..\qxcombobox.cpp ..\qxcombobox.h \
@@ -32391,25 +31910,7 @@ release\dialog_select_another_test.obj: ..\dialog_select_another_test.cpp ..\dia
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlayout.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlayoutitem.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgridlayout.h \
-		ui_dialog_select_another_test.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QComboBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGroupBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgroupbox.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHBoxLayout \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHeaderView \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qheaderview.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QLineEdit \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlineedit.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextcursor.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextformat.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QPushButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qpushbutton.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QWidget
+		ui_dialog_select_another_test.h
 
 release\dialog_wait.obj: ..\dialog_wait.cpp ..\dialog_wait.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDialog \
@@ -32517,29 +32018,13 @@ release\dialog_wait.obj: ..\dialog_wait.cpp ..\dialog_wait.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qvector2d.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtouchdevice.h \
 		ui_dialog_wait.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qcoreapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qeventloop.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qdesktopwidget.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGridLayout \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgridlayout.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlayout.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlayoutitem.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qboxlayout.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QLabel \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlabel.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qframe.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QSpacerItem \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QWidget \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QTime \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qdatetime.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\QMovie \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qmovie.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qimagereader.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qcoreapplication.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qeventloop.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qimageiohandler.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qplugin.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qpointer.h \
@@ -32872,18 +32357,7 @@ release\dialogflurunit.obj: ..\dialogflurunit.cpp ..\dialogflurunit.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlayout.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlayoutitem.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgridlayout.h \
-		ui_dialogflurunit.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGridLayout \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHeaderView \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qheaderview.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QSpacerItem \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QToolButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qtoolbutton.h
+		ui_dialogflurunit.h
 
 release\dialogsettestpreference.obj: ..\dialogsettestpreference.cpp ..\dialogsettestpreference.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDialog \
@@ -32990,27 +32464,7 @@ release\dialogsettestpreference.obj: ..\dialogsettestpreference.cpp ..\dialogset
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qfiledevice.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qvector2d.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtouchdevice.h \
-		ui_dialogsettestpreference.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qcoreapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qeventloop.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qdesktopwidget.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGridLayout \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgridlayout.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlayout.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlayoutitem.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qboxlayout.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QPushButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qpushbutton.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qabstractbutton.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qicon.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QRadioButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qradiobutton.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QSpacerItem
+		ui_dialogsettestpreference.h
 
 release\dialogusertest.obj: ..\dialogusertest.cpp ..\dialogusertest.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDialog \
@@ -33344,24 +32798,6 @@ release\dialogusertest.obj: ..\dialogusertest.cpp ..\dialogusertest.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qformlayout.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QLayout \
 		ui_dialogusertest.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGridLayout \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGroupBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgroupbox.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHBoxLayout \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QLineEdit \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlineedit.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextcursor.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextformat.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QListWidget \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlistwidget.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QPushButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qpushbutton.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QSpacerItem \
 		..\dialogaddcondition.h
 
 release\dialogaddcondition.obj: ..\dialogaddcondition.cpp ..\dialogaddcondition.h \
@@ -33695,21 +33131,7 @@ release\dialogaddcondition.obj: ..\dialogaddcondition.cpp ..\dialogaddcondition.
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QFormLayout \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qformlayout.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QLayout \
-		ui_dialogaddcondition.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGridLayout \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGroupBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgroupbox.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QListWidget \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlistwidget.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QPushButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qpushbutton.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QRadioButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qradiobutton.h
+		ui_dialogaddcondition.h
 
 release\dialogdiagusertest.obj: ..\dialogdiagusertest.cpp ..\dialogdiagusertest.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDialog \
@@ -34037,23 +33459,7 @@ release\dialogdiagusertest.obj: ..\dialogdiagusertest.cpp ..\dialogdiagusertest.
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlayout.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlayoutitem.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgridlayout.h \
-		ui_dialogdiagusertest.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGridLayout \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGroupBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgroupbox.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHBoxLayout \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHeaderView \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qheaderview.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QListWidget \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlistwidget.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QPushButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qpushbutton.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QSpacerItem
+		ui_dialogdiagusertest.h
 
 release\dialogaddterminal.obj: ..\dialogaddterminal.cpp ..\dialogaddterminal.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDialog \
@@ -34385,17 +33791,7 @@ release\dialogaddterminal.obj: ..\dialogaddterminal.cpp ..\dialogaddterminal.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qscrollarea.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\QWheelEvent \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QVBoxLayout \
-		ui_dialogaddterminal.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QComboBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGridLayout \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QPushButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qpushbutton.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QWidget
+		ui_dialogaddterminal.h
 
 release\dialogtestreport.obj: ..\dialogtestreport.cpp ..\dialogtestreport.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDialog \
@@ -35001,11 +34397,7 @@ release\dialogtestreport.obj: ..\dialogtestreport.cpp ..\dialogtestreport.h \
 		..\widget\mygraphicsview.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\QWheelEvent \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QVBoxLayout \
-		ui_dialogtestreport.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QFrame \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHeaderView \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QTreeView
+		ui_dialogtestreport.h
 
 release\dialogmultilib.obj: ..\dialogmultilib.cpp ..\dialogmultilib.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDialog \
@@ -35339,22 +34731,7 @@ release\dialogmultilib.obj: ..\dialogmultilib.cpp ..\dialogmultilib.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlineedit.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextcursor.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextformat.h \
-		ui_dialogmultilib.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGridLayout \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHeaderView \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qheaderview.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QListWidget \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlistwidget.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QPushButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qpushbutton.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QSpacerItem \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QTreeView \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qtreeview.h
+		ui_dialogmultilib.h
 
 release\bpointitem.obj: ..\bpointitem.cpp ..\bpointitem.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QObject \
@@ -35955,29 +35332,7 @@ release\dialogtag.obj: ..\dialogtag.cpp ..\dialogtag.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qfiledevice.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qvector2d.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtouchdevice.h \
-		ui_dialogtag.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qcoreapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qeventloop.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qdesktopwidget.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGroupBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgroupbox.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qframe.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHBoxLayout \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qboxlayout.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlayout.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlayoutitem.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgridlayout.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QSpacerItem \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QToolButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qtoolbutton.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qabstractbutton.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qicon.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QVBoxLayout
+		ui_dialogtag.h
 
 release\codecheckdialog.obj: ..\widget\codecheckdialog.cpp ..\widget\codecheckdialog.h \
 		..\common.h \
@@ -36955,36 +36310,7 @@ release\selectfunctiondialog.obj: ..\widget\selectfunctiondialog.cpp ..\widget\s
 		..\combotree.h \
 		..\cutthread.h \
 		..\solverrunnable.h \
-		ui_selectfunctiondialog.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qdesktopwidget.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QCheckBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qcheckbox.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGridLayout \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QGroupBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgroupbox.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHeaderView \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qheaderview.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QLabel \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlabel.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QPlainTextEdit \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qplaintextedit.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qtextedit.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextdocument.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qabstracttextdocumentlayout.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextlayout.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qglyphrun.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qrawfont.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qfontdatabase.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QProgressBar \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qprogressbar.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QTableWidget \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QTextEdit \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QWidget
+		ui_selectfunctiondialog.h
 
 release\containermodel.obj: ..\widget\containermodel.cpp ..\widget\containermodel.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QAbstractItemModel \
@@ -37204,16 +36530,16 @@ release\containertreedialog.obj: ..\widget\containertreedialog.cpp ..\widget\con
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qfiledevice.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qvector2d.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtouchdevice.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtSql\QSqlDatabase \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtSql\qsqldatabase.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtSql\qtsqlglobal.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtSql\qtsql-config.h \
 		..\widget\containermodel.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QAbstractItemModel \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qabstractitemmodel.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVector \
 		..\BO\containerrepository.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\QList \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtSql\QSqlDatabase \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtSql\qsqldatabase.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtSql\qtsqlglobal.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtSql\qtsql-config.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtSql\QSqlQuery \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtSql\qsqlquery.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtSql\QSqlError \
@@ -37223,15 +36549,16 @@ release\containertreedialog.obj: ..\widget\containertreedialog.cpp ..\widget\con
 		..\DO\containerentity.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QString \
 		ui_containertreedialog.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QApplication \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qcoreapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qeventloop.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qdesktopwidget.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qguiapplication.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qinputmethod.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QComboBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qcombobox.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QMessageBox \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qmessagebox.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDialogButtonBox \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qdialogbuttonbox.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHeaderView \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qheaderview.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qabstractitemview.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qabstractscrollarea.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qframe.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qitemselectionmodel.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qabstractitemdelegate.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qstyleoption.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qabstractspinbox.h \
@@ -37244,33 +36571,116 @@ release\containertreedialog.obj: ..\widget\containertreedialog.cpp ..\widget\con
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qtabbar.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qtabwidget.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qrubberband.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qframe.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QDialogButtonBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qdialogbuttonbox.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHBoxLayout \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qboxlayout.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlayout.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlayoutitem.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qgridlayout.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QHeaderView \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qheaderview.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qabstractitemview.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qabstractscrollarea.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qitemselectionmodel.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QLineEdit \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QMenu \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qmenu.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qaction.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qactiongroup.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QInputDialog \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qinputdialog.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qlineedit.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextcursor.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextformat.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qpen.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtextoption.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QPushButton \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qpushbutton.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qabstractbutton.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QTreeView \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qtreeview.h \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QVBoxLayout \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\QMessageBox \
-		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtWidgets\qmessagebox.h
+		..\widget\containerhierarchyutils.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QStringList
+
+release\containerhierarchyutils.obj: ..\widget\containerhierarchyutils.cpp ..\widget\containerhierarchyutils.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtSql\QSqlDatabase \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtSql\qsqldatabase.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtSql\qtsqlglobal.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qglobal.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qconfig-bootstrapped.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qconfig.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qtcore-config.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qsystemdetection.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qprocessordetection.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qcompilerdetection.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qtypeinfo.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qsysinfo.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qlogging.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qflags.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qatomic.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qbasicatomic.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qatomic_bootstrap.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qgenericatomic.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qatomic_cxx11.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qatomic_msvc.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qglobalstatic.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qmutex.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qnumeric.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qversiontagging.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtSql\qtsql-config.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qstring.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qchar.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qbytearray.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qrefcount.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qnamespace.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qarraydata.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qstringliteral.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qstringalgorithms.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qstringview.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qstringbuilder.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QString \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QStringList \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qstringlist.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qlist.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qalgorithms.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qiterator.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qhashfunctions.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qpair.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qbytearraylist.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qregexp.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qstringmatcher.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\QList \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qevent.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtguiglobal.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtgui-config.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qwindowdefs.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qobjectdefs.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qobjectdefs_impl.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qwindowdefs_win.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qregion.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qrect.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qmargins.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qsize.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qpoint.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qdatastream.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qscopedpointer.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qiodevice.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qobject.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qcoreevent.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qmetatype.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qvarlengtharray.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qcontainerfwd.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qobject_impl.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qkeysequence.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qvariant.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qmap.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qdebug.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qhash.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qtextstream.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qlocale.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qshareddata.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qvector.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qset.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qcontiguouscache.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qsharedpointer.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qsharedpointer_impl.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qurl.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qurlquery.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qfile.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\qfiledevice.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qvector2d.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\qtouchdevice.h \
+		..\BO\containerrepository.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtSql\QSqlQuery \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtSql\qsqlquery.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtSql\QSqlError \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtSql\qsqlerror.h \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QVariant \
+		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtCore\QDebug \
+		..\DO\containerentity.h
 
 release\containerrepository.obj: ..\BO\containerrepository.cpp ..\BO\containerrepository.h \
 		..\..\..\..\..\Qt\Qt5.12.9\5.12.9\msvc2017_64\include\QtGui\QList \

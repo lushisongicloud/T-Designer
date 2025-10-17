@@ -915,7 +915,7 @@ void SystemEntity::solveConflictSets(const QString& modelDescription, const QStr
     //    unchangingCode.append(systemLinkCode);
     //    unchangingCode.append(testCode);
 
-    //    QString out = QStringLiteral("PrepareTime:").append(QString::number(time.elapsed()/1000.0));
+    //    QString out = QString("PrepareTime:").append(QString::number(time.elapsed()/1000.0));
     //    qDebug()<< out<< endl;
 
     //    solve(list, componentEntityList);
