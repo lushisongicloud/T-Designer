@@ -26,6 +26,10 @@ bool SQliteDatabase::connect()
         qDebug() << "Error: Failed to connect database." << database.lastError();
         return false;
     }
+    // Ensure foreign keys and new container tables exist
+    QSqlQuery pragma(database);
+    pragma.exec("PRAGMA foreign_keys = ON");
+
     return true;
 }
 

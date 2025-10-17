@@ -598,6 +598,7 @@ private slots:
 
     void on_CbTestType_currentIndexChanged(const QString &arg1);
 
+
 private:
     QList<CandidateData> candidate_list;
     GraphAdjList* graph_list;

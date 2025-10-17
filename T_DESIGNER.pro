@@ -101,7 +101,6 @@ SOURCES += \
     z3solverthread.cpp \
     combotree.cpp \
     cutthread.cpp
-
 HEADERS += \
         mainwindow.h \
     common.h \
@@ -241,3 +240,4 @@ LIBS += $$PWD/lib/libz3.lib
 
 INCLUDEPATH += $$PWD/.
 DEPENDPATH += $$PWD/.
+

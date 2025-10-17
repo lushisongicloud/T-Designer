@@ -10290,6 +10290,31 @@ QDoubleSpinBox{
          </widget>
         </item>
         <item>
+         <widget class="QToolButton" name="Btn_ContainerTree">
+          <property name="minimumSize">
+           <size>
+            <width>100</width>
+            <height>30</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>层次模型</string>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>32</width>
+            <height>32</height>
+           </size>
+          </property>
+          <property name="toolButtonStyle">
+           <enum>Qt::ToolButtonTextUnderIcon</enum>
+          </property>
+          <property name="autoRaise">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="QToolButton" name="BtnLineConnect">
           <property name="text">
            <string>连线</string>
