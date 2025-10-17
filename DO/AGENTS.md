@@ -23,7 +23,8 @@
   - 与 `docs/hierarchical_modeling_requirements.md` 中的术语与层次一致（例如 Component/Container/System 等）。
 
 ## 代码风格
-- 遵循根目录 `AGENTS.md`：类 PascalCase，字段/访问器 lowerCamelCase，4 空格缩进，UTF‑8，`clang-format`。
+- 遵循根目录 `AGENTS.md`：类 PascalCase，字段/访问器 lowerCamelCase，4 空格缩进，UTF-8 with BOM，`clang-format`。
+- 在代码中需要使用中文的地方，请不要使用 `tr` 与 `QStringLiteral`，而是直接使用双引号字符串（如 `"中文"`）或 `QString("中文")`。
 - 头/源文件成对；头文件尽量最小化包含，使用前置声明降低编译耦合。
 
 ## 典型目录内元素

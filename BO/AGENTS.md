@@ -23,7 +23,8 @@
   - 在新增实体/仓库前，先补充/确认 `DO/` 层的数据结构。
 
 ## 代码风格
-- 遵循根目录 `AGENTS.md` 约定：类 PascalCase，方法/变量 lowerCamelCase，4 空格缩进，UTF‑8，使用 `clang-format`（Qt/Google 风格均可，保持一致）。
+- 遵循根目录 `AGENTS.md` 约定：类 PascalCase，方法/变量 lowerCamelCase，4 空格缩进，UTF-8 with BOM，使用 `clang-format`（Qt/Google 风格均可，保持一致）。
+- 在代码中需要使用中文的地方，请不要使用 `tr` 与 `QStringLiteral`，而是直接使用双引号字符串（如 `"中文"`）或 `QString("中文")`。
 - 头/源文件成对命名；公共类型与接口放入头文件，私有实现细节留在 cpp。
 
 ## 典型目录内元素

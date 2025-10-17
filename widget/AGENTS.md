@@ -30,7 +30,8 @@
 - 字符串使用 `tr()` 以便后续国际化。
 
 ## 代码风格
-- 遵循根目录 `AGENTS.md`：类 PascalCase，方法/变量 lowerCamelCase，4 空格缩进，UTF‑8，`clang-format`。
+- 遵循根目录 `AGENTS.md`：类 PascalCase，方法/变量 lowerCamelCase，4 空格缩进，UTF-8 with BOM，`clang-format`。
+- 在代码中需要使用中文的地方，请不要使用 `tr` 与 `QStringLiteral`，而是直接使用双引号字符串（如 `"中文"`）或 `QString("中文")`。
 - 头/源文件成对；将业务交互点集中在少量方法中（如 `applyChanges()`/`loadFromBo()`）。
 
 ## 典型目录内元素
