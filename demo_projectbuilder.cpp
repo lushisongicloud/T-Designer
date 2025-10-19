@@ -20,7 +20,7 @@ inline bool execQuery(QSqlQuery &query, const QString &sql, QString *errorMessag
 {
     if (!query.exec(sql)) {
         if (errorMessage)
-            *errorMessage = QStringLiteral("SQL error: %1 (%2)").arg(query.lastError().text(), sql);
+            *errorMessage = QString("SQL error: %1 (%2)").arg(query.lastError().text(), sql);
         return false;
     }
     return true;
@@ -33,7 +33,7 @@ inline bool prepareAndExec(QSqlQuery &query, const QString &sql, const QList<QVa
         query.bindValue(i, values.at(i));
     if (!query.exec()) {
         if (errorMessage)
-            *errorMessage = QStringLiteral("SQL error: %1 (%2)").arg(query.lastError().text(), sql);
+            *errorMessage = QString("SQL error: %1 (%2)").arg(query.lastError().text(), sql);
         return false;
     }
     return true;
@@ -56,7 +56,7 @@ bool DemoProjectBuilder::buildDemoProject(const QString &projectDir, const QStri
     QDir dir;
     if (!dir.mkpath(projectDir)) {
         if (errorMessage)
-            *errorMessage = QStringLiteral("无法创建目录: %1").arg(projectDir);
+            *errorMessage = QString("无法创建目录: %1").arg(projectDir);
         return false;
     }
 
@@ -97,7 +97,7 @@ bool DemoProjectBuilder::writeSwProFile(const QString &filePath, const QString &
     QFile file(filePath);
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
         if (errorMessage)
-            *errorMessage = QStringLiteral("无法创建项目文件: %1").arg(filePath);
+            *errorMessage = QString("无法创建项目文件: %1").arg(filePath);
         return false;
     }
     file.write(projectName.toUtf8());
@@ -110,7 +110,7 @@ bool DemoProjectBuilder::writeTestParams(const QString &filePath, QString *error
     QFile file(filePath);
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
         if (errorMessage)
-            *errorMessage = QStringLiteral("无法创建测试参数文件: %1").arg(filePath);
+            *errorMessage = QString("无法创建测试参数文件: %1").arg(filePath);
         return false;
     }
     QTextStream out(&file);
@@ -123,12 +123,12 @@ bool DemoProjectBuilder::writeTestParams(const QString &filePath, QString *error
 
 bool DemoProjectBuilder::buildProjectDatabase(const QString &dbPath, QString *errorMessage)
 {
-    const QString connName = QStringLiteral("demo_project_builder");
+    const QString connName = QString("demo_project_builder");
     QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE", connName);
     db.setDatabaseName(dbPath);
     if (!db.open()) {
         if (errorMessage)
-            *errorMessage = QStringLiteral("无法创建数据库: %1").arg(db.lastError().text());
+            *errorMessage = QString("无法创建数据库: %1").arg(db.lastError().text());
         db = QSqlDatabase();
         QSqlDatabase::removeDatabase(connName);
         return false;
@@ -177,10 +177,10 @@ bool DemoProjectBuilder::buildProjectDatabase(const QString &dbPath, QString *er
 
     // Insert project structure entries
     const QList<QList<QVariant>> projectStructures = {
-        {1001, QStringLiteral("1"), QStringLiteral("Demo System"), 0, QStringLiteral("演示项目根节点")},
-        {1002, QStringLiteral("3"), QStringLiteral("Subsystem"), 1001, QStringLiteral("演示子系统")},
-        {1003, QStringLiteral("5"), QStringLiteral("Station 1"), 1002, QStringLiteral("演示位置")},
-        {1004, QStringLiteral("6"), QStringLiteral("Demo Diagram"), 1003, QStringLiteral("演示图纸")}
+        {1001, QString("1"), QString("Demo System"), 0, QString("演示项目根节点")},
+        {1002, QString("3"), QString("Subsystem"), 1001, QString("演示子系统")},
+        {1003, QString("5"), QString("Station 1"), 1002, QString("演示位置")},
+        {1004, QString("6"), QString("Demo Diagram"), 1003, QString("演示图纸")}
     };
     for (const auto &row : projectStructures) {
         if (!prepareAndExec(query,
@@ -193,8 +193,8 @@ bool DemoProjectBuilder::buildProjectDatabase(const QString &dbPath, QString *er
 
     // Equipment entries
     const QList<QList<QVariant>> equipments = {
-        {1, 1003, QStringLiteral("PSU-1"), QStringLiteral("Power"), QStringLiteral("普通元件"), QStringLiteral("Power Supply"), QStringLiteral("提供24V稳压输出"), QStringLiteral("PSU001"), QString(), QStringLiteral("1"), QStringLiteral("DemoWorks"), QString(), QStringLiteral("class PSU"), QString(), QString(), QString(), QStringLiteral("120000")},
-        {2, 1003, QStringLiteral("ACT-1"), QStringLiteral("Actuator"), QStringLiteral("普通元件"), QStringLiteral("Hydraulic Actuator"), QStringLiteral("输出8bar液压压力"), QStringLiteral("ACT001"), QString(), QStringLiteral("2"), QStringLiteral("DemoWorks"), QString(), QStringLiteral("class ACT"), QString(), QString(), QString(), QStringLiteral("90000")}
+        {1, 1003, QString("PSU-1"), QString("Power"), QString("普通元件"), QString("Power Supply"), QString("提供24V稳压输出"), QString("PSU001"), QString(), QString("1"), QString("DemoWorks"), QString(), QString("class PSU"), QString(), QString(), QString(), QString("120000")},
+        {2, 1003, QString("ACT-1"), QString("Actuator"), QString("普通元件"), QString("Hydraulic Actuator"), QString("输出8bar液压压力"), QString("ACT001"), QString(), QString("2"), QString("DemoWorks"), QString(), QString("class ACT"), QString(), QString(), QString(), QString("90000")}
     };
     for (const auto &row : equipments) {
         if (!prepareAndExec(query,
@@ -206,8 +206,8 @@ bool DemoProjectBuilder::buildProjectDatabase(const QString &dbPath, QString *er
     }
 
     const QList<QList<QVariant>> diagnoseParas = {
-        {1, 1, QStringLiteral("Vout"), QStringLiteral("V"), QStringLiteral("24"), QStringLiteral("24"), QStringLiteral("输出电压")},
-        {2, 2, QStringLiteral("Pressure"), QStringLiteral("bar"), QStringLiteral("8"), QStringLiteral("8"), QStringLiteral("输出压力")}
+        {1, 1, QString("Vout"), QString("V"), QString("24"), QString("24"), QString("输出电压")},
+        {2, 2, QString("Pressure"), QString("bar"), QString("8"), QString("8"), QString("输出压力")}
     };
     for (const auto &row : diagnoseParas) {
         if (!prepareAndExec(query,
@@ -219,8 +219,8 @@ bool DemoProjectBuilder::buildProjectDatabase(const QString &dbPath, QString *er
     }
 
     const QList<QList<QVariant>> symbols = {
-        {1, 1, 1, QStringLiteral("PSU"), QStringLiteral("0"), QStringLiteral("电源模块"), QStringLiteral("PSU"), QString(), QString(), QStringLiteral(""), QStringLiteral("source"), 1, 0, 1, QString(), QStringLiteral("PSU-1.Supply")},
-        {2, 2, 1, QStringLiteral("ACT"), QStringLiteral("0"), QStringLiteral("执行器模块"), QStringLiteral("ACT"), QString(), QString(), QStringLiteral(""), QStringLiteral("actuator"), 0, 1, 1, QString(), QStringLiteral("ACT-1.Deliver")}
+        {1, 1, 1, QString("PSU"), QString("0"), QString("电源模块"), QString("PSU"), QString(), QString(), QString(""), QString("source"), 1, 0, 1, QString(), QString("PSU-1.Supply")},
+        {2, 2, 1, QString("ACT"), QString("0"), QString("执行器模块"), QString("ACT"), QString(), QString(), QString(""), QString("actuator"), 0, 1, 1, QString(), QString("ACT-1.Deliver")}
     };
     for (const auto &row : symbols) {
         if (!prepareAndExec(query,
@@ -232,10 +232,10 @@ bool DemoProjectBuilder::buildProjectDatabase(const QString &dbPath, QString *er
     }
 
     const QList<QList<QVariant>> symbTerms = {
-        {1, 1, QStringLiteral("Vin"), QStringLiteral("供电输入")},
-        {2, 1, QStringLiteral("Vout"), QStringLiteral("稳压输出")},
-        {3, 2, QStringLiteral("Supply"), QStringLiteral("供油接口")},
-        {4, 2, QStringLiteral("Pressure"), QStringLiteral("压力输出")}
+        {1, 1, QString("Vin"), QString("供电输入")},
+        {2, 1, QString("Vout"), QString("稳压输出")},
+        {3, 2, QString("Supply"), QString("供油接口")},
+        {4, 2, QString("Pressure"), QString("压力输出")}
     };
     for (const auto &row : symbTerms) {
         if (!prepareAndExec(query,
@@ -247,7 +247,7 @@ bool DemoProjectBuilder::buildProjectDatabase(const QString &dbPath, QString *er
     }
 
     const QList<QList<QVariant>> pages = {
-        {1, 1004, QStringLiteral("原理图"), QStringLiteral("6"), QStringLiteral("DemoDiagram")}
+        {1, 1004, QString("原理图"), QString("6"), QString("DemoDiagram")}
     };
     for (const auto &row : pages) {
         if (!prepareAndExec(query,
@@ -259,7 +259,7 @@ bool DemoProjectBuilder::buildProjectDatabase(const QString &dbPath, QString *er
     }
 
     const QList<QList<QVariant>> jxbs = {
-        {1, 1003, 1, QVariant(), QStringLiteral("L1"), QString(), QStringLiteral("2"), QStringLiteral("4"), QStringLiteral("Round"), QStringLiteral("Red"), QStringLiteral("2.5"), QStringLiteral("Power"), QStringLiteral("0"), QStringLiteral("0")}
+        {1, 1003, 1, QVariant(), QString("L1"), QString(), QString("2"), QString("4"), QString("Round"), QString("Red"), QString("2.5"), QString("Power"), QString("0"), QString("0")}
     };
     for (const auto &row : jxbs) {
         if (!prepareAndExec(query,
@@ -271,7 +271,7 @@ bool DemoProjectBuilder::buildProjectDatabase(const QString &dbPath, QString *er
     }
 
     const QList<QList<QVariant>> functions = {
-        {1, QStringLiteral("DeliverPressure"), QStringLiteral("ACT-1.Pressure"), QStringLiteral("PSU-1.Vout=24V"), QStringLiteral("演示功能: 电源驱动执行器"), QStringLiteral("PSU-1.Vout,ACT-1.Pressure"), QStringLiteral("PSU-1,ACT-1"), QStringLiteral("PSU-1,ACT-1"), QString(), 1, 0.01}
+        {1, QString("DeliverPressure"), QString("ACT-1.Pressure"), QString("PSU-1.Vout=24V"), QString("演示功能: 电源驱动执行器"), QString("PSU-1.Vout,ACT-1.Pressure"), QString("PSU-1,ACT-1"), QString("PSU-1,ACT-1"), QString(), 1, 0.01}
     };
     for (const auto &row : functions) {
         if (!prepareAndExec(query,
@@ -292,10 +292,10 @@ bool DemoProjectBuilder::buildProjectDatabase(const QString &dbPath, QString *er
     const QStringList testsJson = demoTestJsonList();
 
     const QList<QList<QVariant>> containers = {
-        {1, QStringLiteral("Demo System"), 0, 0, 0, 0, compactJson(QJsonArray()), QString(), subsystemBehaviorJson(), QString(), QString(), QVariant(), QStringLiteral("System"), QStringLiteral("Demo System")},
-        {2, QStringLiteral("Subsystem"), 1, 1, 0, 0, compactJson(QJsonArray()), QString(), subsystemBehaviorJson(), QString(), QString(), QVariant(), QStringLiteral("Subsystem"), QStringLiteral("Hydraulics")},
-        {3, QStringLiteral("PSU-1"), 6, 2, 0, 0, containerPortsJson(QStringLiteral("PSU-1"), QStringLiteral("Vout"), QStringLiteral("power")), QString(), psuBehaviorJson(), testsJson.at(0), QString(), 1, QStringLiteral("Power"), QStringLiteral("Power Supply")},
-        {4, QStringLiteral("ACT-1"), 6, 2, 1, 0, containerPortsJson(QStringLiteral("ACT-1"), QStringLiteral("Pressure"), QStringLiteral("hydraulic"), QStringLiteral("Supply"), QStringLiteral("hydraulic")), QString(), actuatorBehaviorJson(), testsJson.at(1), QString(), 2, QStringLiteral("Actuator"), QStringLiteral("Hydraulic Actuator")}
+        {1, QString("Demo System"), 0, 0, 0, 0, compactJson(QJsonArray()), QString(), subsystemBehaviorJson(), QString(), QString(), QVariant(), QString("System"), QString("Demo System")},
+        {2, QString("Subsystem"), 1, 1, 0, 0, compactJson(QJsonArray()), QString(), subsystemBehaviorJson(), QString(), QString(), QVariant(), QString("Subsystem"), QString("Hydraulics")},
+        {3, QString("PSU-1"), 6, 2, 0, 0, containerPortsJson(QString("PSU-1"), QString("Vout"), QString("power")), QString(), psuBehaviorJson(), testsJson.at(0), QString(), 1, QString("Power"), QString("Power Supply")},
+        {4, QString("ACT-1"), 6, 2, 1, 0, containerPortsJson(QString("ACT-1"), QString("Pressure"), QString("hydraulic"), QString("Supply"), QString("hydraulic")), QString(), actuatorBehaviorJson(), testsJson.at(1), QString(), 2, QString("Actuator"), QString("Hydraulic Actuator")}
     };
     for (const auto &row : containers) {
         if (!prepareAndExec(query,
@@ -332,15 +332,15 @@ QString DemoProjectBuilder::containerPortsJson(const QString &equipmentTag,
     QJsonArray ports;
     if (!inPort.isEmpty()) {
         QJsonObject in;
-        in.insert(QStringLiteral("name"), equipmentTag + "." + inPort);
-        in.insert(QStringLiteral("category"), inCategory);
-        in.insert(QStringLiteral("direction"), QStringLiteral("input"));
+        in.insert(QString("name"), equipmentTag + "." + inPort);
+        in.insert(QString("category"), inCategory);
+        in.insert(QString("direction"), QString("input"));
         ports.append(in);
     }
     QJsonObject out;
-    out.insert(QStringLiteral("name"), equipmentTag + "." + outPort);
-    out.insert(QStringLiteral("category"), outCategory);
-    out.insert(QStringLiteral("direction"), QStringLiteral("output"));
+    out.insert(QString("name"), equipmentTag + "." + outPort);
+    out.insert(QString("category"), outCategory);
+    out.insert(QString("direction"), QString("output"));
     ports.append(out);
     return compactJson(ports);
 }
@@ -348,58 +348,58 @@ QString DemoProjectBuilder::containerPortsJson(const QString &equipmentTag,
 QString DemoProjectBuilder::psuBehaviorJson()
 {
     QJsonObject normal;
-    normal.insert(QStringLiteral("id"), QStringLiteral("psu_normal"));
-    normal.insert(QStringLiteral("name"), QStringLiteral("PSU 正常"));
-    normal.insert(QStringLiteral("type"), QStringLiteral("normal"));
-    normal.insert(QStringLiteral("probability"), 0.0);
-    normal.insert(QStringLiteral("constraints"), QJsonArray{QStringLiteral("PSU-1.Vout=24V")});
+    normal.insert(QString("id"), QString("psu_normal"));
+    normal.insert(QString("name"), QString("PSU 正常"));
+    normal.insert(QString("type"), QString("normal"));
+    normal.insert(QString("probability"), 0.0);
+    normal.insert(QString("constraints"), QJsonArray{QString("PSU-1.Vout=24V")});
 
     QJsonObject fault;
-    fault.insert(QStringLiteral("id"), QStringLiteral("psu_failure"));
-    fault.insert(QStringLiteral("name"), QStringLiteral("PSU 输出失效"));
-    fault.insert(QStringLiteral("type"), QStringLiteral("fault"));
-    fault.insert(QStringLiteral("probability"), 0.01);
-    fault.insert(QStringLiteral("constraints"), QJsonArray{QStringLiteral("PSU-1.Vout=0V")});
+    fault.insert(QString("id"), QString("psu_failure"));
+    fault.insert(QString("name"), QString("PSU 输出失效"));
+    fault.insert(QString("type"), QString("fault"));
+    fault.insert(QString("probability"), 0.01);
+    fault.insert(QString("constraints"), QJsonArray{QString("PSU-1.Vout=0V")});
 
     QJsonObject behavior;
-    behavior.insert(QStringLiteral("normal"), normal);
-    behavior.insert(QStringLiteral("faults"), QJsonArray{fault});
+    behavior.insert(QString("normal"), normal);
+    behavior.insert(QString("faults"), QJsonArray{fault});
     return compactJson(behavior);
 }
 
 QString DemoProjectBuilder::actuatorBehaviorJson()
 {
     QJsonObject normal;
-    normal.insert(QStringLiteral("id"), QStringLiteral("act_normal"));
-    normal.insert(QStringLiteral("name"), QStringLiteral("执行器正常"));
-    normal.insert(QStringLiteral("type"), QStringLiteral("normal"));
-    normal.insert(QStringLiteral("probability"), 0.0);
-    normal.insert(QStringLiteral("constraints"), QJsonArray{QStringLiteral("ACT-1.Pressure=8bar")});
+    normal.insert(QString("id"), QString("act_normal"));
+    normal.insert(QString("name"), QString("执行器正常"));
+    normal.insert(QString("type"), QString("normal"));
+    normal.insert(QString("probability"), 0.0);
+    normal.insert(QString("constraints"), QJsonArray{QString("ACT-1.Pressure=8bar")});
 
     QJsonObject fault;
-    fault.insert(QStringLiteral("id"), QStringLiteral("act_stuck"));
-    fault.insert(QStringLiteral("name"), QStringLiteral("执行器卡滞"));
-    fault.insert(QStringLiteral("type"), QStringLiteral("fault"));
-    fault.insert(QStringLiteral("probability"), 0.02);
-    fault.insert(QStringLiteral("constraints"), QJsonArray{QStringLiteral("ACT-1.Pressure=0bar")});
+    fault.insert(QString("id"), QString("act_stuck"));
+    fault.insert(QString("name"), QString("执行器卡滞"));
+    fault.insert(QString("type"), QString("fault"));
+    fault.insert(QString("probability"), 0.02);
+    fault.insert(QString("constraints"), QJsonArray{QString("ACT-1.Pressure=0bar")});
 
     QJsonObject behavior;
-    behavior.insert(QStringLiteral("normal"), normal);
-    behavior.insert(QStringLiteral("faults"), QJsonArray{fault});
+    behavior.insert(QString("normal"), normal);
+    behavior.insert(QString("faults"), QJsonArray{fault});
     return compactJson(behavior);
 }
 
 QString DemoProjectBuilder::subsystemBehaviorJson()
 {
     QJsonObject normal;
-    normal.insert(QStringLiteral("id"), QStringLiteral("sub_normal"));
-    normal.insert(QStringLiteral("name"), QStringLiteral("子系统正常"));
-    normal.insert(QStringLiteral("type"), QStringLiteral("normal"));
-    normal.insert(QStringLiteral("probability"), 0.0);
+    normal.insert(QString("id"), QString("sub_normal"));
+    normal.insert(QString("name"), QString("子系统正常"));
+    normal.insert(QString("type"), QString("normal"));
+    normal.insert(QString("probability"), 0.0);
 
     QJsonObject behavior;
-    behavior.insert(QStringLiteral("normal"), normal);
-    behavior.insert(QStringLiteral("faults"), QJsonArray());
+    behavior.insert(QString("normal"), normal);
+    behavior.insert(QString("faults"), QJsonArray());
     return compactJson(behavior);
 }
 
@@ -407,34 +407,34 @@ QStringList DemoProjectBuilder::demoTestJsonList()
 {
     auto makeTest = [](const QString &id, const QString &category, const QString &name, const QString &target, const QStringList &faults, double cost, double duration, const QVariantMap &metrics = QVariantMap()) {
         QJsonObject obj;
-        obj.insert(QStringLiteral("id"), id);
-        obj.insert(QStringLiteral("category"), category);
-        obj.insert(QStringLiteral("name"), name);
-        obj.insert(QStringLiteral("description"), QStringLiteral("演示生成的测试"));
-        obj.insert(QStringLiteral("targetId"), target);
-        obj.insert(QStringLiteral("detectableFaults"), QJsonArray::fromStringList(faults));
-        obj.insert(QStringLiteral("isolatableFaults"), QJsonArray::fromStringList(faults));
-        obj.insert(QStringLiteral("estimatedCost"), cost);
-        obj.insert(QStringLiteral("estimatedDuration"), duration);
+        obj.insert(QString("id"), id);
+        obj.insert(QString("category"), category);
+        obj.insert(QString("name"), name);
+        obj.insert(QString("description"), QString("演示生成的测试"));
+        obj.insert(QString("targetId"), target);
+        obj.insert(QString("detectableFaults"), QJsonArray::fromStringList(faults));
+        obj.insert(QString("isolatableFaults"), QJsonArray::fromStringList(faults));
+        obj.insert(QString("estimatedCost"), cost);
+        obj.insert(QString("estimatedDuration"), duration);
         if (!metrics.isEmpty())
-            obj.insert(QStringLiteral("metrics"), QJsonObject::fromVariantMap(metrics));
+            obj.insert(QString("metrics"), QJsonObject::fromVariantMap(metrics));
         return obj;
     };
 
     QStringList list;
     QVariantMap signalMetrics;
-    signalMetrics.insert(QStringLiteral("direction"), QStringLiteral("output"));
-    signalMetrics.insert(QStringLiteral("unit"), QStringLiteral("V"));
-    const QJsonObject signalTest = makeTest(QStringLiteral("signal:3:PSU-1.Vout"), QStringLiteral("signal"), QStringLiteral("PSU 输出电压检测"), QStringLiteral("PSU-1.Vout"), {QStringLiteral("psu_failure")}, 1.0, 1.0, signalMetrics);
+    signalMetrics.insert(QString("direction"), QString("output"));
+    signalMetrics.insert(QString("unit"), QString("V"));
+    const QJsonObject signalTest = makeTest(QString("signal:3:PSU-1.Vout"), QString("signal"), QString("PSU 输出电压检测"), QString("PSU-1.Vout"), {QString("psu_failure")}, 1.0, 1.0, signalMetrics);
 
     QVariantMap functionMetrics;
-    functionMetrics.insert(QStringLiteral("requiredInputs"), QJsonArray{QStringLiteral("PSU-1.Vout")});
-    functionMetrics.insert(QStringLiteral("actuators"), QJsonArray{QStringLiteral("ACT-1.Pressure")});
-    const QJsonObject functionTest = makeTest(QStringLiteral("function:4:DeliverPressure"), QStringLiteral("function"), QStringLiteral("DeliverPressure 功能测试"), QStringLiteral("DeliverPressure"), {QStringLiteral("psu_failure"), QStringLiteral("act_stuck")}, 2.0, 2.0, functionMetrics);
+    functionMetrics.insert(QString("requiredInputs"), QJsonArray{QString("PSU-1.Vout")});
+    functionMetrics.insert(QString("actuators"), QJsonArray{QString("ACT-1.Pressure")});
+    const QJsonObject functionTest = makeTest(QString("function:4:DeliverPressure"), QString("function"), QString("DeliverPressure 功能测试"), QString("DeliverPressure"), {QString("psu_failure"), QString("act_stuck")}, 2.0, 2.0, functionMetrics);
 
     QVariantMap faultMetrics;
-    faultMetrics.insert(QStringLiteral("sourceContainers"), QJsonArray{4});
-    const QJsonObject faultTest = makeTest(QStringLiteral("fault:4:act_stuck"), QStringLiteral("faultMode"), QStringLiteral("执行器卡滞诊断"), QStringLiteral("act_stuck"), {QStringLiteral("act_stuck")}, 3.0, 3.0, faultMetrics);
+    faultMetrics.insert(QString("sourceContainers"), QJsonArray{4});
+    const QJsonObject faultTest = makeTest(QString("fault:4:act_stuck"), QString("faultMode"), QString("执行器卡滞诊断"), QString("act_stuck"), {QString("act_stuck")}, 3.0, 3.0, faultMetrics);
 
     list << compactJson(QJsonArray{signalTest});
     list << compactJson(QJsonArray{functionTest, faultTest});
@@ -445,17 +445,17 @@ QStringList DemoProjectBuilder::demoTestJsonList()
 QString DemoProjectBuilder::demoFunctionXml()
 {
     QDomDocument doc;
-    QDomElement root = doc.createElement(QStringLiteral("root"));
+    QDomElement root = doc.createElement(QString("root"));
     doc.appendChild(root);
 
-    QDomElement treeStruct = doc.createElement(QStringLiteral("treestruct"));
+    QDomElement treeStruct = doc.createElement(QString("treestruct"));
     root.appendChild(treeStruct);
 
-    QDomElement item = doc.createElement(QStringLiteral("item"));
-    item.setAttribute(QStringLiteral("name"), QStringLiteral("DeliverPressure"));
+    QDomElement item = doc.createElement(QString("item"));
+    item.setAttribute(QString("name"), QString("DeliverPressure"));
     treeStruct.appendChild(item);
 
-    QDomElement functionElement = doc.createElement(QStringLiteral("functiondefine"));
+    QDomElement functionElement = doc.createElement(QString("functiondefine"));
     root.appendChild(functionElement);
 
     auto appendTextElement = [&](const QString &tag, const QString &text) {
@@ -465,55 +465,55 @@ QString DemoProjectBuilder::demoFunctionXml()
         return e;
     };
 
-    appendTextElement(QStringLiteral("name"), QStringLiteral("DeliverPressure"));
-    appendTextElement(QStringLiteral("link"), QStringLiteral("PSU-1.Vout,ACT-1.Pressure"));
+    appendTextElement(QString("name"), QString("DeliverPressure"));
+    appendTextElement(QString("link"), QString("PSU-1.Vout,ACT-1.Pressure"));
 
-    QDomElement dependency = doc.createElement(QStringLiteral("dependency"));
+    QDomElement dependency = doc.createElement(QString("dependency"));
     functionElement.appendChild(dependency);
-    QDomElement funcDep = doc.createElement(QStringLiteral("function"));
+    QDomElement funcDep = doc.createElement(QString("function"));
     funcDep.appendChild(doc.createTextNode(QString()));
     dependency.appendChild(funcDep);
-    QDomElement compDep = doc.createElement(QStringLiteral("component"));
-    compDep.appendChild(doc.createTextNode(QStringLiteral("PSU-1,ACT-1")));
+    QDomElement compDep = doc.createElement(QString("component"));
+    compDep.appendChild(doc.createTextNode(QString("PSU-1,ACT-1")));
     dependency.appendChild(compDep);
-    QDomElement allComp = doc.createElement(QStringLiteral("allComponent"));
-    allComp.appendChild(doc.createTextNode(QStringLiteral("PSU-1,ACT-1")));
+    QDomElement allComp = doc.createElement(QString("allComponent"));
+    allComp.appendChild(doc.createTextNode(QString("PSU-1,ACT-1")));
     dependency.appendChild(allComp);
 
-    appendTextElement(QStringLiteral("describe"), QStringLiteral("PSU 为执行器提供稳定压力"));
-    appendTextElement(QStringLiteral("attribute"), QStringLiteral("Persistent,0.01"));
+    appendTextElement(QString("describe"), QString("PSU 为执行器提供稳定压力"));
+    appendTextElement(QString("attribute"), QString("Persistent,0.01"));
 
     auto addConstraint = [&](const QString &variable, const QString &value, const QString &type) {
-        QDomElement constraint = doc.createElement(QStringLiteral("constraint"));
-        QDomElement var = doc.createElement(QStringLiteral("variable"));
+        QDomElement constraint = doc.createElement(QString("constraint"));
+        QDomElement var = doc.createElement(QString("variable"));
         var.appendChild(doc.createTextNode(variable));
         constraint.appendChild(var);
-        QDomElement val = doc.createElement(QStringLiteral("value"));
+        QDomElement val = doc.createElement(QString("value"));
         val.appendChild(doc.createTextNode(value));
         constraint.appendChild(val);
-        QDomElement confidence = doc.createElement(QStringLiteral("confidence"));
-        confidence.appendChild(doc.createTextNode(QStringLiteral("1")));
+        QDomElement confidence = doc.createElement(QString("confidence"));
+        confidence.appendChild(doc.createTextNode(QString("1")));
         constraint.appendChild(confidence);
-        QDomElement typeElement = doc.createElement(QStringLiteral("type"));
+        QDomElement typeElement = doc.createElement(QString("type"));
         typeElement.appendChild(doc.createTextNode(type));
         constraint.appendChild(typeElement);
         functionElement.appendChild(constraint);
     };
 
-    addConstraint(QStringLiteral("PSU-1.Vout"), QStringLiteral("24V"), QStringLiteral("一般变量"));
-    addConstraint(QStringLiteral("ACT-1.Pressure"), QStringLiteral("8bar"), QStringLiteral("功能执行器"));
+    addConstraint(QString("PSU-1.Vout"), QString("24V"), QString("一般变量"));
+    addConstraint(QString("ACT-1.Pressure"), QString("8bar"), QString("功能执行器"));
 
     return doc.toString();
 }
 
 bool DemoProjectBuilder::buildModelDatabase(const QString &dbPath, QString *errorMessage)
 {
-    const QString connName = QStringLiteral("demo_model_builder");
+    const QString connName = QString("demo_model_builder");
     QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE", connName);
     db.setDatabaseName(dbPath);
     if (!db.open()) {
         if (errorMessage)
-            *errorMessage = QStringLiteral("无法创建模型数据库: %1").arg(db.lastError().text());
+            *errorMessage = QString("无法创建模型数据库: %1").arg(db.lastError().text());
         db = QSqlDatabase();
         QSqlDatabase::removeDatabase(connName);
         return false;
@@ -540,8 +540,8 @@ bool DemoProjectBuilder::buildModelDatabase(const QString &dbPath, QString *erro
     }
 
     const QList<QList<QVariant>> components = {
-        {1, QStringLiteral("Power"), QStringLiteral("PSU-1"), QStringLiteral("Vin=24,Load=5"), QStringLiteral("Vout"), QStringLiteral("24V 电源"), QStringLiteral("psu_failure")},
-        {2, QStringLiteral("Actuator"), QStringLiteral("ACT-1"), QStringLiteral("Pressure=8"), QStringLiteral("Pressure"), QStringLiteral("8bar 执行器"), QStringLiteral("act_stuck")}
+        {1, QString("Power"), QString("PSU-1"), QString("Vin=24,Load=5"), QString("Vout"), QString("24V 电源"), QString("psu_failure")},
+        {2, QString("Actuator"), QString("ACT-1"), QString("Pressure=8"), QString("Pressure"), QString("8bar 执行器"), QString("act_stuck")}
     };
     for (const auto &row : components) {
         if (!prepareAndExec(query,
@@ -553,9 +553,9 @@ bool DemoProjectBuilder::buildModelDatabase(const QString &dbPath, QString *erro
     }
 
     const QList<QList<QVariant>> parameters = {
-        {1, 1, QStringLiteral("Vin"), QStringLiteral("24")},
-        {2, 1, QStringLiteral("Load"), QStringLiteral("5")},
-        {3, 2, QStringLiteral("Pressure"), QStringLiteral("8")}
+        {1, 1, QString("Vin"), QString("24")},
+        {2, 1, QString("Load"), QString("5")},
+        {3, 2, QString("Pressure"), QString("8")}
     };
     for (const auto &row : parameters) {
         if (!prepareAndExec(query,
@@ -566,7 +566,7 @@ bool DemoProjectBuilder::buildModelDatabase(const QString &dbPath, QString *erro
         }
     }
 
-    const QString systemDescription = QStringLiteral(
+    const QString systemDescription = QString(
         "DEF BEGIN\n"
         "PSU-1 supply\n"
         "ACT-1 actuator\n"
@@ -577,7 +577,7 @@ bool DemoProjectBuilder::buildModelDatabase(const QString &dbPath, QString *erro
 
     if (!prepareAndExec(query,
                         "INSERT INTO models (id, name, systemDescription, testDiscription, connectNodes, functionDescription) VALUES (?,?,?,?,?,?)",
-                        {1, QStringLiteral("QBT"), systemDescription, QString(), QStringLiteral("PSU-1.Vout->ACT-1.Supply"), functionDescription},
+                        {1, QString("QBT"), systemDescription, QString(), QString("PSU-1.Vout->ACT-1.Supply"), functionDescription},
                         errorMessage)) {
         cleanup();
         return false;
