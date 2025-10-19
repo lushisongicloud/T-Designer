@@ -91,6 +91,12 @@ SOURCES += \
     widget/containermodel.cpp \
     widget/containertreedialog.cpp \
     widget/containerhierarchyutils.cpp \
+    BO/container/containerdata.cpp \
+    BO/container/behavioraggregator.cpp \
+    BO/function/functiondependencyresolver.cpp \
+    BO/test/testdefinition.cpp \
+    BO/test/testgeneratorservice.cpp \
+    BO/test/diagnosticmatrixbuilder.cpp \
     BO/containerrepository.cpp \
     BO/componententity.cpp \
     BO/systementity.cpp \
@@ -167,6 +173,13 @@ HEADERS += \
     widget/containermodel.h \
     widget/containertreedialog.h \
     widget/containerhierarchyutils.h \
+    BO/container/containerdata.h \
+    BO/container/behavioraggregator.h \
+    BO/function/functiondependencyresolver.h \
+    BO/function/functioninfo.h \
+    BO/test/testdefinition.h \
+    BO/test/testgeneratorservice.h \
+    BO/test/diagnosticmatrixbuilder.h \
     BO/containerrepository.h \
     BO/componententity.h \
     BO/systementity.h \

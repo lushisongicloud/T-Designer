@@ -6,7 +6,7 @@ QString typeColumnList()
 {
     return QString(
         "id,name,type,parent_id,order_index,analysis_depth,"
-        "interface_json,behavior_smt,fault_modes_json,"
+        "interface_json,behavior_smt,fault_modes_json,tests_json,"
         "equipment_id,equipment_type,equipment_name");
 }
 
@@ -38,6 +38,7 @@ bool ContainerRepository::ensureTables()
         " interface_json TEXT,"
         " behavior_smt TEXT,"
         " fault_modes_json TEXT,"
+        " tests_json TEXT,"
         " equipment_id INTEGER,"
         " equipment_type TEXT,"
         " equipment_name TEXT,"
@@ -76,6 +77,7 @@ bool ContainerRepository::ensureTables()
         return true;
     };
 
+    if (!ensureColumn("tests_json", "ALTER TABLE containers ADD COLUMN tests_json TEXT")) return false;
     if (!ensureColumn("equipment_id", "ALTER TABLE containers ADD COLUMN equipment_id INTEGER")) return false;
     if (!ensureColumn("equipment_type", "ALTER TABLE containers ADD COLUMN equipment_type TEXT")) return false;
     if (!ensureColumn("equipment_name", "ALTER TABLE containers ADD COLUMN equipment_name TEXT")) return false;
@@ -154,9 +156,9 @@ ContainerEntity ContainerRepository::getById(int id)
 bool ContainerRepository::insert(ContainerEntity &e)
 {
     QSqlQuery q(m_db);
-    q.prepare("INSERT INTO containers(name,type,parent_id,order_index,analysis_depth,interface_json,behavior_smt,fault_modes_json,"
+    q.prepare("INSERT INTO containers(name,type,parent_id,order_index,analysis_depth,interface_json,behavior_smt,fault_modes_json,tests_json,"
               "equipment_id,equipment_type,equipment_name)"
-              " VALUES(:name,:type,:parent,:order,:depth,:iface,:smt,:faults,:eqid,:eqtype,:eqname)");
+              " VALUES(:name,:type,:parent,:order,:depth,:iface,:smt,:faults,:tests,:eqid,:eqtype,:eqname)");
     q.bindValue(":name", e.name());
     q.bindValue(":type", static_cast<int>(e.type()));
     if (e.parentId() == 0)
@@ -168,6 +170,7 @@ bool ContainerRepository::insert(ContainerEntity &e)
     q.bindValue(":iface", e.interfaceJson());
     q.bindValue(":smt", e.behaviorSmt());
     q.bindValue(":faults", e.faultModesJson());
+    q.bindValue(":tests", e.testsJson());
     if (e.equipmentId() == 0)
         q.bindValue(":eqid", QVariant(QVariant::Int));
     else
@@ -186,7 +189,7 @@ bool ContainerRepository::update(const ContainerEntity &e)
 {
     QSqlQuery q(m_db);
     q.prepare("UPDATE containers SET name=:name, type=:type, parent_id=:parent, order_index=:order, analysis_depth=:depth,"
-              "interface_json=:iface, behavior_smt=:smt, fault_modes_json=:faults,"
+              "interface_json=:iface, behavior_smt=:smt, fault_modes_json=:faults, tests_json=:tests,"
               "equipment_id=:eqid, equipment_type=:eqtype, equipment_name=:eqname WHERE id=:id");
     q.bindValue(":id", e.id());
     q.bindValue(":name", e.name());
@@ -200,6 +203,7 @@ bool ContainerRepository::update(const ContainerEntity &e)
     q.bindValue(":iface", e.interfaceJson());
     q.bindValue(":smt", e.behaviorSmt());
     q.bindValue(":faults", e.faultModesJson());
+    q.bindValue(":tests", e.testsJson());
     if (e.equipmentId() == 0)
         q.bindValue(":eqid", QVariant(QVariant::Int));
     else
@@ -355,9 +359,10 @@ ContainerEntity ContainerRepository::fromQuery(const QSqlQuery &query) const
     entity.setInterfaceJson(query.value(6).toString());
     entity.setBehaviorSmt(query.value(7).toString());
     entity.setFaultModesJson(query.value(8).toString());
-    entity.setEquipmentId(query.value(9).isNull() ? 0 : query.value(9).toInt());
-    entity.setEquipmentType(query.value(10).toString());
-    entity.setEquipmentName(query.value(11).toString());
+    entity.setTestsJson(query.value(9).toString());
+    entity.setEquipmentId(query.value(10).isNull() ? 0 : query.value(10).toInt());
+    entity.setEquipmentType(query.value(11).toString());
+    entity.setEquipmentName(query.value(12).toString());
     return entity;
 }
 

@@ -4,6 +4,7 @@
 #include <QDialog>
 #include <QSqlDatabase>
 #include "widget/containermodel.h"
+#include "BO/function/functioninfo.h"
 
 namespace Ui { class ContainerTreeDialog; }
 
@@ -30,6 +31,7 @@ private slots:
 
 private:
     void refreshTypeCombo();
+    QMap<QString, FunctionInfo> loadFunctionInfo() const;
 
     Ui::ContainerTreeDialog *ui;
     ContainerModel *m_model;
