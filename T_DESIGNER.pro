@@ -94,6 +94,7 @@ SOURCES += \
     BO/container/containerdata.cpp \
     BO/container/behavioraggregator.cpp \
     BO/function/functiondependencyresolver.cpp \
+    BO/function/tmodelvalidator.cpp \
     BO/test/testdefinition.cpp \
     BO/test/testgeneratorservice.cpp \
     BO/test/diagnosticmatrixbuilder.cpp \
@@ -177,6 +178,7 @@ HEADERS += \
     BO/container/behavioraggregator.h \
     BO/function/functiondependencyresolver.h \
     BO/function/functioninfo.h \
+    BO/function/tmodelvalidator.h \
     BO/test/testdefinition.h \
     BO/test/testgeneratorservice.h \
     BO/test/diagnosticmatrixbuilder.h \

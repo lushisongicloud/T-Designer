@@ -57,6 +57,8 @@ private slots:
 
     void on_BtnCompile_clicked();
 
+    void on_BtnValidateTModel_clicked();
+
     void on_tableRepairInfo_clicked(const QModelIndex &index);
 
     void on_TextEdRepairPlan_textChanged();

@@ -4,6 +4,7 @@
 #include "BO/container/containerdata.h"
 #include "BO/container/behavioraggregator.h"
 #include "BO/function/functiondependencyresolver.h"
+#include "BO/function/tmodelvalidator.h"
 #include "BO/test/testgeneratorservice.h"
 #include "BO/test/diagnosticmatrixbuilder.h"
 #include <QSqlDatabase>
@@ -16,6 +17,7 @@ private slots:
     void functionDependencyResolver_simpleChain();
     void behaviorAggregator_mergeChildren();
     void testGeneratorService_generatesTests();
+    void tmodelValidator_mapsPorts();
 };
 
 void WorkflowCoreTest::containerData_roundTrip()
@@ -321,6 +323,53 @@ void WorkflowCoreTest::testGeneratorService_generatesTests()
         }
     }
     QSqlDatabase::removeDatabase(QStringLiteral("generator_test"));
+}
+
+void WorkflowCoreTest::tmodelValidator_mapsPorts()
+{
+    QList<PortInfo> ports;
+    PortInfo port1;
+    port1.connNum = QStringLiteral("1");
+    port1.symbolId = QStringLiteral("S1");
+    port1.symb2TermInfoId = QStringLiteral("10");
+    ports.append(port1);
+    PortInfo port2;
+    port2.connNum = QStringLiteral("2");
+    port2.symbolId = QStringLiteral("S1");
+    port2.symb2TermInfoId = QStringLiteral("11");
+    ports.append(port2);
+
+    const QString tmodel = QStringLiteral(
+        "(declare-fun %FU%.1.u () Real)\n"
+        "(declare-fun %FU%.1.i () Real)\n"
+        "(declare-fun FU1.2.u () Real)\n"
+        "(declare-fun FU1.2.i () Real)\n"
+        "(assert (= %FU%.1.u FU1.2.u))\n"
+        "(assert (= %FU%.1.i (* -1 FU1.2.i)))");
+
+    TModelValidator validator;
+    TModelValidationResult result = validator.validate(tmodel, ports);
+    QVERIFY(result.isValid());
+    QCOMPARE(result.bindings.size(), 2);
+    for (const PortVariableBinding &binding : result.bindings) {
+        QVERIFY(binding.declaredDirections.contains(QStringLiteral("u")));
+        QVERIFY(binding.declaredDirections.contains(QStringLiteral("i")));
+    }
+
+    const QString invalidModel = QStringLiteral(
+        "(declare-fun %FU%.1.u () Real)\n"
+        "(declare-fun %FU%.3.u () Real)");
+    result = validator.validate(invalidModel, ports);
+    QVERIFY(!result.isValid());
+    QVERIFY(result.missingDeclarations.contains(QStringLiteral("1.i")));
+    bool orphanFound = false;
+    for (const QString &token : result.undefinedVariables) {
+        if (token.contains(QStringLiteral("%FU%.3.u"))) {
+            orphanFound = true;
+            break;
+        }
+    }
+    QVERIFY(orphanFound);
 }
 
 
