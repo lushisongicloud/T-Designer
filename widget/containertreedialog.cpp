@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <QVector>
 #include "widget/containerhierarchyutils.h"
+#include "widget/testmanagementdialog.h"
 #include "BO/test/testgeneratorservice.h"
 #include "BO/test/diagnosticmatrixbuilder.h"
 #include "BO/function/functiondependencyresolver.h"
@@ -295,7 +296,7 @@ void ContainerTreeDialog::showContextMenu(const QPoint &pos)
         }
 
         QAction *generateTestsAct = menu.addAction(QString("自动生成测试"));
-        connect(generateTestsAct, &QAction::triggered, this, [this, containerId = entity.id(), containerType = entity.type()]() {
+        connect(generateTestsAct, &QAction::triggered, this, [this, container = entity]() {
             ContainerRepository repoLocal(m_db);
             if (!repoLocal.ensureTables()) return;
 
@@ -304,33 +305,35 @@ void ContainerTreeDialog::showContextMenu(const QPoint &pos)
                 [&](int id) { return repoLocal.fetchChildren(id); });
 
             FunctionDependencyResolver resolver;
+            auto functions = ContainerHierarchy::fetchFunctionInfoMap(m_db);
             TestGeneratorService service(repoLocal, aggregator, resolver);
-            QMap<QString, FunctionInfo> functions = loadFunctionInfo();
             service.setFunctionMap(functions);
-            QHash<int, QStringList> mapping;
-            if (containerType == ContainerType::System)
-                mapping.insert(containerId, functions.keys());
-            else
-                mapping.insert(containerId, QStringList());
-            service.setContainerFunctions(mapping);
+            service.setContainerFunctions(ContainerHierarchy::defaultFunctionMapping(container, functions));
 
-            QVector<GeneratedTest> tests = service.generateForContainer(containerId);
+            QVector<GeneratedTest> tests = service.generateForContainer(container.id());
 
-            ContainerData container(repoLocal.getById(containerId));
+            ContainerData containerData(repoLocal.getById(container.id()));
             DiagnosticMatrixBuilder builder;
-            builder.rebuild(container);
+            builder.rebuild(containerData);
             CoverageStats stats = builder.coverageStats();
             QStringList candidateTests = builder.candidateTests(0.6);
 
-            QString summary = QString("生成了%1项测试。检测覆盖: %2/%3隔离覆盖: %4").arg(tests.size())
+            QString summary = QString("生成了%1项测试。检测覆盖: %2/%3 隔离覆盖: %4")
+                                    .arg(tests.size())
                                     .arg(stats.detectedFaults.size())
                                     .arg(stats.totalFaults)
                                     .arg(stats.isolatableFaults.size());
             if (!candidateTests.isEmpty())
-                summary += QString("候选测试(>=60%): %1").arg(candidateTests.join(QString(", ")));
+                summary += QString(" 候选测试(>=60%): %1").arg(candidateTests.join(QString(", ")));
 
             QMessageBox::information(this, QString("自动生成测试"), summary);
             onRefresh();
+        });
+
+        QAction *manageTestsAct = menu.addAction(QString("管理测试"));
+        connect(manageTestsAct, &QAction::triggered, this, [this, containerId = entity.id()]() {
+            TestManagementDialog dialog(containerId, m_db, this);
+            dialog.exec();
         });
 
         menu.addSeparator();
@@ -434,47 +437,4 @@ void ContainerTreeDialog::refreshTypeCombo()
     }
 
     ui->btnAdd->setEnabled(!m_comboTypes.isEmpty());
-}
-
-QMap<QString, FunctionInfo> ContainerTreeDialog::loadFunctionInfo() const
-{
-    QMap<QString, FunctionInfo> functions;
-    QSqlQuery query(m_db);
-    if (!query.exec("SELECT FunctionName, CmdValList, ExecsList, Remark FROM Function"))
-        return functions;
-
-    while (query.next()) {
-        FunctionInfo info;
-        info.functionName = query.value(0).toString().trimmed();
-        info.componentDependency = query.value(3).toString();
-
-        const QString cmdValList = query.value(1).toString();
-        const QString execList = query.value(2).toString();
-
-        if (!execList.trimmed().isEmpty()) {
-            const QString actuator = execList.split(',', QString::SkipEmptyParts).value(0).trimmed();
-            if (!actuator.isEmpty()) {
-                info.actuatorName = actuator;
-                info.actuatorConstraint.variable = actuator;
-                info.actuatorConstraint.value = QStringLiteral("on");
-                info.actuatorConstraint.testType = QStringLiteral("功能执行器");
-                info.actuatorConstraint.checkState = Qt::Unchecked;
-            }
-        }
-
-        const QStringList pairs = cmdValList.split(',', QString::SkipEmptyParts);
-        for (const QString &pair : pairs) {
-            const QStringList parts = pair.split('=');
-            if (parts.size() != 2) continue;
-            TestItem item;
-            item.variable = parts.at(0).trimmed();
-            item.value = parts.at(1).trimmed();
-            item.testType = QStringLiteral("一般变量");
-            item.checkState = Qt::Unchecked;
-            info.constraintList.append(item);
-        }
-
-        functions.insert(info.functionName, info);
-    }
-    return functions;
 }

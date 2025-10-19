@@ -200,6 +200,7 @@ private slots:
     void on_BtnLocalDB_clicked();
 
     void on_Btn_ContainerTree_clicked();
+    void on_BtnFunctionManage_clicked();
     void actionAddComponentContainers();
     void actionRemoveComponentContainers();
     void actionAttachComponentsToHigher();
@@ -211,6 +212,7 @@ private slots:
     void ShowtreeViewPagePopMenu(const QPoint &pos);
 
     void ShowtreeViewUnitsPopMenu(const QPoint &pos);
+    void createFunctionForSymbol();
 
     void ShowtreeViewTerminalPopMenu(const QPoint &pos);
 

@@ -31,7 +31,6 @@ private slots:
 
 private:
     void refreshTypeCombo();
-    QMap<QString, FunctionInfo> loadFunctionInfo() const;
 
     Ui::ContainerTreeDialog *ui;
     ContainerModel *m_model;

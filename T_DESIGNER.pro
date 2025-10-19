@@ -91,10 +91,17 @@ SOURCES += \
     widget/containermodel.cpp \
     widget/containertreedialog.cpp \
     widget/containerhierarchyutils.cpp \
+    widget/testmanagementdialog.cpp \
+    widget/testeditdialog.cpp \
+    widget/functionsymbolpickerdialog.cpp \
+    widget/functionmanagerdialog.cpp \
+    widget/functioneditdialog.cpp \
     BO/container/containerdata.cpp \
     BO/container/behavioraggregator.cpp \
     BO/function/functiondependencyresolver.cpp \
     BO/function/tmodelvalidator.cpp \
+    BO/function/functionrepository.cpp \
+    BO/function/functionanalysisservice.cpp \
     BO/test/testdefinition.cpp \
     BO/test/testgeneratorservice.cpp \
     BO/test/diagnosticmatrixbuilder.cpp \
@@ -174,11 +181,19 @@ HEADERS += \
     widget/containermodel.h \
     widget/containertreedialog.h \
     widget/containerhierarchyutils.h \
+    widget/functionmanagerdialog.h \
+    widget/testmanagementdialog.h \
+    widget/testeditdialog.h \
+    widget/functionsymbolpickerdialog.h \
+    widget/functionmanagerdialog.h \
+    widget/functioneditdialog.h \
     BO/container/containerdata.h \
     BO/container/behavioraggregator.h \
     BO/function/functiondependencyresolver.h \
     BO/function/functioninfo.h \
     BO/function/tmodelvalidator.h \
+    BO/function/functionrepository.h \
+    BO/function/functionanalysisservice.h \
     BO/test/testdefinition.h \
     BO/test/testgeneratorservice.h \
     BO/test/diagnosticmatrixbuilder.h \
@@ -242,7 +257,11 @@ FORMS += \
     dialogmultilib.ui \
     dialogtag.ui \
     widget/selectfunctiondialog.ui \
-    widget/containertreedialog.ui
+    widget/containertreedialog.ui \
+    widget/testmanagementdialog.ui \
+    widget/testeditdialog.ui \
+    widget/functionmanagerdialog.ui \
+    widget/functioneditdialog.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -265,4 +284,3 @@ LIBS += $$PWD/lib/libz3.lib
 
 INCLUDEPATH += $$PWD/.
 DEPENDPATH += $$PWD/.
-

@@ -12,6 +12,9 @@
 #include "widget/containertreedialog.h"
 #include "DO/containerentity.h"
 #include "widget/containerhierarchyutils.h"
+#include "widget/functionmanagerdialog.h"
+#include "widget/functioneditdialog.h"
+#include "BO/function/functionrepository.h"
 bool isPenetrativeSolve=true;
 QMap<QString, QStringList> obsTemplates = {
     {"AC380_3P_u", {"AC380.u", "( 0 , 0 , 0 )", "( 380 , 0 , 0 )", "( 0 , 380 , 0 )", "( 0 , 0 , 380 )", "( 380 , 380 , 0 )", "( 380 , 0 , 380 )", "( 0 , 380 , 380 )", "( 380 , 380 , 380 )"}},
@@ -2758,11 +2761,47 @@ void MainWindow::ShowtreeViewUnitsPopMenu(const QPoint &pos)
         }
         tree_menu.addAction(&actDrawSpurEqualDistance);
         connect(&actDrawSpurEqualDistance,SIGNAL(triggered()),this,SLOT(DrawSpurEqualDistance()));
+        tree_menu.addSeparator();
+        QAction actCreateFunction("创建功能", this);
+        tree_menu.addAction(&actCreateFunction);
+        connect(&actCreateFunction, &QAction::triggered, this, &MainWindow::createFunctionForSymbol);
         QAction actGetLinkRoad("获取信号链路", this);
         tree_menu.addAction(&actGetLinkRoad);
         connect(&actGetLinkRoad,SIGNAL(triggered()),this,SLOT(GetLinkRoad()));
         tree_menu.exec(QCursor::pos());
     }
+}
+
+void MainWindow::createFunctionForSymbol()
+{
+    QModelIndex index = ui->treeViewUnits->currentIndex();
+    if (!index.isValid()) return;
+    if (index.data(Qt::WhatsThisRole).toString() != "功能子块") return;
+
+    const int symbolId = index.data(Qt::UserRole).toInt();
+    if (symbolId <= 0) return;
+    const QString symbolName = index.data(Qt::DisplayRole).toString();
+
+    FunctionEditDialog editor(T_ProjectDatabase, this);
+    editor.setSymbol(symbolId, symbolName);
+    editor.analyzeCurrentSymbol();
+    if (editor.exec() != QDialog::Accepted)
+        return;
+
+    FunctionRepository repo(T_ProjectDatabase);
+    if (!repo.ensureTables()) {
+        QMessageBox::warning(this, tr("提示"), tr("功能存储不可用"));
+        return;
+    }
+
+    FunctionRecord record = editor.record();
+    if (repo.insert(record) == 0) {
+        QMessageBox::warning(this, tr("提示"), tr("保存功能失败"));
+        return;
+    }
+
+    UpdateFuncTable();
+    LoadAllFunction();
 }
 
 void MainWindow::on_Btn_ContainerTree_clicked()
@@ -2771,6 +2810,14 @@ void MainWindow::on_Btn_ContainerTree_clicked()
     dialog.setDatabase(T_ProjectDatabase);
     dialog.setModal(true);
     dialog.exec();
+}
+
+void MainWindow::on_BtnFunctionManage_clicked()
+{
+    FunctionManagerDialog dialog(T_ProjectDatabase, this);
+    dialog.exec();
+    UpdateFuncTable();
+    LoadAllFunction();
 }
 
 void MainWindow::actionAddComponentContainers()

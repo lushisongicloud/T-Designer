@@ -1,5 +1,6 @@
 ﻿#include "formaxwidget.h"
 #include "ui_formaxwidget.h"
+#include <QSet>
 bool IsLoadingSymbol=false;//正在载入符号
 extern int SelectEquipment_ID;
 extern int SelectSymbol_ID;
@@ -5312,6 +5313,38 @@ qDebug()<<"DeleteRecordOfEntity,DeleteEntyID="<<DeleteEntyID;
     IMxDrawEntity *BlkDelete= (IMxDrawEntity*) ui->axWidget->querySubObject("ObjectIdToObject(const qlonglong)",DeleteEntyID);
     if(BlkDelete==nullptr) return;
     QString HandleDelete=BlkDelete->dynamicCall("handle()").toString();
+    QString SymbolIdForDb=BlkDelete->dynamicCall("GetxDataString2(QString,int)","DbId",0).toString();
+
+    // 如果当前删除的不是块引用，尝试获取其所属的块引用，用于同步数据库
+    IMxDrawEntity *BlkDeleteForDb = BlkDelete;
+    QString ObjName = BlkDelete->dynamicCall("ObjectName()").toString();
+    if(ObjName!="McDbBlockReference")
+    {
+        QVariant ownerIdVar = BlkDelete->dynamicCall("OwnerId()");
+        QSet<qlonglong> visitedOwnerIds;
+        while(ownerIdVar.isValid())
+        {
+            qlonglong ownerId = ownerIdVar.toLongLong();
+            if(ownerId<=0 || visitedOwnerIds.contains(ownerId)) break;
+            visitedOwnerIds.insert(ownerId);
+            IMxDrawEntity *OwnerEntity = (IMxDrawEntity*)ui->axWidget->querySubObject("ObjectIdToObject(const qlonglong)",ownerId);
+            if(OwnerEntity==nullptr) break;
+            QString ownerName = OwnerEntity->dynamicCall("ObjectName()").toString();
+            if(ownerName=="McDbBlockReference")
+            {
+                BlkDeleteForDb = OwnerEntity;
+                HandleDelete=BlkDeleteForDb->dynamicCall("handle()").toString();
+                QString DbIdFromOwner=BlkDeleteForDb->dynamicCall("GetxDataString2(QString,int)","DbId",0).toString();
+                if(!DbIdFromOwner.isEmpty()) SymbolIdForDb=DbIdFromOwner;
+                break;
+            }
+            ownerIdVar = OwnerEntity->dynamicCall("OwnerId()");
+        }
+        if((BlkDeleteForDb!=BlkDelete)&&BlkDeleteForDb->dynamicCall("ObjectName()").toString()=="McDbBlockReference")
+        {
+            BlkDelete=BlkDeleteForDb;
+        }
+    }
     //if((BlkDelete->dynamicCall("ObjectName()").toString()!="McDbBlockReference")&&(BlkDelete->dynamicCall("ObjectName()").toString()!="McDbLine")) continue;
 
     if(BlkDelete->dynamicCall("ObjectName()").toString()=="McDbAttributeDefinition")
@@ -5375,12 +5408,24 @@ qDebug()<<"DeleteRecordOfEntity,DeleteEntyID="<<DeleteEntyID;
     qDebug()<<"更新T_ProjectDatabase的Symbol表";
     //更新T_ProjectDatabase的Symbol表
     QSqlQuery QuerySymbol=QSqlQuery(T_ProjectDatabase);
-    QString SqlStr="SELECT * FROM Symbol WHERE Page_ID = '"+QString::number(Page_IDInDB)+"' AND Symbol_Handle='"+HandleDelete+"'";
-    QuerySymbol.exec(SqlStr);
-    if(QuerySymbol.next())
+    QString SqlStr;
+    bool SymbolFound=false;
+    if(HandleDelete!="")
+    {
+        SqlStr="SELECT * FROM Symbol WHERE Page_ID = '"+QString::number(Page_IDInDB)+"' AND Symbol_Handle='"+HandleDelete+"'";
+        QuerySymbol.exec(SqlStr);
+        if(QuerySymbol.next()) SymbolFound=true;
+    }
+    if((!SymbolFound)&&StrIsNumber(SymbolIdForDb)&&SymbolIdForDb!="")
+    {
+        SqlStr="SELECT * FROM Symbol WHERE Symbol_ID = "+SymbolIdForDb;
+        QuerySymbol.exec(SqlStr);
+        if(QuerySymbol.next()) SymbolFound=true;
+    }
+    if(SymbolFound)
     {
         int Symbol_ID=QuerySymbol.value("Symbol_ID").toInt();
-        SqlStr="UPDATE Symbol SET Page_ID=:Page_ID,Symbol_Handle=:Symbol_Handle,InsertionPoint=:InsertionPoint WHERE Symbol_ID = "+QString::number(Symbol_ID);
+        QString SqlStr="UPDATE Symbol SET Page_ID=:Page_ID,Symbol_Handle=:Symbol_Handle,InsertionPoint=:InsertionPoint WHERE Symbol_ID = "+QString::number(Symbol_ID);
         QuerySymbol.prepare(SqlStr);
         QuerySymbol.bindValue(":Page_ID","");
         QuerySymbol.bindValue(":Symbol_Handle","");
