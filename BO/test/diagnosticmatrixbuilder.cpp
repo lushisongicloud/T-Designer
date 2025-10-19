@@ -19,8 +19,8 @@ void DiagnosticMatrixBuilder::rebuild(const ContainerData &container)
     }
 
     for (const GeneratedTest &test : m_tests) {
-        QSet<QString> detect = QSet<QString>(test.detectableFaults.begin(), test.detectableFaults.end());
-        QSet<QString> isolate = QSet<QString>(test.isolatableFaults.begin(), test.isolatableFaults.end());
+        QSet<QString> detect = QSet<QString>::fromList(test.detectableFaults);
+        QSet<QString> isolate = QSet<QString>::fromList(test.isolatableFaults);
         for (const QString &fault : detect) {
             MatrixEntry entry;
             entry.testId = test.id;
@@ -101,8 +101,10 @@ std::shared_ptr<DecisionNode> DiagnosticMatrixBuilder::buildTreeRecursive(const 
     int bestScore = -1;
     for (const GeneratedTest &test : tests) {
         if (usedTests.contains(test.id)) continue;
-        QSet<QString> detect = QSet<QString>(test.detectableFaults.begin(), test.detectableFaults.end()) & faults;
-        QSet<QString> isolate = QSet<QString>(test.isolatableFaults.begin(), test.isolatableFaults.end()) & faults;
+        QSet<QString> detect = QSet<QString>::fromList(test.detectableFaults);
+        detect &= faults;
+        QSet<QString> isolate = QSet<QString>::fromList(test.isolatableFaults);
+        isolate &= faults;
         int score = isolate.size() * 2 + detect.size();
         if (score > bestScore) {
             bestScore = score;
@@ -117,7 +119,8 @@ std::shared_ptr<DecisionNode> DiagnosticMatrixBuilder::buildTreeRecursive(const 
     }
 
     node->testId = bestTest->id;
-    QSet<QString> detect = QSet<QString>(bestTest->detectableFaults.begin(), bestTest->detectableFaults.end()) & faults;
+    QSet<QString> detect = QSet<QString>::fromList(bestTest->detectableFaults);
+    detect &= faults;
     if (detect.isEmpty()) {
         node->isLeaf = true;
         node->faultId = *faults.begin();
