@@ -94,6 +94,7 @@ SOURCES += \
     widget/testmanagementdialog.cpp \
     widget/testeditdialog.cpp \
     widget/functionsymbolpickerdialog.cpp \
+    demo_projectbuilder.cpp \
     widget/functionmanagerdialog.cpp \
     widget/functioneditdialog.cpp \
     BO/container/containerdata.cpp \
@@ -185,6 +186,7 @@ HEADERS += \
     widget/testmanagementdialog.h \
     widget/testeditdialog.h \
     widget/functionsymbolpickerdialog.h \
+    demo_projectbuilder.h \
     widget/functionmanagerdialog.h \
     widget/functioneditdialog.h \
     BO/container/containerdata.h \

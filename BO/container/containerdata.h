@@ -98,19 +98,25 @@ public:
     int analysisDepth() const;
     void setAnalysisDepth(int depth);
 
+    QVariantMap analysisData() const;
+    void setAnalysisData(const QVariantMap &data);
+
 private:
     ContainerEntity m_entity;
     QVector<ContainerPort> m_ports;
     BehaviorSpec m_behavior;
     QVector<GeneratedTest> m_tests;
     QString m_behaviorSmt;
+    QVariantMap m_analysisData;
 
     void readPortsFromEntity();
     void readBehaviorFromEntity();
     void readTestsFromEntity();
+    void readAnalysisFromEntity();
     void writePortsToEntity();
     void writeBehaviorToEntity();
     void writeTestsToEntity();
+    void writeAnalysisToEntity();
 };
 
 #endif // CONTAINERDATA_H

@@ -62,6 +62,8 @@ QVector<GeneratedTest> TestGeneratorService::generateSignalTests(const Container
         if (!port.unit.isEmpty()) metrics.insert(QStringLiteral("unit"), port.unit);
         if (!port.bounds.isEmpty()) metrics.insert(QStringLiteral("bounds"), port.bounds);
         test.metrics = metrics;
+        test.estimatedCost = 1.0;
+        test.estimatedDuration = 1.0;
 
         QStringList tokens;
         tokens << port.name << port.alias << port.signalId;
@@ -100,6 +102,8 @@ QVector<GeneratedTest> TestGeneratorService::generateFunctionTests(int container
         test.metrics.insert(QStringLiteral("requiredInputs"), QStringList(resolved.requiredInputs.values()));
         test.metrics.insert(QStringLiteral("dependencyFunctions"), QStringList(resolved.dependencyFunctions.values()));
         test.metrics.insert(QStringLiteral("actuators"), QStringList(resolved.actuatorVariables.values()));
+        test.estimatedCost = 2.0;
+        test.estimatedDuration = 2.0;
 
         QStringList tokens = QStringList(resolved.requiredInputs.values());
         tokens.append(QStringList(resolved.actuatorVariables.values()));
@@ -138,6 +142,8 @@ QVector<GeneratedTest> TestGeneratorService::generateFaultTests(const ContainerD
         }
         if (mode.probability > 0.0)
             test.metrics.insert(QStringLiteral("probability"), mode.probability);
+        test.estimatedCost = 3.0;
+        test.estimatedDuration = 3.0;
         tests.append(test);
         allFaultIds.append(modeId);
     }
@@ -151,6 +157,8 @@ QVector<GeneratedTest> TestGeneratorService::generateFaultTests(const ContainerD
         normal.description = QStringLiteral("验证容器是否处于正常模式的虚拟测试");
         normal.targetId = behavior.normalMode.modeId.isEmpty() ? QStringLiteral("normal") : behavior.normalMode.modeId;
         normal.detectableFaults = allFaultIds;
+        normal.estimatedCost = 2.5;
+        normal.estimatedDuration = 2.5;
         tests.prepend(normal);
     }
 

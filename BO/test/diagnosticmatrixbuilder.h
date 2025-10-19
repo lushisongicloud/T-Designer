@@ -25,6 +25,14 @@ struct CoverageStats {
     QHash<QString, double> detectionRateByTest;
 };
 
+struct CoverageSummary {
+    int totalFaults = 0;
+    int detectedFaults = 0;
+    int isolatableFaults = 0;
+    double detectionRate = 0.0;
+    double isolationRate = 0.0;
+};
+
 struct DecisionNode {
     QString testId;
     QString faultId;
@@ -41,10 +49,13 @@ public:
 
     const QVector<MatrixEntry> &entries() const { return m_entries; }
     CoverageStats coverageStats() const;
+    CoverageSummary coverageSummary(const QStringList &testIds) const;
 
     QStringList candidateTests(double minDetectionRate) const;
+    QStringList candidateTests(const QStringList &availableTests, double minDetectionRate) const;
 
     std::shared_ptr<DecisionNode> buildDecisionTree() const;
+    std::shared_ptr<DecisionNode> buildDecisionTree(const QStringList &testIds) const;
 
 private:
     std::shared_ptr<DecisionNode> buildTreeRecursive(const QVector<GeneratedTest> &tests,

@@ -63,6 +63,28 @@ CoverageStats DiagnosticMatrixBuilder::coverageStats() const
     return stats;
 }
 
+CoverageSummary DiagnosticMatrixBuilder::coverageSummary(const QStringList &testIds) const
+{
+    CoverageSummary summary;
+    summary.totalFaults = m_faultIds.size();
+
+    QSet<QString> detect;
+    QSet<QString> isolate;
+    const QSet<QString> allowed = QSet<QString>::fromList(testIds);
+    for (const QString &testId : allowed) {
+        detect.unite(m_detectionMap.value(testId));
+        isolate.unite(m_isolationMap.value(testId));
+    }
+    summary.detectedFaults = detect.size();
+    summary.isolatableFaults = isolate.size();
+    if (!m_faultIds.isEmpty()) {
+        const double total = static_cast<double>(m_faultIds.size());
+        summary.detectionRate = detect.size() / total;
+        summary.isolationRate = isolate.size() / total;
+    }
+    return summary;
+}
+
 QStringList DiagnosticMatrixBuilder::candidateTests(double minDetectionRate) const
 {
     QStringList candidates;
@@ -75,11 +97,52 @@ QStringList DiagnosticMatrixBuilder::candidateTests(double minDetectionRate) con
     return candidates;
 }
 
+QStringList DiagnosticMatrixBuilder::candidateTests(const QStringList &availableTests, double minDetectionRate) const
+{
+    QStringList candidates;
+    if (m_faultIds.isEmpty()) return candidates;
+    const double total = static_cast<double>(m_faultIds.size());
+    const QSet<QString> allowed = QSet<QString>::fromList(availableTests);
+    for (const QString &testId : allowed) {
+        const QSet<QString> detect = m_detectionMap.value(testId);
+        if (detect.isEmpty()) continue;
+        const double rate = static_cast<double>(detect.size()) / total;
+        if (rate >= minDetectionRate)
+            candidates.append(testId);
+    }
+    candidates.removeDuplicates();
+    return candidates;
+}
+
 std::shared_ptr<DecisionNode> DiagnosticMatrixBuilder::buildDecisionTree() const
 {
     if (m_tests.isEmpty() || m_faultIds.isEmpty())
         return std::make_shared<DecisionNode>();
     return buildTreeRecursive(m_tests, m_faultIds, {});
+}
+
+std::shared_ptr<DecisionNode> DiagnosticMatrixBuilder::buildDecisionTree(const QStringList &testIds) const
+{
+    if (testIds.isEmpty())
+        return buildDecisionTree();
+
+    QVector<GeneratedTest> subset;
+    subset.reserve(testIds.size());
+    QSet<QString> faults;
+    const QSet<QString> allowed = QSet<QString>::fromList(testIds);
+    for (const GeneratedTest &test : m_tests) {
+        if (!allowed.contains(test.id)) continue;
+        subset.append(test);
+        faults.unite(m_detectionMap.value(test.id));
+        faults.unite(m_isolationMap.value(test.id));
+    }
+
+    if (subset.isEmpty())
+        return buildDecisionTree();
+    if (faults.isEmpty())
+        faults = m_faultIds;
+
+    return buildTreeRecursive(subset, faults, {});
 }
 
 std::shared_ptr<DecisionNode> DiagnosticMatrixBuilder::buildTreeRecursive(const QVector<GeneratedTest> &tests,

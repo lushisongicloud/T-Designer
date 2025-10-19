@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>600</height>
+    <width>920</width>
+    <height>680</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -22,23 +22,271 @@
     </widget>
    </item>
    <item>
-    <widget class="QTableWidget" name="tableTests">
-     <property name="selectionBehavior">
-      <enum>QAbstractItemView::SelectRows</enum>
+    <widget class="QTabWidget" name="tabWidget">
+     <property name="currentIndex">
+      <number>0</number>
      </property>
-     <property name="selectionMode">
-      <enum>QAbstractItemView::SingleSelection</enum>
-     </property>
-     <property name="editTriggers">
-      <set>QAbstractItemView::NoEditTriggers</set>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QPlainTextEdit" name="plainDetails">
-     <property name="readOnly">
-      <bool>true</bool>
-     </property>
+     <widget class="QWidget" name="tabTests">
+      <attribute name="title">
+       <string>测试列表</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayoutTests">
+       <item>
+        <widget class="QTableWidget" name="tableTests">
+         <property name="selectionBehavior">
+          <enum>QAbstractItemView::SelectRows</enum>
+         </property>
+         <property name="selectionMode">
+          <enum>QAbstractItemView::SingleSelection</enum>
+         </property>
+         <property name="editTriggers">
+          <set>QAbstractItemView::NoEditTriggers</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPlainTextEdit" name="plainDetails">
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tabMatrix">
+      <attribute name="title">
+       <string>依赖矩阵</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayoutMatrix">
+       <item>
+        <widget class="QTableWidget" name="tableMatrix">
+         <property name="selectionBehavior">
+          <enum>QAbstractItemView::SelectRows</enum>
+         </property>
+         <property name="editTriggers">
+          <set>QAbstractItemView::NoEditTriggers</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPlainTextEdit" name="plainMatrixInfo">
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tabTargets">
+      <attribute name="title">
+       <string>指标分解</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayoutTargets">
+       <item>
+        <layout class="QGridLayout" name="gridLayoutTargets">
+         <item row="0" column="0">
+          <widget class="QLabel" name="labelTargetDetection">
+           <property name="text">
+            <string>故障检测率目标</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QDoubleSpinBox" name="spinTargetDetection">
+           <property name="maximum">
+            <double>1.000000</double>
+           </property>
+           <property name="singleStep">
+            <double>0.050000</double>
+           </property>
+           <property name="value">
+            <double>0.600000</double>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="labelTargetIsolation">
+           <property name="text">
+            <string>故障隔离率目标</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QDoubleSpinBox" name="spinTargetIsolation">
+           <property name="maximum">
+            <double>1.000000</double>
+           </property>
+           <property name="singleStep">
+            <double>0.050000</double>
+           </property>
+           <property name="value">
+            <double>0.500000</double>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="2" rowspan="2">
+          <widget class="QPushButton" name="btnApplyTargets">
+           <property name="text">
+            <string>分配目标</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QTableWidget" name="tableTargetAllocation">
+         <property name="selectionBehavior">
+          <enum>QAbstractItemView::SelectRows</enum>
+         </property>
+         <property name="editTriggers">
+          <set>QAbstractItemView::NoEditTriggers</set>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tabConstraints">
+      <attribute name="title">
+       <string>约束筛选</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayoutConstraints">
+       <item>
+        <layout class="QGridLayout" name="gridLayoutConstraints">
+         <item row="0" column="0">
+          <widget class="QLabel" name="labelMaxCost">
+           <property name="text">
+            <string>最大测试费用</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QDoubleSpinBox" name="spinMaxCost">
+           <property name="maximum">
+            <double>9999.000000</double>
+           </property>
+           <property name="singleStep">
+            <double>1.000000</double>
+           </property>
+           <property name="value">
+            <double>10.000000</double>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="labelMaxDuration">
+           <property name="text">
+            <string>最大测试时间</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QDoubleSpinBox" name="spinMaxDuration">
+           <property name="maximum">
+            <double>9999.000000</double>
+           </property>
+           <property name="singleStep">
+            <double>1.000000</double>
+           </property>
+           <property name="value">
+            <double>10.000000</double>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="labelMaxCount">
+           <property name="text">
+            <string>最大测试数量</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QSpinBox" name="spinMaxCount">
+           <property name="minimum">
+            <number>0</number>
+           </property>
+           <property name="maximum">
+            <number>999</number>
+           </property>
+           <property name="value">
+            <number>0</number>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="2" rowspan="3">
+          <widget class="QPushButton" name="btnApplyConstraints">
+           <property name="text">
+            <string>筛选候选测试</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QListWidget" name="listCandidateTests"/>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tabPrediction">
+      <attribute name="title">
+       <string>指标预测</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayoutPrediction">
+       <item>
+        <widget class="QLabel" name="labelPredictionSummary">
+         <property name="text">
+          <string>尚未计算预测</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QTableWidget" name="tablePredictionBreakdown">
+         <property name="selectionBehavior">
+          <enum>QAbstractItemView::SelectRows</enum>
+         </property>
+         <property name="editTriggers">
+          <set>QAbstractItemView::NoEditTriggers</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnEvaluatePrediction">
+         <property name="text">
+          <string>重新评估</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tabDecision">
+      <attribute name="title">
+       <string>决策树</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayoutDecision">
+       <item>
+        <widget class="QTreeWidget" name="treeDecision">
+         <column>
+          <property name="text">
+           <string>节点</string>
+          </property>
+         </column>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPlainTextEdit" name="plainDecisionNotes">
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnBuildDecisionTree">
+         <property name="text">
+          <string>生成决策树</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </item>
    <item>

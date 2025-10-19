@@ -4,10 +4,13 @@
 #include <ActiveQt/QAxWidget>
 #include <QTimer>
 #include <QFileInfo>
+#include <QFile>
+#include <QDir>
 #include <QStringList>
 #include <QMenu>
 #include <QSet>
 #include <QInputDialog>
+#include <QShortcut>
 #include "BO/containerrepository.h"
 #include "widget/containertreedialog.h"
 #include "DO/containerentity.h"
@@ -15,6 +18,7 @@
 #include "widget/functionmanagerdialog.h"
 #include "widget/functioneditdialog.h"
 #include "BO/function/functionrepository.h"
+#include "demo_projectbuilder.h"
 bool isPenetrativeSolve=true;
 QMap<QString, QStringList> obsTemplates = {
     {"AC380_3P_u", {"AC380.u", "( 0 , 0 , 0 )", "( 380 , 0 , 0 )", "( 0 , 380 , 0 )", "( 0 , 0 , 380 )", "( 380 , 380 , 0 )", "( 380 , 0 , 380 )", "( 0 , 380 , 380 )", "( 380 , 380 , 380 )"}},
@@ -58,6 +62,9 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->mdiArea->setViewMode(QMdiArea::TabbedView); //Tab多页显示模式
     ui->mdiArea->setTabsClosable(true); //页面可关闭
     InitNavigatorTree();
+
+    auto demoShortcut = new QShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_H), this);
+    connect(demoShortcut, &QShortcut::activated, this, &MainWindow::createDemoProject);
 
     dlgLoadSymbol=nullptr;
     dlgDialogSymbols=nullptr;
@@ -6319,6 +6326,43 @@ void MainWindow::LoadProject()
     HisProFilePath.close();
 
     LoadModel();
+}
+
+void MainWindow::createDemoProject()
+{
+    const QString projectName = QStringLiteral("DemoWorkflow");
+    const QString projectDir = QStringLiteral("%1/%2").arg(QStringLiteral(LocalProjectDefaultPath), projectName);
+
+    QString error;
+    if (!DemoProjectBuilder::buildDemoProject(projectDir, projectName, &error)) {
+        QMessageBox::warning(this, tr("演示项目生成失败"), error);
+        return;
+    }
+
+    if (T_ProjectDatabase.isOpen()) {
+        const QString connName = T_ProjectDatabase.connectionName();
+        T_ProjectDatabase.close();
+        QSqlDatabase::removeDatabase(connName);
+    }
+
+    QDir dataDir(QStringLiteral(LocalDataBasePath));
+    if (!dataDir.exists())
+        dataDir.mkpath(QStringLiteral("."));
+    QFile historyFile(dataDir.filePath(QStringLiteral("历史工程记录.dat")));
+    if (!historyFile.exists()) {
+        historyFile.open(QIODevice::WriteOnly | QIODevice::Text);
+        historyFile.close();
+    }
+
+    CurProjectPath = projectDir;
+    CurProjectName = projectName;
+
+    LoadProject();
+
+    QMessageBox::information(this,
+                             tr("演示项目已创建"),
+                             tr("已在 %1 创建并加载演示项目，您可以按照 workflow_demo.md 的步骤体验完整流程。")
+                                 .arg(projectDir));
 }
 
 void MainWindow::LoadLastOpenedProject()

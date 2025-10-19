@@ -177,6 +177,7 @@ ContainerData::ContainerData()
     readPortsFromEntity();
     readBehaviorFromEntity();
     readTestsFromEntity();
+    readAnalysisFromEntity();
     m_behaviorSmt = m_entity.behaviorSmt();
 }
 
@@ -186,6 +187,7 @@ ContainerData::ContainerData(const ContainerEntity &entity)
     readPortsFromEntity();
     readBehaviorFromEntity();
     readTestsFromEntity();
+    readAnalysisFromEntity();
     m_behaviorSmt = m_entity.behaviorSmt();
 }
 
@@ -251,6 +253,17 @@ int ContainerData::analysisDepth() const
 void ContainerData::setAnalysisDepth(int depth)
 {
     m_entity.setAnalysisDepth(depth);
+}
+
+QVariantMap ContainerData::analysisData() const
+{
+    return m_analysisData;
+}
+
+void ContainerData::setAnalysisData(const QVariantMap &data)
+{
+    m_analysisData = data;
+    writeAnalysisToEntity();
 }
 
 void ContainerData::readPortsFromEntity()
@@ -320,6 +333,19 @@ void ContainerData::readTestsFromEntity()
     }
 }
 
+void ContainerData::readAnalysisFromEntity()
+{
+    m_analysisData.clear();
+    const QString json = m_entity.analysisJson();
+    if (json.trimmed().isEmpty()) return;
+
+    QJsonParseError error;
+    const QJsonDocument doc = QJsonDocument::fromJson(json.toUtf8(), &error);
+    if (error.error != QJsonParseError::NoError || !doc.isObject()) return;
+
+    m_analysisData = doc.object().toVariantMap();
+}
+
 void ContainerData::writePortsToEntity()
 {
     QJsonArray array;
@@ -356,4 +382,15 @@ void ContainerData::writeTestsToEntity()
         array.append(test.toJson());
     const QJsonDocument doc(array);
     m_entity.setTestsJson(QString::fromUtf8(doc.toJson(QJsonDocument::Compact)));
+}
+
+void ContainerData::writeAnalysisToEntity()
+{
+    if (m_analysisData.isEmpty()) {
+        m_entity.setAnalysisJson(QString());
+        return;
+    }
+    const QJsonObject obj = QJsonObject::fromVariantMap(m_analysisData);
+    const QJsonDocument doc(obj);
+    m_entity.setAnalysisJson(QString::fromUtf8(doc.toJson(QJsonDocument::Compact)));
 }

@@ -9,10 +9,13 @@
 #include "BO/containerrepository.h"
 #include "BO/test/testdefinition.h"
 #include "BO/test/testgeneratorservice.h"
+#include "BO/test/diagnosticmatrixbuilder.h"
 
 namespace Ui {
 class TestManagementDialog;
 }
+
+class QTreeWidgetItem;
 
 class TestManagementDialog : public QDialog
 {
@@ -32,6 +35,10 @@ private slots:
     void on_btnDelete_clicked();
     void on_btnSave_clicked();
     void on_tableTests_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn);
+    void on_btnApplyTargets_clicked();
+    void on_btnApplyConstraints_clicked();
+    void on_btnEvaluatePrediction_clicked();
+    void on_btnBuildDecisionTree_clicked();
 
 private:
     void initializeGenerator();
@@ -41,6 +48,22 @@ private:
     void updateCoverage();
     bool saveChanges();
     void markDirty();
+    void configureTables();
+    void rebuildMatrix();
+    void refreshMatrixView();
+    void refreshAllocationView();
+    void refreshCandidateList();
+    void refreshPredictionView();
+    void refreshDecisionTreeView();
+    void loadAnalysisFromEntity();
+    void applyAnalysisToUi();
+    void persistAnalysis();
+    QString testDisplayText(const GeneratedTest &test) const;
+    QStringList candidateTestsByHeuristics(double maxCost, double maxDuration, int maxCount) const;
+    QString decisionNodeSummary(const std::shared_ptr<DecisionNode> &node, int depth = 0) const;
+    QVariantMap decisionNodeToVariant(const std::shared_ptr<DecisionNode> &node) const;
+    void populateDecisionTreeWidget(const std::shared_ptr<DecisionNode> &node, QTreeWidgetItem *parentItem = nullptr);
+    std::shared_ptr<DecisionNode> decisionNodeFromVariant(const QVariantMap &object) const;
 
     Ui::TestManagementDialog *ui;
     int m_containerId;
@@ -51,6 +74,10 @@ private:
     std::unique_ptr<TestGeneratorService> m_generator;
     QVector<GeneratedTest> m_tests;
     ContainerEntity m_entity;
+    QVector<ContainerEntity> m_childEntities;
+    DiagnosticMatrixBuilder m_matrixBuilder;
+    QVariantMap m_analysisData;
+    QStringList m_candidateTests;
     bool m_dirty = false;
     QString m_title;
 };

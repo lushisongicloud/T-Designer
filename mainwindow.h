@@ -73,6 +73,7 @@ public:
     QString GetValidTermIDString(QString OneComponentInfo,QString CurrentInOutName);
     void DrawTestPoint(QString OneComponentInfo,QString CurrentInOutName);
     void LoadProject();
+    void createDemoProject();
     void LoadModel();
     void UpdateFuncTree();
     void LoadProjectSystemDescription();
