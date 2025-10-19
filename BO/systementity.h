@@ -4,6 +4,7 @@
 
 #include <QList>
 #include "BO/componententity.h"
+#include "BO/function/functioninfo.h"
 #include "sqlitedatabase.h"
 #include <z3++.h>
 #include "DO/component.h"
@@ -19,20 +20,6 @@
 #include "z3solverthread.h"
 #include "graphadjlist.h"
 #include "solverrunnable.h"
-
-struct FunctionInfo {
-    QString functionName; //功能名称
-    QString actuatorName; // 执行器名称
-    TestItem actuatorConstraint; // 执行器约束
-    QList<TestItem> constraintList; // 约束列表
-    QString link; // 链路信息
-    QString componentDependency; // 器件依赖关系
-    QString allRelatedComponent; // 全部相关器件
-    QString functionDependency; // 功能依赖关系
-    bool persistent = true; //故障状态是否可保持
-    double faultProbability; // 失效概率
-};
-//QMap<QString, QStringList> functionActuatorConstraintMap;//功能-执行器约束列表
 
 struct FailureEntity {
     double failureProbability;

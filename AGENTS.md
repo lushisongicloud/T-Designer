@@ -43,9 +43,5 @@
 - Do not edit generated files (e.g., `ui_*.h`).
 - When adding/removing sources, update `T_DESIGNER.pro` accordingly.
 - Put helper scripts in `tools/` or repo root and document purpose.
-- All project source files use **UTF-8 with BOM** encoding format
-- When using Chinese text in code:
-  - **Do not use** `tr()` or `QStringLiteral` macros
-  - Use double-quoted string literals directly, e.g., `"中文文本"`
-  - Or use `QString("中文文本")` constructor
-
+- All project source files use **UTF-8 with BOM** encoding format. 所有项目源文件必须保存为 UTF-8 with BOM 编码。
+- When using Chinese text in code, do not use `tr()` or `QStringLiteral`; use double-quoted string literals (e.g., `"中文文本"`) or `QString("中文文本")`. 在代码中直接书写中文时，请不要调用 `tr()` 或 `QStringLiteral`，应直接使用双引号字符串（例如 `"中文"`）或 `QString("中文")`。

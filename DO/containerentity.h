@@ -53,8 +53,14 @@ public:
     QString faultModesJson() const { return m_faultModesJson; }
     void setFaultModesJson(const QString &json) { m_faultModesJson = json; }
 
+    QString testsJson() const { return m_testsJson; }
+    void setTestsJson(const QString &json) { m_testsJson = json; }
+
     int equipmentId() const { return m_equipmentId; }
     void setEquipmentId(int id) { m_equipmentId = id; }
+
+    QString analysisJson() const { return m_analysisJson; }
+    void setAnalysisJson(const QString &json) { m_analysisJson = json; }
 
     QString equipmentType() const { return m_equipmentType; }
     void setEquipmentType(const QString &type) { m_equipmentType = type; }
@@ -72,6 +78,8 @@ private:
     QString m_interfaceJson;
     QString m_behaviorSmt;
     QString m_faultModesJson;
+    QString m_testsJson;
+    QString m_analysisJson;
     int m_equipmentId;
     QString m_equipmentType;
     QString m_equipmentName;

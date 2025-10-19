@@ -6,6 +6,7 @@
 #include <QStringList>
 #include <QList>
 #include "BO/containerrepository.h"
+#include "BO/function/functioninfo.h"
 
 namespace ContainerHierarchy {
 
@@ -25,6 +26,9 @@ QList<ContainerType> parentCandidateTypes(ContainerType childType);
 QList<ContainerType> childCandidateTypes(ContainerType parentType);
 bool detachComponentContainer(ContainerRepository &repo, int componentContainerId);
 bool attachComponentsToTarget(ContainerRepository &repo, const QList<int> &componentContainerIds, int targetId);
+
+QMap<QString, FunctionInfo> fetchFunctionInfoMap(const QSqlDatabase &db);
+QHash<int, QStringList> defaultFunctionMapping(const ContainerEntity &entity, const QMap<QString, FunctionInfo> &functions);
 
 }
 

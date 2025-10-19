@@ -1,5 +1,7 @@
 ﻿#include "dialogUnitAttr.h"
 #include "ui_dialogUnitAttr.h"
+#include "BO/function/tmodelvalidator.h"
+#include <algorithm>
 extern int SelectEquipment_ID;
 extern int SelectSymbol_ID;
 extern QStringList RemovedUnitsInfo;
@@ -1337,6 +1339,62 @@ void DialogUnitAttr::on_BtnCompile_clicked()
         CbCommandOrObservable->addItems({"Commandable","Observable","undefined","default"});
         CbCommandOrObservable->setCurrentText(ListCmdObsVal.at(i));
         ui->tableWidgetStructure->setCellWidget(ui->tableWidgetStructure->rowCount()-1,3,CbCommandOrObservable);
+    }
+}
+
+void DialogUnitAttr::on_BtnValidateTModel_clicked()
+{
+    QList<PortInfo> ports;
+    for (int row = 0; row < ui->tableTerm->rowCount(); ++row) {
+        QTableWidgetItem *symbolItem = ui->tableTerm->item(row, 0);
+        QTableWidgetItem *connItem = ui->tableTerm->item(row, 1);
+        if (!connItem)
+            continue;
+
+        PortInfo info;
+        info.connNum = connItem->text().trimmed();
+        if (symbolItem) {
+            info.symbolId = symbolItem->data(Qt::UserRole).toString();
+            info.description = symbolItem->text();
+        }
+        info.symb2TermInfoId = connItem->data(Qt::UserRole).toString();
+
+        if (!info.connNum.isEmpty())
+            ports.append(info);
+    }
+
+    TModelValidator validator;
+    const TModelValidationResult result = validator.validate(QsciEditDescription->text(), ports);
+
+    QStringList messages;
+    if (!result.formatErrors.isEmpty())
+        messages << result.formatErrors;
+    if (!result.missingDeclarations.isEmpty())
+        messages << tr("缺少declare-fun: %1").arg(result.missingDeclarations.join(QStringLiteral(", ")));
+    if (!result.undefinedVariables.isEmpty())
+        messages << tr("未匹配的端口变量: %1").arg(result.undefinedVariables.join(QStringLiteral(", ")));
+    if (!result.hints.isEmpty())
+        messages << result.hints;
+
+    if (messages.isEmpty()) {
+        QString detail = tr("共检测端号 %1 个。").arg(result.bindings.size());
+        if (!result.unusedPorts.isEmpty())
+            detail += QStringLiteral("\n") + tr("提示：以下端号未在T语言中使用：%1").arg(result.unusedPorts.join(QStringLiteral(", ")));
+
+        QStringList bindingPreview;
+        for (const PortVariableBinding &binding : result.bindings) {
+            QStringList dirs = binding.declaredDirections.values();
+            std::sort(dirs.begin(), dirs.end());
+            bindingPreview << QStringLiteral("%1 (%2)").arg(binding.port.connNum, dirs.join(QStringLiteral("/")));
+            if (bindingPreview.size() >= 6)
+                break;
+        }
+        if (!bindingPreview.isEmpty())
+            detail += QStringLiteral("\n") + tr("映射预览：%1").arg(bindingPreview.join(QStringLiteral("，")));
+
+        QMessageBox::information(this, tr("T语言校验"), tr("端口映射校验通过。") + QStringLiteral("\n") + detail);
+    } else {
+        QMessageBox::warning(this, tr("T语言校验"), messages.join(QStringLiteral("\n")));
     }
 }
 

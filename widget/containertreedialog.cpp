@@ -8,6 +8,11 @@
 #include <algorithm>
 #include <QVector>
 #include "widget/containerhierarchyutils.h"
+#include "widget/testmanagementdialog.h"
+#include "BO/test/testgeneratorservice.h"
+#include "BO/test/diagnosticmatrixbuilder.h"
+#include "BO/function/functiondependencyresolver.h"
+#include "BO/componententity.h"
 
 #pragma execution_character_set("utf-8")
 
@@ -289,6 +294,47 @@ void ContainerTreeDialog::showContextMenu(const QPoint &pos)
                 });
             }
         }
+
+        QAction *generateTestsAct = menu.addAction(QString("自动生成测试"));
+        connect(generateTestsAct, &QAction::triggered, this, [this, container = entity]() {
+            ContainerRepository repoLocal(m_db);
+            if (!repoLocal.ensureTables()) return;
+
+            BehaviorAggregator aggregator(
+                [&](int id) { return repoLocal.getById(id); },
+                [&](int id) { return repoLocal.fetchChildren(id); });
+
+            FunctionDependencyResolver resolver;
+            auto functions = ContainerHierarchy::fetchFunctionInfoMap(m_db);
+            TestGeneratorService service(repoLocal, aggregator, resolver);
+            service.setFunctionMap(functions);
+            service.setContainerFunctions(ContainerHierarchy::defaultFunctionMapping(container, functions));
+
+            QVector<GeneratedTest> tests = service.generateForContainer(container.id());
+
+            ContainerData containerData(repoLocal.getById(container.id()));
+            DiagnosticMatrixBuilder builder;
+            builder.rebuild(containerData);
+            CoverageStats stats = builder.coverageStats();
+            QStringList candidateTests = builder.candidateTests(0.6);
+
+            QString summary = QString("生成了%1项测试。检测覆盖: %2/%3 隔离覆盖: %4")
+                                    .arg(tests.size())
+                                    .arg(stats.detectedFaults.size())
+                                    .arg(stats.totalFaults)
+                                    .arg(stats.isolatableFaults.size());
+            if (!candidateTests.isEmpty())
+                summary += QString(" 候选测试(>=60%): %1").arg(candidateTests.join(QString(", ")));
+
+            QMessageBox::information(this, QString("自动生成测试"), summary);
+            onRefresh();
+        });
+
+        QAction *manageTestsAct = menu.addAction(QString("管理测试"));
+        connect(manageTestsAct, &QAction::triggered, this, [this, containerId = entity.id()]() {
+            TestManagementDialog dialog(containerId, m_db, this);
+            dialog.exec();
+        });
 
         menu.addSeparator();
         QAction *deleteAct = menu.addAction(QString("删除容器"));

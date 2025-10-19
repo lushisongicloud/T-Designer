@@ -4,6 +4,7 @@
 #include <QDialog>
 #include <QSqlDatabase>
 #include "widget/containermodel.h"
+#include "BO/function/functioninfo.h"
 
 namespace Ui { class ContainerTreeDialog; }
 
