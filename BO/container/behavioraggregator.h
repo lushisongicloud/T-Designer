@@ -23,6 +23,7 @@ struct AggregationResult {
     ContainerData container;
     QVector<FaultContribution> contributions;
     QStringList warnings;
+    QString simplificationLog;
 };
 
 class BehaviorAggregator
