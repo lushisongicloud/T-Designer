@@ -99,6 +99,7 @@ SOURCES += \
     widget/functioneditdialog.cpp \
     BO/container/containerdata.cpp \
     BO/container/behavioraggregator.cpp \
+    BO/behavior/z3simplifier.cpp \
     BO/function/functiondependencyresolver.cpp \
     BO/function/tmodelvalidator.cpp \
     BO/function/functionrepository.cpp \
@@ -191,6 +192,7 @@ HEADERS += \
     widget/functioneditdialog.h \
     BO/container/containerdata.h \
     BO/container/behavioraggregator.h \
+    BO/behavior/z3simplifier.h \
     BO/function/functiondependencyresolver.h \
     BO/function/functioninfo.h \
     BO/function/tmodelvalidator.h \

@@ -3,6 +3,7 @@
 #include "BO/componententity.h"
 #include "BO/container/containerdata.h"
 #include "BO/container/behavioraggregator.h"
+#include "BO/behavior/z3simplifier.h"
 #include "BO/function/functiondependencyresolver.h"
 #include "BO/function/tmodelvalidator.h"
 #include "BO/test/testgeneratorservice.h"
@@ -18,6 +19,8 @@ private slots:
     void behaviorAggregator_mergeChildren();
     void testGeneratorService_generatesTests();
     void tmodelValidator_mapsPorts();
+    void z3Simplifier_simplifiesConjunction();
+    void z3Simplifier_detectsUnsat();
 };
 
 void WorkflowCoreTest::containerData_roundTrip()
@@ -186,11 +189,18 @@ void WorkflowCoreTest::behaviorAggregator_mergeChildren()
     QCOMPARE(aggregated.container.ports().size(), 2);
     QCOMPARE(aggregated.container.ports().first().sourceContainerId, childA.id());
     QCOMPARE(aggregated.container.ports().last().sourceContainerId, childB.id());
-    QCOMPARE(aggregated.container.behavior().faultModes.size(), 2);
-    QCOMPARE(aggregated.container.behavior().faultModes.first().modeId.contains(QStringLiteral("ChildA")), true);
-    QCOMPARE(aggregated.container.behavior().faultModes.last().modeId.contains(QStringLiteral("ChildB")), true);
+    QCOMPARE(aggregated.container.behavior().faultModes.size(), 3);
+    const BehaviorMode &aggregatedFault = aggregated.container.behavior().faultModes.at(0);
+    QCOMPARE(aggregatedFault.modeId, QStringLiteral("Parent.fault"));
+    QVERIFY(!aggregatedFault.constraints.isEmpty());
+    QVERIFY(aggregatedFault.constraints.first().startsWith(QStringLiteral("(not ")));
+    const BehaviorMode &childFaultA = aggregated.container.behavior().faultModes.at(1);
+    const BehaviorMode &childFaultB = aggregated.container.behavior().faultModes.at(2);
+    QCOMPARE(childFaultA.modeId.contains(QStringLiteral("ChildA")), true);
+    QCOMPARE(childFaultB.modeId.contains(QStringLiteral("ChildB")), true);
     QCOMPARE(aggregated.container.behavior().normalMode.constraints.size(), 2);
     QCOMPARE(aggregated.container.behaviorSmt(), QStringLiteral("(and (>= Sensor 0) (<= Output 10))"));
+    QVERIFY(!aggregated.simplificationLog.isEmpty());
     QVERIFY(aggregated.warnings.isEmpty());
 }
 void WorkflowCoreTest::testGeneratorService_generatesTests()
@@ -370,6 +380,29 @@ void WorkflowCoreTest::tmodelValidator_mapsPorts()
         }
     }
     QVERIFY(orphanFound);
+}
+
+void WorkflowCoreTest::z3Simplifier_simplifiesConjunction()
+{
+    Z3Simplifier simplifier;
+    QStringList expressions;
+    expressions << QStringLiteral("(= a 1)") << QStringLiteral("(= b (+ a 1))");
+    Z3SimplificationResult result = simplifier.simplifyConjunction(expressions);
+    QVERIFY(result.success);
+    QVERIFY(result.simplifiedExpression.contains(QStringLiteral("(= a 1)")));
+    QVERIFY(result.simplifiedExpression.contains(QStringLiteral("b")));
+    QVERIFY(result.log.contains(QStringLiteral("化简后")));
+}
+
+void WorkflowCoreTest::z3Simplifier_detectsUnsat()
+{
+    Z3Simplifier simplifier;
+    QStringList assertions;
+    assertions << QStringLiteral("(= x 1)") << QStringLiteral("(= x 2)");
+    QVERIFY(simplifier.isUnsat(assertions));
+    QStringList satAssertions;
+    satAssertions << QStringLiteral("(= x 1)") << QStringLiteral("(= y 2)");
+    QVERIFY(!simplifier.isUnsat(satAssertions));
 }
 
 
