@@ -202,7 +202,7 @@ bool DemoProjectBuilder::buildProjectDatabase(const QString &dbPath, QString *er
         "CREATE TABLE IF NOT EXISTS EquipmentDiagnosePara (DiagnoseParaID INTEGER PRIMARY KEY, Equipment_ID INTEGER, Name TEXT, Unit TEXT, CurValue TEXT, DefaultValue TEXT, Remark TEXT)",
         "CREATE TABLE IF NOT EXISTS Symbol (Symbol_ID INTEGER PRIMARY KEY, Equipment_ID INTEGER, Page_ID INTEGER, Symbol TEXT, Symbol_Category TEXT, Symbol_Desc TEXT, Designation TEXT, Symbol_Handle TEXT, Symbol_Remark TEXT, FunDefine TEXT, FuncType TEXT, SourceConn INTEGER, ExecConn INTEGER, SourcePrior INTEGER, InterConnect TEXT, Show_DT TEXT)",
         "CREATE TABLE IF NOT EXISTS Symb2TermInfo (Symb2TermInfo_ID INTEGER PRIMARY KEY, Symbol_ID INTEGER, ConnNum TEXT, ConnDesc TEXT)",
-        "CREATE TABLE IF NOT EXISTS Page (Page_ID INTEGER PRIMARY KEY, ProjectStructure_ID INTEGER, PageType TEXT, Structure_ID TEXT, PageName TEXT)",
+        "CREATE TABLE IF NOT EXISTS Page (Page_ID INTEGER PRIMARY KEY, ProjectStructure_ID INTEGER, Page_Desc TEXT, PageType TEXT, PageNum INTEGER, PageName TEXT, Scale TEXT, Border TEXT, Title TEXT, AlterTime TEXT, MD5Code TEXT)",
         "CREATE TABLE IF NOT EXISTS JXB (JXB_ID INTEGER PRIMARY KEY, ProjectStructure_ID INTEGER, Page_ID INTEGER, Cable_ID INTEGER, ConnectionNumber TEXT, ConnectionNumber_Handle TEXT, Symb1_ID TEXT, Symb2_ID TEXT, Wires_Type TEXT, Wires_Color TEXT, Wires_Diameter TEXT, Wires_Category TEXT, Symb1_Category TEXT, Symb2_Category TEXT)",
         "CREATE TABLE IF NOT EXISTS Connector (Connector_ID INTEGER PRIMARY KEY, Page_ID INTEGER, Symb_ID INTEGER)",
         "CREATE TABLE IF NOT EXISTS Link (Link_ID INTEGER PRIMARY KEY, Page_ID INTEGER)",
@@ -416,12 +416,23 @@ bool DemoProjectBuilder::buildProjectDatabase(const QString &dbPath, QString *er
         }
     }
 
+    const QString alterTime = QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd hh:mm:ss"));
     const QList<QList<QVariant>> pages = {
-        {1, 1004, QString("原理图"), QString("6"), QString("DemoDiagram")}
+        {1,
+         1004,
+         QStringLiteral("Demo diagram for workflow"),
+         QStringLiteral("原理图"),
+         1,
+         QStringLiteral("DemoDiagram"),
+         QStringLiteral("1:1"),
+         QStringLiteral("A3:420x297"),
+         QStringLiteral("Demo Diagram"),
+         alterTime,
+         QString()}
     };
     for (const auto &row : pages) {
         if (!prepareAndExec(query,
-                            "INSERT INTO Page (Page_ID, ProjectStructure_ID, PageType, Structure_ID, PageName) VALUES (?,?,?,?,?)",
+                            "INSERT INTO Page (Page_ID, ProjectStructure_ID, Page_Desc, PageType, PageNum, PageName, Scale, Border, Title, AlterTime, MD5Code) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                             row, errorMessage)) {
             cleanup();
             return false;

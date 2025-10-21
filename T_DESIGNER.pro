@@ -287,4 +287,3 @@ LIBS += $$PWD/lib/libz3.lib
 INCLUDEPATH += $$PWD/.
 DEPENDPATH += $$PWD/.
 
-QMAKE_CXXFLAGS += -finput-charset=UTF-8 -fexec-charset=UTF-8
