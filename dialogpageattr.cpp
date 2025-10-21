@@ -1,5 +1,6 @@
 ﻿#include "dialogpageattr.h"
 #include "ui_dialogpageattr.h"
+#include "common.h"
 extern QSqlDatabase  T_ProjectDatabase;
 DialogPageAttr::DialogPageAttr(QWidget *parent) :
     QDialog(parent),
@@ -72,38 +73,26 @@ void DialogPageAttr::on_BtnOk_clicked()
 {
     QSqlQuery query=QSqlQuery(T_ProjectDatabase);
     int ProjectStructure_ID;
-    QString StrGaoCeng="";
-    if(ui->EdPageName->text().contains("="))
-    {
-        int index=ui->EdPageName->text().indexOf("·");
-        if(ui->EdPageName->text().contains("+")) index=ui->EdPageName->text().indexOf("+");
-        if(ui->EdPageName->text().contains("&")) index=ui->EdPageName->text().indexOf("&");
-        StrGaoCeng=ui->EdPageName->text().mid(ui->EdPageName->text().indexOf("=")+1,index-ui->EdPageName->text().indexOf("=")-1);
-    }
-    QString StrPos="";
-    if(ui->EdPageName->text().contains("+"))
-    {
-        int index=ui->EdPageName->text().indexOf("·");
-        if(ui->EdPageName->text().contains("&")) index=ui->EdPageName->text().indexOf("&");
-        StrPos=ui->EdPageName->text().mid(ui->EdPageName->text().indexOf("+")+1,index-ui->EdPageName->text().indexOf("+")-1);
-    }
-    QString StrPage="";
-    if(ui->EdPageName->text().contains("&"))
-    {
-        int index=ui->EdPageName->text().indexOf("·");
-        StrPage=ui->EdPageName->text().mid(ui->EdPageName->text().indexOf("&")+1,index-ui->EdPageName->text().indexOf("&")-1);
-    }
+    QString displayName = ui->EdPageName->text().trimmed();
+    QString prefix = ExtractPagePrefix(displayName);
+    QString baseName = ExtractPageBaseName(displayName);
+    if (baseName.isEmpty())
+        baseName = displayName;
+    QString StrGaoCeng, StrPos, StrPage;
+    SplitPagePrefix(prefix, &StrGaoCeng, &StrPos, &StrPage);
+    if (StrPage.isEmpty())
+        StrPage = baseName;
+    QString canonicalName = BuildCanonicalPageName(prefix, StrPage, baseName);
+    if (canonicalName != displayName)
+        ui->EdPageName->setText(canonicalName);
+    QString canonicalPrefix = ExtractPagePrefix(ui->EdPageName->text());
+    SplitPagePrefix(canonicalPrefix, &StrGaoCeng, &StrPos, &StrPage);
 
     ProjectStructure_ID=InsertRecordToProjectStructure(1,StrGaoCeng,StrPos,StrPage);
 
-    QString PageName="";
-    if(ui->EdPageName->text().contains("·"))
-    {
-        int index;
-        index=ui->EdPageName->text().indexOf("·");
-        PageName=ui->EdPageName->text().mid(index+1,ui->EdPageName->text().count()-index-1);
-    }
-    else PageName=ui->EdPageName->text();
+    QString PageName = ExtractPageBaseName(ui->EdPageName->text());
+    if (PageName.isEmpty())
+        PageName = ui->EdPageName->text();
 
     QSqlQuery QueryVar = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
     QString temp;
@@ -174,8 +163,7 @@ qDebug()<<dlgPageNameSet.StrGaoceng<<dlgPageNameSet.StrPos<<dlgPageNameSet.StrPa
         query.bindValue(":ProjectStructure_ID",QString::number(ProjectStructure_ID));
         query.bindValue(":Page_Desc",ui->EdPageDesc->text());
         query.bindValue(":PageType",ui->EdPageType->text());
-        int index=ui->EdPageName->text().indexOf("·");
-        query.bindValue(":PageName",ui->EdPageName->text().mid(index+1,ui->EdPageName->text().count()-index-1));
+        query.bindValue(":PageName",ExtractPageBaseName(ui->EdPageName->text()));
         query.bindValue(":Scale","1:1");
         query.bindValue(":Border","A3:420x297");
         query.bindValue(":Title",ui->EdPageFrame->text());

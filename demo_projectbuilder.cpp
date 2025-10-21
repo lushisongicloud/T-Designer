@@ -1,5 +1,6 @@
 ﻿#include "demo_projectbuilder.h"
 
+#include "common.h"
 #include <QDir>
 #include <QFile>
 #include <QJsonArray>
@@ -49,6 +50,55 @@ inline QString compactJson(const QJsonArray &arr)
     return QString::fromUtf8(QJsonDocument(arr).toJson(QJsonDocument::Compact));
 }
 
+inline bool upsertFunctionDefineClass(QSqlDatabase &db, const QVariantList &row, QString *errorMessage)
+{
+    if (row.size() != 11)
+        return false;
+
+    QSqlQuery checkQuery(db);
+    checkQuery.prepare(QString("SELECT COUNT(*) FROM FunctionDefineClass WHERE FunctionDefineClass_ID = ?"));
+    checkQuery.bindValue(0, row.at(0));
+    if (!checkQuery.exec()) {
+        if (errorMessage)
+            *errorMessage = QString("SQL error: %1 (%2)").arg(checkQuery.lastError().text(), checkQuery.lastQuery());
+        return false;
+    }
+
+    bool exists = false;
+    if (checkQuery.next())
+        exists = checkQuery.value(0).toInt() > 0;
+
+    if (exists) {
+        QSqlQuery updateQuery(db);
+        updateQuery.prepare(QString(
+            "UPDATE FunctionDefineClass "
+            "SET ParentNo=?, Level=?, Desc=?, _Order=?, FunctionDefineName=?, FunctionDefineCode=?, DefaultSymbol=?, FuncType=?, TModel=?, TClassName=? "
+            "WHERE FunctionDefineClass_ID=?"));
+        for (int i = 1; i < row.size(); ++i)
+            updateQuery.bindValue(i - 1, row.at(i));
+        updateQuery.bindValue(10, row.at(0));
+        if (!updateQuery.exec()) {
+            if (errorMessage)
+                *errorMessage = QString("SQL error: %1 (%2)").arg(updateQuery.lastError().text(), updateQuery.lastQuery());
+            return false;
+        }
+    } else {
+        QSqlQuery insertQuery(db);
+        insertQuery.prepare(QString(
+            "INSERT INTO FunctionDefineClass (FunctionDefineClass_ID, ParentNo, Level, Desc, _Order, FunctionDefineName, FunctionDefineCode, DefaultSymbol, FuncType, TModel, TClassName) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?)"));
+        for (int i = 0; i < row.size(); ++i)
+            insertQuery.bindValue(i, row.at(i));
+        if (!insertQuery.exec()) {
+            if (errorMessage)
+                *errorMessage = QString("SQL error: %1 (%2)").arg(insertQuery.lastError().text(), insertQuery.lastQuery());
+            return false;
+        }
+    }
+
+    return true;
+}
+
 } // namespace
 
 bool DemoProjectBuilder::buildDemoProject(const QString &projectDir, const QString &projectName, QString *errorMessage)
@@ -64,13 +114,17 @@ bool DemoProjectBuilder::buildDemoProject(const QString &projectDir, const QStri
     const QString dbPath = projectDir + "/" + projectName + ".db";
     const QString modelPath = projectDir + "/Model.db";
     const QString paramsPath = projectDir + "/test.params";
-    const QString dwgPath = projectDir + "/DemoDiagram.dwg";
+    const QString canonicalPageStem = BuildCanonicalPageName(QStringLiteral("=Subsystem+Station 1"),
+                                                             QStringLiteral("Demo Diagram"),
+                                                             QStringLiteral("DemoDiagram"));
+    const QString dwgPath = projectDir + "/" + canonicalPageStem + ".dwg";
 
     QFile::remove(swProPath);
     QFile::remove(dbPath);
     QFile::remove(modelPath);
     QFile::remove(paramsPath);
     QFile::remove(dwgPath);
+    QFile::remove(projectDir + "/DemoDiagram.dwg");
 
     if (!writeSwProFile(swProPath, projectName, errorMessage))
         return false;
@@ -175,6 +229,60 @@ bool DemoProjectBuilder::buildProjectDatabase(const QString &dbPath, QString *er
         }
     }
 
+    const QStringList tablesToReset = {
+        QString("FunctionDefineClass"),
+        QString("ProjectStructure"),
+        QString("Equipment"),
+        QString("EquipmentDiagnosePara"),
+        QString("Symbol"),
+        QString("Symb2TermInfo"),
+        QString("Page"),
+        QString("JXB"),
+        QString("Function"),
+        QString("function_bindings"),
+        QString("containers"),
+        QString("equipment_containers"),
+        QString("UserTest"),
+        QString("Connector"),
+        QString("Link"),
+        QString("Wires"),
+        QString("Terminal"),
+        QString("TerminalStrip"),
+        QString("TerminalTerm"),
+        QString("TerminalInstance"),
+        QString("TerminalStripDiagnosePara"),
+        QString("Cable"),
+        QString("Line")
+    };
+
+    for (const QString &table : tablesToReset) {
+        const QString sql = QString("DELETE FROM %1").arg(table);
+        if (!execQuery(query, sql, errorMessage)) {
+            cleanup();
+            return false;
+        }
+    }
+
+    const QList<QVariantList> functionDefineClasses = {
+        {QVariant(1), QVariant(0), QVariant(0), QString(), QVariant(1), QString("电气工程"), QVariant(), QVariant(), QVariant(), QVariant(), QVariant()},
+        {QVariant(102), QVariant(1), QVariant(1), QString(), QVariant(2), QString("线圈,触点"), QVariant(), QVariant(), QVariant(), QVariant(), QVariant()},
+        {QVariant(10200), QVariant(102), QVariant(2), QString(), QVariant(1), QString("线圈"), QString("200"), QVariant(), QVariant(), QVariant(), QVariant()},
+        {QVariant(1020001), QVariant(10200), QVariant(3), QString(), QVariant(1), QString("线圈,2 个连接点"), QString("200.1"), QVariant(), QString("接线端口"), coilBaseTModel(), QString("KA_xq")},
+        {QVariant(102000100), QVariant(1020001), QVariant(4), QString(), QVariant(1), QString("线圈,常规"), QString("200.1.0"), QString("SPS_M_K-1"), QString("接线端口"), coilTModel(), QString("NewKA_xq")},
+        {QVariant(117), QVariant(1), QVariant(1), QString(), QVariant(17), QString("elecPort"), QVariant(), QVariant(), QVariant(), elecPortTModel(), QString("elecPort")},
+        {QVariant(107), QVariant(1), QVariant(1), QString(), QVariant(6), QString("电源,发电机"), QVariant(), QVariant(), QVariant(), QVariant(), QVariant()},
+        {QVariant(10700), QVariant(107), QVariant(2), QString(), QVariant(1), QString("电压源"), QString("700"), QVariant(), QVariant(), QVariant(), QVariant()},
+        {QVariant(1070099), QVariant(10700), QVariant(3), QString(), QVariant(2), QString("电压源,可变"), QString("700.99"), QVariant(), QVariant(), QVariant(), QVariant()},
+        {QVariant(107009901), QVariant(1070099), QVariant(4), QString(), QVariant(1), QString("电压源,可变"), QString("700.99.1"), QString("SPS_M_BAT-1"), QVariant(), psuTModel(), QString("DC24VSource")}
+    };
+
+    for (const QVariantList &row : functionDefineClasses) {
+        if (!upsertFunctionDefineClass(db, row, errorMessage)) {
+            cleanup();
+            return false;
+        }
+    }
+
     // Insert project structure entries
     const QList<QList<QVariant>> projectStructures = {
         {1001, QString("1"), QString("Demo System"), 0, QString("演示项目根节点")},
@@ -193,8 +301,40 @@ bool DemoProjectBuilder::buildProjectDatabase(const QString &dbPath, QString *er
 
     // Equipment entries
     const QList<QList<QVariant>> equipments = {
-        {1, 1003, QString("PSU-1"), QString("Power"), QString("普通元件"), QString("Power Supply"), QString("提供24V稳压输出"), QString("PSU001"), QString(), QString("1"), QString("DemoWorks"), QString(), QString("class PSU"), QString(), QString(), QString(), QString("120000")},
-        {2, 1003, QString("ACT-1"), QString("Actuator"), QString("普通元件"), QString("Hydraulic Actuator"), QString("输出8bar液压压力"), QString("ACT001"), QString(), QString("2"), QString("DemoWorks"), QString(), QString("class ACT"), QString(), QString(), QString(), QString("90000")}
+        {1,
+         1003,
+         QString("PSU-1"),
+         QString("Power"),
+         QString("普通元件"),
+         QString("Power Supply"),
+         QString("提供24V稳压输出"),
+         QString("PSU001"),
+         QString("SPS_M_BAT-1"),
+         QString("1"),
+         QString("DemoWorks"),
+         QString("PSU-1.Vout"),
+         psuTModel(),
+         QString("107009901"),
+         QString(),
+         QString(),
+         QString("120000")},
+        {2,
+         1003,
+         QString("ACT-1"),
+         QString("Actuator"),
+         QString("普通元件"),
+         QString("Hydraulic Actuator"),
+         QString("输出8bar液压压力"),
+         QString("ACT001"),
+         QString("SPS_M_K-1"),
+         QString("2"),
+         QString("DemoWorks"),
+         QString("ACT-1.Cmd"),
+         coilTModel(),
+         QString("102000100"),
+         QString(),
+         QString(),
+         QString("90000")}
     };
     for (const auto &row : equipments) {
         if (!prepareAndExec(query,
@@ -219,8 +359,38 @@ bool DemoProjectBuilder::buildProjectDatabase(const QString &dbPath, QString *er
     }
 
     const QList<QList<QVariant>> symbols = {
-        {1, 1, 1, QString("PSU"), QString("0"), QString("电源模块"), QString("PSU"), QString(), QString(), QString(""), QString("source"), 1, 0, 1, QString(), QString("PSU-1.Supply")},
-        {2, 2, 1, QString("ACT"), QString("0"), QString("执行器模块"), QString("ACT"), QString(), QString(), QString(""), QString("actuator"), 0, 1, 1, QString(), QString("ACT-1.Deliver")}
+        {1,
+         1,
+         1,
+         QString("SPS_M_BAT-1"),
+         QString("电源,发电机"),
+         QString("电压源子块"),
+         QString("PSU"),
+         QString(),
+         QString("107009901"),
+         QString("电压源,可变"),
+         QString("source"),
+         1,
+         0,
+         1,
+         QString(),
+         QString("PSU-1.Vout")},
+        {2,
+         2,
+         1,
+         QString("SPS_M_K-1"),
+         QString("线圈,触点"),
+         QString("执行器线圈子块"),
+         QString("ACT"),
+         QString(),
+         QString("102000100"),
+         QString("线圈,常规"),
+         QString("actuator"),
+         0,
+         1,
+         1,
+         QString(),
+         QString("ACT-1.Cmd")}
     };
     for (const auto &row : symbols) {
         if (!prepareAndExec(query,
@@ -232,10 +402,10 @@ bool DemoProjectBuilder::buildProjectDatabase(const QString &dbPath, QString *er
     }
 
     const QList<QList<QVariant>> symbTerms = {
-        {1, 1, QString("Vin"), QString("供电输入")},
-        {2, 1, QString("Vout"), QString("稳压输出")},
-        {3, 2, QString("Supply"), QString("供油接口")},
-        {4, 2, QString("Pressure"), QString("压力输出")}
+        {1, 1, QString("P"), QString("正极端子")},
+        {2, 1, QString("N"), QString("负极端子")},
+        {3, 2, QString("A1"), QString("线圈入口")},
+        {4, 2, QString("A2"), QString("线圈返回")}
     };
     for (const auto &row : symbTerms) {
         if (!prepareAndExec(query,
@@ -343,6 +513,205 @@ QString DemoProjectBuilder::containerPortsJson(const QString &equipmentTag,
     out.insert(QString("direction"), QString("output"));
     ports.append(out);
     return compactJson(ports);
+}
+
+QString DemoProjectBuilder::coilBaseTModel()
+{
+    static const char model[] =
+        "class KA_xq {\r\n"
+        "\r\n"
+        "    ModeType mode;\r\n"
+        "    onOffState cmdIn;\r\n"
+        "    Resistance Res;\r\n"
+        "    onOffState xqActivatedLed;\r\n"
+        "    onOffState cmdOut;\r\n"
+        "\r\n"
+        "    enum ModeType {nominal, malFunction, unknownFault};\r\n"
+        "\r\n"
+        "    stateVector [mode];\r\n"
+        "\r\n"
+        "    {\r\n"
+        "        if (cmdIn = on) {\r\n"
+        "            xqActivatedLed = on;\r\n"
+        "        }\r\n"
+        "        if (cmdIn = off) {\r\n"
+        "            xqActivatedLed = off;\r\n"
+        "        }\r\n"
+        "        switch (mode) {\r\n"
+        "            case nominal:\r\n"
+        "                if (cmdIn = on) {\r\n"
+        "                    cmdOut = on;\r\n"
+        "                    Res = nominal;\r\n"
+        "                }\r\n"
+        "                if (cmdIn = off) {\r\n"
+        "                    cmdOut = off;\r\n"
+        "                    Res = nominal;\r\n"
+        "                }\r\n"
+        "            case malFunction:\r\n"
+        "                cmdOut = off;\r\n"
+        "                Res != nominal;\r\n"
+        "            case unknownFault:\r\n"
+        "        }\r\n"
+        "    }\r\n"
+        "\r\n"
+        "    failure toMalFunction(*, malFunction, 2.0e-5) {\r\n"
+        "    }\r\n"
+        "    failure toUnknownFault(*, unknownFault, 1.0e-7) {\r\n"
+        "    }\r\n"
+        "}\r\n";
+    return QString::fromUtf8(model);
+}
+
+QString DemoProjectBuilder::coilTModel()
+{
+    static const char model[] =
+        "class NewKA_xq {\r\n"
+        "\r\n"
+        "    ModeType mode;\r\n"
+        "    onOffState xqActivatedLed;\r\n"
+        "    onOffState cmdOut;\r\n"
+        "    resistance innerR;\r\n"
+        "    elecPort ePort_in;\r\n"
+        "\r\n"
+        "    enum ModeType {nominal, blown, shorted, unknownFault};\r\n"
+        "\r\n"
+        "    stateVector [mode];\r\n"
+        "\r\n"
+        "    {\r\n"
+        "        ePort_in.R = innerR;\r\n"
+        "        ePort_in.appliance_U_I();\r\n"
+        "        if (ePort_in.I = middle) {\r\n"
+        "            xqActivatedLed = on;\r\n"
+        "        }\r\n"
+        "        if (ePort_in.I = none) {\r\n"
+        "            xqActivatedLed = off;\r\n"
+        "        }\r\n"
+        "        switch (mode) {\r\n"
+        "            case nominal:\r\n"
+        "                innerR = middle;\r\n"
+        "                if (ePort_in.I = middle) {\r\n"
+        "                    cmdOut = on;\r\n"
+        "                }\r\n"
+        "                if (ePort_in.I != middle) {\r\n"
+        "                    cmdOut = off;\r\n"
+        "                }\r\n"
+        "            case blown:\r\n"
+        "                innerR = infinite;\r\n"
+        "                cmdOut = off;\r\n"
+        "            case shorted:\r\n"
+        "                innerR = none;\r\n"
+        "                cmdOut = off;\r\n"
+        "            case unknownFault:\r\n"
+        "        }\r\n"
+        "    }\r\n"
+        "\r\n"
+        "    failure toBlown(*, blown, 2.0e-5) {\r\n"
+        "    }\r\n"
+        "    failure toShorted(*, shorted, 1.0e-5) {\r\n"
+        "    }\r\n"
+        "    failure toUnknownFault(*, unknownFault, 1.0e-8) {\r\n"
+        "    }\r\n"
+        "}\r\n";
+    return QString::fromUtf8(model);
+}
+
+QString DemoProjectBuilder::elecPortTModel()
+{
+    static const char model[] =
+        "class elecPort {\r\n"
+        "\r\n"
+        "    current I;\r\n"
+        "    voltage U;\r\n"
+        "    resistance R;\r\n"
+        "\r\n"
+        "    relation ePort_init() {\r\n"
+        "        I = none;\r\n"
+        "        U = none;\r\n"
+        "    }\r\n"
+        "    relation highRes_U_I() {\r\n"
+        "        appliance_U_I();\r\n"
+        "    }\r\n"
+        "    relation appliance_U_I() {\r\n"
+        "        if (R = none) {\r\n"
+        "            U = none;\r\n"
+        "        }\r\n"
+        "        if (R = infinite) {\r\n"
+        "            I = none;\r\n"
+        "        }\r\n"
+        "        if ((U = none & \r\n"
+        "            R != none)) {\r\n"
+        "            I = none;\r\n"
+        "        }\r\n"
+        "        if ((U = middle & \r\n"
+        "            R = middle)) {\r\n"
+        "            I = middle;\r\n"
+        "        }\r\n"
+        "        if ((U = middle & \r\n"
+        "            R = high)) {\r\n"
+        "            I = low;\r\n"
+        "        }\r\n"
+        "        if ((U = middle & \r\n"
+        "            R = low)) {\r\n"
+        "            I = high;\r\n"
+        "        }\r\n"
+        "        if ((U = low & \r\n"
+        "            R = middle)) {\r\n"
+        "            I = low;\r\n"
+        "        }\r\n"
+        "        if ((U = low & \r\n"
+        "            R = high)) {\r\n"
+        "            I = low;\r\n"
+        "        }\r\n"
+        "        if ((U = high & \r\n"
+        "            R = low)) {\r\n"
+        "            I = high;\r\n"
+        "        }\r\n"
+        "        if ((U = high & \r\n"
+        "            R = middle)) {\r\n"
+        "            I = high;\r\n"
+        "        }\r\n"
+        "    }\r\n"
+        "}\r\n";
+    return QString::fromUtf8(model);
+}
+
+QString DemoProjectBuilder::psuTModel()
+{
+    static const char model[] =
+        "class DC24VSource {\r\n"
+        "\r\n"
+        "    ModeType mode;\r\n"
+        "    supplyState supplyStatus;\r\n"
+        "    elecPort port_pos;\r\n"
+        "    elecPort port_neg;\r\n"
+        "\r\n"
+        "    enum ModeType {nominal, openCircuit, shortCircuit, unknownFault};\r\n"
+        "    enum supplyState {energized, deEnergized, shorted};\r\n"
+        "\r\n"
+        "    stateVector [mode];\r\n"
+        "\r\n"
+        "    {\r\n"
+        "        port_pos.appliance_U_I();\r\n"
+        "        port_neg.appliance_U_I();\r\n"
+        "        switch (mode) {\r\n"
+        "            case nominal:\r\n"
+        "                supplyStatus = energized;\r\n"
+        "            case openCircuit:\r\n"
+        "                supplyStatus = deEnergized;\r\n"
+        "            case shortCircuit:\r\n"
+        "                supplyStatus = shorted;\r\n"
+        "            case unknownFault:\r\n"
+        "        }\r\n"
+        "    }\r\n"
+        "\r\n"
+        "    failure toOpenCircuit(*, openCircuit, 1.0e-5) {\r\n"
+        "    }\r\n"
+        "    failure toShortCircuit(*, shortCircuit, 1.0e-5) {\r\n"
+        "    }\r\n"
+        "    failure toUnknownFault(*, unknownFault, 1.0e-8) {\r\n"
+        "    }\r\n"
+        "}\r\n";
+    return QString::fromUtf8(model);
 }
 
 QString DemoProjectBuilder::psuBehaviorJson()
@@ -534,6 +903,20 @@ bool DemoProjectBuilder::buildModelDatabase(const QString &dbPath, QString *erro
 
     for (const QString &statement : createStatements) {
         if (!execQuery(query, statement, errorMessage)) {
+            cleanup();
+            return false;
+        }
+    }
+
+    const QStringList tablesToReset = {
+        QString("components"),
+        QString("parameters"),
+        QString("models")
+    };
+
+    for (const QString &table : tablesToReset) {
+        const QString sql = QString("DELETE FROM %1").arg(table);
+        if (!execQuery(query, sql, errorMessage)) {
             cleanup();
             return false;
         }

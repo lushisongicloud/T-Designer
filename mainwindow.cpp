@@ -3362,11 +3362,14 @@ void MainWindow::AddExistPage()
     QStringList fileNames=fileDialog.selectedFiles();
     QFileInfo SelectedFileInfo(fileNames.at(0));
 
-    QString PageName=SelectedFileInfo.fileName();
-    PageName=PageName.mid(0,PageName.count()-4);
-    if(PageName.contains("·")) PageName=PageName.mid(PageName.lastIndexOf("·")+1,PageName.count()-PageName.lastIndexOf("·")-1);
-    QString ProTag=GetCurIndexProTag(1);
-    if(ProTag!="") PageName=ProTag+"·"+PageName;
+    QString fileStem = SelectedFileInfo.completeBaseName();
+    QString baseName = ExtractPageBaseName(fileStem);
+    if (baseName.isEmpty())
+        baseName = fileStem;
+    QString prefix = GetCurIndexProTag(1);
+    if (prefix.isEmpty())
+        prefix = ExtractPagePrefix(fileStem);
+    QString PageName = BuildCanonicalPageName(prefix, baseName, baseName);
     DialogPageAttr *dlg=new DialogPageAttr(this);
     dlg->Mode=1;//add page
     //根据节点确定dwg文件初始名称
@@ -3536,11 +3539,12 @@ void MainWindow::NewDwgPage()
         else StrGaoceng=ProTag.mid(ProTag.indexOf("+")+1,ProTag.count()-ProTag.indexOf("+")-1);
     }
     QString ProjectStructure_ID=GetPageProjectStructure_IDByGaocengAndPos(StrGaoceng,StrPos,"");
+    QString baseCode;
     if(ui->treeViewPages->currentIndex().data(Qt::WhatsThisRole).toString()=="图纸")
-        PageName=CreateUnusedFileName(ui->treeViewPages->currentIndex().data(Qt::DisplayRole).toString(),ProjectStructure_ID);
+        baseCode=CreateUnusedFileName(ui->treeViewPages->currentIndex().data(Qt::DisplayRole).toString(),ProjectStructure_ID);
     else
-        PageName=CreateUnusedFileName("",ProjectStructure_ID);
-    if(ProTag!="") PageName=ProTag+"·"+PageName;
+        baseCode=CreateUnusedFileName("",ProjectStructure_ID);
+    PageName=BuildCanonicalPageName(ProTag, baseCode, baseCode);
 
     DialogPageAttr *dlg=new DialogPageAttr(this);
     dlg->Mode=1;//add page
@@ -6336,6 +6340,7 @@ void MainWindow::createDemoProject()
     QString error;
     if (!DemoProjectBuilder::buildDemoProject(projectDir, projectName, &error)) {
         QMessageBox::warning(this, tr("演示项目生成失败"), error);
+        qDebug()<<"演示项目生成失败:"<<error;
         return;
     }
 
@@ -6441,17 +6446,27 @@ void MainWindow::CloseMdiWnd(int Mode)
     //if(Mode==0||Mode==1) on_BtnSymbolBaseManage_clicked();
 }
 
+QString MainWindow::resolvePageFilePath(const QString &displayName) const
+{
+    const QStringList candidates = PageNameCandidates(displayName);
+    for (const QString &candidate : candidates) {
+        const QString path = CurProjectPath + "/" + candidate + ".dwg";
+        if (QFile::exists(path))
+            return path;
+    }
+    return QString();
+}
+
 void MainWindow::OpenDwgPageByPageID(int PageID)
 {
-    QString dwgfilename=GetPageNameByPageID(PageID);
-    QString dwgfilepath=CurProjectPath+"/"+dwgfilename+".dwg";
-    QFile dwgfile(dwgfilepath);
-    if(!dwgfile.exists()) return;
+    const QString dwgDisplayName = GetPageNameByPageID(PageID);
+    const QString dwgfilepath = resolvePageFilePath(dwgDisplayName);
+    if (dwgfilepath.isEmpty()) return;
     //查看是否已经打开改图纸
     for(int i=0;i<ui->mdiArea->subWindowList().count();i++)
     {
         //if(ui->mdiArea->subWindowList().at(i)->windowTitle().contains("故障诊断")) continue;
-        if(ui->mdiArea->subWindowList().at(i)->windowTitle()==dwgfilename)
+        if(ui->mdiArea->subWindowList().at(i)->windowTitle()==dwgDisplayName)
         {
             ui->mdiArea->setActiveSubWindow(ui->mdiArea->subWindowList().at(i));
             return;
@@ -6459,7 +6474,7 @@ void MainWindow::OpenDwgPageByPageID(int PageID)
     }
     //创建新的mdi
     formaxwidget *formMxdraw=new formaxwidget(this,dwgfilepath,PageID);
-    formMxdraw->setWindowTitle(dwgfilename);
+    formMxdraw->setWindowTitle(dwgDisplayName);
     QMdiSubWindow *mdisubwindow= ui->mdiArea->addSubWindow (formMxdraw) ;
     formMxdraw->mdisubwindow=mdisubwindow;
     connect(formMxdraw,SIGNAL(SignalCloseMdiWnd(int)),this,SLOT(CloseMdiWnd(int)));
@@ -6491,8 +6506,9 @@ void MainWindow::on_treeViewPages_clicked(const QModelIndex &index)
     int Page_ID=index.data(Qt::UserRole).toInt();
     QString dwgfilename=GetPageNameByPageID(Page_ID);
 
-    QString path=CurProjectPath+"/"+dwgfilename+".dwg";
+    const QString path=resolvePageFilePath(dwgfilename);
     qDebug()<<"path="<<path;
+    if(path.isEmpty()) return;
     QFileInfo file(path);
     if(!file.exists()) return;
     ui->axWidgetPreview->dynamicCall("OpenDwgFile(QString)",path);

@@ -88,6 +88,7 @@ public:
     void FilterLines();
     void FilterTerminal();
     void OpenDwgPageByPageID(int PageID);   
+    QString resolvePageFilePath(const QString &displayName) const;
     formaxwidget* GetOpenedDwgaxwidget(QString Symbol_Handle,int Category);
     QString CreateUnusedFileName(QString CurSelectPageName,QString ProjectStructure_ID);
     void AddDwgFileToIndex(QStandardItem *item,QSqlQuery query,QList<int> listPagesExpend);

@@ -60,3 +60,4 @@ include/
 *.swp
 *.swo
 
+Makefile.*
