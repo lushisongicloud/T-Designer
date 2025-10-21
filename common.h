@@ -101,6 +101,12 @@ extern bool StrIsNumber(QString Str);
 extern bool StrIsDouble(QString Str);
 extern QString GetGaoCengNameByPageID(int Page_ID);
 extern QString GetPageNameByPageID(int Page_ID);
+extern QString BuildCanonicalPagePrefix(const QString &rawPrefix, const QString &pageCode);
+extern QString BuildCanonicalPageName(const QString &rawPrefix, const QString &pageCode, const QString &baseName);
+extern QString ExtractPagePrefix(const QString &fullName);
+extern QString ExtractPageBaseName(const QString &fullName);
+extern void SplitPagePrefix(const QString &prefix, QString *gaoceng, QString *pos, QString *pageCode);
+extern QStringList PageNameCandidates(const QString &fullName);
 extern QString GetTypeBySymb2Class_ID(QString Symb2Class_ID);
 extern QString GetProjectStructureIDByPageID(int Page_ID);//for Unit Structure_ID=5
 extern QString GetProjectStructureStrByProjectStructureID(int ProjectStructure_ID);

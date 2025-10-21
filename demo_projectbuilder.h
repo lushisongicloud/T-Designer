@@ -20,6 +20,10 @@ private:
                                       const QString &outCategory = QStringLiteral("hydraulic"),
                                       const QString &inPort = QString(),
                                       const QString &inCategory = QStringLiteral("hydraulic"));
+    static QString coilBaseTModel();
+    static QString coilTModel();
+    static QString elecPortTModel();
+    static QString psuTModel();
     static QString psuBehaviorJson();
     static QString actuatorBehaviorJson();
     static QString subsystemBehaviorJson();

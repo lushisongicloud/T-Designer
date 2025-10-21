@@ -1325,6 +1325,86 @@ QString GetPageNameByPageID(int Page_ID)
     return PageName;
 }
 
+QString ExtractPagePrefix(const QString &fullName)
+{
+    int dotIndex = fullName.indexOf(QChar(0x00B7));
+    if (dotIndex < 0) return QString();
+    return fullName.left(dotIndex).trimmed();
+}
+
+QString ExtractPageBaseName(const QString &fullName)
+{
+    int dotIndex = fullName.indexOf(QChar(0x00B7));
+    if (dotIndex < 0) return fullName.trimmed();
+    return fullName.mid(dotIndex + 1).trimmed();
+}
+
+QString BuildCanonicalPagePrefix(const QString &rawPrefix, const QString &pageCode)
+{
+    QString prefix = rawPrefix;
+    int dotIndex = prefix.indexOf(QChar(0x00B7));
+    if (dotIndex >= 0)
+        prefix = prefix.left(dotIndex);
+
+    int ampIndex = prefix.indexOf('&');
+    QString head = (ampIndex >= 0) ? prefix.left(ampIndex) : prefix;
+    head = head.trimmed();
+    if (!head.isEmpty())
+        return head + "&" + pageCode;
+    return "&" + pageCode;
+}
+
+QString BuildCanonicalPageName(const QString &rawPrefix, const QString &pageCode, const QString &baseName)
+{
+    QString effectiveCode = pageCode;
+    if (effectiveCode.isEmpty())
+        effectiveCode = baseName;
+    const QString canonicalPrefix = BuildCanonicalPagePrefix(rawPrefix, effectiveCode);
+    if (canonicalPrefix.isEmpty())
+        return baseName;
+    return canonicalPrefix + QChar(0x00B7) + baseName;
+}
+
+void SplitPagePrefix(const QString &prefix, QString *gaoceng, QString *pos, QString *pageCode)
+{
+    if (gaoceng) gaoceng->clear();
+    if (pos) pos->clear();
+    if (pageCode) pageCode->clear();
+
+    const int eqIndex = prefix.indexOf('=');
+    const int plusIndex = prefix.indexOf('+');
+    const int ampIndex = prefix.indexOf('&');
+
+    if (gaoceng && eqIndex >= 0) {
+        int end = prefix.length();
+        if (plusIndex > eqIndex && (ampIndex < 0 || plusIndex < ampIndex))
+            end = plusIndex;
+        else if (ampIndex > eqIndex)
+            end = ampIndex;
+        *gaoceng = prefix.mid(eqIndex + 1, end - eqIndex - 1).trimmed();
+    }
+
+    if (pos && plusIndex >= 0) {
+        int end = (ampIndex > plusIndex) ? ampIndex : prefix.length();
+        *pos = prefix.mid(plusIndex + 1, end - plusIndex - 1).trimmed();
+    }
+
+    if (pageCode && ampIndex >= 0)
+        *pageCode = prefix.mid(ampIndex + 1).trimmed();
+}
+
+QStringList PageNameCandidates(const QString &fullName)
+{
+    QStringList candidates;
+    if (!fullName.isEmpty())
+        candidates << fullName;
+    const QString base = ExtractPageBaseName(fullName);
+    if (!base.isEmpty() && base != fullName)
+        candidates << base;
+    candidates.removeDuplicates();
+    return candidates;
+}
+
 //Structure_ID=5
 bool CheckProjectStructure_IDSameOrNot(QString PageProjectStructure_ID1,QString UnitProjectStructure_ID2)
 {
@@ -5077,6 +5157,5 @@ QString FindLocalFileFromPath(const QString &strFilePath, const QString filename
     }
     return "";
 }
-
 
 
