@@ -2,6 +2,7 @@
 
 #include <QRegularExpression>
 #include <QTextStream>
+#include <string>
 
 #include <z3++.h>
 
@@ -75,8 +76,7 @@ Z3SimplificationResult Z3Simplifier::simplifyConjunction(const QStringList &expr
         z3::solver solver(ctx);
         solver.from_string(script.toUtf8().constData());
 
-        z3::expr_vector assertions(ctx);
-        solver.assertions(assertions);
+    z3::expr_vector assertions = solver.assertions();
         z3::expr combined = ctx.bool_val(true);
         if (assertions.size() == 1) {
             combined = assertions[0];
@@ -108,11 +108,14 @@ Z3SimplificationResult Z3Simplifier::simplifyConjunction(const QStringList &expr
             if (subGoal.size() == 0) {
                 simplified = QStringLiteral("true");
             } else if (subGoal.size() == 1) {
-                simplified = QString::fromUtf8(subGoal[0].to_string());
+                const std::string subGoalString = subGoal[0].to_string();
+                simplified = QString::fromStdString(subGoalString);
             } else {
                 QStringList parts;
-                for (unsigned i = 0; i < subGoal.size(); ++i)
-                    parts.append(QString::fromUtf8(subGoal[i].to_string()));
+                for (unsigned i = 0; i < subGoal.size(); ++i) {
+                    const std::string termString = subGoal[i].to_string();
+                    parts.append(QString::fromStdString(termString));
+                }
                 simplified = QStringLiteral("(and %1)").arg(parts.join(QStringLiteral(" ")));
             }
         } else {
@@ -167,7 +170,7 @@ QString Z3Simplifier::sanitizeExpression(const QString &expression) const
     if (trimmed.isEmpty())
         return QString();
 
-    static const QRegularExpression unsupportedPattern(QStringLiteral("[\\";]"));
+    static const QRegularExpression unsupportedPattern(QStringLiteral("[\";\\]"));
     if (unsupportedPattern.match(trimmed).hasMatch())
         return QString();
 

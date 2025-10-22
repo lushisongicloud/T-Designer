@@ -1,4 +1,5 @@
 # Ignore build directory
+build/
 release/
 debug/
 include/
@@ -13,7 +14,7 @@ lib/
 *.pro.user.*
 
 # 构建文件
-#Makefile*
+Makefile*
 *.qmake.cache
 
 # 编译生成的文件
@@ -60,5 +61,7 @@ include/
 *.swp
 *.swo
 
-Makefile.*
 .aider*
+build/Makefile
+build/Makefile.Debug
+build/Makefile.Release
