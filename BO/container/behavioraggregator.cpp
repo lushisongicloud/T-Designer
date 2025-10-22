@@ -2,6 +2,9 @@
 
 #include <algorithm>
 #include <QSet>
+#include <QVariantList>
+
+#include "BO/behavior/z3simplifier.h"
 
 BehaviorAggregator::BehaviorAggregator(Loader loader, ChildrenFetcher childrenFetcher)
     : m_loader(std::move(loader))
@@ -139,13 +142,50 @@ AggregationResult BehaviorAggregator::combine(const ContainerEntity &entity,
     }
 
     aggregated.setPorts(ports);
-    aggregated.setBehavior(behaviorSpec);
-    if (smtClauses.size() == 1)
-        aggregated.setBehaviorSmt(smtClauses.first());
-    else if (smtClauses.size() > 1)
-        aggregated.setBehaviorSmt(QString("(and %1)").arg(smtClauses.join(QChar(' '))));
+
+    QString simplifiedExpression;
+    if (!smtClauses.isEmpty()) {
+        Z3Simplifier simplifier;
+        Z3SimplificationResult simplification = simplifier.simplifyConjunction(smtClauses);
+        if (simplification.success) {
+            simplifiedExpression = simplification.simplifiedExpression;
+            result.simplificationLog = simplification.log;
+        } else {
+            warnings.append(QStringLiteral("Z3 化简失败，使用原始表达式聚合"));
+            if (smtClauses.size() == 1)
+                simplifiedExpression = smtClauses.first();
+            else
+                simplifiedExpression = QStringLiteral("(and %1)").arg(smtClauses.join(QChar(' ')));
+        }
+    }
+
+    if (!simplifiedExpression.isEmpty())
+        aggregated.setBehaviorSmt(simplifiedExpression);
     else
         aggregated.setBehaviorSmt(QString());
+
+    if (children.size() > 1) {
+        BehaviorMode aggregatedFault;
+        aggregatedFault.modeType = BehaviorModeType::DerivedFault;
+        if (entity.name().isEmpty())
+            aggregatedFault.modeId = QStringLiteral("container-%1.fault").arg(entity.id());
+        else
+            aggregatedFault.modeId = entity.name() + QStringLiteral(".fault");
+        aggregatedFault.displayName = entity.name().isEmpty()
+                ? QStringLiteral("容器%1故障").arg(entity.id())
+                : entity.name() + QStringLiteral(" 故障");
+        if (!aggregated.behaviorSmt().trimmed().isEmpty())
+            aggregatedFault.constraints.append(QStringLiteral("(not %1)").arg(aggregated.behaviorSmt()));
+        aggregatedFault.sourceContainers.append(entity.id());
+        QVariantList childIds;
+        for (const ContainerEntity &childEntity : children)
+            childIds.append(childEntity.id());
+        aggregatedFault.annotations.insert(QStringLiteral("children"), childIds);
+        aggregatedFault.annotations.insert(QStringLiteral("aggregated"), true);
+        behaviorSpec.faultModes.prepend(aggregatedFault);
+    }
+
+    aggregated.setBehavior(behaviorSpec);
 
     result.container = aggregated;
     result.contributions = contributions;
