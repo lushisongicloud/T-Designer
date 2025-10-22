@@ -14,7 +14,7 @@
 #include <QDateTime>
 
 #include <QDomDocument>
-#pragma execution_character_set("utf-8")
+
 namespace {
 
 inline bool execQuery(QSqlQuery &query, const QString &sql, QString *errorMessage)
@@ -114,9 +114,9 @@ bool DemoProjectBuilder::buildDemoProject(const QString &projectDir, const QStri
     const QString dbPath = projectDir + "/" + projectName + ".db";
     const QString modelPath = projectDir + "/Model.db";
     const QString paramsPath = projectDir + "/test.params";
-    const QString canonicalPageStem = BuildCanonicalPageName(QStringLiteral("=Subsystem+Station 1"),
-                                                             QStringLiteral("Demo Diagram"),
-                                                             QStringLiteral("DemoDiagram"));
+    const QString canonicalPageStem = BuildCanonicalPageName(QString("=Subsystem+Station 1"),
+                                                             QString("Demo Diagram"),
+                                                             QString("DemoDiagram"));
     const QString dwgPath = projectDir + "/" + canonicalPageStem + ".dwg";
 
     QFile::remove(swProPath);
@@ -202,7 +202,7 @@ bool DemoProjectBuilder::buildProjectDatabase(const QString &dbPath, QString *er
         "CREATE TABLE IF NOT EXISTS EquipmentDiagnosePara (DiagnoseParaID INTEGER PRIMARY KEY, Equipment_ID INTEGER, Name TEXT, Unit TEXT, CurValue TEXT, DefaultValue TEXT, Remark TEXT)",
         "CREATE TABLE IF NOT EXISTS Symbol (Symbol_ID INTEGER PRIMARY KEY, Equipment_ID INTEGER, Page_ID INTEGER, Symbol TEXT, Symbol_Category TEXT, Symbol_Desc TEXT, Designation TEXT, Symbol_Handle TEXT, Symbol_Remark TEXT, FunDefine TEXT, FuncType TEXT, SourceConn INTEGER, ExecConn INTEGER, SourcePrior INTEGER, InterConnect TEXT, Show_DT TEXT)",
         "CREATE TABLE IF NOT EXISTS Symb2TermInfo (Symb2TermInfo_ID INTEGER PRIMARY KEY, Symbol_ID INTEGER, ConnNum TEXT, ConnDesc TEXT)",
-        "CREATE TABLE IF NOT EXISTS Page (Page_ID INTEGER PRIMARY KEY, ProjectStructure_ID INTEGER, PageType TEXT, Structure_ID TEXT, PageName TEXT)",
+        "CREATE TABLE IF NOT EXISTS Page (Page_ID INTEGER PRIMARY KEY, ProjectStructure_ID INTEGER, Page_Desc TEXT, PageType TEXT, PageNum INTEGER, PageName TEXT, Scale TEXT, Border TEXT, Title TEXT, AlterTime TEXT, MD5Code TEXT)",
         "CREATE TABLE IF NOT EXISTS JXB (JXB_ID INTEGER PRIMARY KEY, ProjectStructure_ID INTEGER, Page_ID INTEGER, Cable_ID INTEGER, ConnectionNumber TEXT, ConnectionNumber_Handle TEXT, Symb1_ID TEXT, Symb2_ID TEXT, Wires_Type TEXT, Wires_Color TEXT, Wires_Diameter TEXT, Wires_Category TEXT, Symb1_Category TEXT, Symb2_Category TEXT)",
         "CREATE TABLE IF NOT EXISTS Connector (Connector_ID INTEGER PRIMARY KEY, Page_ID INTEGER, Symb_ID INTEGER)",
         "CREATE TABLE IF NOT EXISTS Link (Link_ID INTEGER PRIMARY KEY, Page_ID INTEGER)",
@@ -416,12 +416,23 @@ bool DemoProjectBuilder::buildProjectDatabase(const QString &dbPath, QString *er
         }
     }
 
+    const QString alterTime = QDateTime::currentDateTime().toString(QString("yyyy-MM-dd hh:mm:ss"));
     const QList<QList<QVariant>> pages = {
-        {1, 1004, QString("原理图"), QString("6"), QString("DemoDiagram")}
+        {1,
+         1004,
+         QString("Demo diagram for workflow"),
+         QString("原理图"),
+         1,
+         QString("DemoDiagram"),
+         QString("1:1"),
+         QString("A3:420x297"),
+         QString("Demo Diagram"),
+         alterTime,
+         QString()}
     };
     for (const auto &row : pages) {
         if (!prepareAndExec(query,
-                            "INSERT INTO Page (Page_ID, ProjectStructure_ID, PageType, Structure_ID, PageName) VALUES (?,?,?,?,?)",
+                            "INSERT INTO Page (Page_ID, ProjectStructure_ID, Page_Desc, PageType, PageNum, PageName, Scale, Border, Title, AlterTime, MD5Code) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                             row, errorMessage)) {
             cleanup();
             return false;

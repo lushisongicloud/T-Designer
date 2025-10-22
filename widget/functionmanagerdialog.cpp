@@ -7,7 +7,7 @@
 
 #include "widget/functioneditdialog.h"
 
-#pragma execution_character_set("utf-8")
+
 
 FunctionManagerDialog::FunctionManagerDialog(const QSqlDatabase &db, QWidget *parent)
     : QDialog(parent)

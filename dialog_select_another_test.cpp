@@ -1,11 +1,6 @@
 ﻿#include "dialog_select_another_test.h"
 #include "ui_dialog_select_another_test.h"
 
-#if _MSC_VER >= 1600	// MSVC2015 > 1899,	MSVC_VER = 14.0
-
-#pragma execution_character_set("utf-8")
-#endif
-
 Dialog_select_another_test::Dialog_select_another_test(QWidget *parent,QList<TestPoint> *list_test) :
     QDialog(parent),
     ui(new Ui::Dialog_select_another_test)

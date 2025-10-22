@@ -28,12 +28,14 @@ bool database_init()
 }
 int main(int argc, char *argv[])
 {
-qDebug()<<"0";
      QApplication a(argc, argv);
+
+     // 设置应用程序默认编码
+     QTextCodec *codec = QTextCodec::codecForName("UTF-8");
+     QTextCodec::setCodecForLocale(codec);
+
      OleInitialize(0);
-     qDebug()<<"1";
      if(!database_init())  return 0;
-     qDebug()<<"2";
      MainWindow w;
      w.showMaximized(); 
      return a.exec();

@@ -1,0 +1,19 @@
+void MainWindow::AddDwgFileToIndex(QStandardItem *item,QSqlQuery query,QList<int> listPagesExpend)
+{
+    QStandardItem *SubFatherItem=new QStandardItem(QIcon("C:/TBD/data/dwg图标.png"),query.value("PageName").toString()+" "+query.value("Page_Desc").toString());
+    //图纸名称：PageName.dwg
+    SubFatherItem->setData(QVariant("图纸"),Qt::WhatsThisRole);
+    SubFatherItem->setData(QVariant(query.value("Page_ID").toInt()),Qt::UserRole);
+
+
+void MainWindow::AddDwgFileToIndex(QStandardItem *item,QSqlQuery query,QList<int> listPagesExpend)
+{
+    QString pageName = query.value("PageName").toString();
+    QString pageDesc = query.value("Page_Desc").toString();
+    QStandardItem *SubFatherItem = new QStandardItem(QIcon("C:/TBD/data/dwg图标.png"), pageName);
+    // 把页描述作为项的悬停提示（ToolTip）显示，同时也设置ToolTipRole以便其它地方访问
+    SubFatherItem->setToolTip(pageDesc);
+    SubFatherItem->setData(QVariant(pageDesc), Qt::ToolTipRole);
+    //图纸名称：PageName.dwg
+    SubFatherItem->setData(QVariant("图纸"),Qt::WhatsThisRole);
+    SubFatherItem->setData(QVariant(query.value("Page_ID").toInt()),Qt::UserRole);

@@ -54,6 +54,68 @@ QString CurProjectPath,CurProjectName;
 int CurComponentCount = 0;
 int SelectEquipment_ID=0,SelectSymbol_ID=0,SelectTerminalStrip_ID=0,SelectTerminal_ID=0,SelectPage_ID=0;
 QStringList RemovedUnitsInfo;//DT,ProjectStructure_ID,Type,Spec,Eqpt_Category,Name,Desc,PartCode,OrderNum,Factory,Remark,TVariable,TModel
+
+namespace {
+QStandardItem *findChildItem(QStandardItem *parent, const QString &roleTag, const QString &label)
+{
+    if (!parent) return nullptr;
+    for (int row = 0; row < parent->rowCount(); ++row) {
+        QStandardItem *child = parent->child(row, 0);
+        if (!child) continue;
+        if (child->data(Qt::WhatsThisRole).toString() == roleTag &&
+            child->data(Qt::DisplayRole).toString() == label)
+            return child;
+    }
+    return nullptr;
+}
+
+QStandardItem *ensurePageHierarchyItem(QStandardItem *root,
+                                       const QString &gaoceng,
+                                       const QString &pos,
+                                       const QString &pageCode,
+                                       int projectStructureId)
+{
+    if (!root) return nullptr;
+
+    QStandardItem *gaocengParent = root;
+    if (!gaoceng.isEmpty()) {
+        QStandardItem *gaocengItem = findChildItem(root, QString("高层"), gaoceng);
+        if (!gaocengItem) {
+            gaocengItem = new QStandardItem(QIcon("C:/TBD/data/高层图标.png"), gaoceng);
+            gaocengItem->setData(QString("高层"), Qt::WhatsThisRole);
+            root->appendRow(gaocengItem);
+        }
+        gaocengParent = gaocengItem;
+    }
+
+    QStandardItem *posParent = gaocengParent;
+    if (!pos.isEmpty()) {
+        QStandardItem *posItem = findChildItem(gaocengParent, QString("位置"), pos);
+        if (!posItem) {
+            posItem = new QStandardItem(QIcon("C:/TBD/data/位置图标.png"), pos);
+            posItem->setData(QString("位置"), Qt::WhatsThisRole);
+            gaocengParent->appendRow(posItem);
+        }
+        posParent = posItem;
+    }
+
+    QString listLabel = pageCode;
+    if (listLabel.isEmpty())
+        listLabel = QString("未分组");
+
+    QStandardItem *listItem = findChildItem(posParent, QString("列表"), listLabel);
+    if (!listItem) {
+        listItem = new QStandardItem(QIcon("C:/TBD/data/列表图标.png"), listLabel);
+        listItem->setData(QString("列表"), Qt::WhatsThisRole);
+        if (projectStructureId > 0)
+            listItem->setData(projectStructureId, Qt::UserRole);
+        posParent->appendRow(listItem);
+    } else if (projectStructureId > 0 && listItem->data(Qt::UserRole).toInt() == 0) {
+        listItem->setData(projectStructureId, Qt::UserRole);
+    }
+    return listItem;
+}
+} // namespace
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -2971,7 +3033,7 @@ void MainWindow::ShowtreeViewPagePopMenu(const QPoint &pos)
         tree_menu.addAction(&actNewDwgPage);
         connect(&actNewDwgPage,SIGNAL(triggered()),this,SLOT(NewDwgPage()));
         QAction actProjectAttr("项目属性", this);
-        if(ui->treeViewPages->selectionModel()->selectedIndexes().count()>0) actProjectAttr.setEnabled(false);
+        if(ui->treeViewPages->selectionModel()->selectedIndexes().count()>1) actProjectAttr.setEnabled(false);
         tree_menu.addAction(&actProjectAttr);
         connect(&actProjectAttr,SIGNAL(triggered()),this,SLOT(ProjectAttr()));
         QAction actAddExistPage("添加现有图纸", this);
@@ -2985,7 +3047,7 @@ void MainWindow::ShowtreeViewPagePopMenu(const QPoint &pos)
         tree_menu.addAction(&actNewDwgPage);
         connect(&actNewDwgPage,SIGNAL(triggered()),this,SLOT(NewDwgPage()));
         QAction actRename("重命名", this);
-        if(ui->treeViewPages->selectionModel()->selectedIndexes().count()>0) actRename.setEnabled(false);
+        if(ui->treeViewPages->selectionModel()->selectedIndexes().count()>1) actRename.setEnabled(false);
         tree_menu.addAction(&actRename);
         connect(&actRename,SIGNAL(triggered()),this,SLOT(Rename()));
         QAction actDelDwgPage("删除", this);
@@ -2999,7 +3061,7 @@ void MainWindow::ShowtreeViewPagePopMenu(const QPoint &pos)
         tree_menu.addAction(&actNewDwgPage);
         connect(&actNewDwgPage,SIGNAL(triggered()),this,SLOT(NewDwgPage()));
         QAction actDwgPageAttr("页属性", this);
-        if(ui->treeViewPages->selectionModel()->selectedIndexes().count()>0) actDwgPageAttr.setEnabled(false);
+        if(ui->treeViewPages->selectionModel()->selectedIndexes().count()>1) actDwgPageAttr.setEnabled(false);
         tree_menu.addAction(&actDwgPageAttr);
         connect(&actDwgPageAttr,SIGNAL(triggered()),this,SLOT(DwgPageAttr()));
         QAction actDelDwgPage("删除", this);
@@ -3013,7 +3075,7 @@ void MainWindow::ShowtreeViewPagePopMenu(const QPoint &pos)
         tree_menu.addAction(&actNewDwgPage);
         connect(&actNewDwgPage,SIGNAL(triggered()),this,SLOT(NewDwgPage()));
         QAction actLBRename("重命名", this);
-        if(ui->treeViewPages->selectionModel()->selectedIndexes().count()>0) actLBRename.setEnabled(false);
+        if(ui->treeViewPages->selectionModel()->selectedIndexes().count()>1) actLBRename.setEnabled(false);
         tree_menu.addAction(&actLBRename);
         connect(&actLBRename,SIGNAL(triggered()),this,SLOT(Rename()));
         QAction actDelLB("删除", this);
@@ -5116,6 +5178,19 @@ void MainWindow::LoadProjectPages()
             }
             if(Find) break;
         }
+        if(!Find)
+        {
+            QString gaocengStr, posStr, pageCodeStr;
+            const QString prefix = ExtractPagePrefix(GetPageNameByPageID(QueryVar.value("Page_ID").toInt()));
+            SplitPagePrefix(prefix, &gaocengStr, &posStr, &pageCodeStr);
+            QStandardItem *fallbackParent = ensurePageHierarchyItem(ModelPages->item(0,0),
+                                                                     gaocengStr,
+                                                                     posStr,
+                                                                     pageCodeStr,
+                                                                     QueryVar.value("ProjectStructure_ID").toInt());
+            if(fallbackParent)
+                AddDwgFileToIndex(fallbackParent,QueryVar,listPagesExpend);
+        }
     }
     //删除没有图纸的报表节点
     for(int i=0;i<ModelPages->item(0,0)->rowCount();i++)//高层
@@ -5967,7 +6042,12 @@ void MainWindow::AddIndexToIndex(QStandardItem *FatherItem,QSqlQuery query,bool 
 }
 void MainWindow::AddDwgFileToIndex(QStandardItem *item,QSqlQuery query,QList<int> listPagesExpend)
 {
-    QStandardItem *SubFatherItem=new QStandardItem(QIcon("C:/TBD/data/dwg图标.png"),query.value("PageName").toString()+" "+query.value("Page_Desc").toString());
+    QString pageName = query.value("PageName").toString();
+    QString pageDesc = query.value("Page_Desc").toString();
+    QStandardItem *SubFatherItem = new QStandardItem(QIcon("C:/TBD/data/dwg图标.png"), pageName);
+    // 把页描述作为项的悬停提示（ToolTip）显示，同时也设置ToolTipRole以便其它地方访问
+    SubFatherItem->setToolTip(pageDesc);
+    SubFatherItem->setData(QVariant(pageDesc), Qt::ToolTipRole);
     //图纸名称：PageName.dwg
     SubFatherItem->setData(QVariant("图纸"),Qt::WhatsThisRole);
     SubFatherItem->setData(QVariant(query.value("Page_ID").toInt()),Qt::UserRole);
@@ -6334,8 +6414,8 @@ void MainWindow::LoadProject()
 
 void MainWindow::createDemoProject()
 {
-    const QString projectName = QStringLiteral("DemoWorkflow");
-    const QString projectDir = QStringLiteral("%1/%2").arg(QStringLiteral(LocalProjectDefaultPath), projectName);
+    const QString projectName = QString("DemoWorkflow");
+    const QString projectDir = QString("%1/%2").arg(QString(LocalProjectDefaultPath), projectName);
 
     QString error;
     if (!DemoProjectBuilder::buildDemoProject(projectDir, projectName, &error)) {
@@ -6350,10 +6430,10 @@ void MainWindow::createDemoProject()
         QSqlDatabase::removeDatabase(connName);
     }
 
-    QDir dataDir(QStringLiteral(LocalDataBasePath));
+    QDir dataDir(QString(LocalDataBasePath));
     if (!dataDir.exists())
-        dataDir.mkpath(QStringLiteral("."));
-    QFile historyFile(dataDir.filePath(QStringLiteral("历史工程记录.dat")));
+        dataDir.mkpath(QString("."));
+    QFile historyFile(dataDir.filePath(QString("历史工程记录.dat")));
     if (!historyFile.exists()) {
         historyFile.open(QIODevice::WriteOnly | QIODevice::Text);
         historyFile.close();
@@ -6450,10 +6530,31 @@ QString MainWindow::resolvePageFilePath(const QString &displayName) const
 {
     const QStringList candidates = PageNameCandidates(displayName);
     for (const QString &candidate : candidates) {
-        const QString path = CurProjectPath + "/" + candidate + ".dwg";
-        if (QFile::exists(path))
-            return path;
+        QFileInfo info(CurProjectPath + "/" + candidate + ".dwg");
+        if (info.exists())
+            return info.absoluteFilePath();
     }
+
+    const QString baseName = ExtractPageBaseName(displayName);
+    if (!baseName.isEmpty()) {
+        QFileInfo baseInfo(CurProjectPath + "/" + baseName + ".dwg");
+        if (baseInfo.exists())
+            return baseInfo.absoluteFilePath();
+    }
+
+    QDir dir(CurProjectPath);
+    const QStringList files = dir.entryList(QStringList() << "*.dwg", QDir::Files);
+    for (const QString &fileName : files) {
+        QFileInfo info(dir.absoluteFilePath(fileName));
+        const QString stem = info.completeBaseName();
+        if (stem == displayName || (!baseName.isEmpty() && stem == baseName))
+            return info.absoluteFilePath();
+
+        const QStringList stemCandidates = PageNameCandidates(stem);
+        if (stemCandidates.contains(displayName) || (!baseName.isEmpty() && stemCandidates.contains(baseName)))
+            return info.absoluteFilePath();
+    }
+
     return QString();
 }
 

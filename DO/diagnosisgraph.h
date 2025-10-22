@@ -1,6 +1,5 @@
 ﻿#ifndef DIAGNOSISGRAPH_H
 #define DIAGNOSISGRAPH_H
-#pragma execution_character_set("utf-8")
 #include "BO/componententity.h"
 #include "BO/systementity.h"
 #include <QMap>

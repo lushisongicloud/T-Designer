@@ -1,10 +1,6 @@
 ﻿#include "dialogsymbolsort.h"
 #include "ui_dialogsymbolsort.h"
 
-#if _MSC_VER >= 1600	// MSVC2015 > 1899,	MSVC_VER = 14.0
-#pragma execution_character_set("utf-8")
-#endif
-
 DialogSymbolSort::DialogSymbolSort(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::DialogSymbolSort)

@@ -9,7 +9,7 @@
 #include <QTableWidgetItem>
 #include <QSet>
 #include <QtDebug>
-#pragma execution_character_set("utf-8")
+
 FunctionEditDialog::FunctionEditDialog(const QSqlDatabase &db, QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::FunctionEditDialog)

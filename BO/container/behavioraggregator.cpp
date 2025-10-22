@@ -72,11 +72,11 @@ AggregationResult BehaviorAggregator::combine(const ContainerEntity &entity,
     BehaviorSpec behaviorSpec;
     behaviorSpec.normalMode.modeType = BehaviorModeType::Normal;
     behaviorSpec.normalMode.modeId = entity.name().isEmpty()
-            ? QStringLiteral("%1.normal").arg(entity.id())
-            : entity.name() + QStringLiteral(".normal");
+            ? QString("%1.normal").arg(entity.id())
+            : entity.name() + QString(".normal");
     behaviorSpec.normalMode.displayName = entity.name().isEmpty()
-            ? QStringLiteral("Container %1 正常").arg(entity.id())
-            : entity.name() + QStringLiteral(" 正常");
+            ? QString("Container %1 正常").arg(entity.id())
+            : entity.name() + QString(" 正常");
     behaviorSpec.normalMode.sourceContainers.append(entity.id());
 
     QSet<QString> seenPortNames;
@@ -90,7 +90,7 @@ AggregationResult BehaviorAggregator::combine(const ContainerEntity &entity,
             parentPort.sourceContainerId = childEntity.id();
             parentPort.name = qualifiedPortName(childEntity, childPort, options.prefixChildPortNames);
             if (seenPortNames.contains(parentPort.name)) {
-                warnings.append(QStringLiteral("端口名称冲突: %1").arg(parentPort.name));
+                warnings.append(QString("端口名称冲突: %1").arg(parentPort.name));
                 continue;
             }
             seenPortNames.insert(parentPort.name);
@@ -103,7 +103,7 @@ AggregationResult BehaviorAggregator::combine(const ContainerEntity &entity,
             if (childEntity.name().isEmpty())
                 behaviorSpec.normalMode.constraints.append(constraint);
             else
-                behaviorSpec.normalMode.constraints.append(QStringLiteral("[%1] %2").arg(childEntity.name(), constraint));
+                behaviorSpec.normalMode.constraints.append(QString("[%1] %2").arg(childEntity.name(), constraint));
         }
 
         FaultContribution contribution;
@@ -115,18 +115,18 @@ AggregationResult BehaviorAggregator::combine(const ContainerEntity &entity,
             derived.sourceContainers.prepend(childEntity.id());
             if (childEntity.name().isEmpty()) {
                 if (derived.modeId.isEmpty())
-                    derived.modeId = QStringLiteral("fault-%1").arg(childEntity.id());
+                    derived.modeId = QString("fault-%1").arg(childEntity.id());
                 if (derived.displayName.isEmpty())
-                    derived.displayName = QStringLiteral("容器%1故障").arg(childEntity.id());
+                    derived.displayName = QString("容器%1故障").arg(childEntity.id());
             } else {
                 if (derived.modeId.isEmpty())
-                    derived.modeId = childEntity.name() + QStringLiteral(".fault");
+                    derived.modeId = childEntity.name() + QString(".fault");
                 else
-                    derived.modeId = QStringLiteral("%1/%2").arg(childEntity.name(), derived.modeId);
+                    derived.modeId = QString("%1/%2").arg(childEntity.name(), derived.modeId);
                 if (derived.displayName.isEmpty())
-                    derived.displayName = childEntity.name() + QStringLiteral(" 故障");
+                    derived.displayName = childEntity.name() + QString(" 故障");
                 else
-                    derived.displayName = childEntity.name() + QStringLiteral(".") + derived.displayName;
+                    derived.displayName = childEntity.name() + QString(".") + derived.displayName;
             }
             behaviorSpec.faultModes.append(derived);
             contribution.propagatedModes.append(derived.modeId);
@@ -203,5 +203,5 @@ QString BehaviorAggregator::qualifiedPortName(const ContainerEntity &child,
 {
     if (!prefixChildName || child.name().isEmpty() || port.name.isEmpty())
         return port.name;
-    return child.name() + QStringLiteral(".") + port.name;
+    return child.name() + QString(".") + port.name;
 }

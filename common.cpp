@@ -1,9 +1,5 @@
 ﻿#include "common.h"
 
-#if _MSC_VER >= 1600	// MSVC2015 > 1899,	MSVC_VER = 14.0
-#pragma execution_character_set("utf-8")
-#endif
-
 QString m_dragText;
 common::common()
 {
@@ -1341,28 +1337,41 @@ QString ExtractPageBaseName(const QString &fullName)
 
 QString BuildCanonicalPagePrefix(const QString &rawPrefix, const QString &pageCode)
 {
-    QString prefix = rawPrefix;
+    QString prefix = rawPrefix.trimmed();
     int dotIndex = prefix.indexOf(QChar(0x00B7));
-    if (dotIndex >= 0)
-        prefix = prefix.left(dotIndex);
+    if (dotIndex >= 0) {
+        prefix = prefix.left(dotIndex).trimmed();
+    }
 
     int ampIndex = prefix.indexOf('&');
-    QString head = (ampIndex >= 0) ? prefix.left(ampIndex) : prefix;
-    head = head.trimmed();
-    if (!head.isEmpty())
-        return head + "&" + pageCode;
-    return "&" + pageCode;
+    if (ampIndex >= 0) {
+        QString head = prefix.left(ampIndex).trimmed();
+        QString existingCode = prefix.mid(ampIndex + 1).trimmed();
+        QString effectiveCode = pageCode.trimmed().isEmpty() ? existingCode : pageCode.trimmed();
+        if (!head.isEmpty())
+            return head + "&" + effectiveCode;
+        return "&" + effectiveCode;
+    }
+
+    // 没有现成的页号时，不强制追加
+    return prefix;
 }
 
 QString BuildCanonicalPageName(const QString &rawPrefix, const QString &pageCode, const QString &baseName)
 {
-    QString effectiveCode = pageCode;
-    if (effectiveCode.isEmpty())
-        effectiveCode = baseName;
-    const QString canonicalPrefix = BuildCanonicalPagePrefix(rawPrefix, effectiveCode);
-    if (canonicalPrefix.isEmpty())
-        return baseName;
-    return canonicalPrefix + QChar(0x00B7) + baseName;
+    const QString canonicalPrefix = BuildCanonicalPagePrefix(rawPrefix, pageCode);
+    QString trimmedBase = baseName.trimmed();
+    if (trimmedBase.isEmpty())
+        trimmedBase = baseName;
+
+    if (canonicalPrefix.isEmpty()) {
+        const QString head = rawPrefix.trimmed();
+        if (head.isEmpty())
+            return trimmedBase;
+        return head + QChar(0x00B7) + trimmedBase;
+    }
+
+    return canonicalPrefix + QChar(0x00B7) + trimmedBase;
 }
 
 void SplitPagePrefix(const QString &prefix, QString *gaoceng, QString *pos, QString *pageCode)
@@ -1726,188 +1735,106 @@ QString GetProjectStructureStrByProjectStructureID(int ProjectStructure_ID)//从
 int InsertRecordToProjectStructure(int Mode,QString GaocengStr,QString PosStr,QString PageStr)
 {
     qDebug()<<"InsertRecordToProjectStructure,Mode="<<Mode<<"GaocengStr="<<GaocengStr<<"PosStr="<<PosStr<<"PageStr="<<PageStr;
-    QSqlQuery query=QSqlQuery(T_ProjectDatabase);
-    int ProjectStructure_ID;
-    QString sqlstr;
-    bool Find=false;
+    auto nextProjectStructureId = [&]() -> int {
+        return GetMaxIDOfDB(T_ProjectDatabase, "ProjectStructure", "ProjectStructure_ID");
+    };
 
-    if(Mode==0)
-    {
-        sqlstr=QString("SELECT * FROM ProjectStructure WHERE Structure_ID = '5' AND Structure_INT = '"+PosStr+"'");
-        query.exec(sqlstr);
-        while(query.next())
-        {
-            QString Parent_ID=query.value("Parent_ID").toString();
-            QSqlQuery query2=QSqlQuery(T_ProjectDatabase);
-            QString sqlstr2=QString("SELECT * FROM ProjectStructure WHERE ProjectStructure_ID = "+Parent_ID);
-            query2.exec(sqlstr2);
-            if(query2.next())
-            {
-                if(query2.value("Structure_INT").toString()==GaocengStr)
-                {
-                    Find=true;
-                    ProjectStructure_ID=query.value("ProjectStructure_ID").toInt();
-                    break;
-                }
-            }
-        }
-        if(!Find)//当前高层位置在数据库中不存在则插入新记录
-        {
-            ProjectStructure_ID=1;
-            QSqlQuery QueryID = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
-            QString tempQueryID = QString("SELECT * FROM ProjectStructure ORDER BY ProjectStructure_ID DESC");
-            QueryID.exec(tempQueryID);
-            if(QueryID.next()) ProjectStructure_ID=QueryID.value("ProjectStructure_ID").toInt()+1;
-            QString temp =  QString("INSERT INTO ProjectStructure (ProjectStructure_ID,Structure_ID,Structure_INT,Parent_ID,Struct_Desc)"
-                                    "VALUES (:ProjectStructure_ID,:Structure_ID,:Structure_INT,:Parent_ID,:Struct_Desc)");
-            query.prepare(temp);
-            query.bindValue(":ProjectStructure_ID",ProjectStructure_ID);
-            query.bindValue(":Structure_ID","3");
-            query.bindValue(":Structure_INT",GaocengStr);
-            query.bindValue(":Parent_ID","1001");
-            query.bindValue(":Struct_Desc","");//query.bindValue(":Struct_Desc",dlgPageNameSet.PageAttrSetTable->item(0,3)->text());
-            query.exec();
+    auto insertStructureRecord = [&](int id, const QString &structureId, const QString &structureInt, int parentId) {
+        QSqlQuery insertQuery(T_ProjectDatabase);
+        insertQuery.prepare(QStringLiteral("INSERT INTO ProjectStructure (ProjectStructure_ID,Structure_ID,Structure_INT,Parent_ID,Struct_Desc) "
+                                           "VALUES (:ProjectStructure_ID,:Structure_ID,:Structure_INT,:Parent_ID,:Struct_Desc)"));
+        insertQuery.bindValue(QStringLiteral(":ProjectStructure_ID"), id);
+        insertQuery.bindValue(QStringLiteral(":Structure_ID"), structureId);
+        insertQuery.bindValue(QStringLiteral(":Structure_INT"), structureInt);
+        insertQuery.bindValue(QStringLiteral(":Parent_ID"), parentId);
+        insertQuery.bindValue(QStringLiteral(":Struct_Desc"), QString());
+        insertQuery.exec();
+    };
 
-            QString Parent_ID=QString::number(ProjectStructure_ID);
-            tempQueryID = QString("SELECT * FROM ProjectStructure ORDER BY ProjectStructure_ID DESC");
-            QueryID.exec(tempQueryID);
-            if(QueryID.next()) ProjectStructure_ID=QueryID.value("ProjectStructure_ID").toInt()+1;
-            temp =  QString("INSERT INTO ProjectStructure (ProjectStructure_ID,Structure_ID,Structure_INT,Parent_ID,Struct_Desc)"
-                            "VALUES (:ProjectStructure_ID,:Structure_ID,:Structure_INT,:Parent_ID,:Struct_Desc)");
-            query.prepare(temp);
-            query.bindValue(":ProjectStructure_ID",ProjectStructure_ID);
-            query.bindValue(":Structure_ID","5");
-            query.bindValue(":Structure_INT",PosStr);
-            query.bindValue(":Parent_ID",Parent_ID);
-            query.bindValue(":Struct_Desc","");//query.bindValue(":Struct_Desc",dlgPageNameSet.PageAttrSetTable->item(1,3)->text());
-            query.exec();
-        }
-        return ProjectStructure_ID;
-    }
-    if(Mode==2)
-    {
-        sqlstr=QString("SELECT * FROM ProjectStructure WHERE Structure_ID = '5' AND Structure_INT = '"+PosStr+"'");
-        query.exec(sqlstr);
-        while(query.next())
-        {
-            if(query.value("Parent_ID").toString()=="1001")
-            {
-                Find=true;
-                ProjectStructure_ID=query.value("ProjectStructure_ID").toInt();
-                break;
-            }
-        }
-        if(!Find)//当前高层位置在数据库中不存在则插入新记录
-        {
-            ProjectStructure_ID=1;
-            QSqlQuery QueryID = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
-            QString tempQueryID = QString("SELECT * FROM ProjectStructure ORDER BY ProjectStructure_ID DESC");
-            QueryID.exec(tempQueryID);
-            if(QueryID.next()) ProjectStructure_ID=QueryID.value("ProjectStructure_ID").toInt()+1;
-            QString temp =  QString("INSERT INTO ProjectStructure (ProjectStructure_ID,Structure_ID,Structure_INT,Parent_ID,Struct_Desc)"
-                                    "VALUES (:ProjectStructure_ID,:Structure_ID,:Structure_INT,:Parent_ID,:Struct_Desc)");
-            query.prepare(temp);
-            query.bindValue(":ProjectStructure_ID",ProjectStructure_ID);
-            query.bindValue(":Structure_ID","5");
-            query.bindValue(":Structure_INT",PosStr);
-            query.bindValue(":Parent_ID","1001");
-            query.bindValue(":Struct_Desc","");//query.bindValue(":Struct_Desc",dlgPageNameSet.PageAttrSetTable->item(1,3)->text());
-            query.exec();
-        }
-        return ProjectStructure_ID;
+    auto findGaocengId = [&](const QString &name) -> int {
+        if (name.isEmpty())
+            return 1001;
+        QSqlQuery q(T_ProjectDatabase);
+        q.prepare(QStringLiteral("SELECT ProjectStructure_ID FROM ProjectStructure "
+                                 "WHERE Structure_ID='3' AND Structure_INT=:Structure_INT AND Parent_ID=1001"));
+        q.bindValue(QStringLiteral(":Structure_INT"), name);
+        if (q.exec() && q.next())
+            return q.value(0).toInt();
+        return -1;
+    };
+
+    auto ensureGaocengId = [&](const QString &name) -> int {
+        if (name.isEmpty())
+            return 1001;
+        int existingId = findGaocengId(name);
+        if (existingId != -1)
+            return existingId;
+        const int newId = nextProjectStructureId();
+        insertStructureRecord(newId, QStringLiteral("3"), name, 1001);
+        return newId;
+    };
+
+    auto findPosId = [&](int parentId, const QString &name) -> int {
+        if (name.isEmpty())
+            return parentId;
+        QSqlQuery q(T_ProjectDatabase);
+        q.prepare(QStringLiteral("SELECT ProjectStructure_ID FROM ProjectStructure "
+                                 "WHERE Structure_ID='5' AND Structure_INT=:Structure_INT AND Parent_ID=:Parent_ID"));
+        q.bindValue(QStringLiteral(":Structure_INT"), name);
+        q.bindValue(QStringLiteral(":Parent_ID"), parentId);
+        if (q.exec() && q.next())
+            return q.value(0).toInt();
+        return -1;
+    };
+
+    auto ensurePosId = [&](int parentId, const QString &name) -> int {
+        if (name.isEmpty())
+            return parentId;
+        int existingId = findPosId(parentId, name);
+        if (existingId != -1)
+            return existingId;
+        const int newId = nextProjectStructureId();
+        insertStructureRecord(newId, QStringLiteral("5"), name, parentId);
+        return newId;
+    };
+
+    auto findPageStructId = [&](int parentId, const QString &pageInt) -> int {
+        QSqlQuery q(T_ProjectDatabase);
+        q.prepare(QStringLiteral("SELECT ProjectStructure_ID FROM ProjectStructure "
+                                 "WHERE Structure_ID='6' AND Structure_INT=:Structure_INT AND Parent_ID=:Parent_ID"));
+        q.bindValue(QStringLiteral(":Structure_INT"), pageInt);
+        q.bindValue(QStringLiteral(":Parent_ID"), parentId);
+        if (q.exec() && q.next())
+            return q.value(0).toInt();
+        return -1;
+    };
+
+    auto createPageStructId = [&](int parentId, const QString &pageInt) -> int {
+        const int newId = nextProjectStructureId();
+        insertStructureRecord(newId, QStringLiteral("6"), pageInt, parentId);
+        return newId;
+    };
+
+    if (Mode == 0) {
+        const int gaocengId = ensureGaocengId(GaocengStr);
+        const int posId = ensurePosId(gaocengId, PosStr);
+        return posId;
     }
 
-    //Mode==1
-    sqlstr=QString("SELECT * FROM ProjectStructure WHERE Structure_ID = '6' AND Structure_INT = '"+PageStr+"'");
-    query.exec(sqlstr);
-    while(query.next())
-    {
-        qDebug()<<"Mode==1,Structure_ID=6,ProjectStructure_ID="<<query.value("ProjectStructure_ID").toString();
-        QString Parent_ID=query.value("Parent_ID").toString();
-        qDebug()<<"Mode==1,Structure_ID=6,Parent_ID="<<query.value("Parent_ID").toString();
-        QSqlQuery query2=QSqlQuery(T_ProjectDatabase);
-        QString sqlstr2=QString("SELECT * FROM ProjectStructure WHERE ProjectStructure_ID = "+Parent_ID);
-        query2.exec(sqlstr2);
-        if(query2.next())
-        {
-            qDebug()<<"Mode==1,Structure_ID=5,ProjectStructure_ID="<<query2.value("ProjectStructure_ID").toString();
-            if(query2.value("Structure_INT").toString()==PosStr)
-            {
-                QSqlQuery query3=QSqlQuery(T_ProjectDatabase);
-                QString sqlstr3=QString("SELECT * FROM ProjectStructure WHERE ProjectStructure_ID = "+query2.value("Parent_ID").toString());
-                query3.exec(sqlstr3);
-                if(query3.next())
-                {
-                    qDebug()<<"Mode==1,Structure_ID=3,ProjectStructure_ID="<<query3.value("ProjectStructure_ID").toString();
-                    if(query3.value("Structure_INT").toString()==GaocengStr)
-                    {
-                        qDebug()<<"Find,ProjectStructure_ID="<<query.value("ProjectStructure_ID").toInt();
-                        Find=true;
-                        ProjectStructure_ID=query.value("ProjectStructure_ID").toInt();
-                        break;
-                        /*
-                       ProjectStructure_ID=query.value("ProjectStructure_ID").toInt();
-                       //更新数据库中的描述信息
-                       QString tempSQL=QString("UPDATE ProjectStructure SET Struct_Desc=:Struct_Desc WHERE ProjectStructure_ID="+query3.value("ProjectStructure_ID").toString());
-                       query.prepare(tempSQL);
-                       query.bindValue(":Struct_Desc",dlgPageNameSet.PageAttrSetTable->item(0,3)->text());
-                       query.exec();
-                       tempSQL=QString("UPDATE ProjectStructure SET Struct_Desc=:Struct_Desc WHERE ProjectStructure_ID="+query2.value("ProjectStructure_ID").toString());
-                       query.prepare(tempSQL);
-                       query.bindValue(":Struct_Desc",dlgPageNameSet.PageAttrSetTable->item(1,3)->text());
-                       query.exec();
-                       tempSQL=QString("UPDATE ProjectStructure SET Struct_Desc=:Struct_Desc WHERE ProjectStructure_ID="+query.value("ProjectStructure_ID").toString());
-                       query.prepare(tempSQL);
-                       query.bindValue(":Struct_Desc",dlgPageNameSet.PageAttrSetTable->item(2,3)->text());
-                       query.exec();
-                       */
-
-                    }
-                }
-            }
-        }
+    if (Mode == 2) {
+        const int gaocengId = ensureGaocengId(GaocengStr);
+        const int posId = ensurePosId(gaocengId, PosStr);
+        return posId;
     }
-    if(!Find)//当前高层位置在数据库中不存在则插入新记录
-    {
-        qDebug()<<"当前高层位置在数据库中不存在则插入新记录";
-        ProjectStructure_ID=GetMaxIDOfDB(T_ProjectDatabase,"ProjectStructure","ProjectStructure_ID");
-        QString temp =  QString("INSERT INTO ProjectStructure (ProjectStructure_ID,Structure_ID,Structure_INT,Parent_ID,Struct_Desc)"
-                                "VALUES (:ProjectStructure_ID,:Structure_ID,:Structure_INT,:Parent_ID,:Struct_Desc)");
-        query.prepare(temp);
-        query.bindValue(":ProjectStructure_ID",ProjectStructure_ID);
-        query.bindValue(":Structure_ID","3");
-        query.bindValue(":Structure_INT",GaocengStr);
-        query.bindValue(":Parent_ID","1001");
-        query.bindValue(":Struct_Desc","");//query.bindValue(":Struct_Desc",dlgPageNameSet.PageAttrSetTable->item(0,3)->text());
-        query.exec();
 
-
-        QString Parent_ID=QString::number(ProjectStructure_ID);
-        ProjectStructure_ID=GetMaxIDOfDB(T_ProjectDatabase,"ProjectStructure","ProjectStructure_ID");
-        temp =  QString("INSERT INTO ProjectStructure (ProjectStructure_ID,Structure_ID,Structure_INT,Parent_ID,Struct_Desc)"
-                        "VALUES (:ProjectStructure_ID,:Structure_ID,:Structure_INT,:Parent_ID,:Struct_Desc)");
-        query.prepare(temp);
-        query.bindValue(":ProjectStructure_ID",ProjectStructure_ID);
-        query.bindValue(":Structure_ID","5");
-        query.bindValue(":Structure_INT",PosStr);
-        query.bindValue(":Parent_ID",Parent_ID);
-        query.bindValue(":Struct_Desc","");//query.bindValue(":Struct_Desc",dlgPageNameSet.PageAttrSetTable->item(1,3)->text());
-        query.exec();
-
-        Parent_ID=QString::number(ProjectStructure_ID);
-        ProjectStructure_ID=GetMaxIDOfDB(T_ProjectDatabase,"ProjectStructure","ProjectStructure_ID");
-        temp =  QString("INSERT INTO ProjectStructure (ProjectStructure_ID,Structure_ID,Structure_INT,Parent_ID,Struct_Desc)"
-                        "VALUES (:ProjectStructure_ID,:Structure_ID,:Structure_INT,:Parent_ID,:Struct_Desc)");
-        query.prepare(temp);
-        query.bindValue(":ProjectStructure_ID",ProjectStructure_ID);
-        query.bindValue(":Structure_ID","6");
-        query.bindValue(":Structure_INT",PageStr);
-        query.bindValue(":Parent_ID",Parent_ID);
-        query.bindValue(":Struct_Desc","");//query.bindValue(":Struct_Desc",dlgPageNameSet.PageAttrSetTable->item(2,3)->text());
-        query.exec();
-        return ProjectStructure_ID;
-    }
-    return ProjectStructure_ID;
+    // Mode == 1
+    const int gaocengId = ensureGaocengId(GaocengStr);
+    const int posId = ensurePosId(gaocengId, PosStr);
+    int pageStructId = findPageStructId(posId, PageStr);
+    if (pageStructId != -1)
+        return pageStructId;
+    pageStructId = createPageStructId(posId, PageStr);
+    return pageStructId;
 }
 bool MyInsertBlock(QAxWidget *mAxwidget,QString BlkPath,QString BlkName)//通过dwg文件导入块
 {
@@ -5157,5 +5084,3 @@ QString FindLocalFileFromPath(const QString &strFilePath, const QString filename
     }
     return "";
 }
-
-

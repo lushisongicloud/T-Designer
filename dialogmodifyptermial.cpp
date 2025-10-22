@@ -1,8 +1,6 @@
 ﻿#include "dialogmodifyptermial.h"
 #include "ui_dialogmodifyptermial.h"
-#if _MSC_VER >= 1600	// MSVC2015 > 1899,	MSVC_VER = 14.0
-#pragma execution_character_set("utf-8")
-#endif
+
 extern bool FlagPuttingAttrDef;
 extern QString m_dragText;
 DialogModifyPTermial::DialogModifyPTermial(QWidget *parent) :
