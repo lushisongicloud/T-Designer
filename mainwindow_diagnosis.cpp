@@ -422,6 +422,7 @@ void MainWindow::on_BtnStartDiagnose_clicked()
 
 void MainWindow::GetGraphList(QFile& file)
 {
+    Q_UNUSED(file);
     /*
     QTextStream in(&file);
 
@@ -693,7 +694,9 @@ double MainWindow::CalculateRank(const QString& port_name,const QStringList& fro
 
 
 void MainWindow::RemoveRepeatTestPoint(QList<TestPoint>& test_pt)
-{/*
+{
+    Q_UNUSED(test_pt);
+/*
     //    QVector<bool> is_have(test_pt.count(), true);
 
     //    qDebug()<<"输出原始的所有测地";
@@ -836,7 +839,9 @@ void MainWindow::RemoveRepeatTestPoint(QList<TestPoint>& test_pt)
 }
 
 void MainWindow::RemoveTestedPoint(QList<TestPoint>& test_pt)
-{/*
+{
+    Q_UNUSED(test_pt);
+/*
     QVector<bool> is_have(test_pt.count(), true);
 
     for(int i=0; i<test_pt.count()-1; i++)
@@ -2613,6 +2618,7 @@ void MainWindow::LoadTestPointInfo(QString TestPointName,QString CurrentInOutNam
 
 void MainWindow::OpenPic(int ID)
 {
+    Q_UNUSED(ID);
     QXlabel *m_Label=(QXlabel*)sender();
     QPixmap photo(m_Label->PicPath);
     picture_Label->setPixmap(photo);
@@ -3951,6 +3957,7 @@ void MainWindow::on_BtnClearDB_clicked()
 
 void MainWindow::on_CbTestType_currentIndexChanged(const QString &arg1)
 {
+    Q_UNUSED(arg1);
     if(ui->CbTestType->currentText()=="电压") ui->LbDW->setText("V");
     else if(ui->CbTestType->currentText()=="电流") ui->LbDW->setText("A");
     else if(ui->CbTestType->currentText()=="电阻") ui->LbDW->setText("R");

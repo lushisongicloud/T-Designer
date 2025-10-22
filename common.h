@@ -73,7 +73,12 @@ public:
 
 
 #define LocalDataBasePath "C:/TBD/data"
-#define LocalProjectDefaultPath "C:/TBD/MyProjects"
+//#define LocalProjectDefaultPath "C:/TBD/MyProjects" 为方便调试，暂时把目的定义到项目目录中
+#define LocalProjectDefaultPath "./MyProjects"
+
+#ifdef PI
+#undef PI
+#endif
 #define PI 3.1415926535
 #define minDelta 0.2
 extern QString FindLocalFileFromPath(const QString &strFilePath, const QString filename);

@@ -3426,7 +3426,8 @@ void MainWindow::initAfterShow()
 
 void MainWindow::LoadProject()
 {
-    qDebug()<<"CurProjectName"<<CurProjectName;
+    qDebug()<<"CurProjectPath="<<CurProjectPath;
+    qDebug()<<"CurProjectName="<<CurProjectName;
     if(T_ProjectDatabase.isOpen()) T_ProjectDatabase.close();
     T_ProjectDatabase = QSqlDatabase::addDatabase("QSQLITE",CurProjectName);
     QFile  File(CurProjectPath+"/"+CurProjectName+".db");
@@ -3455,9 +3456,10 @@ void MainWindow::LoadProject()
     QStringList ListHisFile;
     ListHisFile.append(CurProjectPath+"/"+CurProjectName+".swPro");
     QTextStream txtInput(&HisProFilePath);
+    txtInput.setCodec("UTF-8");
     while(!txtInput.atEnd())
     {
-        QString CurLineText=txtInput.readLine().toUtf8();
+        QString CurLineText=txtInput.readLine();
         if(CurLineText==(CurProjectPath+"/"+CurProjectName+".swPro")) continue;
         if(CurLineText=="") continue;
         ListHisFile.append(CurLineText);
@@ -3465,11 +3467,15 @@ void MainWindow::LoadProject()
     HisProFilePath.close();
     qDebug()<<"ListHisFile="<<ListHisFile;
     if(!HisProFilePath.open(QIODevice::WriteOnly | QIODevice::Text| QIODevice::Truncate)) return;
+    QTextStream txtOutput(&HisProFilePath);
+    txtOutput.setCodec("UTF-8");
+    txtOutput.setGenerateByteOrderMark(true);
     for(int i=0;i<ListHisFile.count();i++)
     {
         if(i==10) break;
-        HisProFilePath.write((ListHisFile.at(i)+"\n").toLocal8Bit().data());//写入文件，支持QByteArray和 char * 类型数据写入
+        txtOutput<<ListHisFile.at(i)<<"\n";
     }
+    txtOutput.flush();
     HisProFilePath.close();
 
     LoadModel();
@@ -3498,8 +3504,13 @@ void MainWindow::createDemoProject()
         dataDir.mkpath(QString("."));
     QFile historyFile(dataDir.filePath(QString("历史工程记录.dat")));
     if (!historyFile.exists()) {
-        historyFile.open(QIODevice::WriteOnly | QIODevice::Text);
-        historyFile.close();
+        if (historyFile.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
+            QTextStream historyStream(&historyFile);
+            historyStream.setCodec("UTF-8");
+            historyStream.setGenerateByteOrderMark(true);
+            historyStream.flush();
+            historyFile.close();
+        }
     }
 
     CurProjectPath = projectDir;
@@ -3519,7 +3530,8 @@ void MainWindow::LoadLastOpenedProject()
     QFile HisProFilePath(StrDir+"/历史工程记录.dat");
     if(!HisProFilePath.open(QIODevice::ReadOnly|QIODevice::Text))  return;
     QTextStream txtInput(&HisProFilePath);
-    CurProjectName=txtInput.readLine().toUtf8();//读取第一行
+    txtInput.setCodec("UTF-8");
+    CurProjectName=txtInput.readLine();//读取第一行
     HisProFilePath.close();
 
     //CurProjectName:C:/TBD/MyProjects/测试系统5/测试系统5.swPro
@@ -3560,15 +3572,11 @@ void MainWindow::on_BtnOpenProject_clicked()
     fileDialog.setViewMode(QFileDialog::Detail);
     if (!fileDialog.exec()) return;
     QStringList fileNames=fileDialog.selectedFiles();
-    QFile SelectedFilePath(fileNames.at(0));
-    if(!SelectedFilePath.open(QIODevice::ReadOnly|QIODevice::Text))  return;
-    QTextStream txtInput(&SelectedFilePath);
-    CurProjectName=txtInput.readLine().toUtf8();
-    SelectedFilePath.close();
-
-    int Index=fileNames.at(0).lastIndexOf("/");
-    CurProjectPath=fileNames.at(0).mid(0,Index);
-
+    QString swProPath = fileNames.at(0);
+    int Index = swProPath.lastIndexOf("/");
+    CurProjectPath = swProPath.mid(0, Index);
+    int dotIndex = swProPath.lastIndexOf(".swPro");
+    CurProjectName = swProPath.mid(Index + 1, dotIndex - Index - 1);
     LoadProject();
 }
 void MainWindow::CloseMdiWnd(int Mode)

@@ -41,6 +41,17 @@ namespace Ui {
 class MainWindow;
 }
 
+extern QSqlDatabase  T_ProjectDatabase;
+extern QString CurProjectPath;
+extern QString CurProjectName;
+extern int CurComponentCount;
+extern int SelectEquipment_ID;
+extern int SelectSymbol_ID;
+extern int SelectTerminalStrip_ID;
+extern int SelectTerminal_ID;
+extern int SelectPage_ID;
+extern QStringList RemovedUnitsInfo;
+
 struct CandidateData
 {
     QString FaultSpur;

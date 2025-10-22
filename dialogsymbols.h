@@ -17,9 +17,21 @@ using namespace MxDrawXLib;
 namespace Ui {
 class DialogSymbols;
 }
+#ifdef LabelWidth
+#undef LabelWidth
+#endif
 #define LabelWidth 115
+#ifdef LabelHeight
+#undef LabelHeight
+#endif
 #define LabelHeight 74
+#ifdef TotalLabelNum
+#undef TotalLabelNum
+#endif
 #define TotalLabelNum 16
+#ifdef ColumnLabelNum
+#undef ColumnLabelNum
+#endif
 #define ColumnLabelNum 4
 
 class DialogSymbols : public QDialog

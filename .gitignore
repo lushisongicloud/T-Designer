@@ -5,6 +5,7 @@ debug/
 include/
 image/
 lib/
+MyProjects/
 
 # Qt项目文件
 *.pro.user
@@ -62,6 +63,4 @@ include/
 *.swo
 
 .aider*
-build/Makefile
-build/Makefile.Debug
-build/Makefile.Release
+Makefile*

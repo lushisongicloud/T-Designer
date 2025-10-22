@@ -40,8 +40,11 @@ void DialogNewProject::on_BtnOK_clicked()
     file.close();//关闭文件
     //创建数据库
     QString SourceFileName,DestFileName;
+    /* 为方便调试，暂时修改SourceFile到项目目录./ref/project.db
     SourceFileName=LocalDataBasePath;
     SourceFileName.append("/project.db");
+    */
+    SourceFileName = "./ref/project.db";
     DestFileName=ui->LbProjectPath->text()+"/"+ui->EdProjectName->text()+".db";
     QFile::copy(SourceFileName,DestFileName);
     //建立ProjectStructure中的工程记录

@@ -17,3 +17,11 @@ void MainWindow::AddDwgFileToIndex(QStandardItem *item,QSqlQuery query,QList<int
     //图纸名称：PageName.dwg
     SubFatherItem->setData(QVariant("图纸"),Qt::WhatsThisRole);
     SubFatherItem->setData(QVariant(query.value("Page_ID").toInt()),Qt::UserRole);
+
+
+上面是待修复的问题或代码修改的需求，下面是决策要求：
+﹣所有细节你慢慢做，不要节约token，做对最重要
+﹣遇到不确定的功能需求，可以先仔细分析各种可能，并按最科学合理的来
+﹣在具体代码上，如果遇到不确定的，先查一下MCP context7里的文档
+﹣需要花大量的时间分析总体任务，并详细、深入地规划设计总体解决方案，并做任务分解，列出分解后的任务清单，逐项完成；将复杂的任务分解为多个相对简单的可核查的子任务有助于整体任务的解决，这部分不要怕浪费时间，正所谓磨刀不误砍柴工，分解后的子任务在做完后需要进行检查，以免全搞完了发现不行要推倒重来；所有子任务通检查通过后还需要进行全面的集成测试。
+﹣你搞定功能就行,界面部分不要纠结，默认用Qt桌面软件中的主流通俗做法（我的Qt版本为5.12），科学合理、满足基本使用需求即可，后面我们可以再来打磨细节"
