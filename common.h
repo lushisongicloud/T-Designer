@@ -35,9 +35,6 @@ extern int CurComponentCount;
 extern QAxWidget *GlobalBackAxWidget;
 extern IMxDrawApplication *pApp;
 extern QList<QColor> ListTagColor;
-#if _MSC_VER >= 1600	// MSVC2015 > 1899,	MSVC_VER = 14.0
-#pragma execution_character_set("utf-8")
-#endif
 
 //1:只看信息熵 2：只看测试代价 3：信息熵优先 4：测试代价优先
 enum TestPointSort

@@ -1,9 +1,5 @@
 ﻿#include "combotree.h"
 
-#if _MSC_VER >= 1600	// MSVC2015 > 1899,	MSVC_VER = 14.0
-#pragma execution_character_set("utf-8")
-#endif
-
 ComboTree::ComboTree()
 {
 

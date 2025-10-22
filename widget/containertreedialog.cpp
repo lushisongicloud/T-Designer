@@ -14,8 +14,6 @@
 #include "BO/function/functiondependencyresolver.h"
 #include "BO/componententity.h"
 
-#pragma execution_character_set("utf-8")
-
 using namespace ContainerHierarchy;
 namespace {
 

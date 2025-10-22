@@ -79,10 +79,10 @@ QStandardItem *ensurePageHierarchyItem(QStandardItem *root,
 
     QStandardItem *gaocengParent = root;
     if (!gaoceng.isEmpty()) {
-        QStandardItem *gaocengItem = findChildItem(root, QStringLiteral("高层"), gaoceng);
+        QStandardItem *gaocengItem = findChildItem(root, QString("高层"), gaoceng);
         if (!gaocengItem) {
             gaocengItem = new QStandardItem(QIcon("C:/TBD/data/高层图标.png"), gaoceng);
-            gaocengItem->setData(QStringLiteral("高层"), Qt::WhatsThisRole);
+            gaocengItem->setData(QString("高层"), Qt::WhatsThisRole);
             root->appendRow(gaocengItem);
         }
         gaocengParent = gaocengItem;
@@ -90,10 +90,10 @@ QStandardItem *ensurePageHierarchyItem(QStandardItem *root,
 
     QStandardItem *posParent = gaocengParent;
     if (!pos.isEmpty()) {
-        QStandardItem *posItem = findChildItem(gaocengParent, QStringLiteral("位置"), pos);
+        QStandardItem *posItem = findChildItem(gaocengParent, QString("位置"), pos);
         if (!posItem) {
             posItem = new QStandardItem(QIcon("C:/TBD/data/位置图标.png"), pos);
-            posItem->setData(QStringLiteral("位置"), Qt::WhatsThisRole);
+            posItem->setData(QString("位置"), Qt::WhatsThisRole);
             gaocengParent->appendRow(posItem);
         }
         posParent = posItem;
@@ -101,12 +101,12 @@ QStandardItem *ensurePageHierarchyItem(QStandardItem *root,
 
     QString listLabel = pageCode;
     if (listLabel.isEmpty())
-        listLabel = QStringLiteral("未分组");
+        listLabel = QString("未分组");
 
-    QStandardItem *listItem = findChildItem(posParent, QStringLiteral("列表"), listLabel);
+    QStandardItem *listItem = findChildItem(posParent, QString("列表"), listLabel);
     if (!listItem) {
         listItem = new QStandardItem(QIcon("C:/TBD/data/列表图标.png"), listLabel);
-        listItem->setData(QStringLiteral("列表"), Qt::WhatsThisRole);
+        listItem->setData(QString("列表"), Qt::WhatsThisRole);
         if (projectStructureId > 0)
             listItem->setData(projectStructureId, Qt::UserRole);
         posParent->appendRow(listItem);
@@ -6042,7 +6042,12 @@ void MainWindow::AddIndexToIndex(QStandardItem *FatherItem,QSqlQuery query,bool 
 }
 void MainWindow::AddDwgFileToIndex(QStandardItem *item,QSqlQuery query,QList<int> listPagesExpend)
 {
-    QStandardItem *SubFatherItem=new QStandardItem(QIcon("C:/TBD/data/dwg图标.png"),query.value("PageName").toString()+" "+query.value("Page_Desc").toString());
+    QString pageName = query.value("PageName").toString();
+    QString pageDesc = query.value("Page_Desc").toString();
+    QStandardItem *SubFatherItem = new QStandardItem(QIcon("C:/TBD/data/dwg图标.png"), pageName);
+    // 把页描述作为项的悬停提示（ToolTip）显示，同时也设置ToolTipRole以便其它地方访问
+    SubFatherItem->setToolTip(pageDesc);
+    SubFatherItem->setData(QVariant(pageDesc), Qt::ToolTipRole);
     //图纸名称：PageName.dwg
     SubFatherItem->setData(QVariant("图纸"),Qt::WhatsThisRole);
     SubFatherItem->setData(QVariant(query.value("Page_ID").toInt()),Qt::UserRole);
@@ -6409,8 +6414,8 @@ void MainWindow::LoadProject()
 
 void MainWindow::createDemoProject()
 {
-    const QString projectName = QStringLiteral("DemoWorkflow");
-    const QString projectDir = QStringLiteral("%1/%2").arg(QStringLiteral(LocalProjectDefaultPath), projectName);
+    const QString projectName = QString("DemoWorkflow");
+    const QString projectDir = QString("%1/%2").arg(QString(LocalProjectDefaultPath), projectName);
 
     QString error;
     if (!DemoProjectBuilder::buildDemoProject(projectDir, projectName, &error)) {
@@ -6425,10 +6430,10 @@ void MainWindow::createDemoProject()
         QSqlDatabase::removeDatabase(connName);
     }
 
-    QDir dataDir(QStringLiteral(LocalDataBasePath));
+    QDir dataDir(QString(LocalDataBasePath));
     if (!dataDir.exists())
-        dataDir.mkpath(QStringLiteral("."));
-    QFile historyFile(dataDir.filePath(QStringLiteral("历史工程记录.dat")));
+        dataDir.mkpath(QString("."));
+    QFile historyFile(dataDir.filePath(QString("历史工程记录.dat")));
     if (!historyFile.exists()) {
         historyFile.open(QIODevice::WriteOnly | QIODevice::Text);
         historyFile.close();

@@ -3,11 +3,6 @@
 #include <QTime>
 #include <QMovie>
 
-#if _MSC_VER >= 1600	// MSVC2015 > 1899,	MSVC_VER = 14.0
-
-#pragma execution_character_set("utf-8")
-#endif
-
 Dialog_wait::Dialog_wait(QWidget *parent) :
     QDialog(parent,Qt::FramelessWindowHint),
     ui(new Ui::Dialog_wait)

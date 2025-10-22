@@ -1,6 +1,5 @@
 ﻿#ifndef SYSTEMENTITY_H
 #define SYSTEMENTITY_H
-#pragma execution_character_set("utf-8")
 
 #include <QList>
 #include "BO/componententity.h"

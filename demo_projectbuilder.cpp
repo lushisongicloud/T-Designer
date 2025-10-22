@@ -14,7 +14,7 @@
 #include <QDateTime>
 
 #include <QDomDocument>
-#pragma execution_character_set("utf-8")
+
 namespace {
 
 inline bool execQuery(QSqlQuery &query, const QString &sql, QString *errorMessage)
@@ -114,9 +114,9 @@ bool DemoProjectBuilder::buildDemoProject(const QString &projectDir, const QStri
     const QString dbPath = projectDir + "/" + projectName + ".db";
     const QString modelPath = projectDir + "/Model.db";
     const QString paramsPath = projectDir + "/test.params";
-    const QString canonicalPageStem = BuildCanonicalPageName(QStringLiteral("=Subsystem+Station 1"),
-                                                             QStringLiteral("Demo Diagram"),
-                                                             QStringLiteral("DemoDiagram"));
+    const QString canonicalPageStem = BuildCanonicalPageName(QString("=Subsystem+Station 1"),
+                                                             QString("Demo Diagram"),
+                                                             QString("DemoDiagram"));
     const QString dwgPath = projectDir + "/" + canonicalPageStem + ".dwg";
 
     QFile::remove(swProPath);
@@ -416,17 +416,17 @@ bool DemoProjectBuilder::buildProjectDatabase(const QString &dbPath, QString *er
         }
     }
 
-    const QString alterTime = QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd hh:mm:ss"));
+    const QString alterTime = QDateTime::currentDateTime().toString(QString("yyyy-MM-dd hh:mm:ss"));
     const QList<QList<QVariant>> pages = {
         {1,
          1004,
-         QStringLiteral("Demo diagram for workflow"),
-         QStringLiteral("原理图"),
+         QString("Demo diagram for workflow"),
+         QString("原理图"),
          1,
-         QStringLiteral("DemoDiagram"),
-         QStringLiteral("1:1"),
-         QStringLiteral("A3:420x297"),
-         QStringLiteral("Demo Diagram"),
+         QString("DemoDiagram"),
+         QString("1:1"),
+         QString("A3:420x297"),
+         QString("Demo Diagram"),
          alterTime,
          QString()}
     };

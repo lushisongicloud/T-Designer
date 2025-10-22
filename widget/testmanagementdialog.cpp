@@ -15,8 +15,6 @@
 #include "widget/testeditdialog.h"
 #include "widget/containerhierarchyutils.h"
 
-#pragma execution_character_set("utf-8")
-
 namespace {
 struct TestScore {
     GeneratedTest test;
@@ -270,17 +268,17 @@ void TestManagementDialog::markDirty()
 {
     if (!m_dirty) {
         m_dirty = true;
-        setWindowTitle(m_title + QStringLiteral(" *"));
+        setWindowTitle(m_title + QString(" *"));
     }
 }
 
 void TestManagementDialog::refreshAllocationView()
 {
-    const QVariantMap targets = m_analysisData.value(QStringLiteral("targets")).toMap();
-    const double detection = targets.value(QStringLiteral("detection"), ui->spinTargetDetection->value()).toDouble();
-    const double isolation = targets.value(QStringLiteral("isolation"), ui->spinTargetIsolation->value()).toDouble();
+    const QVariantMap targets = m_analysisData.value(QString("targets")).toMap();
+    const double detection = targets.value(QString("detection"), ui->spinTargetDetection->value()).toDouble();
+    const double isolation = targets.value(QString("isolation"), ui->spinTargetIsolation->value()).toDouble();
 
-    QVariantList allocations = m_analysisData.value(QStringLiteral("allocations")).toList();
+    QVariantList allocations = m_analysisData.value(QString("allocations")).toList();
     ui->tableTargetAllocation->setRowCount(0);
 
     auto appendRow = [&](const QString &name, double det, double iso) {
@@ -298,10 +296,10 @@ void TestManagementDialog::refreshAllocationView()
 
     for (const QVariant &value : allocations) {
         const QVariantMap alloc = value.toMap();
-        const int cid = alloc.value(QStringLiteral("containerId")).toInt();
-        double det = alloc.value(QStringLiteral("detection"), detection).toDouble();
-        double iso = alloc.value(QStringLiteral("isolation"), isolation).toDouble();
-        QString name = alloc.value(QStringLiteral("name")).toString();
+        const int cid = alloc.value(QString("containerId")).toInt();
+        double det = alloc.value(QString("detection"), detection).toDouble();
+        double iso = alloc.value(QString("isolation"), isolation).toDouble();
+        QString name = alloc.value(QString("name")).toString();
         if (name.trimmed().isEmpty()) {
             auto it = std::find_if(m_childEntities.begin(), m_childEntities.end(), [cid](const ContainerEntity &entity) {
                 return entity.id() == cid;
@@ -337,25 +335,25 @@ void TestManagementDialog::refreshCandidateList()
 
     if (validated.size() != m_candidateTests.size()) {
         m_candidateTests = validated;
-        m_analysisData.insert(QStringLiteral("candidates"), m_candidateTests);
+        m_analysisData.insert(QString("candidates"), m_candidateTests);
         markDirty();
     }
 }
 
 void TestManagementDialog::refreshPredictionView()
 {
-    const QVariantMap prediction = m_analysisData.value(QStringLiteral("prediction")).toMap();
+    const QVariantMap prediction = m_analysisData.value(QString("prediction")).toMap();
     if (prediction.isEmpty()) {
         ui->labelPredictionSummary->setText(tr("尚未计算预测"));
         ui->tablePredictionBreakdown->setRowCount(0);
         return;
     }
 
-    const double detectionRate = prediction.value(QStringLiteral("detectionRate")).toDouble();
-    const double isolationRate = prediction.value(QStringLiteral("isolationRate")).toDouble();
-    const int detected = prediction.value(QStringLiteral("detectedFaults")).toInt();
-    const int isolatable = prediction.value(QStringLiteral("isolatableFaults")).toInt();
-    const int total = prediction.value(QStringLiteral("totalFaults")).toInt();
+    const double detectionRate = prediction.value(QString("detectionRate")).toDouble();
+    const double isolationRate = prediction.value(QString("isolationRate")).toDouble();
+    const int detected = prediction.value(QString("detectedFaults")).toInt();
+    const int isolatable = prediction.value(QString("isolatableFaults")).toInt();
+    const int total = prediction.value(QString("totalFaults")).toInt();
 
     ui->labelPredictionSummary->setText(
         tr("检测率: %1%，隔离率: %2% (%3/%4, %5/%4)")
@@ -381,7 +379,7 @@ void TestManagementDialog::refreshPredictionView()
 void TestManagementDialog::refreshDecisionTreeView()
 {
     ui->treeDecision->clear();
-    const QVariantMap decision = m_analysisData.value(QStringLiteral("decisionTree")).toMap();
+    const QVariantMap decision = m_analysisData.value(QString("decisionTree")).toMap();
     if (decision.isEmpty()) {
         ui->plainDecisionNotes->setPlainText(tr("尚未生成决策树"));
         return;
@@ -399,27 +397,27 @@ void TestManagementDialog::refreshDecisionTreeView()
 
 void TestManagementDialog::applyAnalysisToUi()
 {
-    const QVariantMap targets = m_analysisData.value(QStringLiteral("targets")).toMap();
+    const QVariantMap targets = m_analysisData.value(QString("targets")).toMap();
     if (!targets.isEmpty()) {
-        ui->spinTargetDetection->setValue(targets.value(QStringLiteral("detection"), ui->spinTargetDetection->value()).toDouble());
-        ui->spinTargetIsolation->setValue(targets.value(QStringLiteral("isolation"), ui->spinTargetIsolation->value()).toDouble());
+        ui->spinTargetDetection->setValue(targets.value(QString("detection"), ui->spinTargetDetection->value()).toDouble());
+        ui->spinTargetIsolation->setValue(targets.value(QString("isolation"), ui->spinTargetIsolation->value()).toDouble());
     }
 
-    const QVariantMap constraints = m_analysisData.value(QStringLiteral("constraints")).toMap();
+    const QVariantMap constraints = m_analysisData.value(QString("constraints")).toMap();
     if (!constraints.isEmpty()) {
-        ui->spinMaxCost->setValue(constraints.value(QStringLiteral("maxCost"), ui->spinMaxCost->value()).toDouble());
-        ui->spinMaxDuration->setValue(constraints.value(QStringLiteral("maxDuration"), ui->spinMaxDuration->value()).toDouble());
-        ui->spinMaxCount->setValue(constraints.value(QStringLiteral("maxCount"), ui->spinMaxCount->value()).toInt());
+        ui->spinMaxCost->setValue(constraints.value(QString("maxCost"), ui->spinMaxCost->value()).toDouble());
+        ui->spinMaxDuration->setValue(constraints.value(QString("maxDuration"), ui->spinMaxDuration->value()).toDouble());
+        ui->spinMaxCount->setValue(constraints.value(QString("maxCount"), ui->spinMaxCount->value()).toInt());
     }
 
-    m_candidateTests = m_analysisData.value(QStringLiteral("candidates")).toStringList();
+    m_candidateTests = m_analysisData.value(QString("candidates")).toStringList();
     refreshAllocationView();
     refreshCandidateList();
 }
 
 QString TestManagementDialog::testDisplayText(const GeneratedTest &test) const
 {
-    return QStringLiteral("[%1] %2 (费用:%3 时间:%4)")
+    return QString("[%1] %2 (费用:%3 时间:%4)")
         .arg(testCategoryToString(test.category))
         .arg(test.name)
         .arg(test.estimatedCost, 0, 'f', 1)
@@ -492,16 +490,16 @@ QVariantMap TestManagementDialog::decisionNodeToVariant(const std::shared_ptr<De
     QVariantMap map;
     if (!node)
         return map;
-    map.insert(QStringLiteral("isLeaf"), node->isLeaf);
+    map.insert(QString("isLeaf"), node->isLeaf);
     if (!node->testId.isEmpty())
-        map.insert(QStringLiteral("test"), node->testId);
+        map.insert(QString("test"), node->testId);
     if (!node->faultId.isEmpty())
-        map.insert(QStringLiteral("fault"), node->faultId);
+        map.insert(QString("fault"), node->faultId);
     QVariantList children;
     for (const auto &child : node->children)
         children.append(decisionNodeToVariant(child));
     if (!children.isEmpty())
-        map.insert(QStringLiteral("children"), children);
+        map.insert(QString("children"), children);
     return map;
 }
 
@@ -510,10 +508,10 @@ std::shared_ptr<DecisionNode> TestManagementDialog::decisionNodeFromVariant(cons
     if (object.isEmpty())
         return nullptr;
     auto node = std::make_shared<DecisionNode>();
-    node->isLeaf = object.value(QStringLiteral("isLeaf")).toBool();
-    node->testId = object.value(QStringLiteral("test")).toString();
-    node->faultId = object.value(QStringLiteral("fault")).toString();
-    const QVariantList children = object.value(QStringLiteral("children")).toList();
+    node->isLeaf = object.value(QString("isLeaf")).toBool();
+    node->testId = object.value(QString("test")).toString();
+    node->faultId = object.value(QString("fault")).toString();
+    const QVariantList children = object.value(QString("children")).toList();
     for (const QVariant &value : children) {
         auto child = decisionNodeFromVariant(value.toMap());
         if (child)
@@ -581,7 +579,7 @@ void TestManagementDialog::on_btnAdd_clicked()
 {
     GeneratedTest test;
     test.category = TestCategory::Signal;
-    test.id = QStringLiteral("user:%1").arg(QUuid::createUuid().toString(QUuid::WithoutBraces));
+    test.id = QString("user:%1").arg(QUuid::createUuid().toString(QUuid::WithoutBraces));
     TestEditDialog dialog(this);
     dialog.setTest(test);
     if (dialog.exec() != QDialog::Accepted)
@@ -654,21 +652,21 @@ void TestManagementDialog::on_tableTests_currentCellChanged(int currentRow, int,
 void TestManagementDialog::on_btnApplyTargets_clicked()
 {
     QVariantMap targets;
-    targets.insert(QStringLiteral("detection"), ui->spinTargetDetection->value());
-    targets.insert(QStringLiteral("isolation"), ui->spinTargetIsolation->value());
-    m_analysisData.insert(QStringLiteral("targets"), targets);
+    targets.insert(QString("detection"), ui->spinTargetDetection->value());
+    targets.insert(QString("isolation"), ui->spinTargetIsolation->value());
+    m_analysisData.insert(QString("targets"), targets);
 
     QVariantList allocations;
     const int childCount = m_childEntities.size();
     for (const ContainerEntity &child : m_childEntities) {
         QVariantMap alloc;
-        alloc.insert(QStringLiteral("containerId"), child.id());
-        alloc.insert(QStringLiteral("name"), child.name());
-        alloc.insert(QStringLiteral("detection"), targets.value(QStringLiteral("detection")));
-        alloc.insert(QStringLiteral("isolation"), targets.value(QStringLiteral("isolation")));
+        alloc.insert(QString("containerId"), child.id());
+        alloc.insert(QString("name"), child.name());
+        alloc.insert(QString("detection"), targets.value(QString("detection")));
+        alloc.insert(QString("isolation"), targets.value(QString("isolation")));
         allocations.append(alloc);
     }
-    m_analysisData.insert(QStringLiteral("allocations"), allocations);
+    m_analysisData.insert(QString("allocations"), allocations);
     refreshAllocationView();
     markDirty();
 }
@@ -683,11 +681,11 @@ void TestManagementDialog::on_btnApplyConstraints_clicked()
     refreshCandidateList();
 
     QVariantMap constraints;
-    constraints.insert(QStringLiteral("maxCost"), maxCost);
-    constraints.insert(QStringLiteral("maxDuration"), maxDuration);
-    constraints.insert(QStringLiteral("maxCount"), maxCount);
-    m_analysisData.insert(QStringLiteral("constraints"), constraints);
-    m_analysisData.insert(QStringLiteral("candidates"), m_candidateTests);
+    constraints.insert(QString("maxCost"), maxCost);
+    constraints.insert(QString("maxDuration"), maxDuration);
+    constraints.insert(QString("maxCount"), maxCount);
+    m_analysisData.insert(QString("constraints"), constraints);
+    m_analysisData.insert(QString("candidates"), m_candidateTests);
     markDirty();
 }
 
@@ -701,13 +699,13 @@ void TestManagementDialog::on_btnEvaluatePrediction_clicked()
 
     CoverageSummary summary = m_matrixBuilder.coverageSummary(testsToEvaluate);
     QVariantMap prediction;
-    prediction.insert(QStringLiteral("detectionRate"), summary.detectionRate);
-    prediction.insert(QStringLiteral("isolationRate"), summary.isolationRate);
-    prediction.insert(QStringLiteral("detectedFaults"), summary.detectedFaults);
-    prediction.insert(QStringLiteral("isolatableFaults"), summary.isolatableFaults);
-    prediction.insert(QStringLiteral("totalFaults"), summary.totalFaults);
-    prediction.insert(QStringLiteral("tests"), testsToEvaluate);
-    m_analysisData.insert(QStringLiteral("prediction"), prediction);
+    prediction.insert(QString("detectionRate"), summary.detectionRate);
+    prediction.insert(QString("isolationRate"), summary.isolationRate);
+    prediction.insert(QString("detectedFaults"), summary.detectedFaults);
+    prediction.insert(QString("isolatableFaults"), summary.isolatableFaults);
+    prediction.insert(QString("totalFaults"), summary.totalFaults);
+    prediction.insert(QString("tests"), testsToEvaluate);
+    m_analysisData.insert(QString("prediction"), prediction);
     refreshPredictionView();
     markDirty();
 }
@@ -721,7 +719,7 @@ void TestManagementDialog::on_btnBuildDecisionTree_clicked()
     }
 
     std::shared_ptr<DecisionNode> root = m_matrixBuilder.buildDecisionTree(testsForTree);
-    m_analysisData.insert(QStringLiteral("decisionTree"), decisionNodeToVariant(root));
+    m_analysisData.insert(QString("decisionTree"), decisionNodeToVariant(root));
     refreshDecisionTreeView();
     markDirty();
 }

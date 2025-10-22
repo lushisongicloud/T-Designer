@@ -6,7 +6,6 @@
 #include <QMessageBox>
 #include <QUuid>
 
-#pragma execution_character_set("utf-8")
 
 TestEditDialog::TestEditDialog(QWidget *parent)
     : QDialog(parent)
@@ -38,8 +37,8 @@ void TestEditDialog::setTest(const GeneratedTest &test)
         ui->comboCategory->setCurrentIndex(categoryIndex);
     ui->editName->setText(test.name);
     ui->editTarget->setText(test.targetId);
-    ui->editDetectable->setText(test.detectableFaults.join(QStringLiteral(", ")));
-    ui->editIsolatable->setText(test.isolatableFaults.join(QStringLiteral(", ")));
+    ui->editDetectable->setText(test.detectableFaults.join(QString(", ")));
+    ui->editIsolatable->setText(test.isolatableFaults.join(QString(", ")));
     ui->doubleCost->setValue(test.estimatedCost);
     ui->doubleDuration->setValue(test.estimatedDuration);
     ui->plainDescription->setPlainText(test.description);
@@ -103,7 +102,7 @@ void TestEditDialog::onAccepted()
     }
 
     if (updated.id.isEmpty())
-        updated.id = QStringLiteral("user:%1").arg(QUuid::createUuid().toString(QUuid::WithoutBraces));
+        updated.id = QString("user:%1").arg(QUuid::createUuid().toString(QUuid::WithoutBraces));
 
     m_test = updated;
     accept();

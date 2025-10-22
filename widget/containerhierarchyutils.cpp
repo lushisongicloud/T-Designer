@@ -3,7 +3,7 @@
 #include <QSqlError>
 #include <QVariant>
 #include <QDebug>
-#pragma execution_character_set("utf-8")
+
 namespace ContainerHierarchy {
 
 namespace {

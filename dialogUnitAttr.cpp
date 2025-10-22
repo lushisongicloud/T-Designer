@@ -1370,31 +1370,31 @@ void DialogUnitAttr::on_BtnValidateTModel_clicked()
     if (!result.formatErrors.isEmpty())
         messages << result.formatErrors;
     if (!result.missingDeclarations.isEmpty())
-        messages << tr("缺少declare-fun: %1").arg(result.missingDeclarations.join(QStringLiteral(", ")));
+        messages << tr("缺少declare-fun: %1").arg(result.missingDeclarations.join(QString(", ")));
     if (!result.undefinedVariables.isEmpty())
-        messages << tr("未匹配的端口变量: %1").arg(result.undefinedVariables.join(QStringLiteral(", ")));
+        messages << tr("未匹配的端口变量: %1").arg(result.undefinedVariables.join(QString(", ")));
     if (!result.hints.isEmpty())
         messages << result.hints;
 
     if (messages.isEmpty()) {
         QString detail = tr("共检测端号 %1 个。").arg(result.bindings.size());
         if (!result.unusedPorts.isEmpty())
-            detail += QStringLiteral("\n") + tr("提示：以下端号未在T语言中使用：%1").arg(result.unusedPorts.join(QStringLiteral(", ")));
+            detail += QString("\n") + tr("提示：以下端号未在T语言中使用：%1").arg(result.unusedPorts.join(QString(", ")));
 
         QStringList bindingPreview;
         for (const PortVariableBinding &binding : result.bindings) {
             QStringList dirs = binding.declaredDirections.values();
             std::sort(dirs.begin(), dirs.end());
-            bindingPreview << QStringLiteral("%1 (%2)").arg(binding.port.connNum, dirs.join(QStringLiteral("/")));
+            bindingPreview << QString("%1 (%2)").arg(binding.port.connNum, dirs.join(QString("/")));
             if (bindingPreview.size() >= 6)
                 break;
         }
         if (!bindingPreview.isEmpty())
-            detail += QStringLiteral("\n") + tr("映射预览：%1").arg(bindingPreview.join(QStringLiteral("，")));
+            detail += QString("\n") + tr("映射预览：%1").arg(bindingPreview.join(QString("，")));
 
-        QMessageBox::information(this, tr("T语言校验"), tr("端口映射校验通过。") + QStringLiteral("\n") + detail);
+        QMessageBox::information(this, tr("T语言校验"), tr("端口映射校验通过。") + QString("\n") + detail);
     } else {
-        QMessageBox::warning(this, tr("T语言校验"), messages.join(QStringLiteral("\n")));
+        QMessageBox::warning(this, tr("T语言校验"), messages.join(QString("\n")));
     }
 }
 
