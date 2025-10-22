@@ -21,6 +21,7 @@
   - 如需 JSON/二进制持久化，提供 `toJson()`/`fromJson()` 或等价静态工厂；保持与 `BO` 的数据库映射一致。
 - 命名与建模：
   - 与 `docs/hierarchical_modeling_requirements.md` 中的术语与层次一致（例如 Component/Container/System 等）。
+  - 参考 `ref/Model.db` 中的 SMT 数据样例，确保实体、系统、功能描述字段与实验性实现（如 `systementity.cpp`、`selectfunctiondialog.cpp`）在命名和层级上保持一致，为后续对接 `z3` 求解器打基础。
 
 ## 代码风格
 - 遵循根目录 `AGENTS.md`：类 PascalCase，字段/访问器 lowerCamelCase，4 空格缩进，UTF-8 with BOM，`clang-format`。
@@ -28,7 +29,7 @@
 - 头/源文件成对；头文件尽量最小化包含，使用前置声明降低编译耦合。
 
 ## 典型目录内元素
-- `component.*`、`model.*`、`diagnosisgraph.*`、`parameter.*`：面向领域的数据结构与算法辅助类型；避免引入 UI/DB 依赖。
+- `component.*`、`model.*`、`diagnosisgraph.*`、`parameter.*`：面向领域的数据结构与算法辅助类型；避免引入 UI/DB 依赖，其中 `model.*`、`diagnosisgraph.*` 与 `ref/Model.db` 结构紧密对应，可用于校验字段含义。
 - `containerentity.h`：与 BO 层的聚合根命名保持一致，但在 DO 层仅表示纯数据形态（若存在同名，注意层内职责差异）。
 
 ## 测试策略（Qt Test）
@@ -39,8 +40,9 @@
 - 新增/删除数据结构时：
   - 同步更新与之交互的 `BO` 仓库/服务的数据映射与用例；
   - 如影响 UI 展示，通知 `widget/` 维护者更新视图/模型。
+- 数据结构与数据库表/字段的对应关系变更时，请使用 `ref/` 下的示例数据库（例如 `ref/Model.db`、`ref/收放存储装置.db`）进行读取或验证，并提供迁移策略或数据修复说明。
+- 若改动会影响工程项目存储格式，先在工程目录的 `project.db` 上验证流程，通过评审后同步 `templete/project.db`，必要时更新 `MyProjects/` 中的示例。
 - 更新 `T_DESIGNER.pro` 中的 `SOURCES`/`HEADERS`。禁止修改自动生成文件（`ui_*.h`）。
 
 ---
 简述：DO 层专注纯数据建模与最小行为，实现可测试、可复用、无 UI/DB 依赖的领域对象。
-

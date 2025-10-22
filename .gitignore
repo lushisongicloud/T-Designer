@@ -5,7 +5,6 @@ debug/
 include/
 image/
 lib/
-MyProjects/
 
 # Qt项目文件
 *.pro.user
@@ -35,12 +34,19 @@ ui_*.h
 *~
 *.tmp
 *.temp
+*.bak
 
 # 资源文件（这些应该被跟踪，所以从忽略列表中移除）
 image/
 lib/
 include/
 *.ico
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.dwg
+*.dwg*
 
 
 # 数据库文件（根据是否需要跟踪决定）

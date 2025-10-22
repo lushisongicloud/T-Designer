@@ -10,6 +10,7 @@
   - 将复杂业务逻辑放入 UI；
   - 进行长时阻塞操作；
   - 依赖自动生成文件（`ui_*.h`）。
+- `MainWindow` 相关代码按功能拆分到仓库根目录的 `mainwindow_project.cpp`、`mainwindow_units.cpp`、`mainwindow_diagnosis.cpp` 中；新增入口或页签时，请跟随现有拆分结构。
 
 ## UI 与模型
 - 使用 Qt Designer 维护 `.ui` 文件；类名与 UI 文件名对应（例如 `CodeCheckDialog` ↔ `codecheckdialog.ui`）。
@@ -28,6 +29,8 @@
 ## 资源与国际化
 - 图标/图片统一通过 `image.qrc` 管理，路径采用 `:/` 前缀。
 - 字符串使用 `tr()` 以便后续国际化。
+- 示例 T-Designer 项目用于 UI 验证时，请从仓库根目录的 `MyProjects/` 中拷贝副本（如 `DemoSystem/`，当前仍使用 Livingstone 求解链路），分析流程后按需迁移到 SMT/`z3` 方案，避免直接修改原始模板。
+- 需要核对函数/系统描述时，可参考 `ref/Model.db` 及其在 `selectfunctiondialog.cpp`、`systementity.cpp` 中的读取方式，保持 UI 字段与数据结构一致。
 
 ## 代码风格
 - 遵循根目录 `AGENTS.md`：类 PascalCase，方法/变量 lowerCamelCase，4 空格缩进，UTF-8 with BOM，`clang-format`。
@@ -37,7 +40,7 @@
 ## 典型目录内元素
 - `containermodel.*`：树形模型；请确保持久索引正确、`parent()`/`index()` 成对一致、避免循环引用。
 - `containertreedialog.*`：容器树选择/浏览对话框；通过信号向外部报告选择结果。
-- `codecheckdialog.*`、`selectfunctiondialog.*`：较大的对话框逻辑，务必将复杂校验/计算下沉至 `BO`。
+- `codecheckdialog.*`、`selectfunctiondialog.*`：较大的对话框逻辑，务必将复杂校验/计算下沉至 `BO`；其中 `selectfunctiondialog.*` 读取 `ref/Model.db` 中的 SMT 数据做实验性验证，UI 变更需同步更新数据解析。
 
 ## 测试策略（Qt Test）
 - 对模型类进行单元测试：验证行列数、角色数据、插入/删除与重置流程；
@@ -52,4 +55,3 @@
 
 ---
 简述：widget 层专注表现与交互，依赖 `BO` 获取/提交数据，避免业务下沉与阻塞 UI。
-
