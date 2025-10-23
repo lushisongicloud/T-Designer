@@ -1,4 +1,4 @@
-#ifndef DEMO_PROJECTBUILDER_H
+﻿#ifndef DEMO_PROJECTBUILDER_H
 #define DEMO_PROJECTBUILDER_H
 
 #include <QString>
@@ -9,17 +9,16 @@ public:
     static bool buildDemoProject(const QString &projectDir, const QString &projectName, QString *errorMessage = nullptr);
 
 private:
-    static bool buildProjectDatabase(const QString &dbPath, QString *errorMessage);
-    static bool buildModelDatabase(const QString &dbPath, QString *errorMessage);
+    static bool populateProjectDatabase(const QString &dbPath, QString *errorMessage);
     static bool writeSwProFile(const QString &filePath, const QString &projectName, QString *errorMessage);
     static bool writeTestParams(const QString &filePath, QString *errorMessage);
 
     static QString demoFunctionXml();
     static QString containerPortsJson(const QString &equipmentTag,
                                       const QString &outPort,
-                                      const QString &outCategory = QStringLiteral("hydraulic"),
+                                      const QString &outCategory = QString("hydraulic"),
                                       const QString &inPort = QString(),
-                                      const QString &inCategory = QStringLiteral("hydraulic"));
+                                      const QString &inCategory = QString("hydraulic"));
     static QString coilBaseTModel();
     static QString coilTModel();
     static QString elecPortTModel();

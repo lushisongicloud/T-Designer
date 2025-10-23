@@ -6,10 +6,10 @@
 #include <QJsonValue>
 
 namespace {
-const QString kDirectionInput = QStringLiteral("input");
-const QString kDirectionOutput = QStringLiteral("output");
-const QString kDirectionInOut = QStringLiteral("inout");
-const QString kDirectionInternal = QStringLiteral("internal");
+const QString kDirectionInput = QString("input");
+const QString kDirectionOutput = QString("output");
+const QString kDirectionInOut = QString("inout");
+const QString kDirectionInternal = QString("internal");
 }
 
 QString portDirectionToString(PortDirection direction)
@@ -28,7 +28,7 @@ PortDirection portDirectionFromString(const QString &directionText)
     const QString normalized = directionText.trimmed().toLower();
     if (normalized == kDirectionInput) return PortDirection::Input;
     if (normalized == kDirectionOutput) return PortDirection::Output;
-    if (normalized == kDirectionInOut || normalized == QStringLiteral("bidirectional"))
+    if (normalized == kDirectionInOut || normalized == QString("bidirectional"))
         return PortDirection::Bidirectional;
     if (normalized == kDirectionInternal) return PortDirection::Internal;
     return PortDirection::Undefined;
@@ -42,127 +42,127 @@ bool ContainerPort::isValid() const
 QJsonObject ContainerPort::toJson() const
 {
     QJsonObject obj;
-    if (!id.isEmpty()) obj.insert(QStringLiteral("id"), id);
-    if (!name.isEmpty()) obj.insert(QStringLiteral("name"), name);
-    if (!category.isEmpty()) obj.insert(QStringLiteral("category"), category);
-    if (!quantity.isEmpty()) obj.insert(QStringLiteral("quantity"), quantity);
+    if (!id.isEmpty()) obj.insert(QString("id"), id);
+    if (!name.isEmpty()) obj.insert(QString("name"), name);
+    if (!category.isEmpty()) obj.insert(QString("category"), category);
+    if (!quantity.isEmpty()) obj.insert(QString("quantity"), quantity);
     if (direction != PortDirection::Undefined)
-        obj.insert(QStringLiteral("direction"), portDirectionToString(direction));
-    if (!unit.isEmpty()) obj.insert(QStringLiteral("unit"), unit);
-    if (!bounds.isEmpty()) obj.insert(QStringLiteral("bounds"), QJsonObject::fromVariantMap(bounds));
-    if (!signalId.isEmpty()) obj.insert(QStringLiteral("signalId"), signalId);
-    if (!mappedSymbol.isEmpty()) obj.insert(QStringLiteral("mappedSymbol"), mappedSymbol);
-    if (sourceContainerId != 0) obj.insert(QStringLiteral("sourceContainerId"), sourceContainerId);
-    if (optional) obj.insert(QStringLiteral("optional"), optional);
-    if (!description.isEmpty()) obj.insert(QStringLiteral("description"), description);
-    if (!alias.isEmpty()) obj.insert(QStringLiteral("alias"), alias);
+        obj.insert(QString("direction"), portDirectionToString(direction));
+    if (!unit.isEmpty()) obj.insert(QString("unit"), unit);
+    if (!bounds.isEmpty()) obj.insert(QString("bounds"), QJsonObject::fromVariantMap(bounds));
+    if (!signalId.isEmpty()) obj.insert(QString("signalId"), signalId);
+    if (!mappedSymbol.isEmpty()) obj.insert(QString("mappedSymbol"), mappedSymbol);
+    if (sourceContainerId != 0) obj.insert(QString("sourceContainerId"), sourceContainerId);
+    if (optional) obj.insert(QString("optional"), optional);
+    if (!description.isEmpty()) obj.insert(QString("description"), description);
+    if (!alias.isEmpty()) obj.insert(QString("alias"), alias);
     return obj;
 }
 
 ContainerPort ContainerPort::fromJson(const QJsonObject &object)
 {
     ContainerPort port;
-    port.id = object.value(QStringLiteral("id")).toString();
-    port.name = object.value(QStringLiteral("name")).toString();
-    port.category = object.value(QStringLiteral("category")).toString();
-    port.quantity = object.value(QStringLiteral("quantity")).toString();
-    port.direction = portDirectionFromString(object.value(QStringLiteral("direction")).toString());
-    port.unit = object.value(QStringLiteral("unit")).toString();
-    if (object.contains(QStringLiteral("bounds")))
-        port.bounds = object.value(QStringLiteral("bounds")).toObject().toVariantMap();
-    port.signalId = object.value(QStringLiteral("signalId")).toString();
-    port.mappedSymbol = object.value(QStringLiteral("mappedSymbol")).toString();
-    port.sourceContainerId = object.value(QStringLiteral("sourceContainerId")).toInt();
-    port.optional = object.value(QStringLiteral("optional")).toBool(false);
-    port.description = object.value(QStringLiteral("description")).toString();
-    port.alias = object.value(QStringLiteral("alias")).toString();
+    port.id = object.value(QString("id")).toString();
+    port.name = object.value(QString("name")).toString();
+    port.category = object.value(QString("category")).toString();
+    port.quantity = object.value(QString("quantity")).toString();
+    port.direction = portDirectionFromString(object.value(QString("direction")).toString());
+    port.unit = object.value(QString("unit")).toString();
+    if (object.contains(QString("bounds")))
+        port.bounds = object.value(QString("bounds")).toObject().toVariantMap();
+    port.signalId = object.value(QString("signalId")).toString();
+    port.mappedSymbol = object.value(QString("mappedSymbol")).toString();
+    port.sourceContainerId = object.value(QString("sourceContainerId")).toInt();
+    port.optional = object.value(QString("optional")).toBool(false);
+    port.description = object.value(QString("description")).toString();
+    port.alias = object.value(QString("alias")).toString();
     return port;
 }
 
 QString behaviorModeTypeToString(BehaviorModeType type)
 {
     switch (type) {
-    case BehaviorModeType::Normal: return QStringLiteral("normal");
-    case BehaviorModeType::Fault: return QStringLiteral("fault");
-    case BehaviorModeType::CommonFault: return QStringLiteral("commonFault");
-    case BehaviorModeType::DerivedFault: return QStringLiteral("derivedFault");
-    default: return QStringLiteral("fault");
+    case BehaviorModeType::Normal: return QString("normal");
+    case BehaviorModeType::Fault: return QString("fault");
+    case BehaviorModeType::CommonFault: return QString("commonFault");
+    case BehaviorModeType::DerivedFault: return QString("derivedFault");
+    default: return QString("fault");
     }
 }
 
 BehaviorModeType behaviorModeTypeFromString(const QString &text)
 {
     const QString normalized = text.trimmed().toLower();
-    if (normalized == QStringLiteral("normal")) return BehaviorModeType::Normal;
-    if (normalized == QStringLiteral("commonfault")) return BehaviorModeType::CommonFault;
-    if (normalized == QStringLiteral("derivedfault")) return BehaviorModeType::DerivedFault;
+    if (normalized == QString("normal")) return BehaviorModeType::Normal;
+    if (normalized == QString("commonfault")) return BehaviorModeType::CommonFault;
+    if (normalized == QString("derivedfault")) return BehaviorModeType::DerivedFault;
     return BehaviorModeType::Fault;
 }
 
 QJsonObject BehaviorMode::toJson() const
 {
     QJsonObject obj;
-    if (!modeId.isEmpty()) obj.insert(QStringLiteral("id"), modeId);
-    if (!displayName.isEmpty()) obj.insert(QStringLiteral("name"), displayName);
-    obj.insert(QStringLiteral("type"), behaviorModeTypeToString(modeType));
-    obj.insert(QStringLiteral("probability"), probability);
+    if (!modeId.isEmpty()) obj.insert(QString("id"), modeId);
+    if (!displayName.isEmpty()) obj.insert(QString("name"), displayName);
+    obj.insert(QString("type"), behaviorModeTypeToString(modeType));
+    obj.insert(QString("probability"), probability);
     QJsonArray constraintArray;
     for (const QString &constraint : constraints)
         constraintArray.append(constraint);
-    if (!constraintArray.isEmpty()) obj.insert(QStringLiteral("constraints"), constraintArray);
+    if (!constraintArray.isEmpty()) obj.insert(QString("constraints"), constraintArray);
     if (!sourceContainers.isEmpty()) {
         QJsonArray sources;
         for (int id : sourceContainers) sources.append(id);
-        obj.insert(QStringLiteral("sources"), sources);
+        obj.insert(QString("sources"), sources);
     }
-    if (!z3StateSymbol.isEmpty()) obj.insert(QStringLiteral("stateSymbol"), z3StateSymbol);
-    if (!annotations.isEmpty()) obj.insert(QStringLiteral("annotations"), QJsonObject::fromVariantMap(annotations));
+    if (!z3StateSymbol.isEmpty()) obj.insert(QString("stateSymbol"), z3StateSymbol);
+    if (!annotations.isEmpty()) obj.insert(QString("annotations"), QJsonObject::fromVariantMap(annotations));
     return obj;
 }
 
 BehaviorMode BehaviorMode::fromJson(const QJsonObject &object)
 {
     BehaviorMode mode;
-    mode.modeId = object.value(QStringLiteral("id")).toString();
-    mode.displayName = object.value(QStringLiteral("name")).toString();
-    mode.modeType = behaviorModeTypeFromString(object.value(QStringLiteral("type")).toString());
-    mode.probability = object.value(QStringLiteral("probability")).toDouble();
-    const QJsonArray constraintArray = object.value(QStringLiteral("constraints")).toArray();
+    mode.modeId = object.value(QString("id")).toString();
+    mode.displayName = object.value(QString("name")).toString();
+    mode.modeType = behaviorModeTypeFromString(object.value(QString("type")).toString());
+    mode.probability = object.value(QString("probability")).toDouble();
+    const QJsonArray constraintArray = object.value(QString("constraints")).toArray();
     for (const QJsonValue &value : constraintArray)
         mode.constraints.append(value.toString());
-    const QJsonArray sources = object.value(QStringLiteral("sources")).toArray();
+    const QJsonArray sources = object.value(QString("sources")).toArray();
     for (const QJsonValue &value : sources)
         mode.sourceContainers.append(value.toInt());
-    mode.z3StateSymbol = object.value(QStringLiteral("stateSymbol")).toString();
-    if (object.contains(QStringLiteral("annotations")))
-        mode.annotations = object.value(QStringLiteral("annotations")).toObject().toVariantMap();
+    mode.z3StateSymbol = object.value(QString("stateSymbol")).toString();
+    if (object.contains(QString("annotations")))
+        mode.annotations = object.value(QString("annotations")).toObject().toVariantMap();
     return mode;
 }
 
 QJsonObject BehaviorSpec::toJson() const
 {
     QJsonObject obj;
-    obj.insert(QStringLiteral("normal"), normalMode.toJson());
+    obj.insert(QString("normal"), normalMode.toJson());
     QJsonArray faults;
     for (const BehaviorMode &fault : faultModes)
         faults.append(fault.toJson());
-    obj.insert(QStringLiteral("faults"), faults);
-    if (!rationale.isEmpty()) obj.insert(QStringLiteral("rationale"), rationale);
+    obj.insert(QString("faults"), faults);
+    if (!rationale.isEmpty()) obj.insert(QString("rationale"), rationale);
     return obj;
 }
 
 BehaviorSpec BehaviorSpec::fromJson(const QJsonObject &object)
 {
     BehaviorSpec spec;
-    if (object.contains(QStringLiteral("normal")))
-        spec.normalMode = BehaviorMode::fromJson(object.value(QStringLiteral("normal")).toObject());
-    const QJsonValue faultsValue = object.value(QStringLiteral("faults"));
+    if (object.contains(QString("normal")))
+        spec.normalMode = BehaviorMode::fromJson(object.value(QString("normal")).toObject());
+    const QJsonValue faultsValue = object.value(QString("faults"));
     if (faultsValue.isArray()) {
         const QJsonArray faults = faultsValue.toArray();
         for (const QJsonValue &value : faults)
             spec.faultModes.append(BehaviorMode::fromJson(value.toObject()));
     }
-    spec.rationale = object.value(QStringLiteral("rationale")).toString();
+    spec.rationale = object.value(QString("rationale")).toString();
     return spec;
 }
 
@@ -281,8 +281,8 @@ void ContainerData::readPortsFromEntity()
         array = doc.array();
     } else if (doc.isObject()) {
         const QJsonObject obj = doc.object();
-        if (obj.contains(QStringLiteral("ports")))
-            array = obj.value(QStringLiteral("ports")).toArray();
+        if (obj.contains(QString("ports")))
+            array = obj.value(QString("ports")).toArray();
     }
 
     for (const QJsonValue &value : array) {
@@ -306,7 +306,7 @@ void ContainerData::readBehaviorFromEntity()
         m_behavior = BehaviorSpec::fromJson(doc.object());
     } else if (doc.isArray()) {
         QJsonObject wrapper;
-        wrapper.insert(QStringLiteral("faults"), doc.array());
+        wrapper.insert(QString("faults"), doc.array());
         m_behavior = BehaviorSpec::fromJson(wrapper);
     }
 }
@@ -325,7 +325,7 @@ void ContainerData::readTestsFromEntity()
     if (doc.isArray())
         array = doc.array();
     else if (doc.isObject())
-        array = doc.object().value(QStringLiteral("tests")).toArray();
+        array = doc.object().value(QString("tests")).toArray();
 
     for (const QJsonValue &value : array) {
         if (!value.isObject()) continue;

@@ -2,6 +2,7 @@
 
 #include <QRegularExpression>
 #include <QTextStream>
+#include <string>
 
 #include <z3++.h>
 
@@ -15,19 +16,19 @@ QString joinExpressions(const QStringList &expressions)
         if (!trimmed.isEmpty())
             sanitized.append(trimmed);
     }
-    return sanitized.join(QStringLiteral("\n"));
+    return sanitized.join(QString("\n"));
 }
 
 QString wrapWithAssert(const QString &expression)
 {
     const QString trimmed = expression.trimmed();
-    if (trimmed.startsWith(QStringLiteral("(assert")))
+    if (trimmed.startsWith(QString("(assert")))
         return trimmed;
-    if (trimmed.startsWith(QStringLiteral("(declare")))
+    if (trimmed.startsWith(QString("(declare")))
         return trimmed;
     if (trimmed.isEmpty())
         return QString();
-    return QStringLiteral("(assert %1)").arg(trimmed);
+    return QString("(assert %1)").arg(trimmed);
 }
 
 QString makeConjunction(const QStringList &expressions)
@@ -39,10 +40,10 @@ QString makeConjunction(const QStringList &expressions)
         parts.append(trimmed);
     }
     if (parts.isEmpty())
-        return QStringLiteral("true");
+        return QString("true");
     if (parts.size() == 1)
         return parts.first();
-    return QStringLiteral("(and %1)").arg(parts.join(QStringLiteral(" ")));
+    return QString("(and %1)").arg(parts.join(QString(" ")));
 }
 }
 
@@ -62,21 +63,20 @@ Z3SimplificationResult Z3Simplifier::simplifyConjunction(const QStringList &expr
 
     if (cleanedExpressions.isEmpty()) {
         result.success = true;
-        result.simplifiedExpression = QStringLiteral("true");
-        result.log = QStringLiteral("Z3Simplifier: 输入为空，返回 true。");
+        result.simplifiedExpression = QString("true");
+        result.log = QString("Z3Simplifier: 输入为空，返回 true。");
         return result;
     }
 
     QString conjunction = makeConjunction(cleanedExpressions);
-    QString script = QStringLiteral("(set-logic ALL)\n(assert %1)").arg(conjunction);
+    QString script = QString("(set-logic ALL)\n(assert %1)").arg(conjunction);
 
     try {
         z3::context ctx;
         z3::solver solver(ctx);
         solver.from_string(script.toUtf8().constData());
 
-        z3::expr_vector assertions(ctx);
-        solver.assertions(assertions);
+    z3::expr_vector assertions = solver.assertions();
         z3::expr combined = ctx.bool_val(true);
         if (assertions.size() == 1) {
             combined = assertions[0];
@@ -106,17 +106,20 @@ Z3SimplificationResult Z3Simplifier::simplifyConjunction(const QStringList &expr
         if (applyResult.size() > 0) {
             const z3::goal &subGoal = applyResult[0];
             if (subGoal.size() == 0) {
-                simplified = QStringLiteral("true");
+                simplified = QString("true");
             } else if (subGoal.size() == 1) {
-                simplified = QString::fromUtf8(subGoal[0].to_string());
+                const std::string subGoalString = subGoal[0].to_string();
+                simplified = QString::fromStdString(subGoalString);
             } else {
                 QStringList parts;
-                for (unsigned i = 0; i < subGoal.size(); ++i)
-                    parts.append(QString::fromUtf8(subGoal[i].to_string()));
-                simplified = QStringLiteral("(and %1)").arg(parts.join(QStringLiteral(" ")));
+                for (unsigned i = 0; i < subGoal.size(); ++i) {
+                    const std::string termString = subGoal[i].to_string();
+                    parts.append(QString::fromStdString(termString));
+                }
+                simplified = QString("(and %1)").arg(parts.join(QString(" ")));
             }
         } else {
-            simplified = QStringLiteral("true");
+            simplified = QString("true");
         }
 
         QTextStream stream(&result.log);
@@ -124,7 +127,7 @@ Z3SimplificationResult Z3Simplifier::simplifyConjunction(const QStringList &expr
         stream << "原始合取: " << conjunction << "\n";
         stream << "化简后: " << simplified << "\n";
         if (!eliminated.isEmpty()) {
-            stream << "已尝试消元的符号: " << eliminated.join(QStringLiteral(", ")) << "\n";
+            stream << "已尝试消元的符号: " << eliminated.join(QString(", ")) << "\n";
             result.eliminatedSymbols = eliminated;
         }
 
@@ -135,7 +138,7 @@ Z3SimplificationResult Z3Simplifier::simplifyConjunction(const QStringList &expr
     } catch (const z3::exception &ex) {
         result.success = false;
         result.simplifiedExpression = conjunction;
-        result.log = QStringLiteral("Z3Simplifier: Z3 异常 %1").arg(QString::fromUtf8(ex.msg()));
+        result.log = QString("Z3Simplifier: Z3 异常 %1").arg(QString::fromUtf8(ex.msg()));
         Z3_finalize_memory();
     }
 
@@ -167,7 +170,7 @@ QString Z3Simplifier::sanitizeExpression(const QString &expression) const
     if (trimmed.isEmpty())
         return QString();
 
-    static const QRegularExpression unsupportedPattern(QStringLiteral("[\\";]"));
+    static const QRegularExpression unsupportedPattern(QString("[\";\\]"));
     if (unsupportedPattern.match(trimmed).hasMatch())
         return QString();
 
@@ -177,7 +180,7 @@ QString Z3Simplifier::sanitizeExpression(const QString &expression) const
 QString Z3Simplifier::buildScriptFromExpressions(const QStringList &expressions) const
 {
     QStringList commands;
-    commands.append(QStringLiteral("(set-logic ALL)"));
+    commands.append(QString("(set-logic ALL)"));
     for (const QString &expression : expressions) {
         const QString sanitized = sanitizeExpression(expression);
         if (sanitized.isEmpty())

@@ -24,6 +24,7 @@ public:
         , m_orderIndex(0)
         , m_analysisDepth(0)
         , m_equipmentId(0)
+        , m_projectStructureId(0)
     {}
 
     int id() const { return m_id; }
@@ -68,6 +69,9 @@ public:
     QString equipmentName() const { return m_equipmentName; }
     void setEquipmentName(const QString &name) { m_equipmentName = name; }
 
+    int projectStructureId() const { return m_projectStructureId; }
+    void setProjectStructureId(int id) { m_projectStructureId = id; }
+
 private:
     int m_id;
     int m_parentId;
@@ -83,6 +87,7 @@ private:
     int m_equipmentId;
     QString m_equipmentType;
     QString m_equipmentName;
+    int m_projectStructureId;
 };
 
 #endif // CONTAINERENTITY_H

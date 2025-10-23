@@ -21,8 +21,8 @@ FunctionModelResult FunctionAnalysisService::analyzeSymbol(int symbolId, const Q
     }
 
     QSqlQuery symbolQuery(m_db);
-    symbolQuery.prepare(QStringLiteral("SELECT Symbol_ID, Show_DT, Equipment_ID FROM Symbol WHERE Symbol_ID = :sid"));
-    symbolQuery.bindValue(QStringLiteral(":sid"), symbolId);
+    symbolQuery.prepare(QString("SELECT Symbol_ID, Show_DT, Equipment_ID FROM Symbol WHERE Symbol_ID = :sid"));
+    symbolQuery.bindValue(QString(":sid"), symbolId);
     if (!symbolQuery.exec() || !symbolQuery.next()) {
         result.warnings.append(QObject::tr("未找到符号 %1").arg(symbolId));
         return result;
@@ -37,14 +37,14 @@ FunctionModelResult FunctionAnalysisService::analyzeSymbol(int symbolId, const Q
 
     QStringList execs;
     QSqlQuery portQuery(m_db);
-    portQuery.prepare(QStringLiteral("SELECT ConnNum FROM Symb2TermInfo WHERE Symbol_ID = :sid ORDER BY Symb2TermInfo_ID"));
-    portQuery.bindValue(QStringLiteral(":sid"), symbolId);
+    portQuery.prepare(QString("SELECT ConnNum FROM Symb2TermInfo WHERE Symbol_ID = :sid ORDER BY Symb2TermInfo_ID"));
+    portQuery.bindValue(QString(":sid"), symbolId);
     if (portQuery.exec()) {
         while (portQuery.next()) {
             const QString port = portQuery.value(0).toString().trimmed();
             if (port.isEmpty()) continue;
             if (!componentName.isEmpty())
-                execs.append(QStringLiteral("%1.%2").arg(componentName, port));
+                execs.append(QString("%1.%2").arg(componentName, port));
             else
                 execs.append(port);
         }

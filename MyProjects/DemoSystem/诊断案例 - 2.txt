@@ -1,0 +1,69 @@
+//=====故障1 继电器KA01失效=====//
+
+//系统外部输入
+progress test.SP01.currentIn=on
+progress test.QF01.cmdIn=on
+progress test.SB01.cmdIn=on
+
+//观测1-1
+assign test.HL01.ledState = on
+assign test.HL02.ledState = off
+fc
+
+//观测1-2
+assign test.KA01.currentOut_11_14 = off
+fc
+
+//观测1-3
+assign test.KA01.currentIn_11_14 = on
+fc
+
+//观测1-4
+assign test.KA01.currentIn_A1_A2 = on
+fc
+
+
+//=====故障2 开关SB01接触不良=====//
+
+//系统外部输入
+progress test.SP01.currentIn=on
+progress test.QF01.cmdIn=on
+progress test.SB01.cmdIn=on
+
+//观测1-1
+assign test.HL01.ledState = on
+assign test.HL02.ledState = off
+fc
+
+//动作及观测1-2
+progress test.SB01.cmdIn=reset
+progress test.SB01.cmdIn=on
+assign test.HL01.ledState = on
+assign test.HL02.ledState = on
+fc
+
+//=====故障5 保险丝FU01熔断=====//
+
+//系统外部输入
+progress test.SP01.currentIn=on
+progress test.QF01.cmdIn=on
+progress test.SB01.cmdIn=on
+
+//观测1-1
+assign test.HL01.ledState = off
+assign test.HL02.ledState = off
+fc
+
+//观测1-4
+assign test.FU01.currentOut_1_2 = off
+fc
+
+//观测1-3
+assign test.FU01.currentIn_1_2 = on
+fc
+
+assign test.HL02.ledState=off
+progress test.SB01.cmdIn=reset
+progress test.SB01.cmdIn=on
+assign test.HL02.ledState=off
+fc

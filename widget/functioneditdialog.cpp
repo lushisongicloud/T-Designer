@@ -90,7 +90,7 @@ void FunctionEditDialog::loadSymbolPorts()
         return;
 
     QSqlQuery query(m_db);
-    query.prepare(QStringLiteral("SELECT ConnNum, ConnDesc FROM Symb2TermInfo WHERE Symbol_ID = :sid ORDER BY ConnNum"));
+    query.prepare(QString("SELECT ConnNum, ConnDesc FROM Symb2TermInfo WHERE Symbol_ID = :sid ORDER BY ConnNum"));
     query.bindValue(":sid", m_record.symbolId);
     if (!query.exec()) {
         qWarning() << "FunctionEditDialog" << query.lastError();
@@ -184,7 +184,7 @@ QString FunctionEditDialog::buildCmdValList() const
         const QString key = ui->tableInputs->item(row, 0) ? ui->tableInputs->item(row, 0)->text().trimmed() : QString();
         const QString value = ui->tableInputs->item(row, 1) ? ui->tableInputs->item(row, 1)->text().trimmed() : QString();
         if (key.isEmpty() || value.isEmpty()) continue;
-        pairs.append(QStringLiteral("%1=%2").arg(key, value));
+        pairs.append(QString("%1=%2").arg(key, value));
     }
     return pairs.join(',');
 }
@@ -197,7 +197,7 @@ QString FunctionEditDialog::buildExecList() const
         if (item->checkState() == Qt::Checked) {
             const QString port = item->text();
             if (!m_record.symbolName.isEmpty())
-                execs.append(QStringLiteral("%1.%2").arg(m_record.symbolName, port));
+                execs.append(QString("%1.%2").arg(m_record.symbolName, port));
             else
                 execs.append(port);
         }

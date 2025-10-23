@@ -21,7 +21,7 @@ FunctionDependencyResolver::ResolvedFunction FunctionDependencyResolver::resolve
     result.functionName = functionName;
 
     if (!m_definitions.contains(functionName)) {
-        result.warnings.append(QStringLiteral("未找到功能定义: %1").arg(functionName));
+        result.warnings.append(QString("未找到功能定义: %1").arg(functionName));
         return result;
     }
 
@@ -35,11 +35,11 @@ FunctionDependencyResolver::ResolvedFunction FunctionDependencyResolver::resolve
 
     std::function<void(const QString &, bool)> dfs = [&](const QString &name, bool collectActuator) {
         if (!m_definitions.contains(name)) {
-            warnings.append(QStringLiteral("未找到功能定义: %1").arg(name));
+            warnings.append(QString("未找到功能定义: %1").arg(name));
             return;
         }
         if (recursionStack.contains(name)) {
-            warnings.append(QStringLiteral("检测到功能依赖循环: %1").arg(name));
+            warnings.append(QString("检测到功能依赖循环: %1").arg(name));
             return;
         }
         if (visited.contains(name)) return;
@@ -121,9 +121,9 @@ QStringList FunctionDependencyResolver::parseDependencyFunctions(const FunctionI
 QStringList FunctionDependencyResolver::extractInputVariables(const FunctionInfo &info) const
 {
     static const QSet<QString> kExcludedTypes = {
-        QStringLiteral("功能执行器"),
-        QStringLiteral("依赖功能"),
-        QStringLiteral("参照功能")
+        QString("功能执行器"),
+        QString("依赖功能"),
+        QString("参照功能")
     };
 
     QStringList inputs;

@@ -21,6 +21,7 @@
 - 与模型规范对齐：
   - 领域建模与层次关系请参考 `docs/hierarchical_modeling_requirements.md`，保持命名与关系图一致。
   - 在新增实体/仓库前，先补充/确认 `DO/` 层的数据结构。
+  - 迁移自 Livingstone 的求解逻辑时，可参考 `MyProjects/DemoSystem/` 的业务流程与数据组织，将其状态机与 T 语言描述改写为通用 SMT 表达，并复用 `z3solverthread.*`。
 
 ## 代码风格
 - 遵循根目录 `AGENTS.md` 约定：类 PascalCase，方法/变量 lowerCamelCase，4 空格缩进，UTF-8 with BOM，使用 `clang-format`（Qt/Google 风格均可，保持一致）。
@@ -29,8 +30,12 @@
 
 ## 典型目录内元素
 - `containerrepository.*`：示例仓库类，负责容器/系统相关的数据装载/持久化，屏蔽底层存储细节。
+- `container/`：包含 `behavioraggregator.*`、`containerdata.*` 等聚合/缓存辅助类，集中管理容器维度的业务状态。
+- `behavior/`：封装求解器或复杂算法（如 `z3simplifier.*`）；保持线程安全，并通过信号返回结果。
+- `function/`：包含 `functionrepository.*`、`functionanalysisservice.*`、`tmodelvalidator.*` 等函数定义/校验逻辑。
+- `test/`：包含 `diagnosticmatrixbuilder.*`、`testgeneratorservice.*` 等测试流程生成器。
 - `worker.*`：后台任务/计算单元，使用线程或任务并发执行，提供进度与结果信号。
-- `componententity.*`、`systementity.*`：业务聚合根或领域对象的业务外观，协调 `DO/` 数据对象。
+- `componententity.*`、`systementity.*`：业务聚合根或领域对象的业务外观，协调 `DO/` 数据对象；其中 `systementity.cpp` 当前以 `ref/Model.db` 中的 SMT 数据为参考，用于验证系统/功能层建模。
 
 ## 测试策略（Qt Test）
 - 为仓库与服务编写独立单元测试（不依赖 UI），覆盖：
@@ -41,9 +46,9 @@
 
 ## 变更流程
 - 新增/删除源文件后，务必更新 `T_DESIGNER.pro`（`SOURCES`/`HEADERS`）。
-- 涉及数据库结构的改动，更新相应迁移/初始化逻辑与示例数据（如需要，避免破坏 `Model.db` 示例用途）。
+- 涉及数据库结构的改动，请在 `ref/` 目录下的示例数据库上读取或验证，并更新迁移/初始化逻辑；避免破坏共享示例数据。
+- 调整求解器或业务流程时，请同步对照 `MyProjects/` 中的示例工程（尤其是 `DemoSystem/`），记录从 Livingstone 到 SMT/`z3` 的差异与迁移步骤。
 - 禁止修改自动生成文件（如 `ui_*.h`）。
 
 ---
 简述：BO 层专注业务编排与数据访问封装，不含 UI。面向 UI 暴露稳定接口，并与 `DO/`、数据库保持清晰边界。
-

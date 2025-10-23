@@ -41,6 +41,9 @@ macx {
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
+        mainwindow_units.cpp \
+        mainwindow_project.cpp \
+        mainwindow_diagnosis.cpp \
     common.cpp \
     mxdrawxlib.cpp \
     qxlabel.cpp \

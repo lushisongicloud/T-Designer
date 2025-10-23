@@ -1414,6 +1414,186 @@ QStringList PageNameCandidates(const QString &fullName)
     return candidates;
 }
 
+QString IncrementPageBaseName(const QString &baseName)
+{
+    if (baseName.isEmpty())
+        return "1";
+    
+    const QString trimmed = baseName.trimmed();
+    if (trimmed.isEmpty())
+        return "1";
+    
+    // 规则3：以数字结尾的，取尾部数字递增
+    QRegExp digitPattern("(\\d+)$");
+    if (digitPattern.indexIn(trimmed) >= 0) {
+        const QString numStr = digitPattern.cap(1);
+        const int pos = digitPattern.indexIn(trimmed);
+        const QString prefix = trimmed.left(pos);
+        bool ok;
+        int num = numStr.toInt(&ok);
+        if (ok) {
+            num++;
+            // 保持与原数字相同的宽度（前导零）
+            QString newNum = QString::number(num);
+            if (numStr.length() > newNum.length() && numStr.startsWith('0')) {
+                newNum = newNum.rightJustified(numStr.length(), '0');
+            }
+            return prefix + newNum;
+        }
+    }
+    
+    // 规则1：以英文字母结尾的，最后一个字符递增
+    QChar lastChar = trimmed.at(trimmed.length() - 1);
+    if ((lastChar >= 'a' && lastChar <= 'z') || (lastChar >= 'A' && lastChar <= 'Z')) {
+        QString prefix = trimmed.left(trimmed.length() - 1);
+        QChar nextChar = lastChar;
+        
+        // 处理小写字母
+        if (lastChar >= 'a' && lastChar <= 'z') {
+            if (lastChar == 'z') {
+                // z 变 aa, az 变 ba
+                return trimmed + 'a';
+            } else {
+                nextChar = QChar(lastChar.unicode() + 1);
+                return prefix + nextChar;
+            }
+        }
+        
+        // 处理大写字母
+        if (lastChar >= 'A' && lastChar <= 'Z') {
+            if (lastChar == 'Z') {
+                // Z 变 AA, AZ 变 BA
+                return trimmed + 'A';
+            } else {
+                nextChar = QChar(lastChar.unicode() + 1);
+                return prefix + nextChar;
+            }
+        }
+    }
+    
+    // 规则2：中文或其他字符结尾的，后面加字符'1'
+    return trimmed + "1";
+}
+
+int FindFirstPageIDUnderStructure(int projectStructureId)
+{
+    // 首先检查该结构节点下是否直接有图纸
+    QSqlQuery queryPage(T_ProjectDatabase);
+    queryPage.prepare("SELECT Page_ID FROM Page WHERE ProjectStructure_ID = :psid ORDER BY Page_ID LIMIT 1");
+    queryPage.bindValue(":psid", projectStructureId);
+    if (queryPage.exec() && queryPage.next()) {
+        return queryPage.value("Page_ID").toInt();
+    }
+    
+    // 如果没有，递归查找子结构节点
+    QSqlQuery queryChildren(T_ProjectDatabase);
+    queryChildren.prepare("SELECT ProjectStructure_ID FROM ProjectStructure WHERE Parent_ID = :pid ORDER BY ProjectStructure_ID");
+    queryChildren.bindValue(":pid", projectStructureId);
+    if (queryChildren.exec()) {
+        while (queryChildren.next()) {
+            int childId = queryChildren.value("ProjectStructure_ID").toInt();
+            int pageId = FindFirstPageIDUnderStructure(childId);
+            if (pageId > 0) {
+                return pageId;
+            }
+        }
+    }
+    
+    return -1; // 未找到
+}
+
+bool UpdateProjectStructureDesc(const QString &structureId, const QString &structureInt, const QString &desc, int parentId)
+{
+    if (structureInt.trimmed().isEmpty()) {
+        return false;
+    }
+    
+    // 首先查找是否已存在该记录
+    QSqlQuery queryCheck(T_ProjectDatabase);
+    queryCheck.prepare("SELECT ProjectStructure_ID FROM ProjectStructure WHERE Structure_ID = :sid AND Structure_INT = :sint");
+    queryCheck.bindValue(":sid", structureId);
+    queryCheck.bindValue(":sint", structureInt.trimmed());
+    
+    if (queryCheck.exec() && queryCheck.next()) {
+        // 记录已存在，更新描述
+        QSqlQuery queryUpdate(T_ProjectDatabase);
+        queryUpdate.prepare("UPDATE ProjectStructure SET Struct_Desc = :desc WHERE Structure_ID = :sid AND Structure_INT = :sint");
+        queryUpdate.bindValue(":desc", desc.trimmed());
+        queryUpdate.bindValue(":sid", structureId);
+        queryUpdate.bindValue(":sint", structureInt.trimmed());
+        return queryUpdate.exec();
+    } else {
+        // 记录不存在，插入新记录
+        // 对于高层节点(Structure_ID=3)，Parent_ID为1(项目节点)
+        // 对于位置和分组节点，需要指定正确的Parent_ID
+        if (structureId == "3") {
+            // 高层节点，Parent_ID固定为1
+            QSqlQuery queryInsert(T_ProjectDatabase);
+            queryInsert.prepare("INSERT INTO ProjectStructure (Structure_ID, Structure_INT, Struct_Desc, Parent_ID) VALUES (:sid, :sint, :desc, 1)");
+            queryInsert.bindValue(":sid", structureId);
+            queryInsert.bindValue(":sint", structureInt.trimmed());
+            queryInsert.bindValue(":desc", desc.trimmed());
+            return queryInsert.exec();
+        } else {
+            // 位置或分组节点，暂不自动创建（需要明确的父节点关系）
+            return false;
+        }
+    }
+}
+
+void RemoveEmptyStructureNodes(int projectStructureId)
+{
+    // 检查该结构节点下是否还有图纸
+    QSqlQuery queryPages(T_ProjectDatabase);
+    queryPages.prepare("SELECT COUNT(*) as page_count FROM Page WHERE ProjectStructure_ID = :psid");
+    queryPages.bindValue(":psid", projectStructureId);
+    
+    if (!queryPages.exec() || !queryPages.next()) {
+        return;
+    }
+    
+    int pageCount = queryPages.value("page_count").toInt();
+    
+    // 检查是否有子结构节点
+    QSqlQuery queryChildren(T_ProjectDatabase);
+    queryChildren.prepare("SELECT COUNT(*) as child_count FROM ProjectStructure WHERE Parent_ID = :pid");
+    queryChildren.bindValue(":pid", projectStructureId);
+    
+    if (!queryChildren.exec() || !queryChildren.next()) {
+        return;
+    }
+    
+    int childCount = queryChildren.value("child_count").toInt();
+    
+    // 如果既没有图纸也没有子节点,删除该节点
+    if (pageCount == 0 && childCount == 0) {
+        // 获取父节点ID
+        QSqlQuery queryNode(T_ProjectDatabase);
+        queryNode.prepare("SELECT Parent_ID, Structure_ID FROM ProjectStructure WHERE ProjectStructure_ID = :psid");
+        queryNode.bindValue(":psid", projectStructureId);
+        
+        if (!queryNode.exec() || !queryNode.next()) {
+            return;
+        }
+        
+        int parentId = queryNode.value("Parent_ID").toInt();
+        int structureId = queryNode.value("Structure_ID").toInt();
+        
+        // 删除该节点(但不要删除项目根节点,Structure_ID=1)
+        if (structureId != 1) {
+            QSqlQuery queryDelete(T_ProjectDatabase);
+            queryDelete.prepare("DELETE FROM ProjectStructure WHERE ProjectStructure_ID = :psid");
+            queryDelete.bindValue(":psid", projectStructureId);
+            queryDelete.exec();
+            
+            // 递归检查父节点
+            if (parentId > 0) {
+                RemoveEmptyStructureNodes(parentId);
+            }
+        }
+    }
+}
+
 //Structure_ID=5
 bool CheckProjectStructure_IDSameOrNot(QString PageProjectStructure_ID1,QString UnitProjectStructure_ID2)
 {
@@ -1741,13 +1921,13 @@ int InsertRecordToProjectStructure(int Mode,QString GaocengStr,QString PosStr,QS
 
     auto insertStructureRecord = [&](int id, const QString &structureId, const QString &structureInt, int parentId) {
         QSqlQuery insertQuery(T_ProjectDatabase);
-        insertQuery.prepare(QStringLiteral("INSERT INTO ProjectStructure (ProjectStructure_ID,Structure_ID,Structure_INT,Parent_ID,Struct_Desc) "
+        insertQuery.prepare(QString("INSERT INTO ProjectStructure (ProjectStructure_ID,Structure_ID,Structure_INT,Parent_ID,Struct_Desc) "
                                            "VALUES (:ProjectStructure_ID,:Structure_ID,:Structure_INT,:Parent_ID,:Struct_Desc)"));
-        insertQuery.bindValue(QStringLiteral(":ProjectStructure_ID"), id);
-        insertQuery.bindValue(QStringLiteral(":Structure_ID"), structureId);
-        insertQuery.bindValue(QStringLiteral(":Structure_INT"), structureInt);
-        insertQuery.bindValue(QStringLiteral(":Parent_ID"), parentId);
-        insertQuery.bindValue(QStringLiteral(":Struct_Desc"), QString());
+        insertQuery.bindValue(QString(":ProjectStructure_ID"), id);
+        insertQuery.bindValue(QString(":Structure_ID"), structureId);
+        insertQuery.bindValue(QString(":Structure_INT"), structureInt);
+        insertQuery.bindValue(QString(":Parent_ID"), parentId);
+        insertQuery.bindValue(QString(":Struct_Desc"), QString());
         insertQuery.exec();
     };
 
@@ -1755,9 +1935,9 @@ int InsertRecordToProjectStructure(int Mode,QString GaocengStr,QString PosStr,QS
         if (name.isEmpty())
             return 1001;
         QSqlQuery q(T_ProjectDatabase);
-        q.prepare(QStringLiteral("SELECT ProjectStructure_ID FROM ProjectStructure "
+        q.prepare(QString("SELECT ProjectStructure_ID FROM ProjectStructure "
                                  "WHERE Structure_ID='3' AND Structure_INT=:Structure_INT AND Parent_ID=1001"));
-        q.bindValue(QStringLiteral(":Structure_INT"), name);
+        q.bindValue(QString(":Structure_INT"), name);
         if (q.exec() && q.next())
             return q.value(0).toInt();
         return -1;
@@ -1770,7 +1950,7 @@ int InsertRecordToProjectStructure(int Mode,QString GaocengStr,QString PosStr,QS
         if (existingId != -1)
             return existingId;
         const int newId = nextProjectStructureId();
-        insertStructureRecord(newId, QStringLiteral("3"), name, 1001);
+        insertStructureRecord(newId, QString("3"), name, 1001);
         return newId;
     };
 
@@ -1778,10 +1958,10 @@ int InsertRecordToProjectStructure(int Mode,QString GaocengStr,QString PosStr,QS
         if (name.isEmpty())
             return parentId;
         QSqlQuery q(T_ProjectDatabase);
-        q.prepare(QStringLiteral("SELECT ProjectStructure_ID FROM ProjectStructure "
+        q.prepare(QString("SELECT ProjectStructure_ID FROM ProjectStructure "
                                  "WHERE Structure_ID='5' AND Structure_INT=:Structure_INT AND Parent_ID=:Parent_ID"));
-        q.bindValue(QStringLiteral(":Structure_INT"), name);
-        q.bindValue(QStringLiteral(":Parent_ID"), parentId);
+        q.bindValue(QString(":Structure_INT"), name);
+        q.bindValue(QString(":Parent_ID"), parentId);
         if (q.exec() && q.next())
             return q.value(0).toInt();
         return -1;
@@ -1794,16 +1974,16 @@ int InsertRecordToProjectStructure(int Mode,QString GaocengStr,QString PosStr,QS
         if (existingId != -1)
             return existingId;
         const int newId = nextProjectStructureId();
-        insertStructureRecord(newId, QStringLiteral("5"), name, parentId);
+        insertStructureRecord(newId, QString("5"), name, parentId);
         return newId;
     };
 
     auto findPageStructId = [&](int parentId, const QString &pageInt) -> int {
         QSqlQuery q(T_ProjectDatabase);
-        q.prepare(QStringLiteral("SELECT ProjectStructure_ID FROM ProjectStructure "
+        q.prepare(QString("SELECT ProjectStructure_ID FROM ProjectStructure "
                                  "WHERE Structure_ID='6' AND Structure_INT=:Structure_INT AND Parent_ID=:Parent_ID"));
-        q.bindValue(QStringLiteral(":Structure_INT"), pageInt);
-        q.bindValue(QStringLiteral(":Parent_ID"), parentId);
+        q.bindValue(QString(":Structure_INT"), pageInt);
+        q.bindValue(QString(":Parent_ID"), parentId);
         if (q.exec() && q.next())
             return q.value(0).toInt();
         return -1;
@@ -1811,7 +1991,7 @@ int InsertRecordToProjectStructure(int Mode,QString GaocengStr,QString PosStr,QS
 
     auto createPageStructId = [&](int parentId, const QString &pageInt) -> int {
         const int newId = nextProjectStructureId();
-        insertStructureRecord(newId, QStringLiteral("6"), pageInt, parentId);
+        insertStructureRecord(newId, QString("6"), pageInt, parentId);
         return newId;
     };
 

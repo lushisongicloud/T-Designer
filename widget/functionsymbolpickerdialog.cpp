@@ -1,4 +1,4 @@
-#include "widget/functionsymbolpickerdialog.h"
+﻿#include "widget/functionsymbolpickerdialog.h"
 
 #include <QDialogButtonBox>
 #include <QSqlQuery>
@@ -50,7 +50,7 @@ void FunctionSymbolPickerDialog::loadData()
         return;
 
     QSqlQuery equipmentQuery(m_db);
-    if (!equipmentQuery.exec(QStringLiteral("SELECT Equipment_ID, DT FROM Equipment ORDER BY DT"))) {
+    if (!equipmentQuery.exec(QString("SELECT Equipment_ID, DT FROM Equipment ORDER BY DT"))) {
         qWarning() << "FunctionSymbolPickerDialog equipment" << equipmentQuery.lastError();
         return;
     }
@@ -64,7 +64,7 @@ void FunctionSymbolPickerDialog::loadData()
         equipItem->setExpanded(true);
 
         QSqlQuery symbolQuery(m_db);
-        symbolQuery.prepare(QStringLiteral("SELECT Symbol_ID, Show_DT, Symbol_Category FROM Symbol WHERE Equipment_ID=:eid ORDER BY Symbol_ID"));
+        symbolQuery.prepare(QString("SELECT Symbol_ID, Show_DT, Symbol_Category FROM Symbol WHERE Equipment_ID=:eid ORDER BY Symbol_ID"));
         symbolQuery.bindValue(":eid", equipmentId);
         if (!symbolQuery.exec()) {
             qWarning() << "FunctionSymbolPickerDialog symbol" << symbolQuery.lastError();

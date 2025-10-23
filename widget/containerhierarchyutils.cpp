@@ -186,7 +186,7 @@ QMap<QString, FunctionInfo> ContainerHierarchy::fetchFunctionInfoMap(const QSqlD
     if (!db.isValid() || !db.isOpen()) return functions;
 
     QSqlQuery query(db);
-    if (!query.exec(QStringLiteral(
+    if (!query.exec(QString(
             "SELECT FunctionName, CmdValList, ExecsList, ComponentDependency, AllComponents, LinkText, FunctionDependency, PersistentFlag, FaultProbability FROM Function"))) {
         qWarning() << "fetchFunctionInfoMap failed:" << query.lastError();
         return functions;
@@ -210,7 +210,7 @@ QMap<QString, FunctionInfo> ContainerHierarchy::fetchFunctionInfoMap(const QSqlD
             TestItem item;
             item.variable = parts.at(0).trimmed();
             item.value = parts.at(1).trimmed();
-            item.testType = QStringLiteral("一般变量");
+            item.testType = QString("一般变量");
             item.checkState = Qt::Unchecked;
             info.constraintList.append(item);
         }
@@ -225,9 +225,9 @@ QMap<QString, FunctionInfo> ContainerHierarchy::fetchFunctionInfoMap(const QSqlD
                     actuatorName = actuatorName.left(dotIndex);
                 info.actuatorName = actuatorName;
                 info.actuatorConstraint.variable = actuatorEntry;
-                info.actuatorConstraint.testType = QStringLiteral("功能执行器");
+                info.actuatorConstraint.testType = QString("功能执行器");
                 info.actuatorConstraint.checkState = Qt::Unchecked;
-                info.actuatorConstraint.value = QStringLiteral("on");
+                info.actuatorConstraint.value = QString("on");
             }
         }
 

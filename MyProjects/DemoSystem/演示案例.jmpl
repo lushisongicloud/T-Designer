@@ -1,0 +1,392 @@
+
+enum KACommand{on, off};
+enum MannualCommand{on, off, reset, noCommand};
+enum onOffState{on, off, onoff};
+enum openClosedValues{open, closed};
+enum EMcmd{on, off, noCommand};
+enum Resistance{nominal, shorted, open};
+enum openClosedState{open, closed};
+enum voltage{none, low, middle, high, infinite};
+enum current{none, low, middle, high, infinite};
+enum resistance{none, low, middle, high, infinite};
+enum mannualCmd{on, off, reset, noCommand};
+
+
+
+class SP {
+    onOffState currentOut_p_n;
+    ModeType mode;
+    MannualCommand currentIn;
+
+    enum ModeType {on, off, blown, unknownFault};
+
+    stateVector [mode];
+
+    {
+        switch (mode) {
+            case on:
+                currentOut_p_n = on;
+            case off:
+                currentOut_p_n = off;
+            case blown:
+                currentOut_p_n = off;
+            case unknownFault:
+        }
+    }
+
+    transition turnOn(off, on) {
+        currentIn = on;
+    }
+    transition turnOff(on, off) {
+        currentIn = off;
+    }
+
+    failure blown(*, blown, 2.0e-5) {
+    }
+    failure unknownFault(*, unknownFault, 1.0e-8) {
+    }
+}
+
+
+class LINE {
+
+    onOffState currentOut_1_2;
+    onOffState currentIn_1_2;
+    ModeType mode;
+
+    enum ModeType {nominal, loose, broken, unknownFault};
+
+    stateVector [mode];
+
+    {
+        switch (mode) {
+            case nominal:
+                currentOut_1_2 = currentIn_1_2;
+            case loose:
+                currentOut_1_2 = off;
+            case broken:
+                currentOut_1_2 = off;
+            case unknownFault:
+        }
+    }
+
+    failure loose(*, loose, 2.0e-4) {
+    }
+    failure broken(*, broken, 1.0e-6) {
+    }
+    failure unknownFault(*, unknownFault, 1.0e-8) {
+    }
+
+}
+
+
+class FU {
+
+    onOffState currentOut_1_2;
+    onOffState currentIn_1_2;
+    enum ModeType {nominal, blown, unknownFault};
+    ModeType mode;
+    stateVector [mode];
+    {
+        switch (mode) {
+            case nominal:
+                currentOut_1_2 = currentIn_1_2;
+            case blown:
+                currentOut_1_2 = off;
+            case unknownFault:                       
+        }
+    }
+
+    failure blown(*, blown, 1.0e-4) {
+    }
+    failure unknownFault(*, unknownFault, 1.0e-8) {
+    }
+}
+
+
+class QF {
+
+    MannualCommand cmdIn;
+    QF_sub QF_1;
+    QF_sub QF_2;
+    onOffState currentIn_1_2;
+    onOffState currentOut_1_2;
+    onOffState currentIn_3_4;
+    onOffState currentOut_3_4;
+
+    {
+        cmdIn = QF_1.cmdIn;
+        cmdIn = QF_2.cmdIn;
+        currentIn_1_2 = QF_1.currentIn;
+        currentIn_3_4 = QF_2.currentIn;
+        QF_1.currentOut = currentOut_1_2;
+        QF_2.currentOut = currentOut_3_4;
+    }
+}
+
+
+class QF_sub {
+
+    MannualCommand cmdIn;
+    onOffState currentIn;
+    onOffState currentOut;
+    ModeType mode;
+
+    enum ModeType {on, off, tripped, blown, unknownFault};
+
+    stateVector [mode];
+
+    {
+        switch (mode) {
+            case on:
+                currentOut = currentIn;
+            case off:
+                currentOut = off;
+            case tripped:
+                currentOut = off;
+            case blown:
+                currentOut = off;
+            case unknownFault:
+        }
+    }
+
+    transition turnOn(off, on) {
+        cmdIn = on;
+    }
+    transition turnOff(on, off) {
+        cmdIn = off;
+    }
+    transition performReset(tripped, off) {
+        cmdIn = reset;
+    }
+
+    failure tripped(*, tripped, 5.0e-5) {
+    }
+    failure blown(*, blown, 2.0e-5) {
+    }
+    failure unknownFault(*, unknownFault, 1.0e-8) {
+    }
+}
+
+
+
+class HL {
+    onOffState ledState;
+    ModeType mode;
+    Resistance Res;
+    onOffState currentIn_1_2;
+
+    enum ModeType {nominal, blown, unknownFault};
+
+    stateVector [mode];
+
+    {
+        switch (mode) {
+            case nominal:
+                ledState = currentIn_1_2;
+                Res = nominal;
+            case blown:
+                ledState = off;
+            case unknownFault:
+        }
+    }
+
+    failure blown(*, blown, 2.0e-5) {
+    }
+    failure unknownFault(*, unknownFault, 1.0e-8) {
+    }
+}
+
+
+class KA {
+
+    KA_cd KA_cd1;
+    KA_xq KA_xq1;
+    onOffState currentIn_11_14;
+    onOffState currentOut_11_14;
+    onOffState currentIn_A1_A2;
+
+    {
+        currentIn_A1_A2 = KA_xq1.cmdIn;
+        currentIn_11_14 = KA_cd1.currentIn;
+        KA_cd1.currentOut = currentOut_11_14;
+        KA_xq1.cmdOut = KA_cd1.cmdIn;
+    }
+}
+
+
+class KA_cd {
+
+    onOffState currentIn;
+    onOffState currentOut;
+    openClosedValues cdPosition;
+    ModeType mode;
+    onOffState cmdIn;
+
+    enum ModeType {nominal, stuckOpen, stuckClosed, unknownFault};
+
+    stateVector [mode];
+
+    {
+        switch (mode) {
+            case nominal:
+                if (cmdIn = on) {
+                    currentOut = currentIn;
+                    cdPosition = closed;
+                }
+                if (cmdIn = off) {
+                    currentOut = off;
+                    cdPosition = open;
+                }
+            case stuckOpen:
+                currentOut = off;
+                cdPosition = open;
+            case stuckClosed:
+                currentOut = currentIn;
+                cdPosition = closed;
+            case unknownFault:
+        }
+    }
+
+    failure toStuckOpen(*, stuckOpen, 1.0e-4) {
+    }
+    failure toStuckClosed(*, stuckClosed, 5.0e-5) {
+    }
+    failure toUnknownFault(*, unknownFault, 1.0e-7) {
+    }
+}
+
+
+
+class KA_xq {
+
+    ModeType mode;
+    onOffState cmdIn;
+    Resistance Res;
+    onOffState xqActivatedLed;
+    onOffState cmdOut;
+
+    enum ModeType {nominal, malFunction, unknownFault};
+
+    stateVector [mode];
+
+    {
+        if (cmdIn = on) {
+            xqActivatedLed = on;
+        }
+        if (cmdIn = off) {
+            xqActivatedLed = off;
+        }
+        switch (mode) {
+            case nominal:
+                if (cmdIn = on) {
+                    cmdOut = on;
+                    Res = nominal;
+                }
+                if (cmdIn = off) {
+                    cmdOut = off;
+                    Res = nominal;
+                }
+            case malFunction:
+                cmdOut = off;
+                Res != nominal;
+            case unknownFault:
+        }
+    }
+
+    failure toMalFunction(*, malFunction, 2.0e-5) {
+    }
+    failure toUnknownFault(*, unknownFault, 1.0e-7) {
+    }
+}
+
+
+
+class SB {
+    MannualCommand cmdIn;
+    onOffState currentIn_1_2;
+    onOffState currentOut_1_2;
+    ModeType mode;
+
+    enum ModeType {open, close, tripped, blown, unknownFault};
+
+    stateVector [mode];
+
+    {
+        switch (mode) {
+            case close:
+                currentOut_1_2 = currentIn_1_2;
+            case open:
+                currentOut_1_2 = off;
+            case tripped:
+                currentOut_1_2 = off;
+            case blown:
+                currentOut_1_2 = off;
+            case unknownFault:
+        }
+    }
+
+    transition turnOn(open, close) {
+        cmdIn = on;
+    }
+    transition turnOff(close, open) {
+        cmdIn = off;
+    }
+    transition performReset(tripped, open) {
+        cmdIn = reset;
+    }
+
+    failure tripped(*, tripped, 1.0e-4) {
+    }
+    failure blown(*, blown, 2.0e-5) {
+    }
+    failure unknownFault(*, unknownFault, 1.0e-8) {
+    }
+}
+
+class Test {
+
+SP SP01;
+LINE L01;
+FU FU01;
+LINE L03;
+QF QF01;
+LINE L02;
+FU FU02;
+LINE L04;
+LINE L05;
+LINE L06;
+HL HL01;
+LINE L07;
+LINE L12;
+LINE L08;
+KA KA01;
+LINE L11;
+HL HL02;
+SB SB01;
+LINE L09;
+LINE L10;
+    {
+        SP01.currentOut_p_n = L01.currentIn_1_2;
+        L01.currentOut_1_2 = FU01.currentIn_1_2;
+        FU01.currentOut_1_2 = L03.currentIn_1_2;
+        L03.currentOut_1_2 = QF01.currentIn_1_2;
+        QF01.currentOut_1_2 = L02.currentIn_1_2;
+        L02.currentOut_1_2 = FU02.currentIn_1_2;
+        FU02.currentOut_1_2 = L04.currentIn_1_2;
+        L04.currentOut_1_2 = QF01.currentIn_3_4;
+        QF01.currentOut_3_4 = L05.currentIn_1_2;
+        L05.currentOut_1_2 = L06.currentIn_1_2;
+        L06.currentOut_1_2 = HL01.currentIn_1_2;
+        QF01.currentOut_3_4 = L07.currentIn_1_2;
+        L07.currentOut_1_2 = L12.currentIn_1_2;
+        L12.currentOut_1_2 = L08.currentIn_1_2;
+        L08.currentOut_1_2 = KA01.currentIn_11_14;
+        KA01.currentOut_11_14 = L11.currentIn_1_2;
+        L11.currentOut_1_2 = HL02.currentIn_1_2;
+        L12.currentOut_1_2 = SB01.currentIn_1_2;
+        SB01.currentOut_1_2 = L09.currentIn_1_2;
+        L09.currentOut_1_2 = L10.currentIn_1_2;
+        L10.currentOut_1_2 = KA01.currentIn_A1_A2;
+    }
+}

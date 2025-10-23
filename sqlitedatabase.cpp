@@ -6,36 +6,42 @@
 SQliteDatabase::SQliteDatabase(QString databaseName)
 {
     this->databaseName = databaseName;
+    this->connectionName = QString("sqlite_conn_%1").arg(reinterpret_cast<quintptr>(this), 0, 16);
 }
 
 SQliteDatabase::~SQliteDatabase()
 {
-    database.close();
+    if (database.isValid()) {
+        database.close();
+    }
+    if (!connectionName.isEmpty()) {
+        QSqlDatabase::removeDatabase(connectionName);
+    }
 }
 
 bool SQliteDatabase::connect()
 {
-    if (QSqlDatabase::contains("qt_sql_default_connection")){
-        database = QSqlDatabase::database("qt_sql_default_connection");
-    }
-    else{
-        database = QSqlDatabase::addDatabase("QSQLITE");
+    if (QSqlDatabase::contains(connectionName)) {
+        database = QSqlDatabase::database(connectionName);
+    } else {
+        database = QSqlDatabase::addDatabase("QSQLITE", connectionName);
         database.setDatabaseName(databaseName);
     }
-    if (!database.open()){
-        qDebug() << "Error: Failed to connect database." << database.lastError();
-        return false;
+    if (!database.isValid() || !database.isOpen()) {
+        if (!database.open()) {
+            qDebug() << "Error: Failed to connect database." << database.lastError();
+            return false;
+        }
     }
-    // Ensure foreign keys and new container tables exist
+
     QSqlQuery pragma(database);
     pragma.exec("PRAGMA foreign_keys = ON");
-
     return true;
 }
 
 component SQliteDatabase::selectComponentByMark(QString mark)
 {
-    QSqlQuery sql_query;
+    QSqlQuery sql_query(database);
     component ans;
 
     QString sql = QString("select id,type,mark,variable,parameter,description,failuremode FROM components WHERE mark = '%1'")
@@ -58,7 +64,7 @@ component SQliteDatabase::selectComponentByMark(QString mark)
 
 model SQliteDatabase::selectModelByName(QString name)
 {
-    QSqlQuery sql_query;
+    QSqlQuery sql_query(database);
     model ans;
 
     QString sql = QString("select id,name,systemDescription,testDiscription,connectNodes,functionDescription FROM models WHERE name = '%1'")
@@ -80,7 +86,7 @@ model SQliteDatabase::selectModelByName(QString name)
 
 parameter SQliteDatabase::selectParameterByNameAndComponentId(QString name, int componentId)
 {
-    QSqlQuery sql_query;
+    QSqlQuery sql_query(database);
     parameter ans;
 
     QString sql = QString("select id,defaultValue FROM parameters WHERE componentId = %1 AND name = '%2'")
@@ -99,7 +105,7 @@ parameter SQliteDatabase::selectParameterByNameAndComponentId(QString name, int 
 
 QStringList SQliteDatabase::selectAllModelName()
 {
-    QSqlQuery sql_query;
+    QSqlQuery sql_query(database);
     QStringList ans;
 
     QString sql = QString("select name FROM models");
@@ -140,7 +146,7 @@ bool SQliteDatabase::insertNewComponent(component c)
     }
     ParameterString.remove(ParameterString.size()-1,1);
 
-    QSqlQuery sql_query;
+    QSqlQuery sql_query(database);
     QString sql = QString("INSERT INTO components (type,mark,parameter,variable,description) "
                              "VALUES (:type,:mark,:parameter,:variable,:description)");
     sql_query.prepare(sql);
@@ -157,7 +163,7 @@ bool SQliteDatabase::insertNewComponent(component c)
         QMap<QString, QString>::iterator iter = parameterMap.begin();
         while (iter != parameterMap.end()&&ans)
         {
-            QSqlQuery sql_query;
+            QSqlQuery sql_query(database);
             QString sql = QString("INSERT INTO parameters (componentId,name,defaultValue) "
                                      "VALUES (:componentId,:name,:defaultValue)");
             sql_query.prepare(sql);
@@ -174,7 +180,7 @@ bool SQliteDatabase::insertNewComponent(component c)
 
 bool SQliteDatabase::saveModel(model model)
 {
-    QSqlQuery sql_query;
+    QSqlQuery sql_query(database);
     QString sql = QString("INSERT INTO models (name,systemDescription,testDiscription,connectNodes,functionDescription) "
                              "VALUES (:name,:systemDescription,:testDiscription,:connectNodes,:functionDescription)");
     sql_query.prepare(sql);
@@ -188,7 +194,7 @@ bool SQliteDatabase::saveModel(model model)
 
 bool SQliteDatabase::updateModel(model& model)
 {
-    QSqlQuery sql_query;
+    QSqlQuery sql_query(database);
     QString sql = QString("UPDATE models SET systemDescription=:systemDescription, "
                           "testDiscription=:testDiscription,connectNodes=:connectNodes,functionDescription=:functionDescription WHERE name=:name");
     sql_query.prepare(sql);
@@ -207,7 +213,7 @@ bool SQliteDatabase::modelExist(QString name)
     return ans.getName() == name;
 }
 
-void saveConnectNodes(const QString& name, const QList<QStringList>& list)
+void SQliteDatabase::saveConnectNodes(const QString& name, const QList<QStringList>& list)
 {
     if(list.isEmpty())
         return;
@@ -226,7 +232,7 @@ void saveConnectNodes(const QString& name, const QList<QStringList>& list)
 
     }
 
-    QSqlQuery sql_query;
+    QSqlQuery sql_query(database);
     QString temp_add = QString("UPDATE models SET connectNodes=:connectNodes WHERE name=:name");
     sql_query.prepare(temp_add);
     sql_query.bindValue(":connectNodes",name);

@@ -10,9 +10,21 @@
 #include "dialogsymbolattribute.h"
 #include "mxdrawxlib.h"
 #include "common.h"
+#ifdef LabelWidth
+#undef LabelWidth
+#endif
 #define LabelWidth 50
+#ifdef LabelHeight
+#undef LabelHeight
+#endif
 #define LabelHeight 42
+#ifdef TotalLabelNum
+#undef TotalLabelNum
+#endif
 #define TotalLabelNum 24
+#ifdef ColumnLabelNum
+#undef ColumnLabelNum
+#endif
 #define ColumnLabelNum 4
 using namespace MxDrawXLib;
 namespace Ui {
