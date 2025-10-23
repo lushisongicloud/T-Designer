@@ -37,9 +37,18 @@ public:
     static bool canContain(ContainerType parentType, ContainerType childType);
 
 private:
-    bool ensureEquipmentLinkTable();
+    bool ensureContainerSchema();
+    bool ensureHierarchySchema();
+    bool ensureComponentLinkSchema();
+    bool ensureColumnExists(const QString &table, const QString &column, const QString &alterSql);
     ContainerEntity fromQuery(const QSqlQuery &query) const;
     bool isAncestorOf(int ancestorId, int nodeId);
+    bool upsertNormalizedContainer(const ContainerEntity &entity);
+    bool updateNormalizedParentLink(int containerId, int parentContainerId);
+    bool updateNormalizedEquipmentLink(const ContainerEntity &entity);
+    int resolveProjectStructureId(const ContainerEntity &entity) const;
+    static QString levelFromType(ContainerType type);
+    static ContainerType typeFromLevel(const QString &level);
 
     QSqlDatabase m_db;
 };

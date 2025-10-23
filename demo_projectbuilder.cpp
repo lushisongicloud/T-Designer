@@ -6,6 +6,8 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QMap>
+#include <QStringList>
 #include <QVariant>
 #include <QSqlDatabase>
 #include <QSqlQuery>
@@ -99,6 +101,22 @@ inline bool upsertFunctionDefineClass(QSqlDatabase &db, const QVariantList &row,
     return true;
 }
 
+inline bool fetchTableColumns(QSqlDatabase &db, const QString &tableName, QStringList *columns, QString *errorMessage)
+{
+    QSqlQuery pragma(db);
+    const QString pragmaSql = QString("PRAGMA table_info(%1)").arg(tableName);
+    if (!pragma.exec(pragmaSql)) {
+        if (errorMessage)
+            *errorMessage = QString("SQL error: %1 (%2)").arg(pragma.lastError().text(), pragmaSql);
+        return false;
+    }
+
+    while (pragma.next())
+        columns->append(pragma.value(1).toString());
+
+    return true;
+}
+
 } // namespace
 
 bool DemoProjectBuilder::buildDemoProject(const QString &projectDir, const QString &projectName, QString *errorMessage)
@@ -112,25 +130,37 @@ bool DemoProjectBuilder::buildDemoProject(const QString &projectDir, const QStri
 
     const QString swProPath = projectDir + "/" + projectName + ".swPro";
     const QString dbPath = projectDir + "/" + projectName + ".db";
-    const QString modelPath = projectDir + "/Model.db";
     const QString paramsPath = projectDir + "/test.params";
     const QString canonicalPageStem = BuildCanonicalPageName(QString("=Subsystem+Station 1"),
                                                              QString("Demo Diagram"),
                                                              QString("DemoDiagram"));
     const QString dwgPath = projectDir + "/" + canonicalPageStem + ".dwg";
+    const QString templatePath = QDir::cleanPath(QString("D:/SynologyDrive/Project/T_DESIGNER/templete/project.db"));
+    qDebug()<<"templatePath = "<<templatePath;
+    qDebug()<<"dbPath = "<<dbPath;
 
     QFile::remove(swProPath);
     QFile::remove(dbPath);
-    QFile::remove(modelPath);
     QFile::remove(paramsPath);
     QFile::remove(dwgPath);
     QFile::remove(projectDir + "/DemoDiagram.dwg");
 
+    if (!QFile::exists(templatePath)) {
+        if (errorMessage)
+            *errorMessage = QString("模板数据库不存在: %1").arg(templatePath);
+        return false;
+    }
+
+    if (!QFile::copy(templatePath, dbPath)) {
+        if (errorMessage)
+            *errorMessage = QString("复制模板数据库失败: %1").arg(dbPath);
+        return false;
+    }
+    QFile::setPermissions(dbPath, QFile::permissions(templatePath));
+
     if (!writeSwProFile(swProPath, projectName, errorMessage))
         return false;
-    if (!buildProjectDatabase(dbPath, errorMessage))
-        return false;
-    if (!buildModelDatabase(modelPath, errorMessage))
+    if (!populateProjectDatabase(dbPath, errorMessage))
         return false;
     if (!writeTestParams(paramsPath, errorMessage))
         return false;
@@ -175,7 +205,7 @@ bool DemoProjectBuilder::writeTestParams(const QString &filePath, QString *error
     return true;
 }
 
-bool DemoProjectBuilder::buildProjectDatabase(const QString &dbPath, QString *errorMessage)
+bool DemoProjectBuilder::populateProjectDatabase(const QString &dbPath, QString *errorMessage)
 {
     const QString connName = QString("demo_project_builder");
     QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE", connName);
@@ -219,7 +249,27 @@ bool DemoProjectBuilder::buildProjectDatabase(const QString &dbPath, QString *er
         "CREATE TABLE IF NOT EXISTS FunctionDefineClass (FunctionDefineClass_ID INTEGER PRIMARY KEY, ParentNo INTEGER, Level INTEGER, Desc TEXT, _Order INTEGER, FunctionDefineName TEXT, FunctionDefineCode TEXT, DefaultSymbol TEXT, FuncType TEXT, TModel TEXT, TClassName TEXT)",
         "CREATE TABLE IF NOT EXISTS UserTest (UserTest_ID INTEGER PRIMARY KEY, FunctionID INTEGER, Name TEXT)",
         "CREATE TABLE IF NOT EXISTS containers (id INTEGER PRIMARY KEY, name TEXT, type INTEGER, parent_id INTEGER, order_index INTEGER, analysis_depth INTEGER, interface_json TEXT, behavior_smt TEXT, fault_modes_json TEXT, tests_json TEXT, analysis_json TEXT, equipment_id INTEGER, equipment_type TEXT, equipment_name TEXT)",
-        "CREATE TABLE IF NOT EXISTS equipment_containers (equipment_id INTEGER PRIMARY KEY, container_id INTEGER)"
+        "CREATE TABLE IF NOT EXISTS equipment_containers (equipment_id INTEGER PRIMARY KEY, container_id INTEGER)",
+        "CREATE TABLE IF NOT EXISTS container (container_id INTEGER PRIMARY KEY AUTOINCREMENT, project_structure_id INTEGER NOT NULL, name TEXT NOT NULL, level TEXT NOT NULL, source_equipment_id INTEGER, auto_generated INTEGER NOT NULL DEFAULT 0, description TEXT, fault_analysis_depth TEXT, inherits_from_container_id INTEGER, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP)",
+        "CREATE TABLE IF NOT EXISTS container_hierarchy (parent_id INTEGER NOT NULL, child_id INTEGER NOT NULL, relation_type TEXT DEFAULT 'contains', PRIMARY KEY (parent_id, child_id))",
+        "CREATE TABLE IF NOT EXISTS container_component (container_id INTEGER NOT NULL, equipment_id INTEGER NOT NULL, role TEXT, PRIMARY KEY (container_id, equipment_id))",
+        "CREATE TABLE IF NOT EXISTS container_interface (interface_id INTEGER PRIMARY KEY AUTOINCREMENT, container_id INTEGER NOT NULL, name TEXT NOT NULL, direction TEXT NOT NULL, signal_category TEXT NOT NULL, signal_subtype TEXT, physical_domain TEXT, default_unit TEXT, description TEXT, inherits_interface_id INTEGER)",
+        "CREATE TABLE IF NOT EXISTS container_interface_binding (binding_id INTEGER PRIMARY KEY AUTOINCREMENT, interface_id INTEGER NOT NULL, equipment_id INTEGER, terminal_id INTEGER, connect_line_id INTEGER, binding_role TEXT)",
+        "CREATE TABLE IF NOT EXISTS container_state (state_id INTEGER PRIMARY KEY AUTOINCREMENT, container_id INTEGER NOT NULL, name TEXT NOT NULL, state_type TEXT NOT NULL, derived_from_children INTEGER NOT NULL DEFAULT 0, probability REAL, rationale TEXT, analysis_scope TEXT)",
+        "CREATE TABLE IF NOT EXISTS container_state_behavior (behavior_id INTEGER PRIMARY KEY AUTOINCREMENT, state_id INTEGER NOT NULL, representation TEXT NOT NULL, expression TEXT NOT NULL, notes TEXT)",
+        "CREATE TABLE IF NOT EXISTS container_state_interface (id INTEGER PRIMARY KEY AUTOINCREMENT, state_id INTEGER NOT NULL, interface_id INTEGER NOT NULL, constraint TEXT)",
+        "CREATE TABLE IF NOT EXISTS function_definition (function_id INTEGER PRIMARY KEY AUTOINCREMENT, container_id INTEGER NOT NULL, parent_function_id INTEGER, name TEXT NOT NULL, description TEXT, requirement TEXT, expected_output TEXT, detection_rule TEXT, auto_generated INTEGER NOT NULL DEFAULT 0)",
+        "CREATE TABLE IF NOT EXISTS function_io (io_id INTEGER PRIMARY KEY AUTOINCREMENT, function_id INTEGER NOT NULL, io_type TEXT NOT NULL, name TEXT NOT NULL, interface_id INTEGER, default_value TEXT, expression TEXT, description TEXT)",
+        "CREATE TABLE IF NOT EXISTS function_dependency (function_id INTEGER NOT NULL, depends_on_function_id INTEGER NOT NULL, dependency_type TEXT DEFAULT 'requires', PRIMARY KEY (function_id, depends_on_function_id))",
+        "CREATE TABLE IF NOT EXISTS test_definition (test_id INTEGER PRIMARY KEY AUTOINCREMENT, container_id INTEGER, function_id INTEGER, related_state_id INTEGER, test_type TEXT NOT NULL, name TEXT NOT NULL, description TEXT, auto_generated INTEGER NOT NULL DEFAULT 1, interface_id INTEGER, signal_category TEXT, expected_result TEXT, complexity INTEGER, estimated_duration REAL, estimated_cost REAL)",
+        "CREATE TABLE IF NOT EXISTS test_fault_coverage (test_id INTEGER NOT NULL, state_id INTEGER NOT NULL, coverage_type TEXT NOT NULL, confidence REAL, PRIMARY KEY (test_id, state_id, coverage_type))",
+        "CREATE TABLE IF NOT EXISTS test_constraint (constraint_id INTEGER PRIMARY KEY AUTOINCREMENT, test_id INTEGER NOT NULL, constraint_type TEXT NOT NULL, value TEXT, unit TEXT)",
+        "CREATE TABLE IF NOT EXISTS analysis_requirement (requirement_id INTEGER PRIMARY KEY AUTOINCREMENT, container_id INTEGER NOT NULL, metric TEXT NOT NULL, target_value REAL NOT NULL, unit TEXT DEFAULT 'ratio', notes TEXT)",
+        "CREATE TABLE IF NOT EXISTS analysis_constraint (constraint_id INTEGER PRIMARY KEY AUTOINCREMENT, container_id INTEGER NOT NULL, constraint_type TEXT NOT NULL, value TEXT, unit TEXT)",
+        "CREATE TABLE IF NOT EXISTS test_plan_candidate (candidate_id INTEGER PRIMARY KEY AUTOINCREMENT, container_id INTEGER NOT NULL, name TEXT NOT NULL, description TEXT, total_cost REAL, total_duration REAL, selection_notes TEXT)",
+        "CREATE TABLE IF NOT EXISTS test_plan_candidate_item (candidate_id INTEGER NOT NULL, test_id INTEGER NOT NULL, PRIMARY KEY (candidate_id, test_id))",
+        "CREATE TABLE IF NOT EXISTS diagnosis_tree (tree_id INTEGER PRIMARY KEY AUTOINCREMENT, container_id INTEGER NOT NULL, name TEXT, description TEXT)",
+        "CREATE TABLE IF NOT EXISTS diagnosis_tree_node (node_id INTEGER PRIMARY KEY AUTOINCREMENT, tree_id INTEGER NOT NULL, parent_node_id INTEGER, test_id INTEGER, state_id INTEGER, outcome TEXT, comment TEXT)"
     };
 
     for (const QString &statement : createStatements) {
@@ -230,29 +280,49 @@ bool DemoProjectBuilder::buildProjectDatabase(const QString &dbPath, QString *er
     }
 
     const QStringList tablesToReset = {
-        QString("FunctionDefineClass"),
-        QString("ProjectStructure"),
-        QString("Equipment"),
-        QString("EquipmentDiagnosePara"),
-        QString("Symbol"),
-        QString("Symb2TermInfo"),
-        QString("Page"),
-        QString("JXB"),
-        QString("Function"),
-        QString("function_bindings"),
+        QString("diagnosis_tree_node"),
+        QString("diagnosis_tree"),
+        QString("test_plan_candidate_item"),
+        QString("test_plan_candidate"),
+        QString("test_fault_coverage"),
+        QString("test_constraint"),
+        QString("test_definition"),
+        QString("analysis_constraint"),
+        QString("analysis_requirement"),
+        QString("function_dependency"),
+        QString("function_io"),
+        QString("function_definition"),
+        QString("container_state_interface"),
+        QString("container_state_behavior"),
+        QString("container_state"),
+        QString("container_interface_binding"),
+        QString("container_interface"),
+        QString("container_component"),
+        QString("container_hierarchy"),
+        QString("container"),
         QString("containers"),
         QString("equipment_containers"),
         QString("UserTest"),
+        QString("Function"),
+        QString("function_bindings"),
+        QString("JXB"),
         QString("Connector"),
         QString("Link"),
         QString("Wires"),
-        QString("Terminal"),
-        QString("TerminalStrip"),
-        QString("TerminalTerm"),
         QString("TerminalInstance"),
+        QString("TerminalTerm"),
         QString("TerminalStripDiagnosePara"),
+        QString("TerminalStrip"),
+        QString("Terminal"),
         QString("Cable"),
-        QString("Line")
+        QString("Line"),
+        QString("Symbol"),
+        QString("Symb2TermInfo"),
+        QString("EquipmentDiagnosePara"),
+        QString("Equipment"),
+        QString("Page"),
+        QString("ProjectStructure"),
+        QString("FunctionDefineClass")
     };
 
     for (const QString &table : tablesToReset) {
@@ -451,16 +521,66 @@ bool DemoProjectBuilder::buildProjectDatabase(const QString &dbPath, QString *er
         }
     }
 
-    const QList<QList<QVariant>> functions = {
-        {1, QString("DeliverPressure"), QString("ACT-1.Pressure"), QString("PSU-1.Vout=24V"), QString("演示功能: 电源驱动执行器"), QString("PSU-1.Vout,ACT-1.Pressure"), QString("PSU-1,ACT-1"), QString("PSU-1,ACT-1"), QString(), 1, 0.01}
+    QStringList functionColumns;
+    if (!fetchTableColumns(db, QString("Function"), &functionColumns, errorMessage)) {
+        cleanup();
+        return false;
+    }
+
+    const QStringList functionColumnPriority = {
+        QString("FunctionID"),
+        QString("FunctionName"),
+        QString("ExecsList"),
+        QString("CmdValList"),
+        QString("UserTest"),
+        QString("Remark"),
+        QString("LinkText"),
+        QString("ComponentDependency"),
+        QString("AllComponents"),
+        QString("FunctionDependency"),
+        QString("PersistentFlag"),
+        QString("FaultProbability")
     };
-    for (const auto &row : functions) {
-        if (!prepareAndExec(query,
-                            "INSERT INTO Function (FunctionID, FunctionName, ExecsList, CmdValList, Remark, LinkText, ComponentDependency, AllComponents, FunctionDependency, PersistentFlag, FaultProbability) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-                            row, errorMessage)) {
-            cleanup();
-            return false;
+
+    QVariantMap functionRow;
+    functionRow.insert(QString("FunctionID"), QVariant(1));
+    functionRow.insert(QString("FunctionName"), QString("DeliverPressure"));
+    functionRow.insert(QString("ExecsList"), QString("ACT-1.Pressure"));
+    functionRow.insert(QString("CmdValList"), QString("PSU-1.Vout=24V"));
+    functionRow.insert(QString("UserTest"), QString());
+    functionRow.insert(QString("Remark"), QString("演示功能: 电源驱动执行器"));
+    functionRow.insert(QString("LinkText"), QString("PSU-1.Vout,ACT-1.Pressure"));
+    functionRow.insert(QString("ComponentDependency"), QString("PSU-1,ACT-1"));
+    functionRow.insert(QString("AllComponents"), QString("PSU-1,ACT-1"));
+    functionRow.insert(QString("FunctionDependency"), QString());
+    functionRow.insert(QString("PersistentFlag"), QVariant(1));
+    functionRow.insert(QString("FaultProbability"), QVariant(0.01));
+
+    QStringList functionInsertColumns;
+    QVariantList functionInsertValues;
+    for (const QString &column : functionColumnPriority) {
+        if (functionColumns.contains(column)) {
+            functionInsertColumns.append(column);
+            functionInsertValues.append(functionRow.value(column));
         }
+    }
+
+    if (!functionInsertColumns.contains(QString("FunctionID")) || !functionInsertColumns.contains(QString("FunctionName"))) {
+        if (errorMessage)
+            *errorMessage = QString("函数表缺少必要字段");
+        cleanup();
+        return false;
+    }
+
+    QStringList placeholders;
+    for (int i = 0; i < functionInsertColumns.size(); ++i)
+        placeholders.append(QString("?"));
+
+    const QString functionInsertSql = QString("INSERT INTO Function (%1) VALUES (%2)")
+                                           .arg(functionInsertColumns.join(", "), placeholders.join(", "));
+    if (!prepareAndExec(query, functionInsertSql, functionInsertValues, errorMessage)) {
+        cleanup();
+        return false;
     }
 
     if (!prepareAndExec(query,
@@ -470,10 +590,325 @@ bool DemoProjectBuilder::buildProjectDatabase(const QString &dbPath, QString *er
         return false;
     }
 
+    // Populate normalized container schema
+    const QList<QList<QVariant>> containerRows = {
+        {1, 1001, QString("Demo System"), QString("system"), QVariant(), 0, QString("演示项目根节点"), QVariant(), QVariant()},
+        {2, 1002, QString("Subsystem"), QString("subsystem"), QVariant(), 0, QString("液压演示子系统"), QVariant(), QVariant()},
+        {3, 1003, QString("PSU-1"), QString("component"), 1, 1, QString("Power Supply container"), QVariant(), QVariant()},
+        {4, 1003, QString("ACT-1"), QString("component"), 2, 1, QString("Hydraulic actuator container"), QVariant(), QVariant()}
+    };
+    for (const auto &row : containerRows) {
+        if (!prepareAndExec(query,
+                            "INSERT INTO container (container_id, project_structure_id, name, level, source_equipment_id, auto_generated, description, fault_analysis_depth, inherits_from_container_id) "
+                            "VALUES (?,?,?,?,?,?,?,?,?)",
+                            row, errorMessage)) {
+            cleanup();
+            return false;
+        }
+    }
+
+    const QList<QList<QVariant>> containerHierarchy = {
+        {1, 2, QString("contains")},
+        {2, 3, QString("contains")},
+        {2, 4, QString("contains")}
+    };
+    for (const auto &row : containerHierarchy) {
+        if (!prepareAndExec(query,
+                            "INSERT INTO container_hierarchy (parent_id, child_id, relation_type) VALUES (?,?,?)",
+                            row, errorMessage)) {
+            cleanup();
+            return false;
+        }
+    }
+
+    const QList<QList<QVariant>> containerComponents = {
+        {3, 1, QString("primary")},
+        {4, 2, QString("primary")}
+    };
+    for (const auto &row : containerComponents) {
+        if (!prepareAndExec(query,
+                            "INSERT INTO container_component (container_id, equipment_id, role) VALUES (?,?,?)",
+                            row, errorMessage)) {
+            cleanup();
+            return false;
+        }
+    }
+
+    const QList<QList<QVariant>> containerInterfaces = {
+        {1, 3, QString("PSU-1.Vout"), QString("out"), QString("electric"), QString("voltage"), QString("electrical"), QString("V"), QString("PSU 输出电压"), QVariant()},
+        {2, 4, QString("ACT-1.Supply"), QString("in"), QString("hydraulic"), QString("pressure"), QString("hydraulic"), QString("bar"), QString("执行器端口供压"), QVariant()},
+        {3, 4, QString("ACT-1.Pressure"), QString("out"), QString("hydraulic"), QString("pressure"), QString("hydraulic"), QString("bar"), QString("执行器输出压力"), QVariant()},
+        {4, 2, QString("Subsystem.Pressure"), QString("out"), QString("hydraulic"), QString("pressure"), QString("hydraulic"), QString("bar"), QString("子系统对外输出"), QVariant()}
+    };
+    for (const auto &row : containerInterfaces) {
+        if (!prepareAndExec(query,
+                            "INSERT INTO container_interface (interface_id, container_id, name, direction, signal_category, signal_subtype, physical_domain, default_unit, description, inherits_interface_id) "
+                            "VALUES (?,?,?,?,?,?,?,?,?,?)",
+                            row, errorMessage)) {
+            cleanup();
+            return false;
+        }
+    }
+
+    const QList<QList<QVariant>> interfaceBindings = {
+        {1, 1, 1, QVariant(), QVariant(), QString("output")},
+        {2, 2, 2, QVariant(), QVariant(), QString("supply")},
+        {3, 3, 2, QVariant(), QVariant(), QString("measurement")}
+    };
+    for (const auto &row : interfaceBindings) {
+        if (!prepareAndExec(query,
+                            "INSERT INTO container_interface_binding (binding_id, interface_id, equipment_id, terminal_id, connect_line_id, binding_role) "
+                            "VALUES (?,?,?,?,?,?)",
+                            row, errorMessage)) {
+            cleanup();
+            return false;
+        }
+    }
+
+    const QList<QList<QVariant>> containerStates = {
+        {1, 3, QString("PSU 正常"), QString("normal"), 0, 0.99, QString("输出稳定在 24V"), QVariant()},
+        {2, 3, QString("PSU 输出失效"), QString("fault"), 0, 0.01, QString("输出降为 0V"), QVariant()},
+        {3, 4, QString("执行器正常"), QString("normal"), 0, 0.98, QString("输出 8bar 压力"), QVariant()},
+        {4, 4, QString("执行器卡滞"), QString("fault"), 0, 0.02, QString("输出压力为 0bar"), QVariant()},
+        {5, 2, QString("子系统正常"), QString("normal"), 1, QVariant(), QString("聚合子级正常状态"), QString("component")},
+        {6, 2, QString("子系统故障"), QString("fault"), 1, QVariant(), QString("聚合子级故障状态"), QString("component")}
+    };
+    for (const auto &row : containerStates) {
+        if (!prepareAndExec(query,
+                            "INSERT INTO container_state (state_id, container_id, name, state_type, derived_from_children, probability, rationale, analysis_scope) "
+                            "VALUES (?,?,?,?,?,?,?,?)",
+                            row, errorMessage)) {
+            cleanup();
+            return false;
+        }
+    }
+
+    const QList<QList<QVariant>> stateBehaviors = {
+        {1, 1, QString("expr"), QString("PSU-1.Vout = 24"), QString()},
+        {2, 2, QString("expr"), QString("PSU-1.Vout = 0"), QString()},
+        {3, 3, QString("expr"), QString("ACT-1.Pressure = 8"), QString()},
+        {4, 4, QString("expr"), QString("ACT-1.Pressure = 0"), QString()},
+        {5, 5, QString("expr"), QString("Subsystem.Pressure = 8"), QString()},
+        {6, 6, QString("expr"), QString("Subsystem.Pressure = 0"), QString()}
+    };
+    for (const auto &row : stateBehaviors) {
+        if (!prepareAndExec(query,
+                            "INSERT INTO container_state_behavior (behavior_id, state_id, representation, expression, notes) VALUES (?,?,?,?,?)",
+                            row, errorMessage)) {
+            cleanup();
+            return false;
+        }
+    }
+
+    QStringList stateInterfaceColumns;
+    if (!fetchTableColumns(db, QString("container_state_interface"), &stateInterfaceColumns, errorMessage)) {
+        cleanup();
+        return false;
+    }
+
+    const QStringList stateInterfacePriority = {
+        QString("id"),
+        QString("state_id"),
+        QString("interface_id"),
+        QString("constraint")
+    };
+
+    const QList<QVariantMap> stateInterfaceRows = {
+        QVariantMap{{QString("id"), QVariant(1)}, {QString("state_id"), QVariant(1)}, {QString("interface_id"), QVariant(1)}, {QString("constraint"), QString("PSU-1.Vout=24V")}},
+        QVariantMap{{QString("id"), QVariant(2)}, {QString("state_id"), QVariant(2)}, {QString("interface_id"), QVariant(1)}, {QString("constraint"), QString("PSU-1.Vout=0V")}},
+        QVariantMap{{QString("id"), QVariant(3)}, {QString("state_id"), QVariant(3)}, {QString("interface_id"), QVariant(3)}, {QString("constraint"), QString("ACT-1.Pressure=8bar")}},
+        QVariantMap{{QString("id"), QVariant(4)}, {QString("state_id"), QVariant(4)}, {QString("interface_id"), QVariant(3)}, {QString("constraint"), QString("ACT-1.Pressure=0bar")}},
+        QVariantMap{{QString("id"), QVariant(5)}, {QString("state_id"), QVariant(5)}, {QString("interface_id"), QVariant(4)}, {QString("constraint"), QString("Subsystem.Pressure=8bar")}},
+        QVariantMap{{QString("id"), QVariant(6)}, {QString("state_id"), QVariant(6)}, {QString("interface_id"), QVariant(4)}, {QString("constraint"), QString("Subsystem.Pressure=0bar")}}
+    };
+
+    for (const QVariantMap &row : stateInterfaceRows) {
+        QStringList insertColumns;
+        QVariantList insertValues;
+        for (const QString &column : stateInterfacePriority) {
+            if (stateInterfaceColumns.contains(column) && row.contains(column)) {
+                insertColumns.append(column);
+                insertValues.append(row.value(column));
+            }
+        }
+
+        if (!insertColumns.contains(QString("state_id")) || !insertColumns.contains(QString("interface_id"))) {
+            if (errorMessage)
+                *errorMessage = QString("状态接口表缺少必要字段");
+            cleanup();
+            return false;
+        }
+
+        QStringList placeholders;
+        for (int i = 0; i < insertColumns.size(); ++i)
+            placeholders.append(QString("?"));
+
+        const QString sql = QString("INSERT INTO container_state_interface (%1) VALUES (%2)")
+                                .arg(insertColumns.join(", "), placeholders.join(", "));
+
+        if (!prepareAndExec(query, sql, insertValues, errorMessage)) {
+            cleanup();
+            return false;
+        }
+    }
+
+    const QList<QList<QVariant>> functionDefinitions = {
+        {1, 2, QVariant(), QString("DeliverPressure"), QString("PSU 提供能量驱动执行器输出压力"), QString("当输入电压满足要求时，应输出 8bar 压力"), QString("Subsystem.Pressure=8bar"), QString("PSU-1.Vout >= 20"), 0}
+    };
+    for (const auto &row : functionDefinitions) {
+        if (!prepareAndExec(query,
+                            "INSERT INTO function_definition (function_id, container_id, parent_function_id, name, description, requirement, expected_output, detection_rule, auto_generated) "
+                            "VALUES (?,?,?,?,?,?,?,?,?)",
+                            row, errorMessage)) {
+            cleanup();
+            return false;
+        }
+    }
+
+    const QList<QList<QVariant>> functionIoRows = {
+        {1, 1, QString("input"), QString("SupplyVoltage"), 1, QVariant(), QString("PSU-1.Vout"), QString("来自电源的输出电压")},
+        {2, 1, QString("output"), QString("SubsystemPressure"), 4, QVariant(), QString("Subsystem.Pressure"), QString("期望输出压力")}
+    };
+    for (const auto &row : functionIoRows) {
+        if (!prepareAndExec(query,
+                            "INSERT INTO function_io (io_id, function_id, io_type, name, interface_id, default_value, expression, description) "
+                            "VALUES (?,?,?,?,?,?,?,?)",
+                            row, errorMessage)) {
+            cleanup();
+            return false;
+        }
+    }
+
+    const QList<QList<QVariant>> testDefinitions = {
+        {1, 3, QVariant(), QVariant(), QString("signal"), QString("PSU 输出电压测试"), QString("测量 PSU 输出是否稳定"), 1, 1, QString("electric"), QString("Vout=24V"), 1, 0.5, 100.0},
+        {2, 4, QVariant(), QVariant(), QString("signal"), QString("执行器压力测试"), QString("测量执行器输出压力"), 1, 3, QString("hydraulic"), QString("Pressure=8bar"), 1, 0.7, 120.0},
+        {3, 2, 1, QVariant(), QString("function"), QString("系统功能验证"), QString("验证 DeliverPressure 功能的整体表现"), 1, QVariant(), QString("functional"), QString("Subsystem.Pressure=8bar"), 2, 1.5, 250.0},
+        {4, 3, QVariant(), 2, QString("fault-mode"), QString("PSU 故障诊断"), QString("定位 PSU 输出失效的故障模式"), 0, 1, QString("electric"), QString("输出降至 0V"), 2, 0.9, 180.0}
+    };
+    for (const auto &row : testDefinitions) {
+        if (!prepareAndExec(query,
+                            "INSERT INTO test_definition (test_id, container_id, function_id, related_state_id, test_type, name, description, auto_generated, interface_id, signal_category, expected_result, complexity, estimated_duration, estimated_cost) "
+                            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                            row, errorMessage)) {
+            cleanup();
+            return false;
+        }
+    }
+
+    const QList<QList<QVariant>> testCoverage = {
+        {1, 2, QString("detect"), 0.95},
+        {2, 4, QString("detect"), 0.93},
+        {3, 6, QString("detect"), 0.90},
+        {4, 2, QString("isolate"), 0.80}
+    };
+    for (const auto &row : testCoverage) {
+        if (!prepareAndExec(query,
+                            "INSERT INTO test_fault_coverage (test_id, state_id, coverage_type, confidence) VALUES (?,?,?,?)",
+                            row, errorMessage)) {
+            cleanup();
+            return false;
+        }
+    }
+
+    const QList<QList<QVariant>> testConstraints = {
+        {1, 1, QString("setup_time"), QString("0.2"), QString("hour")},
+        {2, 2, QString("setup_time"), QString("0.3"), QString("hour")},
+        {3, 3, QString("team_size"), QString("3"), QString("person")}
+    };
+    for (const auto &row : testConstraints) {
+        if (!prepareAndExec(query,
+                            "INSERT INTO test_constraint (constraint_id, test_id, constraint_type, value, unit) VALUES (?,?,?,?,?)",
+                            row, errorMessage)) {
+            cleanup();
+            return false;
+        }
+    }
+
+    const QList<QList<QVariant>> analysisRequirements = {
+        {1, 2, QString("detection_rate"), 0.90, QString("ratio"), QString("子系统检测率目标")},
+        {2, 2, QString("isolation_rate"), 0.75, QString("ratio"), QString("子系统隔离率目标")},
+        {3, 1, QString("detection_rate"), 0.85, QString("ratio"), QString("系统层级检测率")}
+    };
+    for (const auto &row : analysisRequirements) {
+        if (!prepareAndExec(query,
+                            "INSERT INTO analysis_requirement (requirement_id, container_id, metric, target_value, unit, notes) VALUES (?,?,?,?,?,?)",
+                            row, errorMessage)) {
+            cleanup();
+            return false;
+        }
+    }
+
+    const QList<QList<QVariant>> analysisConstraints = {
+        {1, 2, QString("max_duration"), QString("3"), QString("hour")},
+        {2, 2, QString("max_cost"), QString("800"), QString("USD")}
+    };
+    for (const auto &row : analysisConstraints) {
+        if (!prepareAndExec(query,
+                            "INSERT INTO analysis_constraint (constraint_id, container_id, constraint_type, value, unit) VALUES (?,?,?,?,?)",
+                            row, errorMessage)) {
+            cleanup();
+            return false;
+        }
+    }
+
+    const QList<QList<QVariant>> testPlanCandidates = {
+        {1, 2, QString("基础测试方案"), QString("满足指标的最小测试集合"), 320.0, 2.0, QString("自动生成示例")}
+    };
+    for (const auto &row : testPlanCandidates) {
+        if (!prepareAndExec(query,
+                            "INSERT INTO test_plan_candidate (candidate_id, container_id, name, description, total_cost, total_duration, selection_notes) "
+                            "VALUES (?,?,?,?,?,?,?)",
+                            row, errorMessage)) {
+            cleanup();
+            return false;
+        }
+    }
+
+    const QList<QList<QVariant>> testPlanItems = {
+        {1, 1},
+        {1, 2},
+        {1, 3}
+    };
+    for (const auto &row : testPlanItems) {
+        if (!prepareAndExec(query,
+                            "INSERT INTO test_plan_candidate_item (candidate_id, test_id) VALUES (?,?)",
+                            row, errorMessage)) {
+            cleanup();
+            return false;
+        }
+    }
+
+    const QList<QList<QVariant>> diagnosisTrees = {
+        {1, 2, QString("Demo Diagnosis Tree"), QString("基于候选测试集生成的示例决策树")}
+    };
+    for (const auto &row : diagnosisTrees) {
+        if (!prepareAndExec(query,
+                            "INSERT INTO diagnosis_tree (tree_id, container_id, name, description) VALUES (?,?,?,?)",
+                            row, errorMessage)) {
+            cleanup();
+            return false;
+        }
+    }
+
+    const QList<QList<QVariant>> diagnosisNodes = {
+        {1, 1, QVariant(), 1, QVariant(), QString("root"), QString("执行 PSU 输出电压测试")},
+        {2, 1, 1, QVariant(), 5, QString("pass"), QString("测试通过，判定子系统正常")},
+        {3, 1, 1, 4, QVariant(), QString("fail"), QString("测试失败，执行故障模式测试")},
+        {4, 1, 3, QVariant(), 2, QString("isolate"), QString("确认 PSU 输出失效")}
+    };
+    for (const auto &row : diagnosisNodes) {
+        if (!prepareAndExec(query,
+                            "INSERT INTO diagnosis_tree_node (node_id, tree_id, parent_node_id, test_id, state_id, outcome, comment) VALUES (?,?,?,?,?,?,?)",
+                            row, errorMessage)) {
+            cleanup();
+            return false;
+        }
+    }
+
     const QStringList testsJson = demoTestJsonList();
 
     const QList<QList<QVariant>> containers = {
-        {1, QString("Demo System"), 0, 0, 0, 0, compactJson(QJsonArray()), QString(), subsystemBehaviorJson(), QString(), QString(), QVariant(), QString("System"), QString("Demo System")},
+        {1, QString("Demo System"), 0, QVariant(), 0, 0, compactJson(QJsonArray()), QString(), subsystemBehaviorJson(), QString(), QString(), QVariant(), QString("System"), QString("Demo System")},
         {2, QString("Subsystem"), 1, 1, 0, 0, compactJson(QJsonArray()), QString(), subsystemBehaviorJson(), QString(), QString(), QVariant(), QString("Subsystem"), QString("Hydraulics")},
         {3, QString("PSU-1"), 6, 2, 0, 0, containerPortsJson(QString("PSU-1"), QString("Vout"), QString("power")), QString(), psuBehaviorJson(), testsJson.at(0), QString(), 1, QString("Power"), QString("Power Supply")},
         {4, QString("ACT-1"), 6, 2, 1, 0, containerPortsJson(QString("ACT-1"), QString("Pressure"), QString("hydraulic"), QString("Supply"), QString("hydraulic")), QString(), actuatorBehaviorJson(), testsJson.at(1), QString(), 2, QString("Actuator"), QString("Hydraulic Actuator")}
@@ -886,97 +1321,4 @@ QString DemoProjectBuilder::demoFunctionXml()
     return doc.toString();
 }
 
-bool DemoProjectBuilder::buildModelDatabase(const QString &dbPath, QString *errorMessage)
-{
-    const QString connName = QString("demo_model_builder");
-    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE", connName);
-    db.setDatabaseName(dbPath);
-    if (!db.open()) {
-        if (errorMessage)
-            *errorMessage = QString("无法创建模型数据库: %1").arg(db.lastError().text());
-        db = QSqlDatabase();
-        QSqlDatabase::removeDatabase(connName);
-        return false;
-    }
 
-    auto cleanup = [&]() {
-        db.close();
-        db = QSqlDatabase();
-        QSqlDatabase::removeDatabase(connName);
-    };
-
-    QSqlQuery query(db);
-    const QStringList createStatements = {
-        "CREATE TABLE IF NOT EXISTS components (id INTEGER PRIMARY KEY, type TEXT, mark TEXT, parameter TEXT, variable TEXT, description TEXT, failuremode TEXT)",
-        "CREATE TABLE IF NOT EXISTS parameters (id INTEGER PRIMARY KEY, componentId INTEGER, name TEXT, defaultValue TEXT)",
-        "CREATE TABLE IF NOT EXISTS models (id INTEGER PRIMARY KEY, name TEXT, systemDescription TEXT, testDiscription TEXT, connectNodes TEXT, functionDescription TEXT)"
-    };
-
-    for (const QString &statement : createStatements) {
-        if (!execQuery(query, statement, errorMessage)) {
-            cleanup();
-            return false;
-        }
-    }
-
-    const QStringList tablesToReset = {
-        QString("components"),
-        QString("parameters"),
-        QString("models")
-    };
-
-    for (const QString &table : tablesToReset) {
-        const QString sql = QString("DELETE FROM %1").arg(table);
-        if (!execQuery(query, sql, errorMessage)) {
-            cleanup();
-            return false;
-        }
-    }
-
-    const QList<QList<QVariant>> components = {
-        {1, QString("Power"), QString("PSU-1"), QString("Vin=24,Load=5"), QString("Vout"), QString("24V 电源"), QString("psu_failure")},
-        {2, QString("Actuator"), QString("ACT-1"), QString("Pressure=8"), QString("Pressure"), QString("8bar 执行器"), QString("act_stuck")}
-    };
-    for (const auto &row : components) {
-        if (!prepareAndExec(query,
-                            "INSERT INTO components (id, type, mark, parameter, variable, description, failuremode) VALUES (?,?,?,?,?,?,?)",
-                            row, errorMessage)) {
-            cleanup();
-            return false;
-        }
-    }
-
-    const QList<QList<QVariant>> parameters = {
-        {1, 1, QString("Vin"), QString("24")},
-        {2, 1, QString("Load"), QString("5")},
-        {3, 2, QString("Pressure"), QString("8")}
-    };
-    for (const auto &row : parameters) {
-        if (!prepareAndExec(query,
-                            "INSERT INTO parameters (id, componentId, name, defaultValue) VALUES (?,?,?,?)",
-                            row, errorMessage)) {
-            cleanup();
-            return false;
-        }
-    }
-
-    const QString systemDescription = QString(
-        "DEF BEGIN\n"
-        "PSU-1 supply\n"
-        "ACT-1 actuator\n"
-        "DEF END\n\n"
-        "connect2e(PSU-1.Vout,ACT-1.Supply)\n");
-
-    const QString functionDescription = demoFunctionXml();
-
-    if (!prepareAndExec(query,
-                        "INSERT INTO models (id, name, systemDescription, testDiscription, connectNodes, functionDescription) VALUES (?,?,?,?,?,?)",
-                        {1, QString("QBT"), systemDescription, QString(), QString("PSU-1.Vout->ACT-1.Supply"), functionDescription},
-                        errorMessage)) {
-        cleanup();
-        return false;
-    }
-
-    cleanup();
-    return true;
-}

@@ -2,6 +2,7 @@
 #define SQLITEDATABASE_H
 
 #include <QSqlDatabase>
+#include <QtGlobal>
 #include <QDebug>
 #include <QMessageBox>
 #include <QSqlError>
@@ -44,6 +45,7 @@ private:
     QSqlDatabase database;
 
     QString databaseName;
+    QString connectionName;
 };
 
 #endif // SQLITEDATABASE_H

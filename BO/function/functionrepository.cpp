@@ -16,27 +16,27 @@ bool FunctionRepository::ensureTables()
 
     auto ensureColumn = [&](const QString &name, const QString &definition) -> bool {
         QSqlQuery info(m_db);
-        if (!info.exec(QStringLiteral("PRAGMA table_info(Function)"))) {
-            logError(info, QStringLiteral("pragma table_info Function"));
+        if (!info.exec(QString("PRAGMA table_info(Function)"))) {
+            logError(info, QString("pragma table_info Function"));
             return false;
         }
         while (info.next()) {
-            if (info.value(QStringLiteral("name")).toString().compare(name, Qt::CaseInsensitive) == 0)
+            if (info.value(QString("name")).toString().compare(name, Qt::CaseInsensitive) == 0)
                 return true;
         }
         QSqlQuery alter(m_db);
-        if (!alter.exec(QStringLiteral("ALTER TABLE Function ADD COLUMN %1 %2").arg(name, definition))) {
-            logError(alter, QStringLiteral("alter table add column %1").arg(name));
+        if (!alter.exec(QString("ALTER TABLE Function ADD COLUMN %1 %2").arg(name, definition))) {
+            logError(alter, QString("alter table add column %1").arg(name));
             return false;
         }
         return true;
     };
 
     QSqlQuery pragma(m_db);
-    pragma.exec(QStringLiteral("PRAGMA foreign_keys = ON"));
+    pragma.exec(QString("PRAGMA foreign_keys = ON"));
 
     QSqlQuery query(m_db);
-    if (!query.exec(QStringLiteral(
+    if (!query.exec(QString(
             "CREATE TABLE IF NOT EXISTS Function ("
             " FunctionID INTEGER PRIMARY KEY,"
             " FunctionName TEXT NOT NULL,"
@@ -49,7 +49,7 @@ bool FunctionRepository::ensureTables()
             " FunctionDependency TEXT DEFAULT '',"
             " PersistentFlag INTEGER DEFAULT 1,"
             " FaultProbability REAL DEFAULT 0.0)"))) {
-        logError(query, QStringLiteral("create Function"));
+        logError(query, QString("create Function"));
         return false;
     }
 
@@ -69,20 +69,20 @@ bool FunctionRepository::ensureTables()
             return false;
     }
 
-    if (!query.exec(QStringLiteral(
+    if (!query.exec(QString(
             "CREATE TABLE IF NOT EXISTS function_bindings ("
             " id INTEGER PRIMARY KEY AUTOINCREMENT,"
             " function_id INTEGER NOT NULL UNIQUE,"
             " symbol_id INTEGER NOT NULL,"
             " FOREIGN KEY(function_id) REFERENCES Function(FunctionID) ON DELETE CASCADE,"
             " FOREIGN KEY(symbol_id) REFERENCES Symbol(Symbol_ID) ON DELETE CASCADE)"))) {
-        logError(query, QStringLiteral("create function_bindings"));
+        logError(query, QString("create function_bindings"));
         return false;
     }
 
-    if (!query.exec(QStringLiteral(
+    if (!query.exec(QString(
             "CREATE INDEX IF NOT EXISTS idx_function_bindings_symbol ON function_bindings(symbol_id)"))) {
-        logError(query, QStringLiteral("create index function_bindings"));
+        logError(query, QString("create index function_bindings"));
         return false;
     }
 
@@ -95,7 +95,7 @@ QList<FunctionRecord> FunctionRepository::fetchAll() const
     if (!m_db.isOpen()) return list;
 
     QSqlQuery query(m_db);
-    query.prepare(QStringLiteral(
+    query.prepare(QString(
         "SELECT f.FunctionID, f.FunctionName, f.CmdValList, f.ExecsList, f.Remark,"
         " f.LinkText, f.ComponentDependency, f.AllComponents, f.FunctionDependency,"
         " f.PersistentFlag, f.FaultProbability,"
@@ -105,7 +105,7 @@ QList<FunctionRecord> FunctionRepository::fetchAll() const
         " LEFT JOIN Symbol s ON s.Symbol_ID = fb.symbol_id"
         " ORDER BY f.FunctionID"));
     if (!query.exec()) {
-        logError(query, QStringLiteral("fetchAll"));
+        logError(query, QString("fetchAll"));
         return list;
     }
 
@@ -135,7 +135,7 @@ QList<FunctionRecord> FunctionRepository::fetchBySymbol(int symbolId) const
     if (!m_db.isOpen()) return list;
 
     QSqlQuery query(m_db);
-    query.prepare(QStringLiteral(
+    query.prepare(QString(
         "SELECT f.FunctionID, f.FunctionName, f.CmdValList, f.ExecsList, f.Remark,"
         " f.LinkText, f.ComponentDependency, f.AllComponents, f.FunctionDependency,"
         " f.PersistentFlag, f.FaultProbability,"
@@ -147,7 +147,7 @@ QList<FunctionRecord> FunctionRepository::fetchBySymbol(int symbolId) const
         " ORDER BY f.FunctionID"));
     query.bindValue(":symbolId", symbolId);
     if (!query.exec()) {
-        logError(query, QStringLiteral("fetchBySymbol"));
+        logError(query, QString("fetchBySymbol"));
         return list;
     }
 
@@ -177,7 +177,7 @@ FunctionRecord FunctionRepository::getById(int id) const
     if (!m_db.isOpen() || id == 0) return rec;
 
     QSqlQuery query(m_db);
-    query.prepare(QStringLiteral(
+    query.prepare(QString(
         "SELECT f.FunctionID, f.FunctionName, f.CmdValList, f.ExecsList, f.Remark,"
         " f.LinkText, f.ComponentDependency, f.AllComponents, f.FunctionDependency,"
         " f.PersistentFlag, f.FaultProbability,"
@@ -188,7 +188,7 @@ FunctionRecord FunctionRepository::getById(int id) const
         " WHERE f.FunctionID = :id"));
     query.bindValue(":id", id);
     if (!query.exec()) {
-        logError(query, QStringLiteral("getById"));
+        logError(query, QString("getById"));
         return rec;
     }
     if (query.next()) {
@@ -216,7 +216,7 @@ int FunctionRepository::insert(const FunctionRecord &record)
     int newId = record.id > 0 ? record.id : nextId();
 
     QSqlQuery query(m_db);
-    query.prepare(QStringLiteral(
+    query.prepare(QString(
         "INSERT INTO Function(FunctionID, FunctionName, ExecsList, CmdValList, Remark,"
         " LinkText, ComponentDependency, AllComponents, FunctionDependency, PersistentFlag, FaultProbability)"
         " VALUES(:id, :name, :execs, :cmds, :remark, :link, :componentDependency, :allComponents, :functionDependency, :persistent, :faultProbability)"));
@@ -232,7 +232,7 @@ int FunctionRepository::insert(const FunctionRecord &record)
     query.bindValue(":persistent", record.persistent ? 1 : 0);
     query.bindValue(":faultProbability", record.faultProbability);
     if (!query.exec()) {
-        logError(query, QStringLiteral("insert function"));
+        logError(query, QString("insert function"));
         return 0;
     }
 
@@ -247,7 +247,7 @@ bool FunctionRepository::update(const FunctionRecord &record)
     if (!m_db.isOpen() || record.id == 0) return false;
 
     QSqlQuery query(m_db);
-    query.prepare(QStringLiteral(
+    query.prepare(QString(
         "UPDATE Function SET FunctionName=:name, ExecsList=:execs, CmdValList=:cmds, Remark=:remark,"
         " LinkText=:link, ComponentDependency=:componentDependency, AllComponents=:allComponents,"
         " FunctionDependency=:functionDependency, PersistentFlag=:persistent, FaultProbability=:faultProbability"
@@ -264,7 +264,7 @@ bool FunctionRepository::update(const FunctionRecord &record)
     query.bindValue(":faultProbability", record.faultProbability);
     query.bindValue(":id", record.id);
     if (!query.exec()) {
-        logError(query, QStringLiteral("update function"));
+        logError(query, QString("update function"));
         return false;
     }
 
@@ -272,7 +272,7 @@ bool FunctionRepository::update(const FunctionRecord &record)
         bindSymbol(record.id, record.symbolId);
     else {
         QSqlQuery remove(m_db);
-        remove.prepare(QStringLiteral("DELETE FROM function_bindings WHERE function_id=:fid"));
+        remove.prepare(QString("DELETE FROM function_bindings WHERE function_id=:fid"));
         remove.bindValue(":fid", record.id);
         remove.exec();
     }
@@ -285,14 +285,14 @@ bool FunctionRepository::remove(int id)
     if (!m_db.isOpen() || id == 0) return false;
 
     QSqlQuery query(m_db);
-    query.prepare(QStringLiteral("DELETE FROM UserTest WHERE FunctionID=:fid"));
+    query.prepare(QString("DELETE FROM UserTest WHERE FunctionID=:fid"));
     query.bindValue(":fid", id);
     query.exec();
 
-    query.prepare(QStringLiteral("DELETE FROM Function WHERE FunctionID=:id"));
+    query.prepare(QString("DELETE FROM Function WHERE FunctionID=:id"));
     query.bindValue(":id", id);
     if (!query.exec()) {
-        logError(query, QStringLiteral("delete function"));
+        logError(query, QString("delete function"));
         return false;
     }
     return true;
@@ -301,7 +301,7 @@ bool FunctionRepository::remove(int id)
 int FunctionRepository::nextId() const
 {
     QSqlQuery query(m_db);
-    if (!query.exec(QStringLiteral("SELECT IFNULL(MAX(FunctionID),0) + 1 FROM Function")))
+    if (!query.exec(QString("SELECT IFNULL(MAX(FunctionID),0) + 1 FROM Function")))
         return 1;
     if (query.next())
         return query.value(0).toInt();
@@ -311,14 +311,14 @@ int FunctionRepository::nextId() const
 bool FunctionRepository::bindSymbol(int functionId, int symbolId)
 {
     QSqlQuery query(m_db);
-    query.prepare(QStringLiteral(
+    query.prepare(QString(
         "INSERT INTO function_bindings(function_id, symbol_id)"
         " VALUES(:fid,:sid)"
         " ON CONFLICT(function_id) DO UPDATE SET symbol_id = excluded.symbol_id"));
     query.bindValue(":fid", functionId);
     query.bindValue(":sid", symbolId);
     if (!query.exec()) {
-        logError(query, QStringLiteral("bind symbol"));
+        logError(query, QString("bind symbol"));
         return false;
     }
     return true;

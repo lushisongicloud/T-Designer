@@ -6,9 +6,9 @@
 - Modules: `widget/` (custom controls & dialogs), `BO/` (business objects — see `behavior/`, `container/`, `function/`, `test/` submodules), `DO/` (data objects).
 - Resources: `image.qrc`, icons (e.g., `T_DESIGNER.ico`).
 - Data/Templates:
-  - `MyProjects/` 收录现有的 T-Designer 示例工程（如 `DemoSystem/`），这些项目使用 Livingstone 求解器与专用 T 语言描述，整体流程已跑通，可用于理解端口连线、变量定义与诊断流程；在实现新功能时请参考其概念，但逐步迁移到通用 SMT 描述与 `z3` 求解器。
-  - `ref/` 提供离线校验用数据库：`LdMainData.db`（运行环境 `C:/TBD/data/LdMainData.db` 的镜像，用于对照实体元器件库）、`Model.db`（包含实体元、系统、功能的 SMT 描述，配套代码见 `systementity.cpp`、`selectfunctiondialog.cpp`），以及其他实验数据。
-  - `templete/project.db` 是新建工程时的模板；如需调整工程库结构，请先在目标项目的 `project.db` 上验证，评审通过后再更新模板并同步示例工程。
+  - `MyProjects/` 收录现有的 T-Designer 示例工程（如 `双电机拖曳收放装置/`、`DemoSystem/`），但要特别注意`DemoSystem/`项目使用 Livingstone 求解器与专用 T 语言描述，整体流程已跑通，可用于理解端口连线、变量定义与诊断流程；在实现新功能时请参考其概念，但逐步迁移到通用 SMT 描述与 `z3` 求解器。
+  - `ref/` 提供离线校验用数据库：`LdMainData.db`（运行环境 `C:/TBD/data/LdMainData.db` 的镜像，用于对照实体元器件库）、`Model.db`（现还暂未整合到 T-Designer的工作流程中来，其中包含实体元、系统、功能的 SMT 描述，配套代码见 `systementity.cpp`、`selectfunctiondialog.cpp`），以及其他实验数据。
+  - `templete/project.db` 是新建工程时的模板，已包含统一的层次/功能/测试表；如需调整工程库结构，请先在目标项目的 `project.db` 上验证，评审通过后再更新模板并同步示例工程。更新模板时请运行 `tools/update_template_db.py` 以保持示例数据与参考库一致。
 - Tests: add under `tests/` when introduced (see below).
 
 ## Build, Test, and Development Commands
@@ -48,6 +48,5 @@
 - Do not edit generated files (e.g., `ui_*.h`).
 - When adding/removing sources, update `T_DESIGNER.pro` accordingly.
 - Put helper scripts in `tools/` or repo root and document purpose.
-- 调整 T-Designer 工程数据库结构时：① 在工程目录的 `project.db` 上迭代验证；② 评审通过后更新 `templete/project.db`；③ 视需要同步更新 `MyProjects/` 中的示例工程并记录迁移步骤。
-- All project source files use **UTF-8 with BOM** encoding format. 所有项目源文件必须保存为 UTF-8 with BOM 编码。
-- When using Chinese text in code, do not use `tr()` or `QStringLiteral`; use double-quoted string literals (e.g., `"中文文本"`) or `QString("中文文本")`. 在代码中直接书写中文时，请不要调用 `tr()` 或 `QStringLiteral`，应直接使用双引号字符串（例如 `"中文"`）或 `QString("中文")`。
+- 调整 T-Designer 工程数据库结构时：① 在工程目录的 `project.db` 上迭代验证；② 评审通过后更新 `templete/project.db`（使用 `tools/update_template_db.py` 同步参考库与模板）；③ 视需要同步更新 `MyProjects/` 中的示例工程并记录迁移步骤。
+- When using Chinese text in code, do not use `tr()` or `QStringLiteral`; use double-quoted string literals (e.g., `"中文文本"`) or `QString("中文文本")`. 

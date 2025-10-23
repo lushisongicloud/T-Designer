@@ -17,7 +17,7 @@ TModelValidationResult TModelValidator::validate(const QString &tmodelText,
 {
     TModelValidationResult result;
     if (ports.isEmpty()) {
-        result.formatErrors << QStringLiteral("未检测到任何端号，无法执行端口映射校验。");
+        result.formatErrors << QString("未检测到任何端号，无法执行端口映射校验。");
         return result;
     }
 
@@ -31,14 +31,14 @@ TModelValidationResult TModelValidator::validate(const QString &tmodelText,
     }
 
     if (bindingMap.isEmpty()) {
-        result.formatErrors << QStringLiteral("端号字段全部为空，无法生成映射。");
+        result.formatErrors << QString("端号字段全部为空，无法生成映射。");
         return result;
     }
 
     const QString normalized = tmodelText;
 
     QRegularExpression varPattern(
-        QStringLiteral("(?:%[A-Za-z0-9_]+%|[A-Za-z0-9_]+)\\.([A-Za-z0-9_\\-]+)\\.(i|u)\\b"));
+        QString("(?:%[A-Za-z0-9_]+%|[A-Za-z0-9_]+)\\.([A-Za-z0-9_\\-]+)\\.(i|u)\\b"));
     auto varMatchIter = varPattern.globalMatch(normalized);
     while (varMatchIter.hasNext()) {
         const QRegularExpressionMatch match = varMatchIter.next();
@@ -56,7 +56,7 @@ TModelValidationResult TModelValidator::validate(const QString &tmodelText,
     }
 
     QRegularExpression declPattern(
-        QStringLiteral("\\(\\s*declare-fun\\s+(?:%[A-Za-z0-9_]+%|[A-Za-z0-9_]+)"
+        QString("\\(\\s*declare-fun\\s+(?:%[A-Za-z0-9_]+%|[A-Za-z0-9_]+)"
                        "\\.([A-Za-z0-9_\\-]+)\\.(i|u)\\s*\\("));
     auto declIter = declPattern.globalMatch(normalized);
     while (declIter.hasNext()) {
@@ -74,7 +74,7 @@ TModelValidationResult TModelValidator::validate(const QString &tmodelText,
         }
     }
 
-    static const QStringList requiredDirections{QStringLiteral("u"), QStringLiteral("i")};
+    static const QStringList requiredDirections{QString("u"), QString("i")};
     for (auto it = bindingMap.begin(); it != bindingMap.end(); ++it) {
         const QString portName = it.key();
         PortVariableBinding binding = it.value();
@@ -82,7 +82,7 @@ TModelValidationResult TModelValidator::validate(const QString &tmodelText,
         for (const QString &direction : requiredDirections) {
             if (!binding.declaredDirections.contains(direction)) {
                 result.missingDeclarations.append(
-                    QStringLiteral("%1.%2").arg(portName, direction));
+                    QString("%1.%2").arg(portName, direction));
             }
         }
 
@@ -98,8 +98,8 @@ TModelValidationResult TModelValidator::validate(const QString &tmodelText,
     result.unusedPorts.removeDuplicates();
 
     if (!result.unusedPorts.isEmpty()) {
-        result.hints.append(QStringLiteral("以下端号未在T语言中引用：%1")
-                                .arg(result.unusedPorts.join(QStringLiteral(", "))));
+        result.hints.append(QString("以下端号未在T语言中引用：%1")
+                                .arg(result.unusedPorts.join(QString(", "))));
     }
 
     return result;

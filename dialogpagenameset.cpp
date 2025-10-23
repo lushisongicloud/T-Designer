@@ -31,8 +31,8 @@ void DialogPageNameSet::LoadTable(QString PageName,int Mode)
    ui->tableWidget->setRowCount(3);
    ui->tableWidget->setItem(0,0,new QTableWidgetItem("高层代号"));ui->tableWidget->setItem(0,1,new QTableWidgetItem("="));
    ui->tableWidget->setItem(1,0,new QTableWidgetItem("位置代号"));ui->tableWidget->setItem(1,1,new QTableWidgetItem("+"));
-   ui->tableWidget->setItem(2,0,new QTableWidgetItem("文档类型"));ui->tableWidget->setItem(2,1,new QTableWidgetItem("&"));
-   if((Mode==1)||(Mode==2)) ui->tableWidget->setRowHidden(2,true);
+   ui->tableWidget->setItem(2,0,new QTableWidgetItem("分组"));ui->tableWidget->setItem(2,1,new QTableWidgetItem("&"));
+   if(Mode==2) ui->tableWidget->setRowHidden(2,true);
    else if(Mode==3)
    {
        ui->tableWidget->setRowHidden(0,true);
@@ -73,8 +73,34 @@ void DialogPageNameSet::LoadTable(QString PageName,int Mode)
    ui->tableWidget->setCellWidget(0,2,CbGaoCeng);
    sqlstr=QString("SELECT * FROM ProjectStructure WHERE Structure_ID = '3' AND Structure_INT = '"+CbGaoCeng->currentText()+"'");
    query.exec(sqlstr);
-   if(query.next()) ui->tableWidget->setItem(0,3,new QTableWidgetItem(query.value("Struct_Desc").toString()));
-   else ui->tableWidget->setItem(0,3,new QTableWidgetItem(""));
+   QTableWidgetItem *gaocengDescItem = new QTableWidgetItem();
+   if(query.next()) {
+       gaocengDescItem->setText(query.value("Struct_Desc").toString());
+   }
+   gaocengDescItem->setFlags(gaocengDescItem->flags() | Qt::ItemIsEditable);
+   ui->tableWidget->setItem(0,3,gaocengDescItem);
+   
+   // 连接信号，当高层代号改变时更新描述
+   connect(CbGaoCeng, QOverload<const QString &>::of(&QComboBox::currentTextChanged), this, [this](const QString &text) {
+       // ProMode=3时高层行被隐藏,不处理
+       if (ProMode == 3) return;
+       
+       QSqlQuery query(T_ProjectDatabase);
+       QString sqlstr = QString("SELECT Struct_Desc FROM ProjectStructure WHERE Structure_ID = '3' AND Structure_INT = :val");
+       query.prepare(sqlstr);
+       query.bindValue(":val", text.trimmed());
+       QTableWidgetItem *item = ui->tableWidget->item(0, 3);
+       if (!item) {
+           item = new QTableWidgetItem();
+           item->setFlags(item->flags() | Qt::ItemIsEditable);
+           ui->tableWidget->setItem(0, 3, item);
+       }
+       if(query.exec() && query.next()) {
+           item->setText(query.value("Struct_Desc").toString());
+       } else {
+           item->setText("");
+       }
+   });
 
    QComboBox *CbPos=new QComboBox(ui->tableWidget);
    CbPos->setEditable(true);
@@ -111,8 +137,31 @@ void DialogPageNameSet::LoadTable(QString PageName,int Mode)
    ui->tableWidget->setCellWidget(1,2,CbPos);
    sqlstr=QString("SELECT * FROM ProjectStructure WHERE Structure_ID = '5' AND Structure_INT = '"+CbPos->currentText()+"'");
    query.exec(sqlstr);
-   if(query.next()) ui->tableWidget->setItem(1,3,new QTableWidgetItem(query.value("Struct_Desc").toString()));
-   else ui->tableWidget->setItem(1,3,new QTableWidgetItem(""));
+   QTableWidgetItem *posDescItem = new QTableWidgetItem();
+   if(query.next()) {
+       posDescItem->setText(query.value("Struct_Desc").toString());
+   }
+   posDescItem->setFlags(posDescItem->flags() | Qt::ItemIsEditable);
+   ui->tableWidget->setItem(1,3,posDescItem);
+   
+   // 连接信号，当位置代号改变时更新描述
+   connect(CbPos, QOverload<const QString &>::of(&QComboBox::currentTextChanged), this, [this](const QString &text) {
+       QSqlQuery query(T_ProjectDatabase);
+       QString sqlstr = QString("SELECT Struct_Desc FROM ProjectStructure WHERE Structure_ID = '5' AND Structure_INT = :val");
+       query.prepare(sqlstr);
+       query.bindValue(":val", text.trimmed());
+       QTableWidgetItem *item = ui->tableWidget->item(1, 3);
+       if (!item) {
+           item = new QTableWidgetItem();
+           item->setFlags(item->flags() | Qt::ItemIsEditable);
+           ui->tableWidget->setItem(1, 3, item);
+       }
+       if(query.exec() && query.next()) {
+           item->setText(query.value("Struct_Desc").toString());
+       } else {
+           item->setText("");
+       }
+   });
 
    if(ProMode!=1) return;
 
@@ -123,36 +172,134 @@ void DialogPageNameSet::LoadTable(QString PageName,int Mode)
    while(query.next())
    {
       bool Existed=false;
-      for(int i=0;i<CbPageType->count();i++) if(CbPageType->itemText(i)==query.value("Structure_INT").toString()) {Existed=true;break;};
-      if(!Existed) CbPageType->addItem(query.value("Structure_INT").toString());
+      for(int i=0;i<CbPageType->count();i++) if(CbPageType->itemText(i)==query.value("Structure_INT").toString().trimmed()) {Existed=true;break;};
+      if(!Existed) CbPageType->addItem(query.value("Structure_INT").toString().trimmed());
    }
    if(PageName.contains("&"))
    {
        int index=PageName.indexOf("·");
-       CbPageType->setCurrentText(PageName.mid(PageName.indexOf("&")+1,index-PageName.indexOf("&")-1));
+       QString groupValue = PageName.mid(PageName.indexOf("&")+1,index-PageName.indexOf("&")-1).trimmed();
+       // groupValue 可能是 Structure_INT 或 Struct_Desc，优先按 Structure_INT 匹配
+       bool found = false;
+       QSqlQuery queryCheck(T_ProjectDatabase);
+       queryCheck.prepare("SELECT Structure_INT FROM ProjectStructure WHERE Structure_ID = '6' AND Structure_INT = :val");
+       queryCheck.bindValue(":val", groupValue);
+       if(queryCheck.exec() && queryCheck.next()) {
+           // 找到了，直接使用
+           CbPageType->setCurrentText(groupValue);
+           found = true;
+       } else {
+           // 没找到，尝试按 Struct_Desc 查找
+           queryCheck.prepare("SELECT Structure_INT FROM ProjectStructure WHERE Structure_ID = '6' AND Struct_Desc = :val");
+           queryCheck.bindValue(":val", groupValue);
+           if(queryCheck.exec() && queryCheck.next()) {
+               CbPageType->setCurrentText(queryCheck.value("Structure_INT").toString().trimmed());
+               found = true;
+           }
+       }
+       if(!found) CbPageType->setCurrentText("");
    }
    else CbPageType->setCurrentText("");
    ui->tableWidget->setCellWidget(2,2,CbPageType);
-   sqlstr=QString("SELECT * FROM ProjectStructure WHERE Structure_ID = '6' AND Structure_INT = '"+CbPos->currentText()+"'");
-   query.exec(sqlstr);
-   if(query.next()) ui->tableWidget->setItem(2,3,new QTableWidgetItem(query.value("Struct_Desc").toString()));
-   else ui->tableWidget->setItem(2,3,new QTableWidgetItem(""));
+   {
+       QSqlQuery queryDesc(T_ProjectDatabase);
+       queryDesc.prepare("SELECT Struct_Desc FROM ProjectStructure WHERE Structure_ID = '6' AND Structure_INT = :val");
+       queryDesc.bindValue(":val", CbPageType->currentText().trimmed());
+       QTableWidgetItem *pageDescItem = new QTableWidgetItem();
+       if(queryDesc.exec() && queryDesc.next()) {
+           pageDescItem->setText(queryDesc.value("Struct_Desc").toString());
+       }
+       pageDescItem->setFlags(pageDescItem->flags() | Qt::ItemIsEditable);
+       ui->tableWidget->setItem(2, 3, pageDescItem);
+   }
+   // 连接信号，当分组改变时更新描述
+   connect(CbPageType, QOverload<const QString &>::of(&QComboBox::currentTextChanged), this, [this](const QString &text) {
+       // 只在ProMode=1时处理分组
+       if (ProMode != 1) return;
+       
+       QSqlQuery query(T_ProjectDatabase);
+       query.prepare("SELECT Struct_Desc FROM ProjectStructure WHERE Structure_ID = '6' AND Structure_INT = :val");
+       query.bindValue(":val", text.trimmed());
+       QTableWidgetItem *item = ui->tableWidget->item(2, 3);
+       if (!item) {
+           item = new QTableWidgetItem();
+           item->setFlags(item->flags() | Qt::ItemIsEditable);
+           ui->tableWidget->setItem(2, 3, item);
+       }
+       if(query.exec() && query.next()) {
+           item->setText(query.value("Struct_Desc").toString());
+       } else {
+           item->setText("");
+       }
+   });
 
-   ui->EdPageName->setText(PageName.mid(PageName.indexOf("·")+1,PageName.count()-PageName.indexOf("·")-1));  
+   // 安全提取页名部分
+   int dotIndex = PageName.indexOf("·");
+   if (dotIndex >= 0 && dotIndex < PageName.length() - 1) {
+       ui->EdPageName->setText(PageName.mid(dotIndex + 1));
+   } else {
+       ui->EdPageName->setText("");
+   }
 }
 
 void DialogPageNameSet::on_BtnOK_clicked()
 {
     ReturnPageName="";
-    StrGaoceng=((QComboBox *)ui->tableWidget->cellWidget(0,2))->currentText();
-    StrPos=((QComboBox *)ui->tableWidget->cellWidget(1,2))->currentText();
+    
+    // 安全获取ComboBox指针并检查
+    QComboBox *cbGaoceng = qobject_cast<QComboBox*>(ui->tableWidget->cellWidget(0, 2));
+    QComboBox *cbPos = qobject_cast<QComboBox*>(ui->tableWidget->cellWidget(1, 2));
+    
+    if (!cbGaoceng || !cbPos) {
+        // ComboBox不存在,异常情况
+        Canceled = true;
+        close();
+        return;
+    }
+    
+    StrGaoceng = cbGaoceng->currentText();
+    StrPos = cbPos->currentText();
 
-    if(StrGaoceng!="") ReturnPageName+="="+((QComboBox *)ui->tableWidget->cellWidget(0,2))->currentText();
-    if(StrPos!="") ReturnPageName+="+"+((QComboBox *)ui->tableWidget->cellWidget(1,2))->currentText();
-    if(ProMode==1)
+    // 保存描述信息到数据库
+    // 保存高层描述(ProMode=3时高层行被隐藏,不保存)
+    if (ProMode != 3 && !StrGaoceng.trimmed().isEmpty()) {
+        QTableWidgetItem *gaocengDescItem = ui->tableWidget->item(0, 3);
+        if (gaocengDescItem) {
+            QString gaocengDesc = gaocengDescItem->text().trimmed();
+            UpdateProjectStructureDesc("3", StrGaoceng, gaocengDesc);
+        }
+    }
+    
+    // 保存位置描述
+    if (!StrPos.trimmed().isEmpty()) {
+        QTableWidgetItem *posDescItem = ui->tableWidget->item(1, 3);
+        if (posDescItem) {
+            QString posDesc = posDescItem->text().trimmed();
+            UpdateProjectStructureDesc("5", StrPos, posDesc);
+        }
+    }
+    
+    // 保存分组描述（仅当ProMode==1时）
+    if (ProMode == 1) {
+        QComboBox *cbPageType = qobject_cast<QComboBox*>(ui->tableWidget->cellWidget(2, 2));
+        if (cbPageType) {
+            StrPage = cbPageType->currentText();
+            if (!StrPage.trimmed().isEmpty()) {
+                QTableWidgetItem *pageDescItem = ui->tableWidget->item(2, 3);
+                if (pageDescItem) {
+                    QString pageDesc = pageDescItem->text().trimmed();
+                    UpdateProjectStructureDesc("6", StrPage, pageDesc);
+                }
+            }
+        }
+    }
+
+    // 构建返回的页名字符串
+    if(StrGaoceng!="") ReturnPageName+="="+StrGaoceng;
+    if(StrPos!="") ReturnPageName+="+"+StrPos;
+    if(ProMode==1 && !StrPage.isEmpty())
     {
-        StrPage=((QComboBox *)ui->tableWidget->cellWidget(2,2))->currentText();
-        if(StrPage!="") ReturnPageName+="&"+((QComboBox *)ui->tableWidget->cellWidget(2,2))->currentText();
+        if(StrPage!="") ReturnPageName+="&"+StrPage;
     }
     if(ReturnPageName!="") ReturnPageName+="·";
     ReturnPageName+=ui->EdPageName->text();

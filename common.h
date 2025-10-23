@@ -74,7 +74,7 @@ public:
 
 #define LocalDataBasePath "C:/TBD/data"
 //#define LocalProjectDefaultPath "C:/TBD/MyProjects" 为方便调试，暂时把目的定义到项目目录中
-#define LocalProjectDefaultPath "./MyProjects"
+#define LocalProjectDefaultPath "D:/SynologyDrive/Project/T_DESIGNER/MyProjects"
 
 #ifdef PI
 #undef PI
@@ -109,6 +109,10 @@ extern QString ExtractPagePrefix(const QString &fullName);
 extern QString ExtractPageBaseName(const QString &fullName);
 extern void SplitPagePrefix(const QString &prefix, QString *gaoceng, QString *pos, QString *pageCode);
 extern QStringList PageNameCandidates(const QString &fullName);
+extern QString IncrementPageBaseName(const QString &baseName);
+extern int FindFirstPageIDUnderStructure(int projectStructureId);
+extern bool UpdateProjectStructureDesc(const QString &structureId, const QString &structureInt, const QString &desc, int parentId = -1);
+extern void RemoveEmptyStructureNodes(int projectStructureId);
 extern QString GetTypeBySymb2Class_ID(QString Symb2Class_ID);
 extern QString GetProjectStructureIDByPageID(int Page_ID);//for Unit Structure_ID=5
 extern QString GetProjectStructureStrByProjectStructureID(int ProjectStructure_ID);

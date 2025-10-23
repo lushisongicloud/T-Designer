@@ -50,17 +50,17 @@ QVector<GeneratedTest> TestGeneratorService::generateSignalTests(const Container
     for (const ContainerPort &port : container.ports()) {
         GeneratedTest test;
         test.category = TestCategory::Signal;
-        test.id = QStringLiteral("signal:%1:%2").arg(container.entity().id()).arg(port.name);
-        test.name = QStringLiteral("%1%2信号检测").arg(containerName.isEmpty() ? QStringLiteral("容器") : containerName,
-                                                 port.name.isEmpty() ? QString() : QStringLiteral("/") + port.name);
-        test.description = QStringLiteral("根据接口模型自动生成的信号类测试");
+        test.id = QString("signal:%1:%2").arg(container.entity().id()).arg(port.name);
+        test.name = QString("%1%2信号检测").arg(containerName.isEmpty() ? QString("容器") : containerName,
+                                                 port.name.isEmpty() ? QString() : QString("/") + port.name);
+        test.description = QString("根据接口模型自动生成的信号类测试");
         test.targetId = port.name;
         QVariantMap metrics;
-        metrics.insert(QStringLiteral("direction"), portDirectionToString(port.direction));
-        if (!port.category.isEmpty()) metrics.insert(QStringLiteral("category"), port.category);
-        if (!port.quantity.isEmpty()) metrics.insert(QStringLiteral("quantity"), port.quantity);
-        if (!port.unit.isEmpty()) metrics.insert(QStringLiteral("unit"), port.unit);
-        if (!port.bounds.isEmpty()) metrics.insert(QStringLiteral("bounds"), port.bounds);
+        metrics.insert(QString("direction"), portDirectionToString(port.direction));
+        if (!port.category.isEmpty()) metrics.insert(QString("category"), port.category);
+        if (!port.quantity.isEmpty()) metrics.insert(QString("quantity"), port.quantity);
+        if (!port.unit.isEmpty()) metrics.insert(QString("unit"), port.unit);
+        if (!port.bounds.isEmpty()) metrics.insert(QString("bounds"), port.bounds);
         test.metrics = metrics;
         test.estimatedCost = 1.0;
         test.estimatedDuration = 1.0;
@@ -90,18 +90,18 @@ QVector<GeneratedTest> TestGeneratorService::generateFunctionTests(int container
 
         GeneratedTest test;
         test.category = TestCategory::Function;
-        test.id = QStringLiteral("function:%1:%2").arg(container.entity().id()).arg(functionName);
-        test.name = functionName + QStringLiteral(" 功能测试");
-        test.description = QStringLiteral("根据功能依赖关系自动生成的功能类测试");
+        test.id = QString("function:%1:%2").arg(container.entity().id()).arg(functionName);
+        test.name = functionName + QString(" 功能测试");
+        test.description = QString("根据功能依赖关系自动生成的功能类测试");
         test.targetId = functionName;
 
         QStringList prerequisites = resolved.evaluationOrder;
         prerequisites.removeAll(functionName);
         test.prerequisites = prerequisites;
 
-        test.metrics.insert(QStringLiteral("requiredInputs"), QStringList(resolved.requiredInputs.values()));
-        test.metrics.insert(QStringLiteral("dependencyFunctions"), QStringList(resolved.dependencyFunctions.values()));
-        test.metrics.insert(QStringLiteral("actuators"), QStringList(resolved.actuatorVariables.values()));
+        test.metrics.insert(QString("requiredInputs"), QStringList(resolved.requiredInputs.values()));
+        test.metrics.insert(QString("dependencyFunctions"), QStringList(resolved.dependencyFunctions.values()));
+        test.metrics.insert(QString("actuators"), QStringList(resolved.actuatorVariables.values()));
         test.estimatedCost = 2.0;
         test.estimatedDuration = 2.0;
 
@@ -128,20 +128,20 @@ QVector<GeneratedTest> TestGeneratorService::generateFaultTests(const ContainerD
     for (const BehaviorMode &mode : behavior.faultModes) {
         GeneratedTest test;
         test.category = TestCategory::FaultMode;
-        const QString modeId = mode.modeId.isEmpty() ? QStringLiteral("fault-%1").arg(container.entity().id()) : mode.modeId;
-        test.id = QStringLiteral("fault:%1:%2").arg(container.entity().id()).arg(modeId);
+        const QString modeId = mode.modeId.isEmpty() ? QString("fault-%1").arg(container.entity().id()) : mode.modeId;
+        test.id = QString("fault:%1:%2").arg(container.entity().id()).arg(modeId);
         test.name = mode.displayName.isEmpty() ? modeId : mode.displayName;
-        test.description = QStringLiteral("针对故障模式的虚拟测试");
+        test.description = QString("针对故障模式的虚拟测试");
         test.targetId = modeId;
         test.detectableFaults = QStringList{modeId};
         test.isolatableFaults = QStringList{modeId};
         if (!mode.sourceContainers.isEmpty()) {
             QVariantList sources;
             for (int sid : mode.sourceContainers) sources.append(sid);
-            test.metrics.insert(QStringLiteral("sourceContainers"), sources);
+            test.metrics.insert(QString("sourceContainers"), sources);
         }
         if (mode.probability > 0.0)
-            test.metrics.insert(QStringLiteral("probability"), mode.probability);
+            test.metrics.insert(QString("probability"), mode.probability);
         test.estimatedCost = 3.0;
         test.estimatedDuration = 3.0;
         tests.append(test);
@@ -152,10 +152,10 @@ QVector<GeneratedTest> TestGeneratorService::generateFaultTests(const ContainerD
     if (!allFaultIds.isEmpty()) {
         GeneratedTest normal;
         normal.category = TestCategory::FaultMode;
-        normal.id = QStringLiteral("fault:%1:normal").arg(container.entity().id());
-        normal.name = QStringLiteral("正常判别");
-        normal.description = QStringLiteral("验证容器是否处于正常模式的虚拟测试");
-        normal.targetId = behavior.normalMode.modeId.isEmpty() ? QStringLiteral("normal") : behavior.normalMode.modeId;
+        normal.id = QString("fault:%1:normal").arg(container.entity().id());
+        normal.name = QString("正常判别");
+        normal.description = QString("验证容器是否处于正常模式的虚拟测试");
+        normal.targetId = behavior.normalMode.modeId.isEmpty() ? QString("normal") : behavior.normalMode.modeId;
         normal.detectableFaults = allFaultIds;
         normal.estimatedCost = 2.5;
         normal.estimatedDuration = 2.5;

@@ -151,11 +151,11 @@ AggregationResult BehaviorAggregator::combine(const ContainerEntity &entity,
             simplifiedExpression = simplification.simplifiedExpression;
             result.simplificationLog = simplification.log;
         } else {
-            warnings.append(QStringLiteral("Z3 化简失败，使用原始表达式聚合"));
+            warnings.append(QString("Z3 化简失败，使用原始表达式聚合"));
             if (smtClauses.size() == 1)
                 simplifiedExpression = smtClauses.first();
             else
-                simplifiedExpression = QStringLiteral("(and %1)").arg(smtClauses.join(QChar(' ')));
+                simplifiedExpression = QString("(and %1)").arg(smtClauses.join(QChar(' ')));
         }
     }
 
@@ -168,20 +168,20 @@ AggregationResult BehaviorAggregator::combine(const ContainerEntity &entity,
         BehaviorMode aggregatedFault;
         aggregatedFault.modeType = BehaviorModeType::DerivedFault;
         if (entity.name().isEmpty())
-            aggregatedFault.modeId = QStringLiteral("container-%1.fault").arg(entity.id());
+            aggregatedFault.modeId = QString("container-%1.fault").arg(entity.id());
         else
-            aggregatedFault.modeId = entity.name() + QStringLiteral(".fault");
+            aggregatedFault.modeId = entity.name() + QString(".fault");
         aggregatedFault.displayName = entity.name().isEmpty()
-                ? QStringLiteral("容器%1故障").arg(entity.id())
-                : entity.name() + QStringLiteral(" 故障");
+                ? QString("容器%1故障").arg(entity.id())
+                : entity.name() + QString(" 故障");
         if (!aggregated.behaviorSmt().trimmed().isEmpty())
-            aggregatedFault.constraints.append(QStringLiteral("(not %1)").arg(aggregated.behaviorSmt()));
+            aggregatedFault.constraints.append(QString("(not %1)").arg(aggregated.behaviorSmt()));
         aggregatedFault.sourceContainers.append(entity.id());
         QVariantList childIds;
         for (const ContainerEntity &childEntity : children)
             childIds.append(childEntity.id());
-        aggregatedFault.annotations.insert(QStringLiteral("children"), childIds);
-        aggregatedFault.annotations.insert(QStringLiteral("aggregated"), true);
+        aggregatedFault.annotations.insert(QString("children"), childIds);
+        aggregatedFault.annotations.insert(QString("aggregated"), true);
         behaviorSpec.faultModes.prepend(aggregatedFault);
     }
 
