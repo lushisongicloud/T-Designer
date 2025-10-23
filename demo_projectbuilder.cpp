@@ -133,7 +133,7 @@ bool DemoProjectBuilder::buildDemoProject(const QString &projectDir, const QStri
     const QString paramsPath = projectDir + "/test.params";
     const QString canonicalPageStem = BuildCanonicalPageName(QString("=Subsystem+Station 1"),
                                                              QString("Demo Diagram"),
-                                                             QString("DemoDiagram"));
+                                                             QString("D1"));
     const QString dwgPath = projectDir + "/" + canonicalPageStem + ".dwg";
     const QString templatePath = QDir::cleanPath(QString("D:/SynologyDrive/Project/T_DESIGNER/templete/project.db"));
     qDebug()<<"templatePath = "<<templatePath;
@@ -143,7 +143,7 @@ bool DemoProjectBuilder::buildDemoProject(const QString &projectDir, const QStri
     QFile::remove(dbPath);
     QFile::remove(paramsPath);
     QFile::remove(dwgPath);
-    QFile::remove(projectDir + "/DemoDiagram.dwg");
+    QFile::remove(projectDir + "/D1.dwg");
 
     if (!QFile::exists(templatePath)) {
         if (errorMessage)
@@ -358,7 +358,7 @@ bool DemoProjectBuilder::populateProjectDatabase(const QString &dbPath, QString 
         {1001, QString("1"), QString("Demo System"), 0, QString("演示项目根节点")},
         {1002, QString("3"), QString("Subsystem"), 1001, QString("演示子系统")},
         {1003, QString("5"), QString("Station 1"), 1002, QString("演示位置")},
-        {1004, QString("6"), QString("Demo Diagram"), 1003, QString("演示图纸")}
+        {1004, QString("6"), QString("Demo Diagram"), 1003, QString("演示图纸分组")}
     };
     for (const auto &row : projectStructures) {
         if (!prepareAndExec(query,
@@ -471,15 +471,15 @@ bool DemoProjectBuilder::populateProjectDatabase(const QString &dbPath, QString 
         }
     }
 
-    const QList<QList<QVariant>> symbTerms = {
-        {1, 1, QString("P"), QString("正极端子")},
-        {2, 1, QString("N"), QString("负极端子")},
-        {3, 2, QString("A1"), QString("线圈入口")},
-        {4, 2, QString("A2"), QString("线圈返回")}
+    const QList<QVariantList> symbTerms = {
+        {1, 1, QString("1"), QString("P"), QString(), QVariant(0), QString("正极端子")},
+        {2, 1, QString("2"), QString("N"), QString(), QVariant(0), QString("负极端子")},
+        {3, 2, QString("1"), QString("A1"), QString(), QVariant(0), QString("线圈入口")},
+        {4, 2, QString("2"), QString("A2"), QString(), QVariant(0), QString("线圈返回")}
     };
-    for (const auto &row : symbTerms) {
+    for (const QVariantList &row : symbTerms) {
         if (!prepareAndExec(query,
-                            "INSERT INTO Symb2TermInfo (Symb2TermInfo_ID, Symbol_ID, ConnNum, ConnDesc) VALUES (?,?,?,?)",
+                            "INSERT INTO Symb2TermInfo (Symb2TermInfo_ID, Symbol_ID, ConnNum_Logic, ConnNum, ConnDirection, Internal, ConnDesc) VALUES (?,?,?,?,?,?,?)",
                             row, errorMessage)) {
             cleanup();
             return false;
@@ -493,7 +493,7 @@ bool DemoProjectBuilder::populateProjectDatabase(const QString &dbPath, QString 
          QString("Demo diagram for workflow"),
          QString("原理图"),
          1,
-         QString("DemoDiagram"),
+         QString("D1"),
          QString("1:1"),
          QString("A3:420x297"),
          QString("Demo Diagram"),
@@ -503,18 +503,6 @@ bool DemoProjectBuilder::populateProjectDatabase(const QString &dbPath, QString 
     for (const auto &row : pages) {
         if (!prepareAndExec(query,
                             "INSERT INTO Page (Page_ID, ProjectStructure_ID, Page_Desc, PageType, PageNum, PageName, Scale, Border, Title, AlterTime, MD5Code) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-                            row, errorMessage)) {
-            cleanup();
-            return false;
-        }
-    }
-
-    const QList<QList<QVariant>> jxbs = {
-        {1, 1003, 1, QVariant(), QString("L1"), QString(), QString("2"), QString("4"), QString("Round"), QString("Red"), QString("2.5"), QString("Power"), QString("0"), QString("0")}
-    };
-    for (const auto &row : jxbs) {
-        if (!prepareAndExec(query,
-                            "INSERT INTO JXB (JXB_ID, ProjectStructure_ID, Page_ID, Cable_ID, ConnectionNumber, ConnectionNumber_Handle, Symb1_ID, Symb2_ID, Wires_Type, Wires_Color, Wires_Diameter, Wires_Category, Symb1_Category, Symb2_Category) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                             row, errorMessage)) {
             cleanup();
             return false;
@@ -583,13 +571,6 @@ bool DemoProjectBuilder::populateProjectDatabase(const QString &dbPath, QString 
         return false;
     }
 
-    if (!prepareAndExec(query,
-                        "INSERT INTO function_bindings (function_id, symbol_id) VALUES (?,?)",
-                        {1, 2}, errorMessage)) {
-        cleanup();
-        return false;
-    }
-
     // Populate normalized container schema
     const QList<QList<QVariant>> containerRows = {
         {1, 1001, QString("Demo System"), QString("system"), QVariant(), 0, QString("演示项目根节点"), QVariant(), QVariant()},
@@ -644,21 +625,6 @@ bool DemoProjectBuilder::populateProjectDatabase(const QString &dbPath, QString 
         if (!prepareAndExec(query,
                             "INSERT INTO container_interface (interface_id, container_id, name, direction, signal_category, signal_subtype, physical_domain, default_unit, description, inherits_interface_id) "
                             "VALUES (?,?,?,?,?,?,?,?,?,?)",
-                            row, errorMessage)) {
-            cleanup();
-            return false;
-        }
-    }
-
-    const QList<QList<QVariant>> interfaceBindings = {
-        {1, 1, 1, QVariant(), QVariant(), QString("output")},
-        {2, 2, 2, QVariant(), QVariant(), QString("supply")},
-        {3, 3, 2, QVariant(), QVariant(), QString("measurement")}
-    };
-    for (const auto &row : interfaceBindings) {
-        if (!prepareAndExec(query,
-                            "INSERT INTO container_interface_binding (binding_id, interface_id, equipment_id, terminal_id, connect_line_id, binding_role) "
-                            "VALUES (?,?,?,?,?,?)",
                             row, errorMessage)) {
             cleanup();
             return false;

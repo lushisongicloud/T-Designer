@@ -539,6 +539,7 @@ void MainWindow::AddExistPage()
         connect(formMxdraw,SIGNAL(UpdateCounterLink(int,QString)),this,SLOT(updateCounterLink(int,QString)));
         connect(formMxdraw,SIGNAL(SignalUpdateSpur(int)),this,SLOT(UpdateSpurBySymbol_ID(int)));
         connect(formMxdraw,SIGNAL(SignalUpdateTerminal(int)),this,SLOT(UpdateTerminalByTerminal_ID(int)));
+        connect(formMxdraw,SIGNAL(ConnectLinesChanged(int)),this,SLOT(handleConnectLinesChanged(int)));
         connect(formMxdraw,SIGNAL(SignalUpdateDwgBlkTagByPage_ID(int,QString,QString,QString)),this,SLOT(UpdateDwgBlkTagByPage_ID(int,QString,QString,QString)));
         SelectPage_ID=dlg->Page_ID;
         //更新treeview
@@ -836,6 +837,7 @@ void MainWindow::NewDwgPage()
         connect(formMxdraw,SIGNAL(UpdateCounterLink(int,QString)),this,SLOT(updateCounterLink(int,QString)));
         connect(formMxdraw,SIGNAL(SignalUpdateSpur(int)),this,SLOT(UpdateSpurBySymbol_ID(int)));
         connect(formMxdraw,SIGNAL(SignalUpdateTerminal(int)),this,SLOT(UpdateTerminalByTerminal_ID(int)));
+        connect(formMxdraw,SIGNAL(ConnectLinesChanged(int)),this,SLOT(handleConnectLinesChanged(int)));
 
 
         SelectPage_ID=dlg->Page_ID;
@@ -1592,6 +1594,12 @@ void MainWindow::LoadProjectLines()
 {
     LoadModelLineDT();
     LoadModelLineByUnits();
+}
+
+void MainWindow::handleConnectLinesChanged(int pageId)
+{
+    Q_UNUSED(pageId);
+    on_Btn_RemakeConnectLine_clicked();
 }
 
 void MainWindow::LoadProjectTerminals()
@@ -3821,6 +3829,7 @@ void MainWindow::OpenDwgPageByPageID(int PageID)
     connect(formMxdraw,SIGNAL(UpdateCounterLink(int,QString)),this,SLOT(updateCounterLink(int,QString)));
     connect(formMxdraw,SIGNAL(SignalUpdateSpur(int)),this,SLOT(UpdateSpurBySymbol_ID(int)));
     connect(formMxdraw,SIGNAL(SignalUpdateTerminal(int)),this,SLOT(UpdateTerminalByTerminal_ID(int)));
+    connect(formMxdraw,SIGNAL(ConnectLinesChanged(int)),this,SLOT(handleConnectLinesChanged(int)));
 }
 
 //单击鼠标左键预览图纸，双击鼠标左键打开图纸

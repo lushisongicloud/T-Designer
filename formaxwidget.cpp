@@ -6031,6 +6031,26 @@ void formaxwidget::on_axWidget_CommandEnded(const QString &sCmdName)
     //根据当前执行的指令更新数据库   
     LastCommandName=sCmdName;
     qDebug()<<"on_axWidget_CommandEnded,sCmdName"<<sCmdName;
+
+    bool hasNewConnectLine = false;
+    for (int i = 0; i < ListSelectEntys.count(); ++i)
+    {
+        IMxDrawEntity *enty = ListSelectEntys.at(i);
+        if(enty==nullptr) continue;
+        if(EntyIsErased(ui->axWidget,enty)) continue;
+        if(enty->dynamicCall("ObjectName()").toString()!="McDbLine") continue;
+        if(enty->dynamicCall("Layer()").toString()!="CONNECT") continue;
+        const QString lineHandle = enty->dynamicCall("handle()").toString();
+        if(lineHandle.isEmpty()) continue;
+        QSqlQuery queryCheck(T_ProjectDatabase);
+        queryCheck.prepare("SELECT 1 FROM Line WHERE Wires_Handle = ? LIMIT 1");
+        queryCheck.bindValue(0, lineHandle);
+        if(queryCheck.exec() && !queryCheck.next())
+        {
+            hasNewConnectLine = true;
+            break;
+        }
+    }
     if(sCmdName=="MXOCXSYS_ImpMxDrawXCommand")
     {
         if(FlagSetSymbolSpurHighLight) ui->axWidget->dynamicCall("DoCommand(const int&)",107);
@@ -6176,6 +6196,15 @@ qDebug()<<"RespSelectedModifyId count="<<RespSelectedModifyId->dynamicCall("Coun
     {
         qDebug()<<"else";
         ListSelectEntys.clear();
+    }
+
+    if(hasNewConnectLine && Page_IDInDB>0)
+    {
+        if(!dwgFileName.isEmpty())
+        {
+            ui->axWidget->dynamicCall("SaveDwgFile(QString)",dwgFileName);
+        }
+        emit(ConnectLinesChanged(Page_IDInDB));
     }
 //qDebug()<<"END";
 }

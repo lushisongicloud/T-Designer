@@ -205,6 +205,7 @@ signals:
     void SignalUpdateSymbolLib(QString CurSelectSymb2Class_ID);
     void SignalSetCurMdiActive();
     void SignalUpdateDwgBlkTagByPage_ID(int Page_ID,QString Handle,QString TagStr,QString ProjectStructure_ID);
+    void ConnectLinesChanged(int pageId);
 private slots:
     void on_axWidget_ImplementCommandEvent(int iCommandId);
     void on_axWidget_DynWorldDraw(double dX, double dY, IDispatch *pWorldDraw, IDispatch *pData, int &pRet);

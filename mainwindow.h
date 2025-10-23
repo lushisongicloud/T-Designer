@@ -252,6 +252,7 @@ private slots:
     void LoadProjectTerminals();
 
     void LoadProjectLines();
+    void handleConnectLinesChanged(int pageId);
 
     void LoadModelLineDT();
 
