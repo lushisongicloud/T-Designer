@@ -12,46 +12,58 @@
   - 依赖自动生成文件（`ui_*.h`）。
 - `MainWindow` 相关代码按功能拆分到仓库根目录的 `mainwindow_project.cpp`、`mainwindow_units.cpp`、`mainwindow_diagnosis.cpp` 中；新增入口或页签时，请跟随现有拆分结构。
 
+## 本周期重点（T‑Solver 深度集成的 UI 落点）
+- “本地物料库/元件属性”统一校验入口
+  - 在两处的 “T语言模型/元件T语言” 文本编辑区提供统一的“校验”按钮；调用 `BO` 的 SMT 校验接口（语法 + 端口一致性）。
+  - 校验结果以列表/定位的方式呈现；可一键跳转到变量声明/端口配置。
+- 功能子块 → 端口配置页面
+  - 允许设置端口类型（电/液/机/其他）；显示并可编辑默认变量集（i/u、p/q、F+v|n|x）。
+  - 支持自定义变量与 connect 函数族（创建、编辑、删除），并以只读/灰显标识系统预置与用户自定义的差异。
+- 功能管理 UI 重构
+  - 参考 `ref/T-Solver/README.md`：链路可从连线自动生成功能的“链路信息”，用户可修改与确认；
+  - 依赖功能选择器：自动提示主链器件作为他功能的“执行器”的候选；
+  - 边界条件查找与去重；求解前裁剪预览。
+- 测试管理 → 依赖矩阵
+  - 对齐 T‑Solver `dmatrixviewerdialog` 的布局、交互、配色与快捷操作；
+  - 扩展列/行属性编辑（测试：复杂性/费用/时间/成功率/备注；故障：概率/严重度/备注）。
+
 ## UI 与模型
-- 使用 Qt Designer 维护 `.ui` 文件；类名与 UI 文件名对应（例如 `CodeCheckDialog` ↔ `codecheckdialog.ui`）。
+- 使用 Qt Designer 维护 `.ui` 文件；类名与 UI 文件名对应（如 `CodeCheckDialog` ↔ `codecheckdialog.ui`）。
 - Model/View：
-  - 复杂树/表数据使用 `QAbstractItemModel` 派生类（例如 `containermodel.*`）。
-  - 定义清晰的 `Role` 与 `data()` 约定，保证 `index`/`parent`/`flags`/`rowCount`/`columnCount` 的一致性与性能。
-  - 不在 `data()` 中做重计算；缓存或让 `BO` 提供预处理结果。
+  - 复杂树/表数据使用 `QAbstractItemModel` 派生类（如 `containermodel.*`）。
+  - 明确 `Role` 与 `data()` 契约；避免在 `data()` 中做重计算（交给 `BO` 预处理）。
 - 信号/槽：
-  - 将用户操作转为信号或调用 `BO` 接口；
-  - 通过信号接收异步结果并刷新 UI，避免直接跨线程访问模型/控件。
+  - 用户操作转信号或调用 `BO`；
+  - 通过信号接收异步结果并刷新 UI，避免跨线程直接访问控件。
 
 ## 性能与并发
 - 耗时任务移交 `BO` 的 `Worker` 或后台任务；UI 线程仅做轻量操作。
-- 批量更新模型时使用 `beginResetModel()/endResetModel()` 或细粒度 `beginInsertRows()` 等，保持视图一致性与最小重绘。
+- 批量更新模型时使用 `beginResetModel()/endResetModel()` 或细粒度 `beginInsertRows()` 等。
 
-## 资源与国际化
-- 图标/图片统一通过 `image.qrc` 管理，路径采用 `:/` 前缀。
-- 字符串使用 `tr()` 以便后续国际化。
-- 示例 T-Designer 项目用于 UI 验证时，请从仓库根目录的 `MyProjects/` 中拷贝副本（如 `DemoSystem/`，当前仍使用 Livingstone 求解链路），分析流程后按需迁移到 SMT/`z3` 方案，避免直接修改原始模板。
-- 需要核对函数/系统描述时，可参考 `ref/Model.db` 及其在 `selectfunctiondialog.cpp`、`systementity.cpp` 中的读取方式，保持 UI 字段与数据结构一致。
+## 资源与文案
+- 图标/图片统一通过 `image.qrc` 管理。
+- 字符串默认使用 `tr()`，但依据根 `AGENTS.md`：代码中的中文常量可直接使用双引号或 `QString("中文")`。
+- 示例项目用于 UI 验证时请拷贝副本；`DemoSystem/` 仍为 Livingstone 流程，用于理解概念并逐步迁移到 SMT/`z3`。
+- 需要核对函数/系统描述时，参考 `ref/Model.db` 及 `selectfunctiondialog.cpp`、`systementity.cpp` 的读取方式，保持字段一致。
 
 ## 代码风格
 - 遵循根目录 `AGENTS.md`：类 PascalCase，方法/变量 lowerCamelCase，4 空格缩进，UTF-8 with BOM，`clang-format`。
-- 在代码中需要使用中文的地方，请不要使用 `tr` 与 `QStringLiteral`，而是直接使用双引号字符串（如 `"中文"`）或 `QString("中文")`。
+- 中文字符串：使用双引号或 `QString("中文")`，不要使用 `QStringLiteral`。
 - 头/源文件成对；将业务交互点集中在少量方法中（如 `applyChanges()`/`loadFromBo()`）。
 
 ## 典型目录内元素
-- `containermodel.*`：树形模型；请确保持久索引正确、`parent()`/`index()` 成对一致、避免循环引用。
+- `containermodel.*`：树形模型；确保持久索引正确、`parent()`/`index()` 成对一致。
 - `containertreedialog.*`：容器树选择/浏览对话框；通过信号向外部报告选择结果。
-- `codecheckdialog.*`、`selectfunctiondialog.*`：较大的对话框逻辑，务必将复杂校验/计算下沉至 `BO`；其中 `selectfunctiondialog.*` 读取 `ref/Model.db` 中的 SMT 数据做实验性验证，UI 变更需同步更新数据解析。
+- `codecheckdialog.*`、`selectfunctiondialog.*`：较大的对话框逻辑，复杂校验/计算下沉至 `BO`。
 
 ## 测试策略（Qt Test）
-- 对模型类进行单元测试：验证行列数、角色数据、插入/删除与重置流程；
-- 对对话框的关键逻辑（不含交互）编写可调度的函数并测试；
-- 测试文件位于 `tests/`，命名如 `widget_containermodel_test.cpp`，在 `T_DESIGNER.pro` 添加测试目标。
+- 对模型类：验证行列数、角色数据、插入/删除与重置流程。
+- 对对话框：将关键逻辑抽到可测试函数，编写用例。
+- 测试位于 `tests/`，命名如 `widget_containermodel_test.cpp`；在 `T_DESIGNER.pro` 添加测试目标。
 
 ## 变更流程
-- 修改/新增控件或模型：
-  - 同步更新 `.ui` 文件与资源；
-  - 如新增源文件，更新 `T_DESIGNER.pro`；
-  - 不修改 `ui_*.h`（由 Qt 自动生成）。
+- 修改/新增控件或模型：同步更新 `.ui` 与资源；如新增源文件，更新 `T_DESIGNER.pro`。
+- 不修改自动生成文件 `ui_*.h`。
 
 ---
-简述：widget 层专注表现与交互，依赖 `BO` 获取/提交数据，避免业务下沉与阻塞 UI。
+简述：widget 层专注表现与交互，本周期围绕 SMT 校验、功能管理与 D 矩阵重构对 UI 进行改造，核心逻辑由 `BO` 提供。

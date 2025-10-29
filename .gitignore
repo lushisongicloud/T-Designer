@@ -1,5 +1,6 @@
 # Ignore build directory
 build/
+buildInWSL/
 release/
 debug/
 include/

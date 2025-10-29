@@ -4,8 +4,10 @@
 #
 #-------------------------------------------------
 
-QT       += core gui axcontainer charts sql webenginewidgets concurrent xml
-
+QT       += core gui charts sql webenginewidgets concurrent xml
+win32 {
+    QT += axcontainer
+}
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = T-DESIGNER

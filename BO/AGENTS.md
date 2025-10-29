@@ -19,36 +19,57 @@
   - 入参与出参尽量使用 `const &` 或值语义（小对象），指针所有权清晰（`unique_ptr`/`shared_ptr`/裸指针仅作非拥有引用）。
   - 明确区分“无数据”和“失败”（例如返回 `std::optional<T>` 与错误码/错误对象）。
 - 与模型规范对齐：
-  - 领域建模与层次关系请参考 `docs/hierarchical_modeling_requirements.md`，保持命名与关系图一致。
-  - 在新增实体/仓库前，先补充/确认 `DO/` 层的数据结构。
-  - 迁移自 Livingstone 的求解逻辑时，可参考 `MyProjects/DemoSystem/` 的业务流程与数据组织，将其状态机与 T 语言描述改写为通用 SMT 表达，并复用 `z3solverthread.*`。
+  - 新增实体/仓库前，先补充/确认 `DO/` 层的数据结构。
+  - 迁移自 Livingstone 的求解逻辑时，参考 `MyProjects/DemoSystem/` 的流程与组织，将 T 语言描述改写为通用 SMT 表达，复用 `z3solverthread.*`。
+
+## 本周期重点（T‑Solver 深度集成）
+- SMT‑LIB 迁移与校验（BO/function）
+  - 在 `tmodelvalidator.*` 基础上扩展：提供 1）SMT 语法校验，2）端口与变量一致性校验（与元件端口设置、功能子块端号对齐）。
+  - 接口形态：`ValidationResult validateComponentSmt(const QString& smt, const PortSchema& schema)`；返回语法错误、未声明变量、缺失变量、端口/变量冲突清单。
+  - 统一服务：供 “本地物料库/元件属性” 两处 UI 共用。
+- 端口/变量体系与连接语法糖（BO/behavior + BO/function）
+  - 端口类型电/液/机 → 变量集分别为 `i/u`、`p/q`、`F`+`v|n|x`（按元件选一）；允许自定义变量与 connect 函数族（注册表）。
+  - 提供连接生成器：从 CAD 连线语义生成 `connect2e/3e`、`connect2h/3h`、`connect2m/3m` 约束（最终展开为 SMT 断言）。
+  - 数组端口（1P/3P）按索引展开到 `(select X.i k)`。
+- 容器优先实现（BO/container）
+  - 元件级容器代理其包含的单一实体元件接口/行为；新增 SMT 建模/功能管理逻辑尽量落在容器与聚合器中（`behavioraggregator.*`）。
+  - 从实体元件读取功能子块/端口设置，构造容器层的 SMT 变量命名空间（如 `K1.Coil.A1.i`）。
+- 功能管理重构（BO/function）
+  - 参考 `ref/T-Solver/README.md`：链路解析/裁剪、依赖功能展开、边界补全、离线解缓存（`offlineSolveResult`）。
+  - 仓库接口：读/写功能定义（树结构、link、dependency、constraint、属性、样本与范围配置）。
+  - 依赖三元组串行化存储与合并规则与 T‑Solver 保持一致。
+- D 矩阵（BO/test）
+  - 对齐 T‑Solver 的数据结构，扩展测试维度（复杂性/费用/时间/成功率/备注）与故障维度（概率/严重度/备注）。
+  - 提供生成、合并、过滤、加权计算接口；与既有“测试优选/指标预计/诊断决策树”流程兼容。
+- 数据持久化（BO/*Repository）
+  - 仅使用项目 db 存储（项目同名 `.db`）；模板库字段更新需先在项目验证，再用 `tools/` 迁移脚本更新 `templete/project.db`。
+
+## 目录指引
+- `containerrepository.*`：容器/系统数据装载与持久化，屏蔽 DB 细节。
+- `container/`：`behavioraggregator.*`、`containerdata.*` 聚合容器态业务；容器层 SMT/功能/测试性能力的主落点。
+- `behavior/`：求解相关算法与工具（`z3simplifier.*` 等），线程安全，信号/槽返回结果。
+- `function/`：`functionrepository.*`、`functionanalysisservice.*`、`tmodelvalidator.*`；新增链路/依赖/裁剪/校验与 SAT 调用准备逻辑。
+- `test/`：`diagnosticmatrixbuilder.*`、`testgeneratorservice.*`；按新维度扩展，提供权重策略接口。
+- `componententity.*`、`systementity.*`：系统/组件业务外观，负责把数据与求解准备整合给上层。
 
 ## 代码风格
-- 遵循根目录 `AGENTS.md` 约定：类 PascalCase，方法/变量 lowerCamelCase，4 空格缩进，UTF-8 with BOM，使用 `clang-format`（Qt/Google 风格均可，保持一致）。
-- 在代码中需要使用中文的地方，请不要使用 `tr` 与 `QStringLiteral`，而是直接使用双引号字符串（如 `"中文"`）或 `QString("中文")`。
-- 头/源文件成对命名；公共类型与接口放入头文件，私有实现细节留在 cpp。
-
-## 典型目录内元素
-- `containerrepository.*`：示例仓库类，负责容器/系统相关的数据装载/持久化，屏蔽底层存储细节。
-- `container/`：包含 `behavioraggregator.*`、`containerdata.*` 等聚合/缓存辅助类，集中管理容器维度的业务状态。
-- `behavior/`：封装求解器或复杂算法（如 `z3simplifier.*`）；保持线程安全，并通过信号返回结果。
-- `function/`：包含 `functionrepository.*`、`functionanalysisservice.*`、`tmodelvalidator.*` 等函数定义/校验逻辑。
-- `test/`：包含 `diagnosticmatrixbuilder.*`、`testgeneratorservice.*` 等测试流程生成器。
-- `worker.*`：后台任务/计算单元，使用线程或任务并发执行，提供进度与结果信号。
-- `componententity.*`、`systementity.*`：业务聚合根或领域对象的业务外观，协调 `DO/` 数据对象；其中 `systementity.cpp` 当前以 `ref/Model.db` 中的 SMT 数据为参考，用于验证系统/功能层建模。
+- 遵循根目录 `AGENTS.md`：类 PascalCase，方法/变量 lowerCamelCase，4 空格缩进，UTF-8 with BOM，`clang-format`。
+- 中文字符串：使用双引号或 `QString("中文")`，不要使用 `tr`/`QStringLiteral`。
+- 头/源文件成对；公共接口在头文件，私有实现留在 cpp。
 
 ## 测试策略（Qt Test）
-- 为仓库与服务编写独立单元测试（不依赖 UI），覆盖：
-  - 正常路径、边界条件与错误分支；
-  - 并发/异步回调的时序与资源释放；
-  - 与 `DO/` 的转换/映射一致性（例如从数据库行 -> DO 结构）。
-- 测试文件放在 `tests/`，命名如 `bo_containerrepository_test.cpp`，在 `T_DESIGNER.pro` 中添加测试目标。
+- 覆盖点：
+  - SMT 语法与端口一致性校验（正/反例用例集）。
+  - CAD→连接语法糖→SMT 展开正确性（电/液/机、2/3 端、1P/3P）。
+  - 链路裁剪、依赖展开与边界补全；offline 结果序列化往返。
+  - D 矩阵生成/合并/过滤与权重策略。
+- 命名：`bo_<area>_test.cpp`；在 `T_DESIGNER.pro` 添加测试目标。
 
 ## 变更流程
-- 新增/删除源文件后，务必更新 `T_DESIGNER.pro`（`SOURCES`/`HEADERS`）。
-- 涉及数据库结构的改动，请在 `ref/` 目录下的示例数据库上读取或验证，并更新迁移/初始化逻辑；避免破坏共享示例数据。
-- 调整求解器或业务流程时，请同步对照 `MyProjects/` 中的示例工程（尤其是 `DemoSystem/`），记录从 Livingstone 到 SMT/`z3` 的差异与迁移步骤。
+- 新增/删除源文件：更新 `T_DESIGNER.pro`（`SOURCES`/`HEADERS`）。
+- DB 结构调整：先在 `MyProjects/<Project>/<Project>.db` 验证；评审后用 `tools/` 脚本更新 `templete/project.db`。
+- 对照 `ref/T-Solver/README.md` 与 `MyProjects/DemoSystem`，记录从 Livingstone→SMT 的差异与迁移要点。
 - 禁止修改自动生成文件（如 `ui_*.h`）。
 
 ---
-简述：BO 层专注业务编排与数据访问封装，不含 UI。面向 UI 暴露稳定接口，并与 `DO/`、数据库保持清晰边界。
+简述：BO 层专注业务编排与数据访问封装，本周期新增 SMT/功能管理/D 矩阵能力落在容器与服务上，向 UI 暴露稳定接口。
