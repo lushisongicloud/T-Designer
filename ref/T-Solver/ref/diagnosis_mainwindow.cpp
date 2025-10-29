@@ -1,4 +1,4 @@
-﻿#include "diagnosis_mainwindow.h"
+#include "diagnosis_mainwindow.h"
 #include "ui_diagnosis_mainwindow.h"
 #include <QMessageBox>
 #include  <QtDebug>

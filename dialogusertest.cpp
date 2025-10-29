@@ -1,4 +1,4 @@
-﻿#include "dialogusertest.h"
+#include "dialogusertest.h"
 #include "ui_dialogusertest.h"
 #include "dialogaddcondition.h"
 

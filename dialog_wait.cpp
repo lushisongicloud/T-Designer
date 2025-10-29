@@ -1,4 +1,4 @@
-﻿#include "dialog_wait.h"
+#include "dialog_wait.h"
 #include "ui_dialog_wait.h"
 #include <QTime>
 #include <QMovie>

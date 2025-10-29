@@ -1,4 +1,4 @@
-﻿#include "qxlabel.h"
+#include "qxlabel.h"
 #include <QMessageBox>
 
 QXlabel::QXlabel(QWidget * parent):QLabel(parent)

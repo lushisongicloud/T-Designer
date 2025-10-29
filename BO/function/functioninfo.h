@@ -1,4 +1,4 @@
-﻿#ifndef FUNCTIONINFO_H
+#ifndef FUNCTIONINFO_H
 #define FUNCTIONINFO_H
 
 #include <QString>

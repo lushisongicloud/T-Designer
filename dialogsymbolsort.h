@@ -1,4 +1,4 @@
-﻿#ifndef DIALOGSYMBOLSORT_H
+#ifndef DIALOGSYMBOLSORT_H
 #define DIALOGSYMBOLSORT_H
 
 #include <QDialog>

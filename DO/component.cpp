@@ -1,4 +1,4 @@
-﻿#include "component.h"
+#include "component.h"
 #include<QDebug>
 #include <QDomDocument>
 

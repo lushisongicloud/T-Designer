@@ -1,4 +1,4 @@
-﻿#include "dialogunitmanage.h"
+#include "dialogunitmanage.h"
 #include "ui_dialogunitmanage.h"
 #define NodeIconPath "" //"C:/TBD/data/器件库节点图标.png"
 //QIcon icontreenode=QIcon(":/Images/本地器件库节点.png");

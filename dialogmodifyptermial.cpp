@@ -1,4 +1,4 @@
-﻿#include "dialogmodifyptermial.h"
+#include "dialogmodifyptermial.h"
 #include "ui_dialogmodifyptermial.h"
 
 extern bool FlagPuttingAttrDef;

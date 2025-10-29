@@ -1,4 +1,4 @@
-﻿#include "bqgraphicsitem.h"
+#include "bqgraphicsitem.h"
 #include <QVector>
 #include <QDebug>
 #include <QMenu>

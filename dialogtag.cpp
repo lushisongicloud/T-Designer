@@ -1,4 +1,4 @@
-﻿#include "dialogtag.h"
+#include "dialogtag.h"
 #include "ui_dialogtag.h"
 QList<QColor> ListTagColor{QColor(237, 28, 36),QColor(255, 127, 39),QColor(255, 242, 0),QColor(34, 177, 76),QColor(0, 255, 255),QColor(0, 0, 255),QColor(163, 73, 164)};
 dialogTag::dialogTag(QWidget *parent) :

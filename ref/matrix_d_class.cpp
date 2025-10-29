@@ -1,4 +1,4 @@
-﻿#include "matrix_d_class.h"
+#include "matrix_d_class.h"
 #include  <QtDebug>
 
 #if _MSC_VER >= 1600	// MSVC2015 > 1899,	MSVC_VER = 14.0

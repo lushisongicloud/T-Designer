@@ -1,4 +1,4 @@
-﻿#ifndef DIALOGDIAGNOSEUI_H
+#ifndef DIALOGDIAGNOSEUI_H
 #define DIALOGDIAGNOSEUI_H
 
 #include <QDialog>

@@ -1,4 +1,4 @@
-﻿#include "dialogpagenameset.h"
+#include "dialogpagenameset.h"
 #include "ui_dialogpagenameset.h"
 extern QSqlDatabase  T_ProjectDatabase;
 DialogPageNameSet::DialogPageNameSet(QWidget *parent) :

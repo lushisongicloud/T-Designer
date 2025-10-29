@@ -1,4 +1,4 @@
-﻿#include "graphadjlist.h"
+#include "graphadjlist.h"
 
 GraphAdjList::GraphAdjList()
 {

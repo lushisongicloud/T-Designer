@@ -1,4 +1,4 @@
-﻿#ifndef DIALOGADDCONDITION_H
+#ifndef DIALOGADDCONDITION_H
 #define DIALOGADDCONDITION_H
 
 #include <QDialog>

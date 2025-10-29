@@ -1,4 +1,4 @@
-﻿#include "dialogBranchAttr.h"
+#include "dialogBranchAttr.h"
 #include "ui_dialogBranchAttr.h"
 extern QStringList RemovedUnitsInfo;
 DialogBranchAttr::DialogBranchAttr(QWidget *parent) :

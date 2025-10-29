@@ -1,4 +1,4 @@
-﻿#ifndef DIALOGTAG_H
+#ifndef DIALOGTAG_H
 #define DIALOGTAG_H
 
 #include <QWidget>

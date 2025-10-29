@@ -1,4 +1,4 @@
-﻿// worker.h
+// worker.h
 
 #ifndef WORKER_H
 #define WORKER_H

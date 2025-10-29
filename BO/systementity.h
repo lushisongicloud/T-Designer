@@ -1,4 +1,4 @@
-﻿#ifndef SYSTEMENTITY_H
+#ifndef SYSTEMENTITY_H
 #define SYSTEMENTITY_H
 
 #include <QList>

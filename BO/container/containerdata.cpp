@@ -1,4 +1,4 @@
-﻿#include "BO/container/containerdata.h"
+#include "BO/container/containerdata.h"
 
 #include <QJsonArray>
 #include <QJsonDocument>

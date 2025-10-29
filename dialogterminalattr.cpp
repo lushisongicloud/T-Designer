@@ -1,4 +1,4 @@
-﻿#include "dialogterminalattr.h"
+#include "dialogterminalattr.h"
 #include "ui_dialogterminalattr.h"
 extern int SelectTerminalStrip_ID;
 extern int SelectTerminal_ID;

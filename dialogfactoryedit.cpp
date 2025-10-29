@@ -1,4 +1,4 @@
-﻿#include "dialogfactoryedit.h"
+#include "dialogfactoryedit.h"
 #include "ui_dialogfactoryedit.h"
 
 DialogFactoryEdit::DialogFactoryEdit(QWidget *parent) :

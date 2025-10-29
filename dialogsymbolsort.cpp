@@ -1,4 +1,4 @@
-﻿#include "dialogsymbolsort.h"
+#include "dialogsymbolsort.h"
 #include "ui_dialogsymbolsort.h"
 
 DialogSymbolSort::DialogSymbolSort(QWidget *parent) :

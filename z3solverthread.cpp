@@ -1,4 +1,4 @@
-﻿#include "z3solverthread.h"
+#include "z3solverthread.h"
 
 Z3SolverThread::Z3SolverThread(QObject *parent)
 {

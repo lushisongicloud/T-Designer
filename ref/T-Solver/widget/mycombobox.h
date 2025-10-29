@@ -1,4 +1,4 @@
-﻿#ifndef MYCOMBOBOX_H
+#ifndef MYCOMBOBOX_H
 #define MYCOMBOBOX_H
 
 #include <QObject>

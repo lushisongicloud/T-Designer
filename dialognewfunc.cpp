@@ -1,4 +1,4 @@
-﻿#include "dialognewfunc.h"
+#include "dialognewfunc.h"
 #include "ui_dialognewfunc.h"
 
 DialogNewFunc::DialogNewFunc(QWidget *parent) :

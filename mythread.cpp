@@ -1,4 +1,4 @@
-﻿#include "mythread.h"
+#include "mythread.h"
 #include <qdebug.h>
 extern void CommandAndUpdateCandidateConflictList();
 extern void SolveByType(int Type);

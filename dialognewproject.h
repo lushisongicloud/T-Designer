@@ -1,4 +1,4 @@
-﻿#ifndef DIALOGNEWPROJECT_H
+#ifndef DIALOGNEWPROJECT_H
 #define DIALOGNEWPROJECT_H
 
 #include <QDialog>

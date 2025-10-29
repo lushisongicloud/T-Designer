@@ -1,4 +1,4 @@
-﻿#include "function_catalog.h"
+#include "function_catalog.h"
 
 #include <QDomDocument>
 #include <QDomElement>

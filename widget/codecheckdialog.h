@@ -1,4 +1,4 @@
-﻿#ifndef CODECHECKDIALOG_H
+#ifndef CODECHECKDIALOG_H
 #define CODECHECKDIALOG_H
 
 #include "common.h"

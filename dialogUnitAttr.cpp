@@ -1,4 +1,4 @@
-﻿#include "dialogUnitAttr.h"
+#include "dialogUnitAttr.h"
 #include "ui_dialogUnitAttr.h"
 #include "BO/function/tmodelvalidator.h"
 #include <algorithm>

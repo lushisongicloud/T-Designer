@@ -1,4 +1,4 @@
-﻿#include "sqlitedatabase.h"
+#include "sqlitedatabase.h"
 #include <QFormLayout>
 #include <QListWidget>
 #include <QTextEdit>

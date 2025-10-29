@@ -1,4 +1,4 @@
-﻿#include "dialogfuncdefine.h"
+#include "dialogfuncdefine.h"
 #include "ui_dialogfuncdefine.h"
 
 DialogFuncDefine::DialogFuncDefine(QWidget *parent) :

@@ -1,4 +1,4 @@
-﻿#ifndef CONTAINERTREEDIALOG_H
+#ifndef CONTAINERTREEDIALOG_H
 #define CONTAINERTREEDIALOG_H
 
 #include <QDialog>

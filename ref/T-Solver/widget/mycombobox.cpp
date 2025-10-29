@@ -1,4 +1,4 @@
-﻿#include "mycombobox.h"
+#include "mycombobox.h"
 #include <QDebug>
 
 MatchOnlyProxyModel::MatchOnlyProxyModel(QObject *parent) : QSortFilterProxyModel(parent)

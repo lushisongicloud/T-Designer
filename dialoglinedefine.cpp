@@ -1,4 +1,4 @@
-﻿#include "dialoglinedefine.h"
+#include "dialoglinedefine.h"
 #include "ui_dialoglinedefine.h"
 
 DialogLineDefine::DialogLineDefine(QWidget *parent) :

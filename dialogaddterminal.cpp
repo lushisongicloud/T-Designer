@@ -1,4 +1,4 @@
-﻿#include "dialogaddterminal.h"
+#include "dialogaddterminal.h"
 #include "ui_dialogaddterminal.h"
 
 DialogAddTerminal::DialogAddTerminal(QWidget *parent) :

@@ -1,4 +1,4 @@
-﻿#include "codecheckdialog.h"
+#include "codecheckdialog.h"
 
 CodeCheckDialog::CodeCheckDialog(QWidget *parent) : QDialog(parent), m_detailsShown(true)
 {

@@ -1,4 +1,4 @@
-﻿#include "BO/test/diagnosticmatrixbuilder.h"
+#include "BO/test/diagnosticmatrixbuilder.h"
 
 #include <algorithm>
 

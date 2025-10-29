@@ -1,4 +1,4 @@
-﻿#ifndef BQGRAPHICSITEM_H
+#ifndef BQGRAPHICSITEM_H
 #define BQGRAPHICSITEM_H
 
 #include <QObject>

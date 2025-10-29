@@ -1,4 +1,4 @@
-﻿#include "BO/function/functiondependencyresolver.h"
+#include "BO/function/functiondependencyresolver.h"
 
 #include <functional>
 #include <QVector>

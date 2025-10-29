@@ -1,4 +1,4 @@
-﻿#include "formaxwidget.h"
+#include "formaxwidget.h"
 #include "ui_formaxwidget.h"
 #include <QSet>
 bool IsLoadingSymbol=false;//正在载入符号

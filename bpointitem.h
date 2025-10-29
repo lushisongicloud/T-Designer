@@ -1,4 +1,4 @@
-﻿#ifndef BPOINTITEM_H
+#ifndef BPOINTITEM_H
 #define BPOINTITEM_H
 
 #include <QObject>

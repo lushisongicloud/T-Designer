@@ -1,4 +1,4 @@
-﻿#include "BO/behavior/z3simplifier.h"
+#include "BO/behavior/z3simplifier.h"
 
 #include <QRegularExpression>
 #include <QTextStream>

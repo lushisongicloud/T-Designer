@@ -1,4 +1,4 @@
-﻿#include "widget/functionsymbolpickerdialog.h"
+#include "widget/functionsymbolpickerdialog.h"
 
 #include <QDialogButtonBox>
 #include <QSqlQuery>

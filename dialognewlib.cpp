@@ -1,4 +1,4 @@
-﻿#include "dialognewlib.h"
+#include "dialognewlib.h"
 #include "ui_dialognewlib.h"
 
 DialogNewLib::DialogNewLib(QWidget *parent) :

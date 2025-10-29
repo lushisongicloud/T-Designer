@@ -1,4 +1,4 @@
-﻿#ifndef DIALOGLINKEDIT_H
+#ifndef DIALOGLINKEDIT_H
 #define DIALOGLINKEDIT_H
 
 #include <QDialog>

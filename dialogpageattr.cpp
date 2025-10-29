@@ -1,4 +1,4 @@
-﻿#include "dialogpageattr.h"
+#include "dialogpageattr.h"
 #include "ui_dialogpageattr.h"
 #include "common.h"
 extern QSqlDatabase  T_ProjectDatabase;

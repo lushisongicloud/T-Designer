@@ -1,4 +1,4 @@
-﻿#ifndef DIALOGCABLEDEFINE_H
+#ifndef DIALOGCABLEDEFINE_H
 #define DIALOGCABLEDEFINE_H
 
 #include <QDialog>

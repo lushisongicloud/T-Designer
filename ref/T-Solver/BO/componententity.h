@@ -1,4 +1,4 @@
-﻿#ifndef COMPONENTENTITY_H
+#ifndef COMPONENTENTITY_H
 #define COMPONENTENTITY_H
 
 #include <QString>

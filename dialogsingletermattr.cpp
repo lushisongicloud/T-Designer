@@ -1,4 +1,4 @@
-﻿#include "dialogsingletermattr.h"
+#include "dialogsingletermattr.h"
 #include "ui_dialogsingletermattr.h"
 
 DialogSingleTermAttr::DialogSingleTermAttr(QWidget *parent) :

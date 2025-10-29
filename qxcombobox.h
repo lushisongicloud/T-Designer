@@ -1,4 +1,4 @@
-﻿#ifndef QXCOMBOBOX_H
+#ifndef QXCOMBOBOX_H
 #define QXCOMBOBOX_H
 
 #include <QWidget>

@@ -1,4 +1,4 @@
-﻿#include "diagnosisgraph.h"
+#include "diagnosisgraph.h"
 
 // Node\Edge\Dependency类已经在头文件中完全定义了,不需要额外的cpp实现。
 

@@ -1,4 +1,4 @@
-﻿#ifndef QXLABEL_H
+#ifndef QXLABEL_H
 #define QXLABEL_H
 
 #include <QWidget>

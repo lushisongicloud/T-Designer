@@ -1,4 +1,4 @@
-﻿#ifndef DIALOGPAGENAMESET_H
+#ifndef DIALOGPAGENAMESET_H
 #define DIALOGPAGENAMESET_H
 
 #include <QDialog>

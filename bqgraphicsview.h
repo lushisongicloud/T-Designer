@@ -1,4 +1,4 @@
-﻿#ifndef BQGRAPHICSVIEW_H
+#ifndef BQGRAPHICSVIEW_H
 #define BQGRAPHICSVIEW_H
 
 #include <QGraphicsView>

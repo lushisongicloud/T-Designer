@@ -1,4 +1,4 @@
-﻿#ifndef TMODELVALIDATOR_H
+#ifndef TMODELVALIDATOR_H
 #define TMODELVALIDATOR_H
 
 #include <QList>

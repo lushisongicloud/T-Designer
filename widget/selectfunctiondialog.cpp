@@ -1,4 +1,4 @@
-﻿#include "selectfunctiondialog.h"
+#include "selectfunctiondialog.h"
 #include "ui_selectfunctiondialog.h"
 
 extern QMap<QString, QStringList> obsTemplates;

@@ -1,4 +1,4 @@
-﻿#ifndef DIALOGTESTREPORT_H
+#ifndef DIALOGTESTREPORT_H
 #define DIALOGTESTREPORT_H
 
 #include <QDialog>

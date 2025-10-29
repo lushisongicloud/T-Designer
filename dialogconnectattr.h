@@ -1,4 +1,4 @@
-﻿#ifndef DIALOGCONNECTATTR_H
+#ifndef DIALOGCONNECTATTR_H
 #define DIALOGCONNECTATTR_H
 
 #include <QDialog>

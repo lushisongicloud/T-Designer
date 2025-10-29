@@ -1,4 +1,4 @@
-﻿#include "binaryboolcalcute.h"
+#include "binaryboolcalcute.h"
 
 BinaryBoolCalcute::BinaryBoolCalcute()
 {

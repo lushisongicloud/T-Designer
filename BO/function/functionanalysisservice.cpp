@@ -1,4 +1,4 @@
-﻿#include "BO/function/functionanalysisservice.h"
+#include "BO/function/functionanalysisservice.h"
 
 #include <QSqlQuery>
 #include <QSqlError>

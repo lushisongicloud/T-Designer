@@ -1,4 +1,4 @@
-﻿#include "dialogattrdefset.h"
+#include "dialogattrdefset.h"
 #include "ui_dialogattrdefset.h"
 
 DialogAttrDefSet::DialogAttrDefSet(QWidget *parent,IMxDrawAttributeDefinition *AttrDef,IMxDrawAttribute *Attr,IMxDrawMText *Text) :

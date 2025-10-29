@@ -1,4 +1,4 @@
-﻿#ifndef Z3SIMPLIFIER_H
+#ifndef Z3SIMPLIFIER_H
 #define Z3SIMPLIFIER_H
 
 #include <QString>

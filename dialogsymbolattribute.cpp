@@ -1,4 +1,4 @@
-﻿#include "dialogsymbolattribute.h"
+#include "dialogsymbolattribute.h"
 #include "ui_dialogsymbolattribute.h"
 
 DialogSymbolAttribute::DialogSymbolAttribute(QWidget *parent) :

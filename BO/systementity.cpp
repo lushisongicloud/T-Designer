@@ -1,4 +1,4 @@
-﻿#include "systementity.h"
+#include "systementity.h"
 #include "mainwindow.h"
 
 QList<QList<ComponentEntity>> candidateConflictList ;

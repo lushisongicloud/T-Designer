@@ -1,4 +1,4 @@
-﻿#ifndef QSCILEXERCPPATTACH_H
+#ifndef QSCILEXERCPPATTACH_H
 #define QSCILEXERCPPATTACH_H
 
 #include <QObject>

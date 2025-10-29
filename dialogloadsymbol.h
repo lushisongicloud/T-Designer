@@ -1,4 +1,4 @@
-﻿#ifndef DIALOGLOADSYMBOL_H
+#ifndef DIALOGLOADSYMBOL_H
 #define DIALOGLOADSYMBOL_H
 
 #include <QDialog>

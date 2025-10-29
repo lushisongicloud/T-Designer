@@ -1,4 +1,4 @@
-﻿#ifndef BEHAVIORAGGREGATOR_H
+#ifndef BEHAVIORAGGREGATOR_H
 #define BEHAVIORAGGREGATOR_H
 
 #include <functional>

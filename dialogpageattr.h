@@ -1,4 +1,4 @@
-﻿#ifndef DIALOGPAGEATTR_H
+#ifndef DIALOGPAGEATTR_H
 #define DIALOGPAGEATTR_H
 
 #include <QDialog>

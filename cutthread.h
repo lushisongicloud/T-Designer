@@ -1,4 +1,4 @@
-﻿#ifndef CUTTHREAD_H
+#ifndef CUTTHREAD_H
 #define CUTTHREAD_H
 
 #include <QThread>

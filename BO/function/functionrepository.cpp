@@ -1,4 +1,4 @@
-﻿#include "BO/function/functionrepository.h"
+#include "BO/function/functionrepository.h"
 
 #include <QSqlError>
 #include <QSqlRecord>

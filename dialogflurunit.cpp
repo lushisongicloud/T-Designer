@@ -1,4 +1,4 @@
-﻿#include "dialogflurunit.h"
+#include "dialogflurunit.h"
 #include "ui_dialogflurunit.h"
 
 DialogFlurUnit::DialogFlurUnit(QWidget *parent,QList<QString> *list_unit) :

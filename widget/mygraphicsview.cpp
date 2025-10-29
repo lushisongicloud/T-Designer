@@ -1,4 +1,4 @@
-﻿#include "mygraphicsview.h"
+#include "mygraphicsview.h"
 #include <QDebug>
 #include <QTimer>
 

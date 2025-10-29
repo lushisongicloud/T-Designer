@@ -1,4 +1,4 @@
-﻿#ifndef FORMAXWIDGET_H
+#ifndef FORMAXWIDGET_H
 #define FORMAXWIDGET_H
 
 #include <QWidget>

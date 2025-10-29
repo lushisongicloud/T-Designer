@@ -1,4 +1,4 @@
-﻿#ifndef Z3SOLVERTHREAD_H
+#ifndef Z3SOLVERTHREAD_H
 #define Z3SOLVERTHREAD_H
 
 #include <QThread>

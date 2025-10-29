@@ -1,4 +1,4 @@
-﻿#include "dialog_select_another_test.h"
+#include "dialog_select_another_test.h"
 #include "ui_dialog_select_another_test.h"
 
 Dialog_select_another_test::Dialog_select_another_test(QWidget *parent,QList<TestPoint> *list_test) :

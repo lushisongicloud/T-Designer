@@ -1,4 +1,4 @@
-﻿#include "dialogtestreport.h"
+#include "dialogtestreport.h"
 #include "ui_dialogtestreport.h"
 
 DialogTestReport::DialogTestReport(QWidget *parent) :

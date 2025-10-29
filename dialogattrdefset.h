@@ -1,4 +1,4 @@
-﻿#ifndef DIALOGATTRDEFSET_H
+#ifndef DIALOGATTRDEFSET_H
 #define DIALOGATTRDEFSET_H
 
 #include <QDialog>

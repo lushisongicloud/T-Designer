@@ -1,4 +1,4 @@
-﻿#include "dialogdiagnoseui.h"
+#include "dialogdiagnoseui.h"
 #include "ui_dialogdiagnoseui.h"
 
 dialogDiagnoseUI::dialogDiagnoseUI(QWidget *parent) :

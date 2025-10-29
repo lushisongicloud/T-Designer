@@ -1,4 +1,4 @@
-﻿#ifndef DRAWSTYLE_H
+#ifndef DRAWSTYLE_H
 #define DRAWSTYLE_H
 
 #include <QString>

@@ -1,4 +1,4 @@
-﻿#include "widget/containerhierarchyutils.h"
+#include "widget/containerhierarchyutils.h"
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QVariant>

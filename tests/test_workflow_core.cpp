@@ -1,4 +1,4 @@
-﻿#include <QtTest>
+#include <QtTest>
 
 #include "BO/componententity.h"
 #include "BO/container/containerdata.h"

@@ -1,4 +1,4 @@
-﻿#include "dialogsymbols.h"
+#include "dialogsymbols.h"
 #include "ui_dialogsymbols.h"
 #include <QMessageBox>
 

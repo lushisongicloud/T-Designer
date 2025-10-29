@@ -1,4 +1,4 @@
-﻿#ifndef DIALOGBRANCHATTR_H
+#ifndef DIALOGBRANCHATTR_H
 #define DIALOGBRANCHATTR_H
 
 #include <QDialog>

@@ -1,4 +1,4 @@
-﻿#include "widget/functionmanagerdialog.h"
+#include "widget/functionmanagerdialog.h"
 #include "ui_functionmanagerdialog.h"
 
 #include <QMessageBox>

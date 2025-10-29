@@ -1,4 +1,4 @@
-﻿#include "dialogcabledefine.h"
+#include "dialogcabledefine.h"
 #include "ui_dialogcabledefine.h"
 
 DialogCableDefine::DialogCableDefine(QWidget *parent) :

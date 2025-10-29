@@ -1,4 +1,4 @@
-﻿#include "bpointitem.h"
+#include "bpointitem.h"
 #include "bqgraphicsitem.h"
 
 BPointItem::BPointItem(QAbstractGraphicsShapeItem* parent, QPointF p, PointType type)

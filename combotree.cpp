@@ -1,4 +1,4 @@
-﻿#include "combotree.h"
+#include "combotree.h"
 
 ComboTree::ComboTree()
 {

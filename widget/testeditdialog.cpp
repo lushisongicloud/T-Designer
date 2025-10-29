@@ -1,4 +1,4 @@
-﻿#include "widget/testeditdialog.h"
+#include "widget/testeditdialog.h"
 #include "ui_testeditdialog.h"
 
 #include <QJsonDocument>

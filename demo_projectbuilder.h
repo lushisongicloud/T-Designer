@@ -1,4 +1,4 @@
-﻿#ifndef DEMO_PROJECTBUILDER_H
+#ifndef DEMO_PROJECTBUILDER_H
 #define DEMO_PROJECTBUILDER_H
 
 #include <QString>

@@ -1,4 +1,4 @@
-﻿#include "dialoggenerate.h"
+#include "dialoggenerate.h"
 #include "ui_dialoggenerate.h"
 
 DialogGenerate::DialogGenerate(QWidget *parent) :

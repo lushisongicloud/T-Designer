@@ -1,4 +1,4 @@
-﻿#include "BO/test/testgeneratorservice.h"
+#include "BO/test/testgeneratorservice.h"
 
 #include <QVariant>
 #include <QVariantList>

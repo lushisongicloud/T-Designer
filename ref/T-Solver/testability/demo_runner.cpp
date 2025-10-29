@@ -1,4 +1,4 @@
-﻿#include "demo_runner.h"
+#include "demo_runner.h"
 
 #include <QTextStream>
 

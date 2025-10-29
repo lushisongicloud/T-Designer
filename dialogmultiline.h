@@ -1,4 +1,4 @@
-﻿#ifndef DIALOGMULTILINE_H
+#ifndef DIALOGMULTILINE_H
 #define DIALOGMULTILINE_H
 
 #include <QDialog>

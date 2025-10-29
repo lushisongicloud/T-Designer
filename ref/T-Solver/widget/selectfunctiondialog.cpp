@@ -1,4 +1,4 @@
-﻿#include "selectfunctiondialog.h"
+#include "selectfunctiondialog.h"
 #include "ui_selectfunctiondialog.h"
 #include "testability/constraint_utils.h"
 #include "testability/function_catalog.h"

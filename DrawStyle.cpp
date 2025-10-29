@@ -1,4 +1,4 @@
-﻿#include "drawstyle.h"
+#include "drawstyle.h"
 int QColorToInt(const QColor &color)
 {
     //将Color 从QColor 转换成 int，注意转成ARBG形式，这是CAD里面用的顺序

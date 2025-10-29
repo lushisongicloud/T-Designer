@@ -1,4 +1,4 @@
-﻿#include "BO/test/testdefinition.h"
+#include "BO/test/testdefinition.h"
 
 #include <QJsonArray>
 #include <QtGlobal>

@@ -1,4 +1,4 @@
-﻿#ifndef MYGRAPHICSVIEW_H
+#ifndef MYGRAPHICSVIEW_H
 #define MYGRAPHICSVIEW_H
 
 #include <QGraphicsView>

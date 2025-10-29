@@ -1,4 +1,4 @@
-﻿#ifndef DIALOGFLURUNIT_H
+#ifndef DIALOGFLURUNIT_H
 #define DIALOGFLURUNIT_H
 
 #include <QDialog>

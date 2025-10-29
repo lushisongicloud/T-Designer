@@ -1,4 +1,4 @@
-﻿#ifndef SOLVERRUNNABLE_H
+#ifndef SOLVERRUNNABLE_H
 #define SOLVERRUNNABLE_H
 
 #include <QMutex>

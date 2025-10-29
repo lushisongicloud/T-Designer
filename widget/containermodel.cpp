@@ -1,4 +1,4 @@
-﻿#include "widget/containermodel.h"
+#include "widget/containermodel.h"
 #include <QBrush>
 #include <algorithm>
 #include <functional>

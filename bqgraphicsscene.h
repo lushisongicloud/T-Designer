@@ -1,4 +1,4 @@
-﻿#ifndef BQGRAPHICSSCENE_H
+#ifndef BQGRAPHICSSCENE_H
 #define BQGRAPHICSSCENE_H
 
 #include <QGraphicsScene>

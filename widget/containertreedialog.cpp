@@ -1,4 +1,4 @@
-﻿#include "widget/containertreedialog.h"
+#include "widget/containertreedialog.h"
 #include "ui_containertreedialog.h"
 #include <QMessageBox>
 #include <QDialogButtonBox>

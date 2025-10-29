@@ -1,4 +1,4 @@
-﻿#include "demo_projectbuilder.h"
+#include "demo_projectbuilder.h"
 
 #include "common.h"
 #include <QDir>

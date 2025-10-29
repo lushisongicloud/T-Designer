@@ -1,4 +1,4 @@
-﻿#include "widget/functioneditdialog.h"
+#include "widget/functioneditdialog.h"
 #include "ui_functioneditdialog.h"
 
 #include "widget/functionsymbolpickerdialog.h"

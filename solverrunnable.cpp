@@ -1,4 +1,4 @@
-﻿#include "solverrunnable.h"
+#include "solverrunnable.h"
 
 // 此处可以添加 z3Solve 函数的定义，或者确保其定义在其他合适的源文件中
 

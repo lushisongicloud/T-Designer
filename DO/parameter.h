@@ -1,4 +1,4 @@
-﻿#ifndef PARAMETER_H
+#ifndef PARAMETER_H
 #define PARAMETER_H
 
 #include <QString>

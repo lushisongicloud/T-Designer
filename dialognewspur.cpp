@@ -1,4 +1,4 @@
-﻿#include "dialognewspur.h"
+#include "dialognewspur.h"
 #include "ui_dialognewspur.h"
 
 DialogNewSpur::DialogNewSpur(QWidget *parent,int Type) :

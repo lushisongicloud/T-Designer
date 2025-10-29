@@ -1,4 +1,4 @@
-﻿#include "qxcombobox.h"
+#include "qxcombobox.h"
 
 qxcombobox::qxcombobox(QWidget * parent):QComboBox(parent)
 {

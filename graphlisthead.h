@@ -1,4 +1,4 @@
-﻿#ifndef GRAPHLISTHEAD_H
+#ifndef GRAPHLISTHEAD_H
 #define GRAPHLISTHEAD_H
 
 #include <QString>

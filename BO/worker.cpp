@@ -1,4 +1,4 @@
-﻿#include "worker.h"
+#include "worker.h"
 #include "systementity.h"
 
 Worker::Worker(SystemEntity& entity) : systemEntity(entity) {}

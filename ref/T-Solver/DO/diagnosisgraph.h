@@ -1,4 +1,4 @@
-﻿#ifndef DIAGNOSISGRAPH_H
+#ifndef DIAGNOSISGRAPH_H
 #define DIAGNOSISGRAPH_H
 #include "BO/componententity.h"
 #include "BO/systementity.h"

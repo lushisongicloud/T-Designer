@@ -1,4 +1,4 @@
-﻿#include "qscilexercppattach.h"
+#include "qscilexercppattach.h"
 
 QscilexerCppAttach::QscilexerCppAttach(QObject *parent, bool caseInsensitiveKeywords)
 {

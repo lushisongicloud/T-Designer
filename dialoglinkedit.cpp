@@ -1,4 +1,4 @@
-﻿#include "dialoglinkedit.h"
+#include "dialoglinkedit.h"
 #include "ui_dialoglinkedit.h"
 
 DialogLinkEdit::DialogLinkEdit(QWidget *parent) :

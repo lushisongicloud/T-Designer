@@ -1,4 +1,4 @@
-﻿#include "dialogmultiline.h"
+#include "dialogmultiline.h"
 #include "ui_dialogmultiline.h"
 
 DialogMultiLine::DialogMultiLine(QWidget *parent) :

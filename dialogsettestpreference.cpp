@@ -1,4 +1,4 @@
-﻿#include "dialogsettestpreference.h"
+#include "dialogsettestpreference.h"
 #include "ui_dialogsettestpreference.h"
 
 DialogSetTestPreference::DialogSetTestPreference(QWidget *parent) :

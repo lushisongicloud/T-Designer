@@ -1,4 +1,4 @@
-﻿#ifndef CONTAINERDATA_H
+#ifndef CONTAINERDATA_H
 #define CONTAINERDATA_H
 
 #include <QJsonObject>

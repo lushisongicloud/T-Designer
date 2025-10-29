@@ -1,4 +1,4 @@
-﻿#ifndef DIALOGNEWSPUR_H
+#ifndef DIALOGNEWSPUR_H
 #define DIALOGNEWSPUR_H
 
 #include <QDialog>

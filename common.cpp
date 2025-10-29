@@ -1,4 +1,4 @@
-﻿#include "common.h"
+#include "common.h"
 
 QString m_dragText;
 common::common()

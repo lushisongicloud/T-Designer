@@ -1,4 +1,4 @@
-﻿#include "dialogaddcondition.h"
+#include "dialogaddcondition.h"
 #include "ui_dialogaddcondition.h"
 
 DialogAddCondition::DialogAddCondition(QWidget *parent) :

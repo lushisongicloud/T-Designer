@@ -1,4 +1,4 @@
-﻿#include "bqgraphicsview.h"
+#include "bqgraphicsview.h"
 
 BQGraphicsView::BQGraphicsView(QWidget *parent) : QGraphicsView(parent)
 {

@@ -1,4 +1,4 @@
-﻿#include "dialogmultilib.h"
+#include "dialogmultilib.h"
 #include "ui_dialogmultilib.h"
 
 DialogMultiLib::DialogMultiLib(QWidget *parent) :

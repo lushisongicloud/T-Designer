@@ -1,4 +1,4 @@
-﻿#ifndef DIALOGNEWFUNC_H
+#ifndef DIALOGNEWFUNC_H
 #define DIALOGNEWFUNC_H
 
 #include <QDialog>

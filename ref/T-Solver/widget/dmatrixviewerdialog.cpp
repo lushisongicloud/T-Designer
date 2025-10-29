@@ -1,4 +1,4 @@
-﻿#include "dmatrixviewerdialog.h"
+#include "dmatrixviewerdialog.h"
 #include "ui_dmatrixviewerdialog.h"
 
 #include <QCheckBox>

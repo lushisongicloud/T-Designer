@@ -1,4 +1,4 @@
-﻿#include "BO/function/tmodelvalidator.h"
+#include "BO/function/tmodelvalidator.h"
 
 #include <QMap>
 #include <QRegularExpression>

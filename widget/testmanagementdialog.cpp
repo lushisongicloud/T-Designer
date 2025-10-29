@@ -1,4 +1,4 @@
-﻿#include "widget/testmanagementdialog.h"
+#include "widget/testmanagementdialog.h"
 #include "ui_testmanagementdialog.h"
 
 #include <algorithm>

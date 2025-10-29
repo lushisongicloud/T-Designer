@@ -1,4 +1,4 @@
-﻿#include "BO/container/behavioraggregator.h"
+#include "BO/container/behavioraggregator.h"
 
 #include <algorithm>
 #include <QSet>

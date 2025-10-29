@@ -1,4 +1,4 @@
-﻿#include "dialogconnectattr.h"
+#include "dialogconnectattr.h"
 #include "ui_dialogconnectattr.h"
 
 DialogConnectAttr::DialogConnectAttr(QWidget *parent) :

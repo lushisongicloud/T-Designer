@@ -1,4 +1,4 @@
-﻿#include "cutthread.h"
+#include "cutthread.h"
 
 CutThread::CutThread(int TaskType)
 {

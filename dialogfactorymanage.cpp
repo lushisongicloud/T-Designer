@@ -1,4 +1,4 @@
-﻿#include "dialogfactorymanage.h"
+#include "dialogfactorymanage.h"
 #include "ui_dialogfactorymanage.h"
 
 DialogFactoryManage::DialogFactoryManage(QWidget *parent) :

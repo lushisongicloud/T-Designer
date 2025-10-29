@@ -1,4 +1,4 @@
-﻿#include "dialogfunctionmanage.h"
+#include "dialogfunctionmanage.h"
 #include "ui_dialogfunctionmanage.h"
 #include "dialogusertest.h"
 

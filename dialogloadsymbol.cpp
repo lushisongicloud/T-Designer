@@ -1,4 +1,4 @@
-﻿#include "dialogloadsymbol.h"
+#include "dialogloadsymbol.h"
 #include <QStandardItemModel>
 #include "ui_dialogloadsymbol.h"
 #include <QDir>

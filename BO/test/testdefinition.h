@@ -1,4 +1,4 @@
-﻿#ifndef TESTDEFINITION_H
+#ifndef TESTDEFINITION_H
 #define TESTDEFINITION_H
 
 #include <QJsonObject>

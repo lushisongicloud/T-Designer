@@ -1,4 +1,4 @@
-﻿#ifndef SQLITEDATABASE_H
+#ifndef SQLITEDATABASE_H
 #define SQLITEDATABASE_H
 
 #include <QSqlDatabase>

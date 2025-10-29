@@ -1,4 +1,4 @@
-﻿#include "componententity.h"
+#include "componententity.h"
 
 ComponentEntity::ComponentEntity()
 {

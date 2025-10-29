@@ -1,4 +1,4 @@
-﻿#ifndef DIALOGUNITMANAGE_H
+#ifndef DIALOGUNITMANAGE_H
 #define DIALOGUNITMANAGE_H
 
 #include <QDialog>

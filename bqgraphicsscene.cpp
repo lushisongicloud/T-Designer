@@ -1,4 +1,4 @@
-﻿#include "bqgraphicsscene.h"
+#include "bqgraphicsscene.h"
 #include <QSettings>
 #include <QFile>
 #include <QDir>

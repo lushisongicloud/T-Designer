@@ -1,4 +1,4 @@
-﻿
+
 #include "BO/containerrepository.h"
 
 bool ContainerRepository::ensureContainerSchema()

@@ -1,4 +1,4 @@
-﻿#ifndef COMBOTREE_H
+#ifndef COMBOTREE_H
 #define COMBOTREE_H
 
 #include <QStringList>

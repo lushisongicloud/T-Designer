@@ -1,4 +1,4 @@
-﻿#ifndef GRAPHADJLIST_H
+#ifndef GRAPHADJLIST_H
 #define GRAPHADJLIST_H
 
 #include <QString>
