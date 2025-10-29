@@ -12,13 +12,10 @@
 
 ## Phase 0 · 基线理解与对齐
 
-- [ ] 阅读与对齐 ref/T‑Solver/README.md 建模要点与接口边界（变量、端口、connect 语法糖、功能与链路、D 矩阵），记录差异点与兼容策略
+- [x] 阅读与对齐 ref/T‑Solver/README.md 建模要点与接口边界（变量、端口、connect 语法糖、功能与链路、D 矩阵），记录差异点与兼容策略
+- [x] 盘点 T‑Designer 现状：功能管理入口、容器层接口、现有 D 矩阵实现与 UI、T 语言校验逻辑
   - 产出：差异清单与决策笔记 docs/solver_integration_notes.md
   - 重点：液压用 p/q（代码中 connect2h 现用 p/f）；机械速度变量统一键为 v/n/x 之一（T‑Solver 现用 M）
-
-- [ ] 盘点 T‑Designer 现状：功能管理入口、容器层接口、现有 D 矩阵实现与 UI、T 语言校验逻辑
-  - 参考：BO/*, widget/*, DO/*, widget/testmanagementdialog.*
-  - 产出：现状梳理与替换/复用矩阵 docs/designer_current_state.md
 
 ---
 
@@ -268,4 +265,3 @@
 备注：
 - WSL 环境限制：不运行 axcontainer 相关；优先实现可在 WSL 下单测/静态校验的模块。
 - 代码风格：Qt 5.12，4 空格缩进，UTF‑8，LF；遵循仓内现有模式，必要处最小侵入修改。
-
