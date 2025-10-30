@@ -13,6 +13,9 @@ struct PortInfo
     QString symbolId;
     QString symb2TermInfoId;
     QString description;
+    QString functionBlock;
+    QString portType;
+    QStringList variableNames;
 };
 
 struct PortVariableBinding
@@ -21,6 +24,10 @@ struct PortVariableBinding
     QSet<QString> declaredDirections;
     QSet<QString> referencedDirections;
     QSet<QString> tokens;
+    QSet<QString> expectedDirections;
+    QSet<QString> alternativeDirections;
+    QString alternativeLabel;
+    QStringList expectedDisplayOrder;
 };
 
 struct TModelValidationResult
@@ -48,4 +55,3 @@ public:
 };
 
 #endif // TMODELVALIDATOR_H
-

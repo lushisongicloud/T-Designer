@@ -1,6 +1,7 @@
 #include "dialogUnitAttr.h"
 #include "ui_dialogUnitAttr.h"
 #include "BO/function/tmodelvalidator.h"
+#include "BO/function/tmodelcheckservice.h"
 #include "widget/portconfigpanel.h"
 #include "widget/portconfigeditdialog.h"
 #include "widget/containerhierarchyutils.h"
@@ -9,6 +10,8 @@
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QJsonValue>
+#include <QMap>
 extern int SelectEquipment_ID;
 extern int SelectSymbol_ID;
 extern QStringList RemovedUnitsInfo;
@@ -118,7 +121,7 @@ void DialogUnitAttr::InitUIInfo()
     ui->LbOrderNum->setText("");
     ui->tableWidgetUnitAttr->item(0,1)->setText("");
     ui->tableWidgetUnitAttr->item(1,1)->setText("");
-    QsciEditDescription->setText("");
+    QsciEdit->setText("");
     ui->tableWidgetSpur->setRowCount(0);
     ui->tableWidgetStructure->setRowCount(0);
     loadPortConfig(0);
@@ -173,7 +176,7 @@ void DialogUnitAttr::UpdateUIInfo(QSqlQuery QueryEquipment)//dataFunc 从工程�
         if(TModel!="") TModel+="%";
         TModel+=StrTModel;
     }
-    QsciEditDescription->setText(TModel);
+    QsciEdit->setText(TModel);
     qDebug()<<"on_BtnCompile_clicked";
     on_BtnCompile_clicked();
     QStringList ListStructure=QueryEquipment.value("Structure").toString().split(";");
@@ -522,27 +525,27 @@ void DialogUnitAttr::InitTEdit()
 */
 
 
-    QsciEditDescription = new QsciScintilla();
-    ui->TEditLayout_Description->addWidget(QsciEditDescription);
-    ui->frame_Edit_Description->setLayout(ui->TEditLayout_Description);
+    QsciEdit = new QsciScintilla();
+    ui->TEditLayout->addWidget(QsciEdit);
+    ui->frame_Edit_Description->setLayout(ui->TEditLayout);
     //connect(QsciEdit, SIGNAL(textChanged()),this, SLOT(ModelWasModified()));
     //setCurrentFile("");
     //设置字体
-    QsciEditDescription->setFont(font);
-    QsciEditDescription->setMarginsFont(font);
+    QsciEdit->setFont(font);
+    QsciEdit->setMarginsFont(font);
     //设置左侧行号栏宽度等
-    QsciEditDescription->setMarginWidth(0, fontmetrics.width("000"));
-    QsciEditDescription->setMarginLineNumbers(0, true);
-    QsciEditDescription->setBraceMatching(QsciScintilla::SloppyBraceMatch);
-    QsciEditDescription->setTabWidth(4);
+    QsciEdit->setMarginWidth(0, fontmetrics.width("000"));
+    QsciEdit->setMarginLineNumbers(0, true);
+    QsciEdit->setBraceMatching(QsciScintilla::SloppyBraceMatch);
+    QsciEdit->setTabWidth(4);
     //设置括号等自动补全
-    QsciEditDescription->setAutoIndent(true);
+    QsciEdit->setAutoIndent(true);
     //初始设置c++解析器
     //textEdit->setLexer(new QsciLexerCPP(this));
     QscilexerCppAttach *textLexer2 = new QscilexerCppAttach;
     textLexer->setColor(QColor(Qt:: green),QsciLexerCPP::CommentLine);    //设置自带的注释行为绿色
     textLexer->setColor(QColor(Qt::red),QsciLexerCPP::KeywordSet2);
-    QsciEditDescription->setLexer(textLexer2);
+    QsciEdit->setLexer(textLexer2);
     //设置自动补全
 
     QsciAPIs *apis2 = new QsciAPIs(textLexer);
@@ -558,24 +561,24 @@ void DialogUnitAttr::InitTEdit()
     apis2->prepare();
 
 
-    QsciEditDescription->setAutoCompletionSource(QsciScintilla::AcsAll);   //设置源，自动补全所有地方出现的
-    QsciEditDescription->setAutoCompletionCaseSensitivity(true);   //设置自动补全大小写敏感
-    QsciEditDescription->setAutoCompletionThreshold(2);    //设置每输入2个字符就会出现自动补全的提示
+    QsciEdit->setAutoCompletionSource(QsciScintilla::AcsAll);   //设置源，自动补全所有地方出现的
+    QsciEdit->setAutoCompletionCaseSensitivity(true);   //设置自动补全大小写敏感
+    QsciEdit->setAutoCompletionThreshold(2);    //设置每输入2个字符就会出现自动补全的提示
 
-    QsciEditDescription->setCaretLineVisible(true);
+    QsciEdit->setCaretLineVisible(true);
     //设置光标所在行背景色
-    QsciEditDescription->setCaretLineBackgroundColor(Qt::lightGray);
+    QsciEdit->setCaretLineBackgroundColor(Qt::lightGray);
 
     // ui->textEdit->setCursorPosition(2,2);
     //int markerDefine(MarkerSymbol sym, int markerNumber = -1);
-    QsciEditDescription->SendScintilla(QsciScintilla::SCI_SETCODEPAGE,QsciScintilla::SC_CP_UTF8);//设置编码为UTF-8
+    QsciEdit->SendScintilla(QsciScintilla::SCI_SETCODEPAGE,QsciScintilla::SC_CP_UTF8);//设置编码为UTF-8
     //得到光标位置
-    QsciEditDescription->getCursorPosition(&line,&col);
+    QsciEdit->getCursorPosition(&line,&col);
 
     //设置显示字体
-    QsciEditDescription->setFont(QFont("Courier New"));
+    QsciEdit->setFont(QFont("Courier New"));
     //设置编码方式
-    QsciEditDescription->SendScintilla(QsciScintilla::SCI_SETCODEPAGE,QsciScintilla::SC_CP_UTF8);//设置编码为UTF-8
+    QsciEdit->SendScintilla(QsciScintilla::SCI_SETCODEPAGE,QsciScintilla::SC_CP_UTF8);//设置编码为UTF-8
 }
 void DialogUnitAttr::on_tableWidgetSpur_clicked(const QModelIndex &index)
 {
@@ -770,7 +773,7 @@ void DialogUnitAttr::on_BtnOk_clicked()//dataFunc 将界面上的器件信息保
         QueryVar.bindValue(":OrderNum",ui->LbOrderNum->text());
         QueryVar.bindValue(":Factory",ui->LbFactory->text());
         QueryVar.bindValue(":TVariable","");//QsciEditVariable->text());
-        QueryVar.bindValue(":TModel",QsciEditDescription->text());
+        QueryVar.bindValue(":TModel",QsciEdit->text());
         QueryVar.bindValue(":MTBF",ui->EdMTBF->text());
         QString StrPic;
         for(int i=0;i<ui->tableWidgetUnitPic->rowCount();i++)
@@ -830,7 +833,7 @@ void DialogUnitAttr::on_BtnOk_clicked()//dataFunc 将界面上的器件信息保
         QueryVar.bindValue(":OrderNum",ui->LbOrderNum->text());
         QueryVar.bindValue(":Factory",ui->LbFactory->text());
         QueryVar.bindValue(":TVariable","");//QsciEditVariable->text());
-        QueryVar.bindValue(":TModel",QsciEditDescription->text());
+        QueryVar.bindValue(":TModel",QsciEdit->text());
         QueryVar.bindValue(":MTBF",ui->EdMTBF->text());
         QString StrStructure;
         for(int i=0;i<ui->tableWidgetStructure->rowCount();i++)
@@ -1081,7 +1084,7 @@ void DialogUnitAttr::on_BtnUnitChoose_clicked() //dataFunc 从器件库中载入
     ui->LbOrderNum->setText(QueryEquipment.value("OrderNum").toString());
     ui->tableWidgetUnitAttr->item(0,1)->setText(QueryEquipment.value("Desc").toString());
     ui->EdMTBF->setText(QueryEquipment.value("MTBF").toString());
-    QsciEditDescription->setText(QueryEquipment.value("TModel").toString());
+    QsciEdit->setText(QueryEquipment.value("TModel").toString());
     on_BtnCompile_clicked();
     QStringList ListStructure=QueryEquipment.value("Structure").toString().split(";");
     if(ListStructure.count()==ui->tableWidgetStructure->rowCount())
@@ -1278,7 +1281,7 @@ void DialogUnitAttr::on_BtnUnitChoose_clicked() //dataFunc 从器件库中载入
 
 void DialogUnitAttr::ReplaceMarkToTag()
 {
-    QString TModel=QsciEditDescription->text();
+    QString TModel=QsciEdit->text();
     //%**%替换为UnitTag %UnitTag%
     //除了EquipmentDiagnosePara中定义过的器件，其余替换代号
     QStringList ListTModel=TModel.split("%");
@@ -1312,7 +1315,7 @@ void DialogUnitAttr::ReplaceMarkToTag()
         if(TModel!="") TModel+="%";
         TModel+=StrTModel;
     }
-    QsciEditDescription->setText(TModel);
+    QsciEdit->setText(TModel);
 
     /*
     //QString TVariable=QsciEditVariable->text();
@@ -1389,15 +1392,19 @@ void DialogUnitAttr::on_BtnDeletePara_clicked()
 
 void DialogUnitAttr::on_BtnCompile_clicked()
 {
+    //原来是livingstone的模型，完全不用了，这部分需要完全重写
+    //点击按钮后应弹出对话框，显示当前器件完整的smt描述，包括变量定义、参数定义、正常模式描述、故障模式描述，同时自动把smt描述中器件的模板名称替换为实际的元件代号
+    return;
+
     ui->tableWidgetStructure->setRowCount(0);
     //提取Enum
-    QString StrUnitDesc=QsciEditDescription->text();
+    QString StrUnitDesc=QsciEdit->text();
     QStringList ListEnumName,ListEnumTypeName,ListEnumVal,ListIniVal,ListCmdObsVal;
     qDebug()<<"CompileStructure1";
     CompileStructure(StrUnitDesc,"",ListEnumName,ListEnumTypeName,ListEnumVal,ListIniVal,ListCmdObsVal);
     qDebug()<<"CompileStructure1 ok";
     //添加子器件的enum
-    QStringList SubComponentList=GetSubComponentList(QsciEditDescription->text());
+    QStringList SubComponentList=GetSubComponentList(QsciEdit->text());
     for(QString StrSubComponent:SubComponentList)
     {
         QSqlQuery QueryFunctionDefineClass(T_LibDatabase);
@@ -1428,6 +1435,60 @@ void DialogUnitAttr::on_BtnCompile_clicked()
 
 void DialogUnitAttr::on_BtnValidateTModel_clicked()
 {
+    auto makePortKey = [](const QString &functionBlock, const QString &portName) -> QString {
+        const QString block = functionBlock.trimmed();
+        const QString port = portName.trimmed();
+        if (port.isEmpty())
+            return QString();
+        if (block.isEmpty())
+            return port;
+        return QString("%1.%2").arg(block, port);
+    };
+
+    QMap<QString, QString> portTypeMap;
+    QMap<QString, QStringList> portVariablesMap;
+    if (m_componentContainerId > 0 && T_ProjectDatabase.isValid()) {
+        QSqlQuery configQuery(T_ProjectDatabase);
+        configQuery.prepare(QStringLiteral("SELECT function_block, port_name, port_type, variables_json "
+                                           "FROM port_config WHERE container_id = ?"));
+        configQuery.addBindValue(m_componentContainerId);
+        if (configQuery.exec()) {
+            while (configQuery.next()) {
+                const QString functionBlock = configQuery.value(0).toString();
+                const QString portName = configQuery.value(1).toString();
+                const QString key = makePortKey(functionBlock, portName);
+                if (key.isEmpty())
+                    continue;
+
+                QString portType = configQuery.value(2).toString().trimmed().toLower();
+                if (!portType.isEmpty())
+                    portTypeMap.insert(key, portType);
+
+                QStringList variables;
+                const QString json = configQuery.value(3).toString();
+                if (!json.isEmpty()) {
+                    const QJsonDocument doc = QJsonDocument::fromJson(json.toUtf8());
+                    if (doc.isArray()) {
+                        const QJsonArray array = doc.array();
+                        for (const QJsonValue &val : array) {
+                            if (val.isObject()) {
+                                const QString name = val.toObject().value(QStringLiteral("name")).toString().trimmed();
+                                if (!name.isEmpty())
+                                    variables.append(name);
+                            } else if (val.isString()) {
+                                const QString name = val.toString().trimmed();
+                                if (!name.isEmpty())
+                                    variables.append(name);
+                            }
+                        }
+                    }
+                }
+                if (!variables.isEmpty())
+                    portVariablesMap.insert(key, variables);
+            }
+        }
+    }
+
     QList<PortInfo> ports;
     for (int row = 0; row < ui->tableTerm->rowCount(); ++row) {
         QTableWidgetItem *symbolItem = ui->tableTerm->item(row, 0);
@@ -1437,49 +1498,25 @@ void DialogUnitAttr::on_BtnValidateTModel_clicked()
 
         PortInfo info;
         info.connNum = connItem->text().trimmed();
+        info.functionBlock = symbolItem ? symbolItem->text().trimmed() : QString();
         if (symbolItem) {
             info.symbolId = symbolItem->data(Qt::UserRole).toString();
             info.description = symbolItem->text();
         }
         info.symb2TermInfoId = connItem->data(Qt::UserRole).toString();
 
+        const QString portKeyCombined = makePortKey(info.functionBlock, info.connNum);
+        QString configuredType = portTypeMap.value(portKeyCombined).trimmed();
+        if (configuredType.isEmpty())
+            configuredType = QStringLiteral("electric");
+        info.portType = configuredType.toLower();
+        info.variableNames = portVariablesMap.value(portKeyCombined);
+
         if (!info.connNum.isEmpty())
             ports.append(info);
     }
 
-    TModelValidator validator;
-    const TModelValidationResult result = validator.validate(QsciEditDescription->text(), ports);
-
-    QStringList messages;
-    if (!result.formatErrors.isEmpty())
-        messages << result.formatErrors;
-    if (!result.missingDeclarations.isEmpty())
-        messages << tr("缺少declare-fun: %1").arg(result.missingDeclarations.join(QString(", ")));
-    if (!result.undefinedVariables.isEmpty())
-        messages << tr("未匹配的端口变量: %1").arg(result.undefinedVariables.join(QString(", ")));
-    if (!result.hints.isEmpty())
-        messages << result.hints;
-
-    if (messages.isEmpty()) {
-        QString detail = tr("共检测端号 %1 个。").arg(result.bindings.size());
-        if (!result.unusedPorts.isEmpty())
-            detail += QString("\n") + tr("提示：以下端号未在T语言中使用：%1").arg(result.unusedPorts.join(QString(", ")));
-
-        QStringList bindingPreview;
-        for (const PortVariableBinding &binding : result.bindings) {
-            QStringList dirs = binding.declaredDirections.values();
-            std::sort(dirs.begin(), dirs.end());
-            bindingPreview << QString("%1 (%2)").arg(binding.port.connNum, dirs.join(QString("/")));
-            if (bindingPreview.size() >= 6)
-                break;
-        }
-        if (!bindingPreview.isEmpty())
-            detail += QString("\n") + tr("映射预览：%1").arg(bindingPreview.join(QString("，")));
-
-        QMessageBox::information(this, tr("T语言校验"), tr("端口映射校验通过。") + QString("\n") + detail);
-    } else {
-        QMessageBox::warning(this, tr("T语言校验"), messages.join(QString("\n")));
-    }
+    TModelCheckService::run(this, QsciEdit->text(), ports);
 }
 
 void DialogUnitAttr::on_tableRepairInfo_clicked(const QModelIndex &index)

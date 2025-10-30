@@ -77,15 +77,15 @@
 
 ## Phase 3 · SMT 校验（语法 + 端口一致性）
 
-- [ ] 语法校验器：基于 Z3 解析（移植/复用 ref/T‑Solver/BO/systementity.cpp 中 parse_string/错误处理）
+- [x] 语法校验器：基于 Z3 解析（移植/复用 ref/T‑Solver/BO/systementity.cpp 中 parse_string/错误处理）
+
   - 新建 BO/function/SmtSyntaxChecker.{h,cpp}（输入 smt_text，输出错误行列与消息；离线可用）
 
-- [ ] 端口一致性校验器：扩展现有 BO/function/tmodelvalidator.* 支持多类型/多变量集
+- [x] 端口一致性校验器：扩展现有 BO/function/tmodelvalidator.* 支持多类型/多变量集
   - 支持：电(i/u)、液(p/q)、机(F+v|n|x 其一)、数组 select；占位符 %MARK%、多级端口名
   - 输出：缺失声明、未匹配变量、未使用端口、提示
-
-- [ ] 统一校验入口：
-  - 元件属性 “元件T语言”页按钮 → 语法+一致性合并反馈
+- [x] 统一校验入口：
+  - 元件属性 “T语言模型”页按钮 → 语法+一致性合并反馈
   - 本地物料库 “T语言模型”页按钮 → 复用同一后端
   - 产出：widget/codecheckdialog 可重用弹窗/报告
 
