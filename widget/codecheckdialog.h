@@ -1,60 +1,42 @@
 #ifndef CODECHECKDIALOG_H
 #define CODECHECKDIALOG_H
 
-#include "common.h"
 #include <QDialog>
-#include <QTextBrowser>
-#include <QVBoxLayout>
-#include <QLabel>
-#include <QPushButton>
-#include <QScrollArea>
+#include <QList>
+#include <QString>
 
-struct CodeError {
-    int lineNumber;
-    QString codeSegment;
-    QString reason;
-};
+namespace Ui {
+class CodeCheckDialog;
+}
+
 class CodeCheckDialog : public QDialog
 {
     Q_OBJECT
-
 public:
+    enum class Severity {
+        Info,
+        Warning,
+        Error
+    };
+
+    struct Entry
+    {
+        Severity severity = Severity::Info;
+        QString location;
+        QString message;
+    };
+
     explicit CodeCheckDialog(QWidget *parent = nullptr);
-    void setCheckResult(const QVector<CodeError> &errors);
+    ~CodeCheckDialog() override;
+
+    void setSummary(const QString &summary);
+    void setEntries(const QList<Entry> &entries);
 
 private:
-    QLabel *m_summaryLabel;
-    QPushButton *m_detailsButton, *m_okButton;
-    QScrollArea *m_scrollArea;
-    QTextBrowser *m_textBrowser;
-    bool m_detailsShown;
+    QString severityToText(Severity severity) const;
+    QColor severityToColor(Severity severity) const;
 
-private slots:
-    void toggleDetails();
+    Ui::CodeCheckDialog *ui;
 };
-
-#include <QString>
-#include <QVector>
-#include <QRegExp>
-#include <QSet>
-#include <QStringList>
-#include <QStack>
-
-class CodeChecker {
-public:
-    CodeChecker(const QString& code);
-
-    QVector<CodeError> check();
-
-private:
-    QString code_;
-    QSet<QString> keywords_;
-    QRegExp portDefRegex_, variateDefRegex_, functionDefRegex_;
-
-    void checkBrackets(const QString &code, QVector<CodeError> &errors) ;
-    void collectVariables(const QString &line, QSet<QString> &definedVariables);
-};
-
-
 
 #endif // CODECHECKDIALOG_H

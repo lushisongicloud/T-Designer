@@ -37,7 +37,7 @@ public:
     bool UnitProSetUpdated;
     int NewProjectStructure_ID;
     int AttrMode;//AttrMode=1:add  AttrMode=2:modify
-    QsciScintilla *QsciEditDescription;//*QsciEditVariable,
+    QsciScintilla *QsciEdit;//*QsciEditVariable,
     DialogUnitManage *dlgUnitManage;
     QStringList ListSymbolSpurInfo;
 private slots:

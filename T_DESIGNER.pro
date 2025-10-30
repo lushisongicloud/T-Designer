@@ -113,6 +113,7 @@ SOURCES += \
     widget/functioneditdialog.cpp \
     widget/portconfigpanel.cpp \
     widget/portconfigeditdialog.cpp \
+    widget/codecheckdialog.cpp \
     BO/container/containerdata.cpp \
     BO/container/behavioraggregator.cpp \
     BO/behavior/z3simplifier.cpp \
@@ -120,6 +121,8 @@ SOURCES += \
     BO/function/tmodelvalidator.cpp \
     BO/function/functionrepository.cpp \
     BO/function/functionanalysisservice.cpp \
+    BO/function/SmtSyntaxChecker.cpp \
+    BO/function/tmodelcheckservice.cpp \
     BO/test/testdefinition.cpp \
     BO/test/testgeneratorservice.cpp \
     BO/test/diagnosticmatrixbuilder.cpp \
@@ -208,6 +211,7 @@ HEADERS += \
     widget/functioneditdialog.h \
     widget/portconfigpanel.h \
     widget/portconfigeditdialog.h \
+    widget/codecheckdialog.h \
     BO/container/containerdata.h \
     BO/container/behavioraggregator.h \
     BO/behavior/z3simplifier.h \
@@ -216,6 +220,8 @@ HEADERS += \
     BO/function/tmodelvalidator.h \
     BO/function/functionrepository.h \
     BO/function/functionanalysisservice.h \
+    BO/function/SmtSyntaxChecker.h \
+    BO/function/tmodelcheckservice.h \
     BO/test/testdefinition.h \
     BO/test/testgeneratorservice.h \
     BO/test/diagnosticmatrixbuilder.h \
@@ -285,7 +291,8 @@ FORMS += \
     widget/functionmanagerdialog.ui \
     widget/functioneditdialog.ui \
     widget/portconfigpanel.ui \
-    widget/portconfigeditdialog.ui
+    widget/portconfigeditdialog.ui \
+    widget/codecheckdialog.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

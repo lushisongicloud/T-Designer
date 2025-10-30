@@ -380,6 +380,19 @@ void WorkflowCoreTest::tmodelValidator_mapsPorts()
         }
     }
     QVERIFY(orphanFound);
+
+    ports.clear();
+    PortInfo mechanicalPort;
+    mechanicalPort.connNum = QStringLiteral("A1");
+    mechanicalPort.functionBlock = QStringLiteral("Actuator");
+    mechanicalPort.portType = QStringLiteral("mechanical");
+    ports.append(mechanicalPort);
+
+    const QString mechanicalModel = QStringLiteral(
+        "(declare-fun %M%.Actuator.A1.F () Real)");
+    result = validator.validate(mechanicalModel, ports);
+    QVERIFY(!result.isValid());
+    QVERIFY(result.missingDeclarations.contains(QStringLiteral("Actuator.A1.v/n/x")));
 }
 
 void WorkflowCoreTest::z3Simplifier_simplifiesConjunction()

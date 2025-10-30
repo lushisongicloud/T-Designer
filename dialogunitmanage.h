@@ -195,6 +195,7 @@ private slots:
     void on_BtnCheck_clicked();
 
 private:
+    void performTModelValidation();
     Ui::DialogUnitManage *ui;
     unsigned char CurUnitImageIndex=0;
     QString CurImgPath;

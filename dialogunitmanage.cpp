@@ -4,9 +4,13 @@
 #include "widget/portconfigeditdialog.h"
 #include "widget/containerhierarchyutils.h"
 #include "BO/containerrepository.h"
+#include "BO/function/tmodelvalidator.h"
+#include "BO/function/tmodelcheckservice.h"
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QJsonValue>
+#include <QMap>
 extern QSqlDatabase T_LibDatabase;
 #define NodeIconPath "" //"C:/TBD/data/器件库节点图标.png"
 //QIcon icontreenode=QIcon(":/Images/本地器件库节点.png");
@@ -2308,6 +2312,98 @@ void DialogUnitManage::on_BtnCompile_clicked()
         CbCommandOrObservable->setCurrentText(ListCmdObsVal.at(i));
         ui->tableWidgetStructure->setCellWidget(ui->tableWidgetStructure->rowCount()-1,3,CbCommandOrObservable);
     }
+
+    performTModelValidation();
+}
+
+void DialogUnitManage::performTModelValidation()
+{
+    auto makePortKey = [](const QString &functionBlock, const QString &portName) -> QString {
+        const QString block = functionBlock.trimmed();
+        const QString port = portName.trimmed();
+        if (port.isEmpty())
+            return QString();
+        if (block.isEmpty())
+            return port;
+        return QString("%1.%2").arg(block, port);
+    };
+
+    QMap<QString, QString> portTypeMap;
+    QMap<QString, QStringList> portVariablesMap;
+    if (!CurEquipment_ID.isEmpty() && T_LibDatabase.isValid()) {
+        const int equipmentId = CurEquipment_ID.toInt();
+        m_componentContainerId = resolveContainerId(equipmentId, true);
+        if (m_componentContainerId > 0) {
+            QSqlQuery configQuery(T_LibDatabase);
+            configQuery.prepare(QStringLiteral("SELECT function_block, port_name, port_type, variables_json "
+                                               "FROM port_config WHERE container_id = ?"));
+            configQuery.addBindValue(m_componentContainerId);
+            if (configQuery.exec()) {
+                while (configQuery.next()) {
+                    const QString functionBlock = configQuery.value(0).toString();
+                    const QString portName = configQuery.value(1).toString();
+                    const QString key = makePortKey(functionBlock, portName);
+                    if (key.isEmpty())
+                        continue;
+
+                    QString portType = configQuery.value(2).toString().trimmed().toLower();
+                    if (!portType.isEmpty())
+                        portTypeMap.insert(key, portType);
+
+                    QStringList variables;
+                    const QString json = configQuery.value(3).toString();
+                    if (!json.isEmpty()) {
+                        const QJsonDocument doc = QJsonDocument::fromJson(json.toUtf8());
+                        if (doc.isArray()) {
+                            const QJsonArray array = doc.array();
+                            for (const QJsonValue &val : array) {
+                                if (val.isObject()) {
+                                    const QString name = val.toObject().value(QStringLiteral("name")).toString().trimmed();
+                                    if (!name.isEmpty())
+                                        variables.append(name);
+                                } else if (val.isString()) {
+                                    const QString name = val.toString().trimmed();
+                                    if (!name.isEmpty())
+                                        variables.append(name);
+                                }
+                            }
+                        }
+                    }
+                    if (!variables.isEmpty())
+                        portVariablesMap.insert(key, variables);
+                }
+            }
+        }
+    }
+
+    QList<PortInfo> ports;
+    for (int row = 0; row < ui->tableTerm->rowCount(); ++row) {
+        QTableWidgetItem *functionBlockItem = ui->tableTerm->item(row, 0);
+        QTableWidgetItem *portItem = ui->tableTerm->item(row, 1);
+        if (!portItem)
+            continue;
+
+        PortInfo info;
+        info.functionBlock = functionBlockItem ? functionBlockItem->text().trimmed() : QString();
+        info.connNum = portItem->text().trimmed();
+        if (functionBlockItem) {
+            info.symbolId = functionBlockItem->data(Qt::UserRole).toString();
+            info.description = functionBlockItem->text();
+        }
+        info.symb2TermInfoId = portItem->data(Qt::UserRole).toString();
+
+        const QString portKeyCombined = makePortKey(info.functionBlock, info.connNum);
+        QString configuredType = portTypeMap.value(portKeyCombined);
+        if (configuredType.isEmpty())
+            configuredType = QStringLiteral("electric");
+        info.portType = configuredType;
+        info.variableNames = portVariablesMap.value(portKeyCombined);
+
+        if (!info.connNum.isEmpty())
+            ports.append(info);
+    }
+
+    TModelCheckService::run(this, QsciEdit->text(), ports);
 }
 
 
@@ -2863,43 +2959,9 @@ void DialogUnitManage::on_BtnCopyUnitPic_clicked()
     QMessageBox::information(this, "处理结果", QString("选中了 %1 行，成功处理了 %2 行").arg(selectedRows).arg(processedRows));
 }
 
-//void DialogUnitManage::on_BtnCheck_clicked()
-//{
-//    // 获取代码编辑器中的代码
-//    QString code = QsciEdit->text();
-
-//    // 初始化检查结果
-//    QVector<CodeError> errors;
-
-//    // 假设已实现检查逻辑，将错误添加到errors向量中...
-//    // 示例错误：
-//    errors.append({3, "DEF ELECTRIC_PORT \"(10) 21\"", "无效的端口定义"});
-
-//    // 生成校核结果文本
-//    QString checkResult;
-//    for (const auto &error : errors)
-//    {
-//        checkResult += "<p>Line " + QString::number(error.lineNumber) + ": <span style='color:red'>" + error.codeSegment + "</span></p>";
-//        checkResult += "<p>错误原因: " + error.reason + "</p>";
-//    }
-
-//    // 显示CodeCheckDialog
-//    CodeCheckDialog dialog(this);
-//    dialog.setCheckResult(checkResult,1);
-//    dialog.exec();
-//}
 void DialogUnitManage::on_BtnCheck_clicked()
 {
-    QString code = QsciEdit->text();
-    CodeChecker checker(code);  // 创建CodeChecker对象
-    QVector<CodeError> errors = checker.check();  // 进行代码检查
-    //errors.append({4, "DEF ELECTRIC_PORT \"3\" \"20211212125501\" AS \"EP1\"", "无效的端口定义"});
-    //errors.append({11, "PORT_DEFEND", "语法错误"});
-    //errors.append({20, "	il=-i2 ^ i2 > 0 ^ i2=(u1-u2)/r1;}", "变量未定义"});
-
-    CodeCheckDialog dialog(this);
-    dialog.setCheckResult(errors);
-    dialog.exec();
+    performTModelValidation();
 }
 
 void DialogUnitManage::showTableTermContextMenu(const QPoint &pos)
