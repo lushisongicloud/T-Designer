@@ -4,7 +4,7 @@
 #include <ActiveQt/QAxObject>
 #include <QtSql>
 #include "common.h"
-#define LIBFilePathName "C:\\TBD\\data\\LdMainData.db"
+#define LIBFilePathName "D:\\SynologyDrive\\Project\\T_DESIGNER\\ref\\LdMainData.db"
 QSqlDatabase  T_LibDatabase;
 QAxWidget *GlobalBackAxWidget = nullptr;
 IMxDrawApplication *pApp = nullptr;

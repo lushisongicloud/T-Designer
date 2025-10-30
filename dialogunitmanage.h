@@ -34,6 +34,8 @@ namespace Ui {
 class DialogUnitManage;
 }
 
+class PortConfigPanel;
+
 class DialogUnitManage : public QDialog
 {
     Q_OBJECT
@@ -58,12 +60,19 @@ public:
     QString CurEquipment_ID;//UnitJpgName;
     QString CurEquipment_Supplier;
     DialogFuncDefine *dlgFuncDefine;
-    DialogLoadSymbol *dlgLoadSymbol;
-    QString CopyEquipment_ID="";
-    QsciScintilla *QsciEdit;
+   DialogLoadSymbol *dlgLoadSymbol;
+   QString CopyEquipment_ID="";
+   QsciScintilla *QsciEdit;
 
-    QMap<QString, QString> factoryMap;
-    QSet<QString> equipmentID_IN_EquipmentTemplate;
+   QMap<QString, QString> factoryMap;
+   QSet<QString> equipmentID_IN_EquipmentTemplate;
+    PortConfigPanel *m_portConfigPanel = nullptr;
+    int m_componentContainerId = 0;
+
+    void loadPortConfig(int equipmentId);
+    int resolveContainerId(int equipmentId, bool createIfMissing);
+    bool savePortConfig();
+    QString getPortVariables(const QString &functionBlock, const QString &portName) const;
 private slots:
     void on_BtnClose_clicked();
 
@@ -168,6 +177,12 @@ private slots:
     void on_BtnCategory_clicked();
 
     void on_BtnCountUnit_clicked();
+
+    void showTableTermContextMenu(const QPoint &pos);
+
+    void onConfigurePort();
+
+    void onRemovePortConfig();
 
     void on_BtnCopyUnitPic_clicked();
 

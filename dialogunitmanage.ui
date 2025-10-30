@@ -1565,7 +1565,7 @@ QDoubleSpinBox{
              <enum>QAbstractItemView::SelectRows</enum>
             </property>
             <property name="columnCount">
-             <number>6</number>
+             <number>7</number>
             </property>
             <attribute name="horizontalHeaderMinimumSectionSize">
              <number>40</number>
@@ -1598,6 +1598,11 @@ QDoubleSpinBox{
             <column>
              <property name="text">
               <string>描述</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>变量</string>
              </property>
             </column>
             <column>

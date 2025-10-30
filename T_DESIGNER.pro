@@ -111,6 +111,8 @@ SOURCES += \
     demo_projectbuilder.cpp \
     widget/functionmanagerdialog.cpp \
     widget/functioneditdialog.cpp \
+    widget/portconfigpanel.cpp \
+    widget/portconfigeditdialog.cpp \
     BO/container/containerdata.cpp \
     BO/container/behavioraggregator.cpp \
     BO/behavior/z3simplifier.cpp \
@@ -204,6 +206,8 @@ HEADERS += \
     demo_projectbuilder.h \
     widget/functionmanagerdialog.h \
     widget/functioneditdialog.h \
+    widget/portconfigpanel.h \
+    widget/portconfigeditdialog.h \
     BO/container/containerdata.h \
     BO/container/behavioraggregator.h \
     BO/behavior/z3simplifier.h \
@@ -279,7 +283,9 @@ FORMS += \
     widget/testmanagementdialog.ui \
     widget/testeditdialog.ui \
     widget/functionmanagerdialog.ui \
-    widget/functioneditdialog.ui
+    widget/functioneditdialog.ui \
+    widget/portconfigpanel.ui \
+    widget/portconfigeditdialog.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

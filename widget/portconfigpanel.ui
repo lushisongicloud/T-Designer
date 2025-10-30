@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>PortConfigPanel</class>
+ <widget class="QWidget" name="PortConfigPanel">
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QGroupBox" name="groupPorts">
+     <property name="title">
+      <string>端口配置</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayoutPorts">
+      <item>
+       <widget class="QTableWidget" name="tablePorts"/>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="layoutPortButtons">
+        <item>
+         <widget class="QPushButton" name="btnAddPort">
+          <property name="text">
+           <string>添加端口</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="btnRemovePort">
+          <property name="text">
+           <string>删除端口</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="portSpacer">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupMacros">
+     <property name="title">
+      <string>连接宏</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayoutMacros">
+      <item>
+       <widget class="QTableWidget" name="tableMacros"/>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="layoutMacroButtons">
+        <item>
+         <widget class="QPushButton" name="btnAddMacro">
+          <property name="text">
+           <string>添加宏</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="btnRemoveMacro">
+          <property name="text">
+           <string>删除宏</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="macroSpacer">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <spacer name="bottomSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+  </layout>
+ </widget>
+ <layoutdefault spacing="6" margin="9"/>
+ <resources/>
+ <connections/>
+</ui>

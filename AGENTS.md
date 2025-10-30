@@ -52,12 +52,12 @@
 
 ## Development Sprint Goals — T‑Solver Integration
 - Deeply integrate T‑Solver modeling, function management, and D‑matrix into T‑Designer; keep legacy D‑matrix workflows compatible (测试优选、测试性指标预计、诊断决策树等)。
-- Migrate component "元件T语言" to SMT‑LIB2; align SMT port names with 元件属性中“功能子块”的端号与类型（电气/液压/机械）。
-- Auto‑generate system port connections from CAD netlist using `connect2e/3e`, `connect2h/3h`, `connect2m/3m` sugar that expand to KCL/KVL‑style SMT constraints.
-- Unify edit flows between “本地物料库”与“元件属性”：复用同一校验与持久化逻辑，避免双处维护。
+- Migrate component "元件T语言" to SMT‑LIB2; align SMT port names with 元件属性中"功能子块"的端号与类型（电气/液压/机械）。
+- Auto‑generate system port connections from CAD netlist using connection macro families: system selects appropriate macro (connect2e/3e/4e) based on actual port count at connection point.
+- Unify edit flows between "本地物料库"与"元件属性"：复用同一校验与持久化逻辑，避免双处维护。
 - Add SMT model validator: 语法校验 + 端口与变量一致性校验；在两处界面统一复用。
-- Extend port configuration UI to set port type and default/custom variable sets（i/u, p/q, F+v|n|x；允许用户自定义变量与 connect 函数族）。
-- Store SMT for components/systems and function definitions only in project DB（项目同名 db）；模板调整遵循“先项目验证、后模板更新、提供 tools 迁移脚本”。
+- Extend port configuration UI to set port type, default/custom variable sets, and connection macro family selection（用户可选择内置宏族或创建自定义宏族）。
+- Store SMT for components/systems, function definitions, and macro families only in project DB（项目同名 db）；模板调整遵循"先项目验证、后模板更新、提供 tools 迁移脚本"。
 - Rebuild System Function Management per T‑Solver：链路自动从连线推断，可编辑确认；依赖/边界条件裁剪与求解前准备按 T‑Solver 规则。
 - Rebuild Test Management → 依赖矩阵：UI/交互与数据结构对齐 T‑Solver 的 `dmatrixviewerdialog` 实现，并扩展测试/故障维度信息（复杂性、费用、时间、成功率、备注；概率、严重度、备注等）。
 - Implement at container level first：元件级容器代理单一实体元件的接口/行为；将新 SMT 建模、功能管理与 D‑矩阵逻辑尽量落在容器与 BO 层，减少对实体元件内部侵入。
@@ -65,12 +65,27 @@
 ## Port/Variable Naming Rules
 - Electrical: `.i` current, `.u` voltage；Hydraulic: `.p` pressure, `.q` flow；Mechanical: `.F` force, `.v`/`.n`/`.x`（选其一）。
 - Example relay KA1 with Coil(A1|A2) and Contact(11|14|12): declare variables `KA1.Coil.A1.i/u`, `KA1.Coil.A2.i/u`, `KA1.Contact.11.i/u`, `KA1.Contact.14.i/u`, `KA1.Contact.12.i/u`.
-- Support default and custom variable sets per port type；user‑defined connect functions are allowed and must expand to valid SMT constraints.
+- Support default and custom variable sets per port type；user‑defined connect macro families are allowed and must expand to valid SMT constraints.
+
+## Connection Macro Family Concept
+- **Macro Family（宏族）**: 一组支持不同端口数量（arity）的连接宏，系统根据连接点的实际端口数自动选择合适的宏。
+- **内置宏族**（存储在 port_connect_macro_family 表，is_builtin=1）：
+  - `electric-connect`: 包含 connect2e/3e/4e 等，生成电流守恒（Σi=0）+ 电压等势（u相等）约束
+  - `hydraulic-connect`: 包含 connect2h/3h/4h 等，生成流量守恒（Σq=0）+ 压力等势（p相等）约束
+  - `mechanical-connect`: 包含 connect2m/3m/4m 等，生成力守恒（ΣF=0）+ 速度/转速/位移等势（v/n/x相等）约束
+- **自定义宏族**: 用户可通过 PortConfigEditDialog 添加自定义宏族，支持特殊连接语义。
+- **宏族数据结构**:
+  - family_name: 宏族名称（如 "electric-connect"）
+  - domain: 领域（electric/hydraulic/mechanical/other）
+  - macros_json: JSON数组，包含多个宏定义 `[{arity:2, macro_name:"connect2e", expansion:"..."}, ...]`
+- **自动选择逻辑**: 在生成系统连接约束时，根据连接点的端口数量从配置的宏族中选择对应arity的宏并展开为SMT约束。
 
 ## Cad → SMT Connection Sugar
+- 连接语法糖从宏族中的宏展开而来，基本规则：
 - `connect2e(A,B)`: `(assert (= (+ A.i B.i) 0))` + `(assert (= A.u B.u))`.
 - `connect3e(A,B,C)`: Σi=0 + equal potential; similarly for `h`/`m` with appropriate variables.
 - Multi‑phase arrays: `connect2e(3P, A,B)` expands per phase using `(select X.i 0/1/2)`.
+- 宏的展开式存储在宏族的 macros_json 字段中，可由用户在添加自定义宏族时定义。
 
 ## Database Expectations (Project DB only)
 - Persist: component templates and instances SMT, system DEF/connect/raw SMT, functions (link/dependency/constraints/offline results), D‑matrix data.
