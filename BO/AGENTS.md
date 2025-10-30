@@ -27,9 +27,15 @@
   - 在 `tmodelvalidator.*` 基础上扩展：提供 1）SMT 语法校验，2）端口与变量一致性校验（与元件端口设置、功能子块端号对齐）。
   - 接口形态：`ValidationResult validateComponentSmt(const QString& smt, const PortSchema& schema)`；返回语法错误、未声明变量、缺失变量、端口/变量冲突清单。
   - 统一服务：供 “本地物料库/元件属性” 两处 UI 共用。
-- 端口/变量体系与连接语法糖（BO/behavior + BO/function）
-  - 端口类型电/液/机 → 变量集分别为 `i/u`、`p/q`、`F`+`v|n|x`（按元件选一）；允许自定义变量与 connect 函数族（注册表）。
-  - 提供连接生成器：从 CAD 连线语义生成 `connect2e/3e`、`connect2h/3h`、`connect2m/3m` 约束（最终展开为 SMT 断言）。
+- 端口/变量体系与连接宏族（BO/behavior + BO/function）
+  - 端口类型电/液/机 → 变量集分别为 `i/u`、`p/q`、`F`+`v|n|x`（按元件选一）；允许自定义变量与连接宏族（注册表）。
+  - **连接宏族概念**：一个宏族包含支持不同端口数量的多个连接宏，系统根据连接点的实际端口数自动选择合适的宏：
+    - electric-connect宏族：包含connect2e（2端口）、connect3e（3端口）、connect4e（4端口）等
+    - hydraulic-connect宏族：包含connect2h/3h/4h等
+    - mechanical-connect宏族：包含connect2m/3m/4m等
+  - 宏族数据存储在port_connect_macro_family表（family_name, domain, description, is_builtin, macros_json）
+  - 宏族的macros_json字段存储多个宏定义：`[{arity:2, macro_name:"connect2e", expansion:"..."}, {arity:3, ...}, ...]`
+  - 提供连接生成器：从 CAD 连线语义生成连接宏调用（如connect3e），根据连接点上的端口数量从配置的宏族中自动选择对应arity的宏，最终展开为 SMT 断言（守恒定律+等势约束）。
   - 数组端口（1P/3P）按索引展开到 `(select X.i k)`。
 - 容器优先实现（BO/container）
   - 元件级容器代理其包含的单一实体元件接口/行为；新增 SMT 建模/功能管理逻辑尽量落在容器与聚合器中（`behavioraggregator.*`）。

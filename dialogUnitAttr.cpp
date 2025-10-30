@@ -1,10 +1,18 @@
 #include "dialogUnitAttr.h"
 #include "ui_dialogUnitAttr.h"
 #include "BO/function/tmodelvalidator.h"
+#include "widget/portconfigpanel.h"
+#include "widget/portconfigeditdialog.h"
+#include "widget/containerhierarchyutils.h"
+#include "BO/containerrepository.h"
 #include <algorithm>
+#include <QJsonDocument>
+#include <QJsonArray>
+#include <QJsonObject>
 extern int SelectEquipment_ID;
 extern int SelectSymbol_ID;
 extern QStringList RemovedUnitsInfo;
+extern QSqlDatabase T_ProjectDatabase;
 DialogUnitAttr::DialogUnitAttr(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::DialogUnitAttr)
@@ -44,9 +52,10 @@ DialogUnitAttr::DialogUnitAttr(QWidget *parent) :
 
     ui->tableTerm->setColumnWidth(0,60);
     ui->tableTerm->setColumnWidth(1,40);
-    ui->tableTerm->setColumnWidth(2,40);
-    ui->tableTerm->setColumnWidth(3,60);
-    ui->tableTerm->setColumnWidth(4,50);
+    ui->tableTerm->setColumnWidth(2,80);
+    ui->tableTerm->setColumnWidth(3,80);
+    ui->tableTerm->setColumnWidth(4,60);
+    ui->tableTerm->setColumnWidth(5,50);
 
     Canceled=true;
     UnitTypeChanged=false;
@@ -71,6 +80,16 @@ DialogUnitAttr::DialogUnitAttr(QWidget *parent) :
     m_dialogTermTag=new dialogTag(ui->frameTag_Term);
     connect(m_dialogTermTag,SIGNAL(DrawTag(int,QColor)),this,SLOT(SlotDrawTermTagWrapper(int,QColor)));
     connect(m_dialogTermTag,SIGNAL(ChangeColor(QColor)),this,SLOT(SlotChangeTermColorWrapper(QColor)));
+
+    // m_portConfigPanel = ui->portConfigPanel;  // 已移除独立的PortConfigPanel控件
+    // if (m_portConfigPanel) {
+    //     m_portConfigPanel->setDatabase(T_ProjectDatabase);
+    //     loadPortConfig(0);
+    // }
+
+    // 设置 tableTerm 右键菜单
+    ui->tableTerm->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(ui->tableTerm, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showTableTermContextMenu(QPoint)));
 }
 
 DialogUnitAttr::~DialogUnitAttr()
@@ -102,6 +121,7 @@ void DialogUnitAttr::InitUIInfo()
     QsciEditDescription->setText("");
     ui->tableWidgetSpur->setRowCount(0);
     ui->tableWidgetStructure->setRowCount(0);
+    loadPortConfig(0);
 }
 
 void DialogUnitAttr::UpdateUIInfo(QSqlQuery QueryEquipment)//dataFunc 从工程数据库中加载信息到界面
@@ -127,6 +147,8 @@ void DialogUnitAttr::UpdateUIInfo(QSqlQuery QueryEquipment)//dataFunc 从工程�
     //Lu ToDo 照片及标注信息加载
     //ui->tableWidgetUnitPic 第1列为“图片”，第2列为“已标注”
     fillUnitPicTable(QueryEquipment.value("Picture").toString(),QueryEquipment.value("Factory").toString());
+
+    loadPortConfig(QueryEquipment.value("Equipment_ID").toInt());
 
     QString TModel=QueryEquipment.value("TModel").toString();
     //%**%替换为UnitTag %UnitTag%
@@ -254,7 +276,7 @@ void DialogUnitAttr::UpdateUIInfo(QSqlQuery QueryEquipment)//dataFunc 从工程�
             }
 
             //端子配置ui->tableTerm
-            //0）子块代号 1）端号 2）描述 3）测试代价 4）是否标注 5）图片路径
+            //0）子块代号 1）端号 2）描述 3）变量 4）测试代价 5）是否标注 6）图片路径
             ui->tableTerm->setRowCount(ui->tableTerm->rowCount()+1);
 
             ui->tableTerm->setItem(ui->tableTerm->rowCount()-1,0,new QTableWidgetItem(spurDT));
@@ -262,7 +284,12 @@ void DialogUnitAttr::UpdateUIInfo(QSqlQuery QueryEquipment)//dataFunc 从工程�
             ui->tableTerm->setItem(ui->tableTerm->rowCount()-1,1,new QTableWidgetItem(QuerySymb2TermInfo.value("ConnNum").toString()));
             ui->tableTerm->item(ui->tableTerm->rowCount()-1,1)->setData(Qt::UserRole,QuerySymb2TermInfo.value("Symb2TermInfo_ID").toString());
             ui->tableTerm->setItem(ui->tableTerm->rowCount()-1,2,new QTableWidgetItem(QuerySymb2TermInfo.value("ConnDesc").toString()));
-            ui->tableTerm->setItem(ui->tableTerm->rowCount()-1,3,new QTableWidgetItem(QuerySymb2TermInfo.value("TestCost").toString()));
+            
+            // 获取端口配置的变量
+            QString variables = getPortVariables(spurDT, QuerySymb2TermInfo.value("ConnNum").toString());
+            ui->tableTerm->setItem(ui->tableTerm->rowCount()-1,3,new QTableWidgetItem(variables));
+            
+            ui->tableTerm->setItem(ui->tableTerm->rowCount()-1,4,new QTableWidgetItem(QuerySymb2TermInfo.value("TestCost").toString()));
 
             QMap<QString, QString> imagePaths; // 文件名与路径的映射
             QMap<QString, QString> tagInfos;   // 文件名与标注信息的映射
@@ -286,12 +313,12 @@ void DialogUnitAttr::UpdateUIInfo(QSqlQuery QueryEquipment)//dataFunc 从工程�
             }
             QString absoluteImagePath = imagePaths.value(fileName);
             QString strTagInfo = tagInfos.value(fileName);
-            // 4）是否标注
+            // 5）是否标注
             QString annotated = (!strTagInfo.isEmpty() && !absoluteImagePath.isEmpty()) ? "是" : "否";
-            ui->tableTerm->setItem(ui->tableTerm->rowCount() - 1, 4, new QTableWidgetItem(annotated));
-            ui->tableTerm->item(ui->tableTerm->rowCount() - 1, 4)->setData(Qt::UserRole, strTagInfo);
-            // 5）图片路径
-            ui->tableTerm->setItem(ui->tableTerm->rowCount() - 1, 5, new QTableWidgetItem(absoluteImagePath));
+            ui->tableTerm->setItem(ui->tableTerm->rowCount() - 1, 5, new QTableWidgetItem(annotated));
+            ui->tableTerm->item(ui->tableTerm->rowCount() - 1, 5)->setData(Qt::UserRole, strTagInfo);
+            // 6）图片路径
+            ui->tableTerm->setItem(ui->tableTerm->rowCount() - 1, 6, new QTableWidgetItem(absoluteImagePath));
         }
 
         SpurDescStr=QuerySymbol.value("Show_DT").toString();
@@ -891,6 +918,13 @@ void DialogUnitAttr::on_BtnOk_clicked()//dataFunc 将界面上的器件信息保
     }
 
     qDebug()<<"DELETE FROM EquipmentDiagnosePara";
+    m_componentContainerId = resolveContainerId(CurEquipment_ID.toInt(), true);
+    // if (m_portConfigPanel) {  // 已移除独立的PortConfigPanel控件
+    //     m_portConfigPanel->setContainerId(m_componentContainerId);
+    //     if (!savePortConfig())
+    //         return;
+    // }
+
     QSqlQuery QueryVar = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
     QString SqlStr="DELETE FROM EquipmentDiagnosePara WHERE Equipment_ID='"+CurEquipment_ID+"'";
     QueryVar.exec(SqlStr);
@@ -927,6 +961,56 @@ void DialogUnitAttr::on_BtnOk_clicked()//dataFunc 将界面上的器件信息保
 //ui->tableWidgetUnitPic共两列：
 //1）图片:显示信息[如果在磁盘中找到了图片，则显示图片的绝对路径；如果没找到图片，则显示图片名];UserRole Data：[图片的绝对路径（在磁盘中找到了对应文件）；""（在磁盘中未找到图片）]
 //2）标注信息:显示信息[“是”（strTagInfo有效）；“否”（strTagInfo无效）];UserRole Data[strTagInfo]
+int DialogUnitAttr::resolveContainerId(int equipmentId, bool createIfMissing)
+{
+    if (equipmentId <= 0)
+        return 0;
+
+    QSqlQuery ddl(T_ProjectDatabase);
+    ddl.exec(QStringLiteral("CREATE TABLE IF NOT EXISTS equipment_containers (equipment_id INTEGER PRIMARY KEY, container_id INTEGER)"));
+    ddl.exec(QStringLiteral("CREATE INDEX IF NOT EXISTS idx_eq_containers_container ON equipment_containers(container_id)"));
+
+    ContainerRepository repo(T_ProjectDatabase);
+    if (!repo.ensureTables())
+        return 0;
+
+    int containerId = repo.componentContainerIdForEquipment(equipmentId);
+    if (containerId == 0 && createIfMissing) {
+        containerId = ContainerHierarchy::ensureComponentContainer(repo, T_ProjectDatabase, equipmentId);
+    }
+    return containerId;
+}
+
+void DialogUnitAttr::loadPortConfig(int equipmentId)
+{
+    // 已移除独立的PortConfigPanel控件，端口配置通过tableTerm右键菜单编辑
+    // if (!m_portConfigPanel)
+    //     return;
+    m_componentContainerId = resolveContainerId(equipmentId, true);
+    // m_portConfigPanel->setContainerId(m_componentContainerId);
+    // m_portConfigPanel->load();
+}
+
+bool DialogUnitAttr::savePortConfig()
+{
+    // 已移除独立的PortConfigPanel控件，端口配置通过tableTerm右键菜单保存
+    // if (!m_portConfigPanel)
+    //     return true;
+    if (m_componentContainerId <= 0)
+        return true;
+
+    // QString error;
+    // if (!m_portConfigPanel->validate(&error)) {
+    //     QMessageBox::warning(this, tr("提示"), error);
+    //     return false;
+    // }
+    // if (!m_portConfigPanel->save()) {
+    //     QMessageBox::warning(this, tr("提示"), tr("端口配置保存失败"));
+    //     return false;
+    // }
+    return true;
+}
+
 void DialogUnitAttr::fillUnitPicTable(const QString &picture, const QString &supplier) {
     ui->tableWidgetUnitPic->setRowCount(0);
     if(picture.isEmpty())return;
@@ -1617,18 +1701,18 @@ void DialogUnitAttr::on_BtnSave_clicked() //dataFunc 保存器件标注信息（
     }
 }
 
-//ui->tableTerm: 4）是否标注 5）图片路径
+//ui->tableTerm: 5）已标注 6）图片路径
 void DialogUnitAttr::on_tableTerm_clicked(const QModelIndex &index)
 {
     m_scene_term.clear();
-    QString absoluteImagePath = ui->tableTerm->item(index.row(),5)->text();
+    QString absoluteImagePath = ui->tableTerm->item(index.row(),6)->text();
     if(absoluteImagePath.isEmpty())return;
     QPixmap pix(absoluteImagePath);
     if(!pix)return;
     m_scene_term.SetBackGroundImage(pix);
     ui->graphicsView_Term->ScaleToWidget();
     CurImgPath=absoluteImagePath;
-    QString strTagInfo = ui->tableTerm->item(index.row(),4)->data(Qt::UserRole).toString();
+    QString strTagInfo = ui->tableTerm->item(index.row(),5)->data(Qt::UserRole).toString();
     if(isTagInfoValid(strTagInfo)) LoadPicTag(strTagInfo,ui->graphicsView_Term);
 }
 
@@ -1738,7 +1822,7 @@ void DialogUnitAttr::on_BtnSaveTerm_clicked()//dataFunc 保存端口标注信息
     }
 
     int currentRow = ui->tableTerm->currentRow();
-    QString originalImgPath = ui->tableTerm->item(currentRow, 5)->data(Qt::UserRole).toString();
+    QString originalImgPath = ui->tableTerm->item(currentRow, 6)->data(Qt::UserRole).toString();
 
     // 使用copyImageToDirectory辅助函数复制图片
     CurImgPath = copyImageToDirectory(originalImgPath, CurProjectPath+PROJECT_PIC_PATH, "");
@@ -1749,9 +1833,9 @@ void DialogUnitAttr::on_BtnSaveTerm_clicked()//dataFunc 保存端口标注信息
     //qDebug()<<"StrTagInfo:"<<StrTagInfo;
 
     //更新表格
-    ui->tableTerm->item(ui->tableTerm->currentRow(), 5)->setText(CurImgPath);
-    ui->tableTerm->item(ui->tableTerm->currentRow(), 4)->setText((isTagInfoValid(StrTagInfo) && !CurImgPath.isEmpty()) ? "是" : "否");
-    ui->tableTerm->item(ui->tableTerm->currentRow(), 4)->setData(Qt::UserRole, StrTagInfo);
+    ui->tableTerm->item(ui->tableTerm->currentRow(), 6)->setText(CurImgPath);
+    ui->tableTerm->item(ui->tableTerm->currentRow(), 5)->setText((isTagInfoValid(StrTagInfo) && !CurImgPath.isEmpty()) ? "是" : "否");
+    ui->tableTerm->item(ui->tableTerm->currentRow(), 5)->setData(Qt::UserRole, StrTagInfo);
 
     //更新数据库
     QString Symb2TermInfo_ID = ui->tableTerm->item(ui->tableTerm->currentRow(),1)->data(Qt::UserRole).toString();
@@ -1759,10 +1843,110 @@ void DialogUnitAttr::on_BtnSaveTerm_clicked()//dataFunc 保存端口标注信息
     QString SqlStr=  "UPDATE Symb2TermInfo SET TestCost=:TestCost,TermPicPath=:TermPicPath,ConnDesc =:ConnDesc WHERE Symb2TermInfo_ID = "+Symb2TermInfo_ID;
     querySymb2TermInfo.prepare(SqlStr);
     querySymb2TermInfo.bindValue(":ConnDesc", ui->tableTerm->item(ui->tableTerm->currentRow(),2)->text());
-    querySymb2TermInfo.bindValue(":TestCost",ui->tableTerm->item(ui->tableTerm->currentRow(),3)->text());
+    querySymb2TermInfo.bindValue(":TestCost",ui->tableTerm->item(ui->tableTerm->currentRow(),4)->text());
     QString termPicPath = fileName + (StrTagInfo.isEmpty() ? "" : "*" + StrTagInfo); // 构建 "文件名*标签信息" 格式的字符串
     querySymb2TermInfo.bindValue(":TermPicPath", termPicPath); // 绑定处理后的路径
     if(!querySymb2TermInfo.exec()) {
         qDebug() << "Error executing SQL query:" << querySymb2TermInfo.lastError().text();
+    }
+}
+
+QString DialogUnitAttr::getPortVariables(const QString &functionBlock, const QString &portName) const
+{
+    if (m_componentContainerId <= 0 || !T_ProjectDatabase.isValid())
+        return QString();
+
+    QSqlQuery query(T_ProjectDatabase);
+    query.prepare("SELECT variables_json FROM port_config "
+                  "WHERE container_id = ? AND function_block = ? AND port_name = ?");
+    query.addBindValue(m_componentContainerId);
+    query.addBindValue(functionBlock);
+    query.addBindValue(portName);
+
+    if (!query.exec() || !query.next())
+        return QString();
+
+    QString json = query.value(0).toString();
+    QJsonDocument doc = QJsonDocument::fromJson(json.toUtf8());
+    if (!doc.isArray())
+        return QString();
+
+    QStringList vars;
+    QJsonArray array = doc.array();
+    for (const QJsonValue &val : array) {
+        if (val.isObject()) {
+            vars.append(val.toObject().value("name").toString());
+        }
+    }
+    return vars.join(",");
+}
+
+void DialogUnitAttr::showTableTermContextMenu(const QPoint &pos)
+{
+    if (!ui->tableTerm->indexAt(pos).isValid())
+        return;
+
+    QMenu menu(this);
+    QAction *actConfigPort = menu.addAction("配置端口");
+    QAction *actRemoveConfig = menu.addAction("删除配置");
+
+    connect(actConfigPort, &QAction::triggered, this, &DialogUnitAttr::onConfigurePort);
+    connect(actRemoveConfig, &QAction::triggered, this, &DialogUnitAttr::onRemovePortConfig);
+
+    menu.exec(QCursor::pos());
+}
+
+void DialogUnitAttr::onConfigurePort()
+{
+    int currentRow = ui->tableTerm->currentRow();
+    if (currentRow < 0)
+        return;
+
+    QString functionBlock = ui->tableTerm->item(currentRow, 0)->text();
+    QString portName = ui->tableTerm->item(currentRow, 1)->text();
+
+    PortConfigEditDialog dialog(T_ProjectDatabase, m_componentContainerId, this);
+    dialog.setPortInfo(functionBlock, portName);
+    dialog.loadConfig();
+
+    if (dialog.exec() == QDialog::Accepted) {
+        if (dialog.saveConfig()) {
+            // 更新表格中的变量显示
+            QString variables = getPortVariables(functionBlock, portName);
+            ui->tableTerm->item(currentRow, 3)->setText(variables);
+            QMessageBox::information(this, "成功", "端口配置已保存");
+        }
+    }
+}
+
+void DialogUnitAttr::onRemovePortConfig()
+{
+    int currentRow = ui->tableTerm->currentRow();
+    if (currentRow < 0)
+        return;
+
+    QString functionBlock = ui->tableTerm->item(currentRow, 0)->text();
+    QString portName = ui->tableTerm->item(currentRow, 1)->text();
+
+    QMessageBox::StandardButton reply = QMessageBox::question(
+        this, "确认删除", 
+        QString("确定要删除端口 %1.%2 的配置吗？").arg(functionBlock, portName),
+        QMessageBox::Yes | QMessageBox::No);
+
+    if (reply != QMessageBox::Yes)
+        return;
+
+    QSqlQuery query(T_ProjectDatabase);
+    query.prepare("DELETE FROM port_config WHERE container_id = ? AND function_block = ? AND port_name = ?");
+    query.addBindValue(m_componentContainerId);
+    query.addBindValue(functionBlock);
+    query.addBindValue(portName);
+
+    if (query.exec()) {
+        // 清空表格中的变量显示
+        ui->tableTerm->item(currentRow, 3)->setText("");
+        QMessageBox::information(this, "成功", "端口配置已删除");
+    } else {
+        QMessageBox::warning(this, "失败", "删除端口配置失败：" + query.lastError().text());
     }
 }

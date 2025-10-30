@@ -12,6 +12,21 @@
   - 版本标记与变更记录（schema_version 表或等效机制）；
   - 幂等检查（重复执行不会破坏数据）；
   - 失败回滚与恢复指引。
+- `init_builtin_macro_families.py`：初始化内置连接宏族到项目数据库
+  - 目的：创建port_connect_macro_family表并插入三个内置宏族（electric-connect、hydraulic-connect、mechanical-connect）
+  - 输入：项目数据库路径（默认为templete/project.db）
+  - 输出：成功消息或错误信息
+  - 宏族结构：
+    - family_name: 宏族名称（如"electric-connect"）
+    - domain: 领域（electric/hydraulic/mechanical）
+    - description: 宏族描述
+    - is_builtin: 是否为内置宏族（1=内置，0=自定义）
+    - macros_json: JSON数组，包含多个不同arity的宏定义 `[{arity:2, macro_name:"connect2e", expansion:"..."}, ...]`
+    - created_at: 创建时间戳
+  - 使用场景：
+    - 新建项目时确保宏族表已初始化
+    - 升级现有项目数据库添加宏族支持
+    - 修复或重置内置宏族定义
 
 ## 本周期建议新增脚本
 - `migrate_project_db.py`：对单个项目 db 应用 SMT/功能/D 矩阵所需的新表/字段；

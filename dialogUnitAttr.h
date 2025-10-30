@@ -14,6 +14,8 @@ namespace Ui {
 class DialogUnitAttr;
 }
 
+class PortConfigPanel;
+
 class DialogUnitAttr : public QDialog
 {
     Q_OBJECT
@@ -87,6 +89,12 @@ private slots:
 
     void on_tableTerm_clicked(const QModelIndex &index);
 
+    void showTableTermContextMenu(const QPoint &pos);
+
+    void onConfigurePort();
+
+    void onRemovePortConfig();
+
     void on_BtnFromUnitImage_clicked();
 
     void on_BtnFromDisk_clicked();
@@ -109,6 +117,13 @@ private:
     dialogTag *m_dialogTag,*m_dialogTermTag;
     unsigned char CurUnitImageIndex=0;
     QString CurImgPath;
+    PortConfigPanel *m_portConfigPanel = nullptr;
+    int m_componentContainerId = 0;
+
+    void loadPortConfig(int equipmentId);
+    int resolveContainerId(int equipmentId, bool createIfMissing);
+    bool savePortConfig();
+    QString getPortVariables(const QString &functionBlock, const QString &portName) const;
 };
 
 #endif // DIALOGNEWUNIT_H

@@ -39,16 +39,39 @@
 
 ## Phase 2 · 端口类型与变量集配置（双入口复用）
 
-- [ ] 新建复用控件 widget/PortConfigPanel（不侵入旧 UI，元件属性/本地物料库共用）
-  - 能力：配置端口类型（电/液/机/其他）、默认变量集（i/u、p/q、F+v|n|x）、自定义变量集与自定义 connect 函数族（文本 → 展开式 SMT）
+- [x] 新建复用控件 widget/PortConfigPanel（不侵入旧 UI，元件属性/本地物料库共用）
+  - 能力：配置端口类型（电/液/机/其他）、默认变量集（i/u、p/q、F+v|n|x）、自定义变量集与自定义连接宏族（文本 → 展开式 SMT）
   - 接口：load(containerId)、save(containerId)、validate()
 
-- [ ] 将 PortConfigPanel 嵌入：
-  - 元件属性 dialogUnitAttr.ui → “端口配置”页；
-  - 本地物料库 dialogunitmanage.ui → “功能子块/端口配置”页。
+- [x] 将 PortConfigPanel 嵌入：
+  - 元件属性 dialogUnitAttr.ui → "端口配置"页；
+  - 本地物料库 dialogunitmanage.ui → "功能子块/端口配置"页。
   - 产出：装配代码与保存逻辑，统一走 port_config 表
+  - **实现方案调整**：不使用独立的 PortConfigPanel tab页，而是与 tableTerm 深度集成
+    - 在 tableTerm 增加"变量"列（第3列）显示端口配置的变量
+    - 通过右键菜单打开 PortConfigEditDialog 编辑单个端口配置
+    - 新建 widget/PortConfigEditDialog 对话框用于编辑单个端口
+    - 实现 getPortVariables() 方法从 port_config 表读取变量并显示
+    - 右键菜单提供"配置端口"和"删除配置"功能
+    - tableTerm 列结构：0-子块代号, 1-端号, 2-描述, 3-变量, 4-测试代价, 5-已标注, 6-图片路径
+  - **连接宏族支持**：
+    - 数据库表：port_connect_macro_family（family_name, domain, description, is_builtin, macros_json）
+    - 内置宏族：electric-connect（包含connect2e/3e/4e）、hydraulic-connect（包含connect2h/3h/4h）、mechanical-connect（包含connect2m/3m/4m）
+    - 用户可添加自定义宏族，但内置宏族不可删除
+    - 端口配置时选择宏族名称（如"electric-connect"），系统在生成连接时根据端口数自动选择对应宏（如3个端口相连时自动选择connect3e）
+  - **已完成验证**：
+    - ✅ port_config 表结构正确，包含所有必需字段
+    - ✅ PortConfigEditDialog 的 SQL 操作正确（INSERT/UPDATE/DELETE）
+    - ✅ m_componentContainerId 在两个对话框中正确设置和使用
+    - ✅ getPortVariables() 正确从 port_config 读取并格式化变量
+    - ✅ 右键菜单功能完整实现（showTableTermContextMenu, onConfigurePort, onRemovePortConfig）
+    - ✅ 列号调整完成，所有涉及 tableTerm 的代码已更新为7列结构
+    - ✅ 连接宏族管理功能实现（添加/删除宏族按钮，内置宏族保护）
+    - ✅ 编译成功，无错误无警告
+  - 详见：docs/phase2_implementation_summary.md 和 docs/port_config_fixes_summary.md
 
-- [ ] 变量集与 connect 族的规则落地文档 docs/port_variable_rules.md（含多相数组、层级端口）
+- [x] 变量集与连接宏族的规则落地文档 docs/port_variable_rules.md（含多相数组、层级端口）
+  - 待补充：完整的宏族展开规则与多相数组处理细节
 
 ---
 
@@ -76,13 +99,20 @@
 
 - [ ] 采集连线语义：复用现有连线表与功能子块端口映射（见 common.cpp:GetLinkRoadBySymbol, SystemStructure 等）
 
-- [ ] 生成连接语句：connect2e/3e、connect2h/3h、connect2m/3m 与 1P/3P 数组展开
+- [ ] 实现连接宏族管理：
+  - 数据库表 port_connect_macro_family：family_name, domain, description, is_builtin, macros_json, created_at
+  - 内置宏族初始化脚本：tools/init_builtin_macro_families.py
+  - 三个内置宏族：electric-connect（包含connect2e/3e/4e）、hydraulic-connect（包含connect2h/3h/4h）、mechanical-connect（包含connect2m/3m/4m）
+  - 宏族的macros_json格式：`[{arity:2, macro_name:"connect2e", expansion:"..."}, {arity:3, ...}, ...]`
+  - UI支持：在PortConfigEditDialog中显示可用宏族、添加/删除自定义宏族（内置宏族不可删除）
+
+- [ ] 生成连接语句：根据连接点端口数自动选择合适的连接宏
   - 新建 BO/behavior/ConnectSugarGenerator.{h,cpp}
   - 接口：generate(containerId, port_map, variable_sets) → QStringList connect_lines
   - 规则：
-    - 电：i 守恒 + u 等势
-    - 液：q 守恒 + p 等势
-    - 机：F 守恒 + 速度/转速/位移等势（按端口配置选择 v|n|x）
+    - 电：i 守恒 + u 等势（从electric-connect宏族中根据端口数选择connect2e/3e/4e）
+    - 液：q 守恒 + p 等势（从hydraulic-connect宏族中根据端口数选择connect2h/3h/4h）
+    - 机：F 守恒 + 速度/转速/位移等势（按端口配置选择 v|n|x，从mechanical-connect宏族中选择connect2m/3m/4m）
     - 多相：select .i[0/1/2] 按相展开
 
 - [ ] 系统模型拼接器：SystemModelAssembler.{h,cpp}
