@@ -21,7 +21,7 @@
 
 ## Phase 1 · 数据与持久化（项目 DB 专用）
 
-- [ ] 设计并评审项目 DB 表结构扩展（仅项目 DB；模板后置同步）
+- [x] 设计并评审项目 DB 表结构扩展（仅项目 DB；模板后置同步）
   - 新增/扩展建议：
     - component_instance_smt(id, container_id, comp_tag, smt_text, updated_at)
     - port_config(id, container_id, func_block, port_name, port_type, var_set, custom_vars_json)
@@ -30,10 +30,10 @@
     - dmatrix_meta(id, container_id, json_text, csv_path, updated_at)
   - 产出：SQL 草案与字段说明 docs/db_project_schema.md；验证脚本 tools/db_migrate_project.py（仅建表/幂等）
 
-- [ ] 在 MyProjects 示例库上验证新表创建、读写与回滚
+- [x] 在 MyProjects 示例库上验证新表创建、读写与回滚
   - 验证：sqlite3 与 tools/db_migrate_project.py 可正反操作
 
-- [ ] 评审通过后，同步 templete/project.db，并记录版本戳
+- [x] 评审通过后，同步 templete/project.db
 
 ---
 
