@@ -286,7 +286,7 @@ background-color: rgb(13, 26, 43);
       <string notr="true"/>
      </property>
      <property name="currentIndex">
-      <number>4</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="tab">
       <property name="styleSheet">
@@ -946,365 +946,6 @@ color: rgb(255, 255, 255);
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="tab_5">
-      <property name="styleSheet">
-       <string notr="true">#tab_5{background-color: rgba(19, 67, 79, 1);
-    border-color: rgba(19, 67, 79, 1);
-    border: 0px solid rgba(61, 255, 255,0.4);
-    margin: 2px;}</string>
-      </property>
-      <attribute name="title">
-       <string>元件诊断参数</string>
-      </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_4">
-       <property name="spacing">
-        <number>0</number>
-       </property>
-       <property name="leftMargin">
-        <number>0</number>
-       </property>
-       <property name="topMargin">
-        <number>0</number>
-       </property>
-       <property name="rightMargin">
-        <number>0</number>
-       </property>
-       <property name="bottomMargin">
-        <number>0</number>
-       </property>
-       <item>
-        <widget class="QTableWidget" name="tableUnitDiagnosePara">
-         <property name="focusPolicy">
-          <enum>Qt::NoFocus</enum>
-         </property>
-         <property name="styleSheet">
-          <string notr="true"/>
-         </property>
-         <property name="editTriggers">
-          <set>QAbstractItemView::DoubleClicked</set>
-         </property>
-         <property name="selectionBehavior">
-          <enum>QAbstractItemView::SelectRows</enum>
-         </property>
-         <attribute name="verticalHeaderVisible">
-          <bool>false</bool>
-         </attribute>
-         <column>
-          <property name="text">
-           <string>参数名称</string>
-          </property>
-         </column>
-         <column>
-          <property name="text">
-           <string>单位</string>
-          </property>
-         </column>
-         <column>
-          <property name="text">
-           <string>当前值</string>
-          </property>
-         </column>
-         <column>
-          <property name="text">
-           <string>默认值</string>
-          </property>
-         </column>
-         <column>
-          <property name="text">
-           <string>备注</string>
-          </property>
-         </column>
-        </widget>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout">
-         <item>
-          <widget class="QPushButton" name="BtnAddPara">
-           <property name="minimumSize">
-            <size>
-             <width>0</width>
-             <height>25</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>添   加</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="BtnDeletePara">
-           <property name="minimumSize">
-            <size>
-             <width>0</width>
-             <height>25</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>删   除</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-      </layout>
-     </widget>
-     <widget class="QWidget" name="tab_3">
-      <property name="styleSheet">
-       <string notr="true">#tab_3{background-color: rgba(19, 67, 79, 1);
-    border-color: rgba(19, 67, 79, 1);
-    border: 0px solid rgba(61, 255, 255,0.4);
-    margin: 2px;}</string>
-      </property>
-      <attribute name="title">
-       <string>变量定义</string>
-      </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_2">
-       <property name="spacing">
-        <number>0</number>
-       </property>
-       <property name="leftMargin">
-        <number>0</number>
-       </property>
-       <property name="topMargin">
-        <number>0</number>
-       </property>
-       <property name="rightMargin">
-        <number>0</number>
-       </property>
-       <property name="bottomMargin">
-        <number>0</number>
-       </property>
-      </layout>
-     </widget>
-     <widget class="QWidget" name="tab_4">
-      <property name="styleSheet">
-       <string notr="true">#tab_4{background-color: rgba(19, 67, 79, 1);
-    border-color: rgba(19, 67, 79, 1);
-    border: 0px solid rgba(61, 255, 255,0.4);
-    margin: 2px;}</string>
-      </property>
-      <attribute name="title">
-       <string>T语言模型</string>
-      </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_3">
-       <property name="spacing">
-        <number>0</number>
-       </property>
-       <property name="leftMargin">
-        <number>0</number>
-       </property>
-       <property name="topMargin">
-        <number>0</number>
-       </property>
-       <property name="rightMargin">
-        <number>0</number>
-       </property>
-       <property name="bottomMargin">
-        <number>0</number>
-       </property>
-       <item>
-        <layout class="QVBoxLayout" name="verticalLayout_1">
-         <property name="spacing">
-          <number>0</number>
-         </property>
-         <property name="leftMargin">
-          <number>0</number>
-         </property>
-         <property name="topMargin">
-          <number>0</number>
-         </property>
-         <property name="rightMargin">
-          <number>0</number>
-         </property>
-         <property name="bottomMargin">
-          <number>0</number>
-         </property>
-         <item>
-          <widget class="QFrame" name="frame_Edit_Description">
-           <property name="minimumSize">
-            <size>
-             <width>0</width>
-             <height>400</height>
-            </size>
-           </property>
-           <property name="frameShape">
-            <enum>QFrame::StyledPanel</enum>
-           </property>
-           <property name="frameShadow">
-            <enum>QFrame::Raised</enum>
-           </property>
-           <layout class="QGridLayout" name="gridLayout_6">
-            <item row="1" column="0">
-             <layout class="QVBoxLayout" name="TEditLayout"/>
-            </item>
-           </layout>
-          </widget>
-         </item>
-         <item>
-          <widget class="QWidget" name="QWidget_Btn" native="true">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <layout class="QHBoxLayout" name="horizontalLayout_2">
-            <item>
-             <widget class="QPushButton" name="BtnUpdatePortVars">
-              <property name="text">
-               <string>更新端口变量</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="BtnValidateTModel">
-              <property name="text">
-               <string>校验</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="BtnCompile">
-              <property name="text">
-               <string>编译</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </item>
-         <item>
-          <widget class="QTableWidget" name="tableWidgetStructure">
-           <property name="styleSheet">
-            <string notr="true"/>
-           </property>
-           <attribute name="verticalHeaderVisible">
-            <bool>false</bool>
-           </attribute>
-           <column>
-            <property name="text">
-             <string>变量名称</string>
-            </property>
-           </column>
-           <column>
-            <property name="text">
-             <string>变量类型</string>
-            </property>
-           </column>
-           <column>
-            <property name="text">
-             <string>初始值</string>
-            </property>
-           </column>
-           <column>
-            <property name="text">
-             <string>可控制/可观测</string>
-            </property>
-           </column>
-          </widget>
-         </item>
-        </layout>
-       </item>
-      </layout>
-     </widget>
-     <widget class="QWidget" name="tab_6">
-      <property name="styleSheet">
-       <string notr="true">#tab_6{background-color: rgba(19, 67, 79, 1);
-    border-color: rgba(19, 67, 79, 1);
-    border: 0px solid rgba(61, 255, 255,0.4);
-    margin: 2px;}</string>
-      </property>
-      <attribute name="title">
-       <string>维修信息</string>
-      </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_5">
-       <item>
-        <widget class="QTableWidget" name="tableRepairInfo">
-         <property name="focusPolicy">
-          <enum>Qt::NoFocus</enum>
-         </property>
-         <property name="styleSheet">
-          <string notr="true"/>
-         </property>
-         <property name="editTriggers">
-          <set>QAbstractItemView::DoubleClicked</set>
-         </property>
-         <property name="selectionBehavior">
-          <enum>QAbstractItemView::SelectRows</enum>
-         </property>
-         <attribute name="verticalHeaderVisible">
-          <bool>false</bool>
-         </attribute>
-         <column>
-          <property name="text">
-           <string>故障模式</string>
-          </property>
-         </column>
-         <column>
-          <property name="text">
-           <string>故障概率</string>
-          </property>
-         </column>
-         <column>
-          <property name="text">
-           <string>解决方案</string>
-          </property>
-         </column>
-         <column>
-          <property name="text">
-           <string>所需资源</string>
-          </property>
-         </column>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="label_18">
-         <property name="text">
-          <string>解决方案：</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QTextEdit" name="TextEdRepairPlan">
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>0</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>16777215</width>
-           <height>150</height>
-          </size>
-         </property>
-         <property name="styleSheet">
-          <string notr="true"/>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="label_19">
-         <property name="text">
-          <string>所需资源：</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QTextEdit" name="TextEdRepairResource">
-         <property name="maximumSize">
-          <size>
-           <width>16777215</width>
-           <height>100</height>
-          </size>
-         </property>
-         <property name="styleSheet">
-          <string notr="true"/>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </widget>
      <widget class="QWidget" name="tab_Term">
       <property name="styleSheet">
        <string notr="true">#tab_Term{background-color: rgba(19, 67, 79, 1);
@@ -1313,7 +954,7 @@ color: rgb(255, 255, 255);
     margin: 2px;}</string>
       </property>
       <attribute name="title">
-       <string>端口配置</string>
+       <string>端口</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayoutPortTab">
        <item>
@@ -1557,6 +1198,365 @@ color: rgb(255, 255, 255);
          </item>
         </layout>
        </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tab_4">
+      <property name="styleSheet">
+       <string notr="true">#tab_4{background-color: rgba(19, 67, 79, 1);
+    border-color: rgba(19, 67, 79, 1);
+    border: 0px solid rgba(61, 255, 255,0.4);
+    margin: 2px;}</string>
+      </property>
+      <attribute name="title">
+       <string>T语言模型</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout_1">
+         <property name="spacing">
+          <number>0</number>
+         </property>
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QFrame" name="frame_Edit_Description">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>400</height>
+            </size>
+           </property>
+           <property name="frameShape">
+            <enum>QFrame::StyledPanel</enum>
+           </property>
+           <property name="frameShadow">
+            <enum>QFrame::Raised</enum>
+           </property>
+           <layout class="QGridLayout" name="gridLayout_6">
+            <item row="1" column="0">
+             <layout class="QVBoxLayout" name="TEditLayout"/>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QWidget" name="QWidget_Btn" native="true">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <layout class="QHBoxLayout" name="horizontalLayout_2">
+            <item>
+             <widget class="QPushButton" name="BtnUpdatePortVars">
+              <property name="text">
+               <string>更新端口变量</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="BtnValidateTModel">
+              <property name="text">
+               <string>校验</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="BtnCompile">
+              <property name="text">
+               <string>编译</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QTableWidget" name="tableWidgetStructure">
+           <property name="styleSheet">
+            <string notr="true"/>
+           </property>
+           <attribute name="verticalHeaderVisible">
+            <bool>false</bool>
+           </attribute>
+           <column>
+            <property name="text">
+             <string>变量名称</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>变量类型</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>初始值</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>可控制/可观测</string>
+            </property>
+           </column>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tab_6">
+      <property name="styleSheet">
+       <string notr="true">#tab_6{background-color: rgba(19, 67, 79, 1);
+    border-color: rgba(19, 67, 79, 1);
+    border: 0px solid rgba(61, 255, 255,0.4);
+    margin: 2px;}</string>
+      </property>
+      <attribute name="title">
+       <string>维修信息</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_5">
+       <item>
+        <widget class="QTableWidget" name="tableRepairInfo">
+         <property name="focusPolicy">
+          <enum>Qt::NoFocus</enum>
+         </property>
+         <property name="styleSheet">
+          <string notr="true"/>
+         </property>
+         <property name="editTriggers">
+          <set>QAbstractItemView::DoubleClicked</set>
+         </property>
+         <property name="selectionBehavior">
+          <enum>QAbstractItemView::SelectRows</enum>
+         </property>
+         <attribute name="verticalHeaderVisible">
+          <bool>false</bool>
+         </attribute>
+         <column>
+          <property name="text">
+           <string>故障模式</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>故障概率</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>解决方案</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>所需资源</string>
+          </property>
+         </column>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_18">
+         <property name="text">
+          <string>解决方案：</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QTextEdit" name="TextEdRepairPlan">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>150</height>
+          </size>
+         </property>
+         <property name="styleSheet">
+          <string notr="true"/>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_19">
+         <property name="text">
+          <string>所需资源：</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QTextEdit" name="TextEdRepairResource">
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>100</height>
+          </size>
+         </property>
+         <property name="styleSheet">
+          <string notr="true"/>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tab_5">
+      <property name="styleSheet">
+       <string notr="true">#tab_5{background-color: rgba(19, 67, 79, 1);
+    border-color: rgba(19, 67, 79, 1);
+    border: 0px solid rgba(61, 255, 255,0.4);
+    margin: 2px;}</string>
+      </property>
+      <attribute name="title">
+       <string>元件诊断参数</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_4">
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QTableWidget" name="tableUnitDiagnosePara">
+         <property name="focusPolicy">
+          <enum>Qt::NoFocus</enum>
+         </property>
+         <property name="styleSheet">
+          <string notr="true"/>
+         </property>
+         <property name="editTriggers">
+          <set>QAbstractItemView::DoubleClicked</set>
+         </property>
+         <property name="selectionBehavior">
+          <enum>QAbstractItemView::SelectRows</enum>
+         </property>
+         <attribute name="verticalHeaderVisible">
+          <bool>false</bool>
+         </attribute>
+         <column>
+          <property name="text">
+           <string>参数名称</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>单位</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>当前值</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>默认值</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>备注</string>
+          </property>
+         </column>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <item>
+          <widget class="QPushButton" name="BtnAddPara">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>25</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>添   加</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="BtnDeletePara">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>25</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>删   除</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tab_var">
+      <property name="styleSheet">
+       <string notr="true">#tab_3{background-color: rgba(19, 67, 79, 1);
+    border-color: rgba(19, 67, 79, 1);
+    border: 0px solid rgba(61, 255, 255,0.4);
+    margin: 2px;}</string>
+      </property>
+      <attribute name="title">
+       <string>变量定义</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
       </layout>
      </widget>
     </widget>

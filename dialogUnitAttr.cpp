@@ -85,8 +85,14 @@ DialogUnitAttr::DialogUnitAttr(QWidget *parent) :
     UnitProSetUpdated=false;
     UnitTagChanged=false;
     InitTEdit();
-    ui->tabWidget->removeTab(2);
-    //ui->tabWidget->removeTab(5);
+    const int tab5Index = ui->tabWidget->indexOf(ui->tab_5);
+    const int tab3Index = ui->tabWidget->indexOf(ui->tab_3);
+    if (tab5Index != -1) {
+        ui->tabWidget->removeTab(tab5Index);
+    }
+    if (tab3Index != -1) {
+        ui->tabWidget->removeTab(tab3Index);
+    }
     dlgUnitManage=new DialogUnitManage(this);
     ui->tabWidget->setCurrentIndex(0);
 
@@ -749,6 +755,8 @@ void DialogUnitAttr::on_BtnOk_clicked()//dataFunc 将界面上的器件信息保
 
         //更新T_ProjectDatabase数据库的Symbol表和Symb2TermInfo表
         AddSymbTblAndSymb2TermInfoTbl(LibEquipment_ID,QString::number(MaxEquipment_ID),"",ListSymbolSpurInfo);
+        // 复制端口配置与宏族（库 -> 工程）
+        copyPortConfigAndMacrosFromLibrary(LibEquipment_ID, MaxEquipment_ID);
         SelectEquipment_ID=MaxEquipment_ID;
         SelectSymbol_ID=0;
         CurEquipment_ID=QString::number(MaxEquipment_ID);
@@ -853,6 +861,10 @@ void DialogUnitAttr::on_BtnOk_clicked()//dataFunc 将界面上的器件信息保
             //                Symb2TermIndex++;
             //            }//while(QuerySearch.next())
         }
+        // 如果重新设定过型号，需同步端口配置/宏族
+        if(UnitTypeChanged) {
+            copyPortConfigAndMacrosFromLibrary(LibEquipment_ID, CurEquipment_ID.toInt());
+        }
     }
 
     qDebug()<<"DELETE FROM EquipmentDiagnosePara";
@@ -946,6 +958,150 @@ bool DialogUnitAttr::savePortConfig()
     //     QMessageBox::warning(this, tr("提示"), tr("端口配置保存失败"));
     //     return false;
     // }
+    return true;
+}
+
+// 复制库中元件的端口配置与连接宏到工程数据库
+// 触发时机：
+// 1) 新增元件（AttrMode==1）并从器件库选择了型号
+// 2) 修改元件（AttrMode==2 且 UnitTypeChanged==true）重新选择了型号
+// 说明：库与工程的 equipment_id 不同，需重新分配 container_id，并克隆全部 port_config / port_connect_macro 条目
+bool DialogUnitAttr::copyPortConfigAndMacrosFromLibrary(const QString &libEquipmentIdStr, int projectEquipmentId)
+{
+    int libEquipmentId = libEquipmentIdStr.toInt();
+    if (libEquipmentId <= 0 || projectEquipmentId <= 0) {
+        qDebug() << "[copyPortConfig] 参数非法" << libEquipmentId << projectEquipmentId;
+        return false;
+    }
+
+    // 获取库侧 container_id
+    {
+        QSqlQuery ddl(T_LibDatabase);
+        ddl.exec(QStringLiteral("CREATE TABLE IF NOT EXISTS equipment_containers (equipment_id INTEGER PRIMARY KEY, container_id INTEGER)"));
+        ddl.exec(QStringLiteral("CREATE INDEX IF NOT EXISTS idx_eq_containers_container ON equipment_containers(container_id)"));
+    }
+    ContainerRepository repoLib(T_LibDatabase);
+    if (!repoLib.ensureTables()) {
+        qWarning() << "[copyPortConfig] ensureTables(lib) 失败";
+        return false;
+    }
+    int libContainerId = repoLib.componentContainerIdForEquipment(libEquipmentId);
+    if (libContainerId == 0) {
+        // 若库侧尚未生成，尝试生成（理论上库中应已有）
+        libContainerId = ContainerHierarchy::ensureComponentContainer(repoLib, T_LibDatabase, libEquipmentId);
+    }
+    if (libContainerId == 0) {
+        qWarning() << "[copyPortConfig] 未获得库侧 container_id";
+        return false;
+    }
+
+    // 获取工程侧 container_id
+    int projectContainerId = resolveContainerId(projectEquipmentId, true);
+    if (projectContainerId <= 0) {
+        qWarning() << "[copyPortConfig] 未获得工程侧 container_id";
+        return false;
+    }
+
+    // 确保工程侧存在 port_config / port_connect_macro 表
+    {
+        QSqlQuery ddlProj(T_ProjectDatabase);
+        ddlProj.exec(QStringLiteral("CREATE TABLE IF NOT EXISTS port_config ("
+                                    " port_config_id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                                    " container_id INTEGER NOT NULL,"
+                                    " function_block TEXT NOT NULL,"
+                                    " port_name TEXT NOT NULL,"
+                                    " port_type TEXT NOT NULL,"
+                                    " direction TEXT NOT NULL DEFAULT 'bidirectional',"
+                                    " variable_profile TEXT NOT NULL DEFAULT 'default',"
+                                    " variables_json TEXT NOT NULL,"
+                                    " connect_macro TEXT,"
+                                    " custom_metadata TEXT,"
+                                    " updated_at TEXT DEFAULT CURRENT_TIMESTAMP)"));
+        ddlProj.exec(QStringLiteral("CREATE TABLE IF NOT EXISTS port_connect_macro ("
+                                    " macro_id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                                    " container_id INTEGER NOT NULL,"
+                                    " macro_name TEXT NOT NULL,"
+                                    " domain TEXT NOT NULL,"
+                                    " arity INTEGER NOT NULL,"
+                                    " expansion_template TEXT NOT NULL,"
+                                    " description TEXT,"
+                                    " metadata_json TEXT,"
+                                    " updated_at TEXT DEFAULT CURRENT_TIMESTAMP)"));
+        ddlProj.exec(QStringLiteral("CREATE UNIQUE INDEX IF NOT EXISTS idx_port_config_unique ON port_config(container_id, function_block, port_name)"));
+        ddlProj.exec(QStringLiteral("CREATE UNIQUE INDEX IF NOT EXISTS idx_connect_macro_unique ON port_connect_macro(container_id, macro_name)"));
+    }
+
+    QSqlQuery selLibCfg(T_LibDatabase);
+    selLibCfg.prepare(QStringLiteral("SELECT function_block, port_name, port_type, direction, variable_profile, variables_json, connect_macro, custom_metadata "
+                                     "FROM port_config WHERE container_id = ?"));
+    selLibCfg.addBindValue(libContainerId);
+    if (!selLibCfg.exec()) {
+        qWarning() << "[copyPortConfig] 读取库侧 port_config 失败:" << selLibCfg.lastError();
+        return false;
+    }
+
+    // 清理工程侧旧配置（若重新选择型号）
+    QSqlQuery delProj(T_ProjectDatabase);
+    delProj.prepare(QStringLiteral("DELETE FROM port_config WHERE container_id = ?"));
+    delProj.addBindValue(projectContainerId);
+    if (!delProj.exec()) {
+        qWarning() << "[copyPortConfig] 删除旧工程 port_config 失败:" << delProj.lastError();
+        return false;
+    }
+
+    QSqlQuery insProjCfg(T_ProjectDatabase);
+    insProjCfg.prepare(QStringLiteral("INSERT INTO port_config(container_id,function_block,port_name,port_type,direction,variable_profile,variables_json,connect_macro,custom_metadata)"
+                                      " VALUES(?,?,?,?,?,?,?,?,?)"));
+    int copiedPorts = 0;
+    while (selLibCfg.next()) {
+        insProjCfg.addBindValue(projectContainerId);
+        insProjCfg.addBindValue(selLibCfg.value(0));
+        insProjCfg.addBindValue(selLibCfg.value(1));
+        insProjCfg.addBindValue(selLibCfg.value(2));
+        insProjCfg.addBindValue(selLibCfg.value(3));
+        insProjCfg.addBindValue(selLibCfg.value(4));
+        insProjCfg.addBindValue(selLibCfg.value(5));
+        insProjCfg.addBindValue(selLibCfg.value(6));
+        insProjCfg.addBindValue(selLibCfg.value(7));
+        if (!insProjCfg.exec()) {
+            qWarning() << "[copyPortConfig] 插入工程 port_config 失败:" << insProjCfg.lastError();
+        } else {
+            ++copiedPorts;
+        }
+    }
+
+    // 拷贝连接宏（包含自定义与内置映射；内置宏族若后续改为全局，可在此处过滤）
+    QSqlQuery selLibMacro(T_LibDatabase);
+    selLibMacro.prepare(QStringLiteral("SELECT macro_name, domain, arity, expansion_template, description, metadata_json FROM port_connect_macro WHERE container_id = ?"));
+    selLibMacro.addBindValue(libContainerId);
+    if (!selLibMacro.exec()) {
+        qWarning() << "[copyPortConfig] 读取库侧 port_connect_macro 失败:" << selLibMacro.lastError();
+    } else {
+        // 删除工程侧旧宏
+        QSqlQuery delMacro(T_ProjectDatabase);
+        delMacro.prepare(QStringLiteral("DELETE FROM port_connect_macro WHERE container_id = ?"));
+        delMacro.addBindValue(projectContainerId);
+        delMacro.exec();
+
+        QSqlQuery insProjMacro(T_ProjectDatabase);
+        insProjMacro.prepare(QStringLiteral("INSERT INTO port_connect_macro(container_id,macro_name,domain,arity,expansion_template,description,metadata_json) VALUES(?,?,?,?,?,?,?)"));
+        int copiedMacros = 0;
+        while (selLibMacro.next()) {
+            insProjMacro.addBindValue(projectContainerId);
+            insProjMacro.addBindValue(selLibMacro.value(0));
+            insProjMacro.addBindValue(selLibMacro.value(1));
+            insProjMacro.addBindValue(selLibMacro.value(2));
+            insProjMacro.addBindValue(selLibMacro.value(3));
+            insProjMacro.addBindValue(selLibMacro.value(4));
+            insProjMacro.addBindValue(selLibMacro.value(5));
+            if (!insProjMacro.exec()) {
+                qWarning() << "[copyPortConfig] 插入工程 port_connect_macro 失败:" << insProjMacro.lastError();
+            } else {
+                ++copiedMacros;
+            }
+        }
+        qDebug() << "[copyPortConfig] 已复制端口" << copiedPorts << "条, 宏" << copiedMacros << "条";
+    }
     return true;
 }
 

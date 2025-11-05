@@ -111,7 +111,7 @@ DialogUnitManage::DialogUnitManage(QWidget *parent) :
     connect(ui->treeViewUnitGroup,SIGNAL(customContextMenuRequested(QPoint)),this,SLOT(ShowtreeViewUnitGroupPopMenu(QPoint)));
     ui->BtnPasteUnit->setEnabled(false);
 
-    //ui->tabWidget->removeTab(4);
+    ui->tabWidget->removeTab(5);
     ui->tabWidget->setCurrentIndex(0);
 
     m_scene.setBackgroundBrush(Qt::gray);
