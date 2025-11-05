@@ -2,16 +2,21 @@
 #include "ui_dialogUnitAttr.h"
 #include "BO/function/tmodelvalidator.h"
 #include "BO/function/tmodelcheckservice.h"
+#include "BO/function/tmodelhelper.h"
 #include "widget/portconfigpanel.h"
 #include "widget/portconfigeditdialog.h"
 #include "widget/containerhierarchyutils.h"
 #include "BO/containerrepository.h"
+#include "widget/tmodelcompiledisplaydialog.h"
 #include <algorithm>
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QJsonValue>
 #include <QMap>
+#include <QMenu>
+#include <QMessageBox>
+#include <QRegularExpression>
 extern int SelectEquipment_ID;
 extern int SelectSymbol_ID;
 extern QStringList RemovedUnitsInfo;
@@ -42,16 +47,31 @@ DialogUnitAttr::DialogUnitAttr(QWidget *parent) :
     ui->tableWidgetSpur->setColumnWidth(1,100);//子块代号
     //ui->tableWidgetSpur->setColumnHidden(4,true);
 
-    ui->tableWidgetStructure->setColumnWidth(0,200);//变量名称
-    ui->tableWidgetStructure->setColumnWidth(1,200);//变量类型
-    ui->tableWidgetStructure->setColumnWidth(2,150);//初始值
-    ui->tableWidgetStructure->setColumnWidth(3,150);//可控制/可观测
-    //ui->tableWidgetStructure->setColumnWidth(4,100);//测试代价
+    // 修改tableWidgetStructure为常量表，4列：常量名、值、单位、备注
+    ui->tableWidgetStructure->setColumnCount(4);
+    ui->tableWidgetStructure->setHorizontalHeaderLabels({"常量名", "值", "单位", "备注"});
+    ui->tableWidgetStructure->setColumnWidth(0,100);//常量名
+    ui->tableWidgetStructure->setColumnWidth(1,100);//值
+    ui->tableWidgetStructure->setColumnWidth(2,100);//单位
+    ui->tableWidgetStructure->horizontalHeader()->setStretchLastSection(true);//最后一列自适应
+    ui->tableWidgetStructure->setSelectionBehavior(QAbstractItemView::SelectRows);
+    ui->tableWidgetStructure->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    ui->tableWidgetStructure->setEditTriggers(QAbstractItemView::DoubleClicked | QAbstractItemView::EditKeyPressed);
+    
+    // 设置右键菜单
+    ui->tableWidgetStructure->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(ui->tableWidgetStructure, SIGNAL(customContextMenuRequested(QPoint)), 
+            this, SLOT(showConstantsContextMenu(QPoint)));
 
-    ui->tableRepairInfo->setColumnWidth(0,140);//名称
-    ui->tableRepairInfo->setColumnWidth(1,140);//故障模式
+    ui->tableRepairInfo->setColumnWidth(0,200);//故障模式
+    ui->tableRepairInfo->setColumnWidth(1,100);//故障概率
     ui->tableRepairInfo->setColumnWidth(2,300);//解决方案
     ui->tableRepairInfo->setColumnWidth(3,240);//所需资源
+    
+    // 设置tableRepairInfo右键菜单
+    ui->tableRepairInfo->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(ui->tableRepairInfo, SIGNAL(customContextMenuRequested(QPoint)), 
+            this, SLOT(showRepairInfoContextMenu(QPoint)));
 
     ui->tableTerm->setColumnWidth(0,60);
     ui->tableTerm->setColumnWidth(1,40);
@@ -153,79 +173,14 @@ void DialogUnitAttr::UpdateUIInfo(QSqlQuery QueryEquipment)//dataFunc 从工程�
 
     loadPortConfig(QueryEquipment.value("Equipment_ID").toInt());
 
-    QString TModel=QueryEquipment.value("TModel").toString();
-    //%**%替换为UnitTag %UnitTag%
-    //除了EquipmentDiagnosePara中定义过的器件，其余替换代号
-    QStringList ListTModel=TModel.split("%");
-    for(int i=0;i<ListTModel.count()-1;i++)
-    {
-        if((i%2)==0) continue;
-        QSqlQuery QuerySearch= QSqlQuery(T_ProjectDatabase);
-        QString SqlStr="SELECT * FROM EquipmentDiagnosePara WHERE Equipment_ID = '"+QueryEquipment.value("Equipment_ID").toString()+"' AND Name = '"+ListTModel.at(i)+"'";
-        QuerySearch.exec(SqlStr);
-        if(QuerySearch.next())
-        {
-            //ListTModel[i]=QuerySearch.value("CurValue").toString();
-            continue;
-        }
-        ListTModel[i]=UnitTag;
-    }
-    TModel="";
-    for(QString StrTModel:ListTModel)
-    {
-        if(TModel!="") TModel+="%";
-        TModel+=StrTModel;
-    }
-    QsciEdit->setText(TModel);
-    qDebug()<<"on_BtnCompile_clicked";
-    on_BtnCompile_clicked();
-    QStringList ListStructure=QueryEquipment.value("Structure").toString().split(";");
-    qDebug()<<"ListStructure="<<ListStructure;
-    if(ListStructure.count()==ui->tableWidgetStructure->rowCount())
-    {
-        for(int i=0;i<ListStructure.count();i++)
-        {
-            //if(ListStructure.at(i).split(",").count()!=3) continue;
-            if(ui->tableWidgetStructure->item(i,0)->text()!=ListStructure.at(i).split(",").at(0)) continue;
-            ((QComboBox *)ui->tableWidgetStructure->cellWidget(i,2))->setCurrentText(ListStructure.at(i).split(",").at(1));
-            ((QComboBox *)ui->tableWidgetStructure->cellWidget(i,3))->setCurrentText(ListStructure.at(i).split(",").at(2));
-            //ui->tableWidgetStructure->setItem(i,4,new QTableWidgetItem(ListStructure.at(i).split(",").at(3)));
-        }
-    }
-
-    //维修信息
-    ui->tableRepairInfo->setRowCount(0);
-    for(int i=0;i<ui->tableWidgetStructure->rowCount();i++)
-    {
-        if(ui->tableWidgetStructure->item(i,1)->text()=="ModeType")
-        {
-            QComboBox *CbModeTypeBox= ((QComboBox *)ui->tableWidgetStructure->cellWidget(i,2));
-            for(int j=0;j<CbModeTypeBox->count();j++)
-            {
-                if((CbModeTypeBox->itemText(j)=="nominal")||(CbModeTypeBox->itemText(j)=="undefined")||(CbModeTypeBox->itemText(j)=="default")) continue;
-                if((CbModeTypeBox->itemText(j)=="on")||(CbModeTypeBox->itemText(j)=="off")||(CbModeTypeBox->itemText(j)=="open")||(CbModeTypeBox->itemText(j)=="close")) continue;
-                ui->tableRepairInfo->setRowCount(ui->tableRepairInfo->rowCount()+1);
-                ui->tableRepairInfo->setItem(ui->tableRepairInfo->rowCount()-1,0,new QTableWidgetItem(ui->tableWidgetStructure->item(i,0)->text()));
-                ui->tableRepairInfo->setItem(ui->tableRepairInfo->rowCount()-1,1,new QTableWidgetItem(CbModeTypeBox->itemText(j)));
-                ui->tableRepairInfo->setItem(ui->tableRepairInfo->rowCount()-1,2,new QTableWidgetItem(""));
-                ui->tableRepairInfo->setItem(ui->tableRepairInfo->rowCount()-1,3,new QTableWidgetItem(""));
-            }
-        }
-    }
-    QStringList ListRepairInfo=QueryEquipment.value("RepairInfo").toString().split("￤￤");
-    if(ListRepairInfo.count()==ui->tableRepairInfo->rowCount())
-    {
-        for(int i=0;i<ListRepairInfo.count();i++)
-        {
-            if(ListRepairInfo.at(i).split("￤").count()==4)
-            {
-                if(ui->tableRepairInfo->item(i,0)->text()!=ListRepairInfo.at(i).split("￤").at(0)) continue;
-                if(ui->tableRepairInfo->item(i,1)->text()!=ListRepairInfo.at(i).split("￤").at(1)) continue;
-                ui->tableRepairInfo->item(i,2)->setText(ListRepairInfo.at(i).split("￤").at(2));
-                ui->tableRepairInfo->item(i,3)->setText(ListRepairInfo.at(i).split("￤").at(3));
-            }
-        }
-    }
+    QsciEdit->setText(QueryEquipment.value("TModel").toString());
+    
+    // 加载常量数据（从Structure字段）
+    loadConstants(QueryEquipment.value("Structure").toString());
+    
+    //维修信息 - 使用新格式加载（故障模式、故障概率、解决方案、所需资源）
+    TModelHelper::loadRepairInfoToTable(ui->tableRepairInfo, QueryEquipment.value("RepairInfo").toString());
+    
     if(ui->tableRepairInfo->rowCount()>0)
     {
         ui->tableRepairInfo->setCurrentIndex(ui->tableRepairInfo->model()->index(0,0));
@@ -782,23 +737,13 @@ void DialogUnitAttr::on_BtnOk_clicked()//dataFunc 将界面上的器件信息保
             StrPic+=ui->tableWidgetUnitPic->item(i,0)->data(Qt::UserRole).toString();
         }
         QueryVar.bindValue(":Picture",StrPic);
-        QString StrStructure;
-        for(int i=0;i<ui->tableWidgetStructure->rowCount();i++)
-        {
-            if(i!=0) StrStructure+=";";
-            StrStructure+=ui->tableWidgetStructure->item(i,0)->text()+","+((QComboBox *)ui->tableWidgetStructure->cellWidget(i,2))->currentText()+","+((QComboBox *)ui->tableWidgetStructure->cellWidget(i,3))->currentText();//+","+ui->tableWidgetStructure->item(i,4)->text();
-        }
+        
+        // 保存常量数据到Structure字段
+        QString StrStructure = saveConstants();
         QueryVar.bindValue(":Structure",StrStructure);
-        QString StrRepairInfo;
-        for(int i=0;i<ui->tableRepairInfo->rowCount();i++)
-        {
-            if(i!=0) StrRepairInfo+="￤￤";
-            QString RepairPlan=ui->tableRepairInfo->item(i,2)->text();
-            if(RepairPlan=="") RepairPlan="无";
-            QString RepairResource=ui->tableRepairInfo->item(i,3)->text();
-            if(RepairResource=="") RepairResource="无";
-            StrRepairInfo+=ui->tableRepairInfo->item(i,0)->text()+"￤"+ui->tableRepairInfo->item(i,1)->text()+"￤"+RepairPlan+"￤"+RepairResource;
-        }
+        
+        // 保存维修信息 - 使用新格式（故障模式、故障概率、解决方案、所需资源）
+        QString StrRepairInfo = TModelHelper::saveRepairInfoFromTable(ui->tableRepairInfo);
         QueryVar.bindValue(":RepairInfo",StrRepairInfo);
         QueryVar.exec();
 
@@ -835,28 +780,18 @@ void DialogUnitAttr::on_BtnOk_clicked()//dataFunc 将界面上的器件信息保
         QueryVar.bindValue(":TVariable","");//QsciEditVariable->text());
         QueryVar.bindValue(":TModel",QsciEdit->text());
         QueryVar.bindValue(":MTBF",ui->EdMTBF->text());
-        QString StrStructure;
-        for(int i=0;i<ui->tableWidgetStructure->rowCount();i++)
-        {
-            if(i!=0) StrStructure+=";";
-            StrStructure+=ui->tableWidgetStructure->item(i,0)->text()+","+((QComboBox *)ui->tableWidgetStructure->cellWidget(i,2))->currentText()+","+((QComboBox *)ui->tableWidgetStructure->cellWidget(i,3))->currentText();//+","+ui->tableWidgetStructure->item(i,4)->text();
-        }
+        
+        // 保存常量数据到Structure字段
+        QString StrStructure = saveConstants();
         QueryVar.bindValue(":Structure",StrStructure);
-        QString StrRepairInfo;
-        for(int i=0;i<ui->tableRepairInfo->rowCount();i++)
-        {
-            if(i!=0) StrRepairInfo+="￤￤";
-            QString RepairPlan=ui->tableRepairInfo->item(i,2)->text();
-            if(RepairPlan=="") RepairPlan="无";
-            QString RepairResource=ui->tableRepairInfo->item(i,3)->text();
-            if(RepairResource=="") RepairResource="无";
-            StrRepairInfo+=ui->tableRepairInfo->item(i,0)->text()+"￤"+ui->tableRepairInfo->item(i,1)->text()+"￤"+RepairPlan+"￤"+RepairResource;
-        }
+        
+        // 保存维修信息 - 使用新格式（故障模式、故障概率、解决方案、所需资源）
+        QString StrRepairInfo = TModelHelper::saveRepairInfoFromTable(ui->tableRepairInfo);
         QueryVar.bindValue(":RepairInfo",StrRepairInfo);
         QueryVar.exec();
 
         for(int i=0;i<ui->tableWidgetSpur->rowCount();i++)
-        {
+{
             SqlStr="UPDATE Symbol SET Show_DT=:Show_DT,SourceConn=:SourceConn,ExecConn=:ExecConn,SourcePrior=:SourcePrior,InterConnect=:InterConnect, Symbol_Desc=:Symbol_Desc WHERE Symbol_ID= "+ui->tableWidgetSpur->item(i,0)->data(Qt::UserRole).toString();
             QueryVar.prepare(SqlStr);
             QueryVar.bindValue(":Show_DT",ui->tableWidgetSpur->item(i,1)->text());
@@ -1276,79 +1211,6 @@ void DialogUnitAttr::on_BtnUnitChoose_clicked() //dataFunc 从器件库中载入
             else if(Symbol.contains("ES2_")) UnitSymbolsView("C:/TBD/SYMB2LIB/"+Symbol+".dwg","C:/TBD/data/TempImage/"+Symbol+".jpg",ui->LbSpurJpg,true);
         }
     }
-    ReplaceMarkToTag();
-}
-
-void DialogUnitAttr::ReplaceMarkToTag()
-{
-    QString TModel=QsciEdit->text();
-    //%**%替换为UnitTag %UnitTag%
-    //除了EquipmentDiagnosePara中定义过的器件，其余替换代号
-    QStringList ListTModel=TModel.split("%");
-    for(int i=0;i<ListTModel.count()-1;i++)
-    {
-        if((i%2)==0) continue;
-        QSqlQuery QuerySearch;
-        QString SqlStr;
-        if(!UnitTypeChanged)
-        {
-            QuerySearch= QSqlQuery(T_ProjectDatabase);
-            SqlStr="SELECT * FROM EquipmentDiagnosePara WHERE Equipment_ID = '"+CurEquipment_ID+"' AND Name = '"+ListTModel.at(i)+"'";
-        }
-        else
-        {
-            QuerySearch= QSqlQuery(T_LibDatabase);
-            SqlStr="SELECT * FROM EquipmentDiagnosePara WHERE Equipment_ID = '"+LibEquipment_ID+"' AND Name = '"+ListTModel.at(i)+"'";
-        }
-        QuerySearch.exec(SqlStr);
-        if(QuerySearch.next())
-        {
-            //if(!UnitTypeChanged) ListTModel[i]=QuerySearch.value("CurValue").toString();
-            //else ListTModel[i]=QuerySearch.value("DefaultValue").toString();
-            continue;
-        }
-        ListTModel[i]=ui->EdUnitTag->text();
-    }
-    TModel="";
-    for(QString StrTModel:ListTModel)
-    {
-        if(TModel!="") TModel+="%";
-        TModel+=StrTModel;
-    }
-    QsciEdit->setText(TModel);
-
-    /*
-    //QString TVariable=QsciEditVariable->text();
-    //%**%替换为UnitTag %UnitTag%
-    //除了EquipmentDiagnosePara中定义过的器件，其余替换代号
-    QStringList ListTVariable=TVariable.split("%");
-    for(int i=0;i<ListTVariable.count()-1;i++)
-    {
-        if((i%2)==0) continue;
-        QSqlQuery QuerySearch;
-        QString SqlStr;
-        if(!UnitTypeChanged)
-        {
-            QuerySearch= QSqlQuery(T_ProjectDatabase);
-            SqlStr="SELECT * FROM EquipmentDiagnosePara WHERE Equipment_ID = '"+CurEquipment_ID+"' AND Name = '"+ListTVariable.at(i)+"'";
-        }
-        else
-        {
-            QuerySearch= QSqlQuery(T_LibDatabase);
-            SqlStr="SELECT * FROM EquipmentDiagnosePara WHERE Equipment_ID = '"+LibEquipment_ID+"' AND Name = '"+ListTVariable.at(i)+"'";
-        }
-        QuerySearch.exec(SqlStr);
-        if(QuerySearch.next()) continue;
-        ListTVariable[i]=ui->EdUnitTag->text();
-    }
-
-    TVariable="";
-    for(QString StrTVariable:ListTVariable)
-    {
-        if(TVariable!="") TVariable+="%";
-        TVariable+=StrTVariable;
-    }
-    QsciEditVariable->setText(TVariable);*/
 }
 
 void DialogUnitAttr::on_EdUnitTag_textChanged(const QString &arg1)
@@ -1361,10 +1223,6 @@ void DialogUnitAttr::on_EdUnitTag_textChanged(const QString &arg1)
     if(QuerySearch.next())
     {
         UpdateUIInfo(QuerySearch);
-    }
-    else
-    {
-        ReplaceMarkToTag();
     }
 }
 
@@ -1392,49 +1250,146 @@ void DialogUnitAttr::on_BtnDeletePara_clicked()
 
 void DialogUnitAttr::on_BtnCompile_clicked()
 {
-    //原来是livingstone的模型，完全不用了，这部分需要完全重写
-    //点击按钮后应弹出对话框，显示当前器件完整的smt描述，包括变量定义、参数定义、正常模式描述、故障模式描述，同时自动把smt描述中器件的模板名称替换为实际的元件代号
-    return;
-
-    ui->tableWidgetStructure->setRowCount(0);
-    //提取Enum
-    QString StrUnitDesc=QsciEdit->text();
-    QStringList ListEnumName,ListEnumTypeName,ListEnumVal,ListIniVal,ListCmdObsVal;
-    qDebug()<<"CompileStructure1";
-    CompileStructure(StrUnitDesc,"",ListEnumName,ListEnumTypeName,ListEnumVal,ListIniVal,ListCmdObsVal);
-    qDebug()<<"CompileStructure1 ok";
-    //添加子器件的enum
-    QStringList SubComponentList=GetSubComponentList(QsciEdit->text());
-    for(QString StrSubComponent:SubComponentList)
-    {
-        QSqlQuery QueryFunctionDefineClass(T_LibDatabase);
-        QString StrSql="SELECT * FROM FunctionDefineClass WHERE TClassName = '"+StrSubComponent.split(",").at(0)+"'";
-        QueryFunctionDefineClass.exec(StrSql);
-        if(QueryFunctionDefineClass.next())
-        {
-            QString SubModuleTModel=QueryFunctionDefineClass.value("TModel").toString();
-            CompileStructure(SubModuleTModel,StrSubComponent.split(",").at(1),ListEnumName,ListEnumTypeName,ListEnumVal,ListIniVal,ListCmdObsVal);
+    // 解析T语言模型
+    TModelParser parser;
+    QString tmodelText = QsciEdit->text();
+    
+    if (!parser.parse(tmodelText)) {
+        QMessageBox::warning(this, "解析失败", "T语言模型解析失败");
+        return;
+    }
+    
+    // 收集常量映射
+    QMap<QString, QString> constants;
+    for (int i = 0; i < ui->tableWidgetStructure->rowCount(); i++) {
+        QString name = ui->tableWidgetStructure->item(i, 0) ? ui->tableWidgetStructure->item(i, 0)->text().trimmed() : "";
+        QString value = ui->tableWidgetStructure->item(i, 1) ? ui->tableWidgetStructure->item(i, 1)->text().trimmed() : "";
+        
+        if (!name.isEmpty()) {
+            constants[name] = value;
         }
     }
-
-    for(int i=0;i<ListEnumName.count();i++)
-    {
-        ui->tableWidgetStructure->setRowCount(ui->tableWidgetStructure->rowCount()+1);
-        ui->tableWidgetStructure->setItem(ui->tableWidgetStructure->rowCount()-1,0,new QTableWidgetItem(ListEnumName.at(i)));
-        ui->tableWidgetStructure->setItem(ui->tableWidgetStructure->rowCount()-1,1,new QTableWidgetItem(ListEnumTypeName.at(i)));
-        QComboBox *CbInitVal=new QComboBox();
-        CbInitVal->addItems(ListEnumVal.at(i).split(","));
-        CbInitVal->setCurrentText(ListIniVal.at(i));
-        ui->tableWidgetStructure->setCellWidget(ui->tableWidgetStructure->rowCount()-1,2,CbInitVal);
-        QComboBox *CbCommandOrObservable=new QComboBox();
-        CbCommandOrObservable->addItems({"Commandable","Observable","undefined","default"});
-        CbCommandOrObservable->setCurrentText(ListCmdObsVal.at(i));
-        ui->tableWidgetStructure->setCellWidget(ui->tableWidgetStructure->rowCount()-1,3,CbCommandOrObservable);
+    
+    // 获取器件名称（用于替换%Name%）
+    QString componentName = ui->EdUnitTag->text().trimmed();
+    if (componentName.isEmpty()) {
+        componentName = "COMPONENT";  // 默认名称
+    }
+    
+    // 编译
+    QString portVars, internalVars, normalMode;
+    QList<TModelParser::FailureMode> failureModes;
+    
+    if (!parser.compile(componentName, constants, portVars, internalVars, normalMode, failureModes)) {
+        QMessageBox::warning(this, "编译失败", "T语言模型编译失败");
+        return;
+    }
+    
+    // 显示编译结果
+    TModelCompileDisplayDialog *displayDialog = new TModelCompileDisplayDialog(this);
+    displayDialog->setCompileResult(portVars, internalVars, normalMode, failureModes);
+    displayDialog->exec();
+    delete displayDialog;
+    
+    // 自动从T语言模型中获取故障模式
+    int addedCount = TModelHelper::autoFillFaultModesFromTModel(ui->tableRepairInfo, tmodelText);
+    if (addedCount > 0) {
+        qDebug() << "自动添加了" << addedCount << "个故障模式";
     }
 }
 
 void DialogUnitAttr::on_BtnValidateTModel_clicked()
 {
+    const QString rawModelText = QsciEdit->text();
+    QString componentName = ui->EdUnitTag->text().trimmed();
+    if (componentName.isEmpty()) {
+        componentName = QStringLiteral("COMPONENT");
+    }
+
+    // 准备校验上下文
+    TModelValidationContext context;
+    context.componentName = componentName;
+
+    QMap<QString, QString> placeholderValues;
+    auto addPlaceholderValue = [&](const QString &name, const QString &value) {
+        const QString trimmedName = name.trimmed();
+        const QString trimmedValue = value.trimmed();
+        if (trimmedName.isEmpty() || trimmedValue.isEmpty())
+            return;
+        placeholderValues.insert(trimmedName, trimmedValue);
+    };
+
+    // 收集常量表格中的常量定义
+    for (int row = 0; row < ui->tableWidgetStructure->rowCount(); ++row) {
+        QTableWidgetItem *nameItem = ui->tableWidgetStructure->item(row, 0);
+        QTableWidgetItem *valueItem = ui->tableWidgetStructure->item(row, 1);
+        if (!nameItem)
+            continue;
+        QString name = nameItem->text().trimmed();
+        QString value = valueItem ? valueItem->text().trimmed() : QString();
+        if (!name.isEmpty()) {
+            context.constants[name] = value;
+        }
+        addPlaceholderValue(nameItem->text(), valueItem ? valueItem->text() : QString());
+    }
+
+    for (int row = 0; row < ui->tableUnitDiagnosePara->rowCount(); ++row) {
+        QTableWidgetItem *nameItem = ui->tableUnitDiagnosePara->item(row, 0);
+        if (!nameItem)
+            continue;
+        const QString currentValue = ui->tableUnitDiagnosePara->item(row, 2)
+                ? ui->tableUnitDiagnosePara->item(row, 2)->text()
+                : QString();
+        QString value = currentValue.trimmed();
+        if (value.isEmpty()) {
+            const QString defaultValue = ui->tableUnitDiagnosePara->item(row, 3)
+                    ? ui->tableUnitDiagnosePara->item(row, 3)->text()
+                    : QString();
+            value = defaultValue.trimmed();
+        }
+        addPlaceholderValue(nameItem->text(), value);
+    }
+    
+    // 收集维修信息表格中的故障模式概率
+    for (int row = 0; row < ui->tableRepairInfo->rowCount(); ++row) {
+        QString faultMode = ui->tableRepairInfo->item(row, 0) ? 
+            ui->tableRepairInfo->item(row, 0)->text().trimmed() : "";
+        QString probability = ui->tableRepairInfo->item(row, 1) ? 
+            ui->tableRepairInfo->item(row, 1)->text().trimmed() : "";
+        
+        if (!faultMode.isEmpty() && !probability.isEmpty()) {
+            context.faultModeProbabilities[faultMode] = probability;
+        }
+    }
+
+    QString preparedModel = TModelParser::replacePlaceholders(rawModelText, componentName, placeholderValues);
+
+    QRegularExpression placeholderPattern(QStringLiteral("%([^%\\s]+)%"));
+    QRegularExpressionMatchIterator placeholderIter = placeholderPattern.globalMatch(preparedModel);
+    QStringList unresolvedPlaceholders;
+    while (placeholderIter.hasNext()) {
+        const QRegularExpressionMatch match = placeholderIter.next();
+        const QString name = match.captured(1).trimmed();
+        if (!name.isEmpty())
+            unresolvedPlaceholders.append(name);
+    }
+    unresolvedPlaceholders.removeDuplicates();
+
+    int syntheticIndex = 0;
+    const QRegularExpression invalidPlaceholderChars(QStringLiteral("[^A-Za-z0-9_]+"));
+    const QRegularExpression leadingUnderscores(QStringLiteral("^_+"));
+    const QRegularExpression trailingUnderscores(QStringLiteral("_+$"));
+    for (const QString &name : unresolvedPlaceholders) {
+        QString sanitized = name;
+        sanitized.replace(invalidPlaceholderChars, QStringLiteral("_"));
+        sanitized.remove(leadingUnderscores);
+        sanitized.remove(trailingUnderscores);
+        if (sanitized.isEmpty())
+            sanitized = QStringLiteral("placeholder");
+        const QString replacement = QStringLiteral("__placeholder_%1_%2__").arg(sanitized).arg(syntheticIndex++);
+        preparedModel.replace(QStringLiteral("%") + name + QStringLiteral("%"), replacement);
+    }
+
     auto makePortKey = [](const QString &functionBlock, const QString &portName) -> QString {
         const QString block = functionBlock.trimmed();
         const QString port = portName.trimmed();
@@ -1516,7 +1471,8 @@ void DialogUnitAttr::on_BtnValidateTModel_clicked()
             ports.append(info);
     }
 
-    TModelCheckService::run(this, QsciEdit->text(), ports);
+    // 执行校验，传递上下文和原始模型文本（不是替换后的）
+    TModelCheckService::run(this, rawModelText, ports, context);
 }
 
 void DialogUnitAttr::on_tableRepairInfo_clicked(const QModelIndex &index)
@@ -1985,5 +1941,279 @@ void DialogUnitAttr::onRemovePortConfig()
         QMessageBox::information(this, "成功", "端口配置已删除");
     } else {
         QMessageBox::warning(this, "失败", "删除端口配置失败：" + query.lastError().text());
+    }
+}
+
+// ===================== 常量管理功能实现 =====================
+
+void DialogUnitAttr::showConstantsContextMenu(const QPoint &pos)
+{
+    QMenu menu(this);
+    
+    // 获取点击位置
+    QModelIndex index = ui->tableWidgetStructure->indexAt(pos);
+    
+    if (index.isValid() && index.column() == 0) {
+        // 在常量名列点击：插入常量名到编辑器
+        QAction *insertAction = menu.addAction("插入常量名到T语言模型");
+        connect(insertAction, &QAction::triggered, this, &DialogUnitAttr::onInsertConstantName);
+        menu.addSeparator();
+    }
+    
+    // 通用菜单项
+    QAction *addAction = menu.addAction("新增");
+    connect(addAction, &QAction::triggered, this, &DialogUnitAttr::onAddConstant);
+    
+    if (ui->tableWidgetStructure->selectionModel()->hasSelection()) {
+        QAction *deleteAction = menu.addAction("删除");
+        connect(deleteAction, &QAction::triggered, this, &DialogUnitAttr::onDeleteConstants);
+    }
+    
+    menu.exec(ui->tableWidgetStructure->viewport()->mapToGlobal(pos));
+}
+
+void DialogUnitAttr::onAddConstant()
+{
+    int row = ui->tableWidgetStructure->rowCount();
+    ui->tableWidgetStructure->insertRow(row);
+    
+    ui->tableWidgetStructure->setItem(row, 0, new QTableWidgetItem(""));  // 常量名
+    ui->tableWidgetStructure->setItem(row, 1, new QTableWidgetItem(""));  // 值
+    ui->tableWidgetStructure->setItem(row, 2, new QTableWidgetItem(""));  // 单位
+    ui->tableWidgetStructure->setItem(row, 3, new QTableWidgetItem(""));  // 备注
+    
+    // 自动进入编辑模式
+    ui->tableWidgetStructure->editItem(ui->tableWidgetStructure->item(row, 0));
+}
+
+void DialogUnitAttr::onDeleteConstants()
+{
+    QList<int> selectedRows;
+    QList<QTableWidgetItem *> selectedItems = ui->tableWidgetStructure->selectedItems();
+    
+    for (QTableWidgetItem *item : selectedItems) {
+        int row = item->row();
+        if (!selectedRows.contains(row)) {
+            selectedRows.append(row);
+        }
+    }
+    
+    if (selectedRows.isEmpty()) {
+        return;
+    }
+    
+    // 排序行号（从大到小，避免删除时索引变化）
+    std::sort(selectedRows.begin(), selectedRows.end(), std::greater<int>());
+    
+    // 如果删除多行，二次确认
+    if (selectedRows.count() > 1) {
+        QMessageBox::StandardButton reply = QMessageBox::question(
+            this, "确认删除", 
+            QString("确定要删除选中的 %1 个常量吗？").arg(selectedRows.count()),
+            QMessageBox::Yes | QMessageBox::No);
+        
+        if (reply != QMessageBox::Yes) {
+            return;
+        }
+    }
+    
+    // 删除选中的行
+    for (int row : selectedRows) {
+        ui->tableWidgetStructure->removeRow(row);
+    }
+}
+
+void DialogUnitAttr::onInsertConstantName()
+{
+    int currentRow = ui->tableWidgetStructure->currentRow();
+    if (currentRow < 0) {
+        return;
+    }
+    
+    QTableWidgetItem *nameItem = ui->tableWidgetStructure->item(currentRow, 0);
+    if (!nameItem) {
+        return;
+    }
+    
+    QString constantName = nameItem->text().trimmed();
+    if (constantName.isEmpty()) {
+        QMessageBox::warning(this, "警告", "常量名为空");
+        return;
+    }
+    
+    // 插入到T语言模型编辑器的光标位置
+    QString textToInsert = "%" + constantName + "%";
+    QsciEdit->insert(textToInsert);
+    QsciEdit->setFocus();
+}
+
+void DialogUnitAttr::loadConstants(const QString &constantsData)
+{
+    ui->tableWidgetStructure->setRowCount(0);
+    
+    if (constantsData.isEmpty()) {
+        return;
+    }
+    
+    // 格式：常量名1,值1,单位1,备注1;常量名2,值2,单位2,备注2;...
+    QStringList constantsList = constantsData.split(";", QString::SkipEmptyParts);
+    
+    for (const QString &constantStr : constantsList) {
+        QStringList parts = constantStr.split(",");
+        if (parts.count() >= 2) {  // 至少需要常量名和值
+            int row = ui->tableWidgetStructure->rowCount();
+            ui->tableWidgetStructure->insertRow(row);
+            
+            ui->tableWidgetStructure->setItem(row, 0, new QTableWidgetItem(parts.at(0)));  // 常量名
+            ui->tableWidgetStructure->setItem(row, 1, new QTableWidgetItem(parts.at(1)));  // 值
+            ui->tableWidgetStructure->setItem(row, 2, new QTableWidgetItem(parts.count() > 2 ? parts.at(2) : ""));  // 单位
+            ui->tableWidgetStructure->setItem(row, 3, new QTableWidgetItem(parts.count() > 3 ? parts.at(3) : ""));  // 备注
+        }
+    }
+}
+
+QString DialogUnitAttr::saveConstants() const
+{
+    QStringList constantsList;
+    
+    for (int i = 0; i < ui->tableWidgetStructure->rowCount(); i++) {
+        QString name = ui->tableWidgetStructure->item(i, 0) ? ui->tableWidgetStructure->item(i, 0)->text().trimmed() : "";
+        QString value = ui->tableWidgetStructure->item(i, 1) ? ui->tableWidgetStructure->item(i, 1)->text().trimmed() : "";
+        QString unit = ui->tableWidgetStructure->item(i, 2) ? ui->tableWidgetStructure->item(i, 2)->text().trimmed() : "";
+        QString remark = ui->tableWidgetStructure->item(i, 3) ? ui->tableWidgetStructure->item(i, 3)->text().trimmed() : "";
+        
+        if (name.isEmpty()) {
+            continue;  // 跳过空常量名
+        }
+        
+        QString constantStr = name + "," + value + "," + unit + "," + remark;
+        constantsList.append(constantStr);
+    }
+    
+    return constantsList.join(";");
+}
+
+bool DialogUnitAttr::validateConstantName(const QString &name, int excludeRow) const
+{
+    if (name.trimmed().isEmpty()) {
+        return false;
+    }
+    
+    // 检查常量名是否重复
+    for (int i = 0; i < ui->tableWidgetStructure->rowCount(); i++) {
+        if (i == excludeRow) {
+            continue;
+        }
+        
+        QTableWidgetItem *item = ui->tableWidgetStructure->item(i, 0);
+        if (item && item->text().trimmed() == name.trimmed()) {
+            return false;  // 重复
+        }
+    }
+    
+    return true;
+}
+
+// ==================== 端口变量更新功能 ====================
+void DialogUnitAttr::on_BtnUpdatePortVars_clicked()
+{
+    // 从tableTerm生成端口变量
+    QString portVars = TModelHelper::generatePortVariablesFromTable(ui->tableTerm);
+    
+    // 获取当前T语言模型文本
+    QString tmodelText = QsciEdit->text();
+    
+    // 更新端口变量部分
+    QString updatedTModel = TModelHelper::updatePortVariablesInTModel(tmodelText, portVars);
+    
+    // 设置回编辑器
+    QsciEdit->setText(updatedTModel);
+    
+    QMessageBox::information(this, "提示", "端口变量已更新");
+}
+
+// ==================== 维修信息右键菜单 ====================
+void DialogUnitAttr::showRepairInfoContextMenu(const QPoint &pos)
+{
+    QMenu menu;
+    QAction *addAction = menu.addAction("新增");
+    QAction *deleteAction = menu.addAction("删除");
+    QAction *autoFillAction = menu.addAction("从T语言中自动获取");
+    
+    connect(addAction, &QAction::triggered, this, &DialogUnitAttr::onAddRepairInfo);
+    connect(deleteAction, &QAction::triggered, this, &DialogUnitAttr::onDeleteRepairInfo);
+    connect(autoFillAction, &QAction::triggered, this, &DialogUnitAttr::onAutoFillFromTModel);
+    
+    menu.exec(ui->tableRepairInfo->viewport()->mapToGlobal(pos));
+}
+
+void DialogUnitAttr::onAddRepairInfo()
+{
+    int row = ui->tableRepairInfo->rowCount();
+    ui->tableRepairInfo->insertRow(row);
+    
+    // 创建空白项
+    for (int col = 0; col < 4; col++) {
+        QTableWidgetItem *item = new QTableWidgetItem("");
+        ui->tableRepairInfo->setItem(row, col, item);
+    }
+    
+    // 选中新行并开始编辑
+    ui->tableRepairInfo->setCurrentCell(row, 0);
+    ui->tableRepairInfo->editItem(ui->tableRepairInfo->item(row, 0));
+}
+
+void DialogUnitAttr::onDeleteRepairInfo()
+{
+    QList<QTableWidgetItem*> selectedItems = ui->tableRepairInfo->selectedItems();
+    if (selectedItems.isEmpty()) {
+        QMessageBox::warning(this, "警告", "请先选择要删除的行");
+        return;
+    }
+    
+    // 获取选中的行号（去重）
+    QSet<int> selectedRows;
+    for (QTableWidgetItem *item : selectedItems) {
+        selectedRows.insert(item->row());
+    }
+    
+    // 如果选中多行，二次确认
+    if (selectedRows.count() > 1) {
+        QMessageBox::StandardButton reply = QMessageBox::question(
+            this, 
+            "确认删除", 
+            QString("确定要删除选中的 %1 行吗？").arg(selectedRows.count()),
+            QMessageBox::Yes | QMessageBox::No
+        );
+        
+        if (reply != QMessageBox::Yes) {
+            return;
+        }
+    }
+    
+    // 从后往前删除（避免行号变化）
+    QList<int> rowList = selectedRows.toList();
+    std::sort(rowList.begin(), rowList.end(), std::greater<int>());
+    
+    for (int row : rowList) {
+        ui->tableRepairInfo->removeRow(row);
+    }
+}
+
+void DialogUnitAttr::onAutoFillFromTModel()
+{
+    QString tmodelText = QsciEdit->text();
+    
+    if (tmodelText.trimmed().isEmpty()) {
+        QMessageBox::information(this, "提示", "T语言模型为空");
+        return;
+    }
+    
+    int addedCount = TModelHelper::autoFillFaultModesFromTModel(ui->tableRepairInfo, tmodelText);
+    
+    if (addedCount > 0) {
+        QMessageBox::information(this, "提示", QString("已添加 %1 个故障模式").arg(addedCount));
+    } else {
+        QMessageBox::information(this, "提示", "没有新的故障模式需要添加");
     }
 }

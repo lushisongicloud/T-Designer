@@ -1,4 +1,5 @@
 #include "BO/function/tmodelvalidator.h"
+#include "BO/function/tmodelparser.h"
 
 #include <QMap>
 #include <QRegularExpression>
@@ -8,13 +9,10 @@ namespace {
 
 QString portKey(const PortInfo &info)
 {
-    const QString block = info.functionBlock.trimmed();
-    const QString port = info.connNum.trimmed();
-    if (port.isEmpty())
-        return QString();
-    if (block.isEmpty())
-        return port;
-    return QString("%1.%2").arg(block, port);
+    // 新规范：变量定义不再包含功能子块名，只使用端号本身。
+    // 若历史数据 functionBlock 不为空且端号未包含该前缀，不在此添加，保持与生成声明格式一致。
+    QString port = info.connNum.trimmed();
+    return port; // 直接返回端号
 }
 
 QString normalizePortToken(const QString &rawPath)
@@ -135,11 +133,85 @@ bool isDirectionAllowed(const PortVariableBinding &binding, const QString &direc
 }
 
 TModelValidationResult TModelValidator::validate(const QString &tmodelText,
-                                                const QList<PortInfo> &ports) const
+                                                const QList<PortInfo> &ports,
+                                                const TModelValidationContext &context) const
 {
     TModelValidationResult result;
+    
+    // 1. 检查器件名称占位符
+    if (!context.componentName.isEmpty()) {
+        // 检查是否使用了%Name%占位符
+        QRegularExpression namePattern(QStringLiteral("%Name%"));
+        if (!namePattern.match(tmodelText).hasMatch()) {
+            result.formatErrors << QString("T语言模型中应使用 %Name% 作为器件名称占位符");
+        }
+        
+        // 检查是否错误地使用了具体器件名称而非占位符
+        if (!context.componentName.isEmpty() && context.componentName != "COMPONENT") {
+            QRegularExpression concreteNamePattern(
+                QString("\\b%1\\.").arg(QRegularExpression::escape(context.componentName)));
+            if (concreteNamePattern.match(tmodelText).hasMatch()) {
+                result.formatErrors << QString("T语言模型中不应直接使用具体器件名称 \"%1\"，请使用 %Name% 占位符")
+                    .arg(context.componentName);
+            }
+        }
+    }
+    
+    // 2. 检查常量定义
+    if (!context.constants.isEmpty()) {
+        // 从T语言模型中提取所有常量占位符
+        QStringList usedConstants = TModelParser::extractConstants(tmodelText);
+        
+        for (const QString &constantName : usedConstants) {
+            if (!context.constants.contains(constantName)) {
+                result.formatErrors << QString("常量 \"%1\" 在T语言模型中使用但未在常量表格中定义")
+                    .arg(constantName);
+            }
+        }
+    }
+    
+    // 4. 检查模型结构完整性
+    TModelParser parser;
+    if (!parser.parse(tmodelText)) {
+        result.formatErrors << QString("T语言模型结构解析失败，无法识别必需的部分标记");
+    } else {
+        // 检查是否有端口变量定义部分
+        QString portVars = parser.getPortVariables();
+        if (portVars.trimmed().isEmpty() && !ports.isEmpty()) {
+            result.warnings << QString("缺少 \";;端口变量定义\" 部分或该部分为空");
+        }
+        
+        // 检查是否有正常模式
+        QString normalMode = parser.getNormalMode();
+        if (normalMode.trimmed().isEmpty()) {
+            result.warnings << QString("缺少 \";;正常模式\" 部分或该部分为空");
+        }
+        
+        // 可选：检查是否有故障模式部分的标记
+        QList<TModelParser::FailureMode> failureModes = parser.getFailureModes();
+        // 故障模式是可选的，所以只是统计
+        if (!failureModes.isEmpty()) {
+            result.hints << QString("检测到 %1 个故障模式").arg(failureModes.size());
+        }
+    }
+    
+    // 5. 检查故障模式概率定义
+    if (!context.faultModeProbabilities.isEmpty()) {
+        TModelParser parser2;
+        if (parser2.parse(tmodelText)) {
+            QList<TModelParser::FailureMode> failureModes = parser2.getFailureModes();
+            for (const TModelParser::FailureMode &fm : failureModes) {
+                if (!fm.name.isEmpty() && !context.faultModeProbabilities.contains(fm.name)) {
+                    result.warnings << QString("故障模式 \"%1\" 的概率未在维修信息表格中定义")
+                        .arg(fm.name);
+                }
+            }
+        }
+    }
+    
+    // 3. 端口变量一致性检查（保留原有逻辑）
     if (ports.isEmpty()) {
-        result.formatErrors << QString("未检测到任何端号，无法执行端口映射校验。");
+        result.formatErrors << QString("未检测到任何端号，无法执行端口映射校验");
         return result;
     }
 
@@ -161,7 +233,7 @@ TModelValidationResult TModelValidator::validate(const QString &tmodelText,
     }
 
     if (bindingMap.isEmpty()) {
-        result.formatErrors << QString("端号字段全部为空，无法生成映射。");
+        result.formatErrors << QString("端号字段全部为空，无法生成映射");
         return result;
     }
 

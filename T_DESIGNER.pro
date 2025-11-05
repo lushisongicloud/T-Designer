@@ -113,7 +113,7 @@ SOURCES += \
     widget/functioneditdialog.cpp \
     widget/portconfigpanel.cpp \
     widget/portconfigeditdialog.cpp \
-    widget/codecheckdialog.cpp \
+    widget/tmodelcompiledisplaydialog.cpp \
     BO/container/containerdata.cpp \
     BO/container/behavioraggregator.cpp \
     BO/behavior/z3simplifier.cpp \
@@ -123,6 +123,8 @@ SOURCES += \
     BO/function/functionanalysisservice.cpp \
     BO/function/SmtSyntaxChecker.cpp \
     BO/function/tmodelcheckservice.cpp \
+    BO/function/tmodelparser.cpp \
+    BO/function/tmodelhelper.cpp \
     BO/test/testdefinition.cpp \
     BO/test/testgeneratorservice.cpp \
     BO/test/diagnosticmatrixbuilder.cpp \
@@ -211,7 +213,7 @@ HEADERS += \
     widget/functioneditdialog.h \
     widget/portconfigpanel.h \
     widget/portconfigeditdialog.h \
-    widget/codecheckdialog.h \
+    widget/tmodelcompiledisplaydialog.h \
     BO/container/containerdata.h \
     BO/container/behavioraggregator.h \
     BO/behavior/z3simplifier.h \
@@ -222,6 +224,8 @@ HEADERS += \
     BO/function/functionanalysisservice.h \
     BO/function/SmtSyntaxChecker.h \
     BO/function/tmodelcheckservice.h \
+    BO/function/tmodelparser.h \
+    BO/function/tmodelhelper.h \
     BO/test/testdefinition.h \
     BO/test/testgeneratorservice.h \
     BO/test/diagnosticmatrixbuilder.h \
