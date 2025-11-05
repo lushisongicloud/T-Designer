@@ -147,6 +147,7 @@ private:
     int resolveContainerId(int equipmentId, bool createIfMissing);
     bool savePortConfig();
     QString getPortVariables(const QString &functionBlock, const QString &portName) const;
+    bool copyPortConfigAndMacrosFromLibrary(const QString &libEquipmentIdStr, int projectEquipmentId);
 };
 
 #endif // DIALOGNEWUNIT_H
