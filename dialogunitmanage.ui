@@ -609,7 +609,7 @@ QScrollBar {
 }</string>
         </property>
         <property name="currentIndex">
-         <number>4</number>
+         <number>0</number>
         </property>
         <widget class="QWidget" name="tab">
          <property name="sizePolicy">
@@ -1958,6 +1958,13 @@ QDoubleSpinBox{
               <number>0</number>
              </property>
              <item>
+              <widget class="QPushButton" name="BtnUpdatePortVars">
+               <property name="text">
+                <string>更新端口变量</string>
+               </property>
+              </widget>
+             </item>
+             <item>
               <widget class="QPushButton" name="BtnCheck">
                <property name="text">
                 <string>校验</string>
@@ -2234,12 +2241,12 @@ background-color: rgba(19, 67, 79, 1);
             </attribute>
             <column>
              <property name="text">
-              <string>名称</string>
+              <string>故障模式</string>
              </property>
             </column>
             <column>
              <property name="text">
-              <string>故障模式</string>
+              <string>故障概率</string>
              </property>
             </column>
             <column>

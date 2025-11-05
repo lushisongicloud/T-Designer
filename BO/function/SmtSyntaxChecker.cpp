@@ -4,6 +4,7 @@
 #include <QRegularExpression>
 #include <QStringList>
 #include <QtGlobal>
+#include <QDebug>
 
 #include <z3++.h>
 
@@ -63,6 +64,70 @@ SmtSyntaxChecker::CheckResult buildFailureResult(const QString &rawMessage)
 }
 } // namespace
 
+// 预扫描：括号与占位符
+static QStringList preflightScan(const QString &script)
+{
+    QStringList hints;
+    int line = 1;
+    int column = 0; // 我们在发现错误时+1补偿为人类列号
+    struct ParenInfo { QChar ch; int line; int col; };
+    QVector<ParenInfo> stack;
+    auto pushParen = [&](QChar ch){ stack.push_back({ch, line, column+1}); };
+    auto popParen = [&](QChar ch){
+        if (stack.isEmpty()) {
+            hints << QString("预扫描: 在 %1:%2 发现多余的右括号 '%3'").arg(line).arg(column+1).arg(ch);
+            return;
+        }
+        ParenInfo top = stack.last();
+        if ((top.ch == '(' && ch == ')') || (top.ch == '[' && ch == ']')) {
+            stack.pop_back();
+        } else {
+            hints << QString("预扫描: 在 %1:%2 发现不匹配的右括号 '%3' (与 %4:%5 '%6')")
+                        .arg(line).arg(column+1).arg(ch)
+                        .arg(top.line).arg(top.col).arg(top.ch);
+            stack.pop_back();
+        }
+    };
+
+    for (int i=0;i<script.size();++i) {
+        QChar c = script.at(i);
+        if (c == '\n') { line++; column = 0; continue; }
+        column++;
+        if (c == '(' || c == '[') pushParen(c);
+        else if (c == ')' || c == ']') popParen(c);
+    }
+    for (const ParenInfo &pi : stack) {
+        hints << QString("预扫描: 未闭合的左括号 '%1' (位置 %2:%3)").arg(pi.ch).arg(pi.line).arg(pi.col);
+    }
+
+    // 剩余占位符（未被替换的 %CONST%）
+    static const QRegularExpression placeholderRe(QStringLiteral("%[A-Za-z_][A-Za-z0-9_]*%"));
+    QSet<QString> placeholders;
+    auto it = placeholderRe.globalMatch(script);
+    while (it.hasNext()) {
+        const QRegularExpressionMatch m = it.next();
+        placeholders.insert(m.captured());
+    }
+    if (!placeholders.isEmpty()) {
+        hints << QString("预扫描: 检测到未替换占位符: %1").arg(QStringList(placeholders.values()).join(", "));
+    }
+    return hints;
+}
+
+static void debugDumpScript(const QString &script)
+{
+    // 控制输出长度，避免刷屏
+    const int maxLines = 400; // 足够调试
+    QStringList lines = script.split('\n');
+    qDebug() << "[SmtSyntaxChecker] 最终传入 Z3 的脚本 (行数=" << lines.size() << ")";
+    for (int i=0;i<lines.size() && i<maxLines; ++i) {
+        qDebug().noquote() << QString("%1 | %2").arg(i+1, 4).arg(lines.at(i));
+    }
+    if (lines.size() > maxLines) {
+        qDebug() << "[SmtSyntaxChecker] ... 截断后续";
+    }
+}
+
 SmtSyntaxChecker::CheckResult SmtSyntaxChecker::check(const QString &smtText) const
 {
     CheckResult result;
@@ -72,6 +137,16 @@ SmtSyntaxChecker::CheckResult SmtSyntaxChecker::check(const QString &smtText) co
         result.success = true;
         return result;
     }
+
+    // 预扫描（不影响是否调用 Z3，仅提供附加提示）
+    const QStringList preflightHints = preflightScan(script);
+    if (!preflightHints.isEmpty()) {
+        // 将预扫描提示合并到最终错误信息中（仅在出现语法错误时显示）
+        result.errorMessage = preflightHints.join("\n"); // 暂存，可被后续覆盖
+    }
+
+    // 调试输出完整脚本
+    debugDumpScript(script);
 
     g_syntaxErrorTriggered = false;
     g_syntaxErrorMessage.clear();
@@ -84,11 +159,19 @@ SmtSyntaxChecker::CheckResult SmtSyntaxChecker::check(const QString &smtText) co
         solver.from_string(utf8.constData());
     } catch (const z3::exception &ex) {
         const QString message = QString::fromUtf8(ex.msg());
-        return buildFailureResult(message.isEmpty() ? g_syntaxErrorMessage : message);
+        QString primary = message.isEmpty() ? g_syntaxErrorMessage : message;
+        if (!result.errorMessage.isEmpty()) {
+            primary.append("\n" + result.errorMessage); // 追加预扫描提示
+        }
+        return buildFailureResult(primary);
     }
 
     if (g_syntaxErrorTriggered) {
-        return buildFailureResult(g_syntaxErrorMessage);
+        QString primary = g_syntaxErrorMessage;
+        if (!result.errorMessage.isEmpty()) {
+            primary.append("\n" + result.errorMessage);
+        }
+        return buildFailureResult(primary);
     }
 
     result.success = true;

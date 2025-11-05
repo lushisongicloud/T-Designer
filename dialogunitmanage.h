@@ -26,6 +26,7 @@
 #include "bqgraphicsscene.h"
 #include "dialogtag.h"
 #include "widget/codecheckdialog.h"
+#include "BO/function/tmodelparser.h"
 
 extern QSqlDatabase  T_Database;
 
@@ -140,9 +141,19 @@ private slots:
 
     void on_CbAllSourceConn_clicked();
 
+    void on_BtnUpdatePortVars_clicked();
+
     void on_BtnCompile_clicked();
 
     void on_tableRepairInfo_clicked(const QModelIndex &index);
+
+    void showRepairInfoContextMenu(const QPoint &pos);
+
+    void onAddRepairInfo();
+
+    void onDeleteRepairInfo();
+
+    void onAutoFillFromTModel();
 
     void on_TextEdRepairPlan_textChanged();
 
@@ -194,8 +205,20 @@ private slots:
 
     void on_BtnCheck_clicked();
 
+    void showConstantsContextMenu(const QPoint &pos);
+
+    void onAddConstant();
+
+    void onDeleteConstants();
+
+    void onInsertConstantName();
+
 private:
     void performTModelValidation();
+    //void setupConstantsTable();
+    void loadConstants(const QString &constantsData);
+    QString saveConstants() const;
+    bool validateConstantName(const QString &name, int excludeRow = -1) const;
     Ui::DialogUnitManage *ui;
     unsigned char CurUnitImageIndex=0;
     QString CurImgPath;

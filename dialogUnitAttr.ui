@@ -1150,6 +1150,13 @@ color: rgb(255, 255, 255);
            </property>
            <layout class="QHBoxLayout" name="horizontalLayout_2">
             <item>
+             <widget class="QPushButton" name="BtnUpdatePortVars">
+              <property name="text">
+               <string>更新端口变量</string>
+              </property>
+             </widget>
+            </item>
+            <item>
              <widget class="QPushButton" name="BtnValidateTModel">
               <property name="text">
                <string>校验</string>
@@ -1230,12 +1237,12 @@ color: rgb(255, 255, 255);
          </attribute>
          <column>
           <property name="text">
-           <string>名称</string>
+           <string>故障模式</string>
           </property>
          </column>
          <column>
           <property name="text">
-           <string>故障模式</string>
+           <string>故障概率</string>
           </property>
          </column>
          <column>

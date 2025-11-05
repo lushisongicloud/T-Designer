@@ -10,6 +10,7 @@
 #include <Qsci/qsciapis.h>
 #include "qscilexercppattach.h"
 #include "dialogtag.h"
+#include "BO/function/tmodelparser.h"
 namespace Ui {
 class DialogUnitAttr;
 }
@@ -28,7 +29,6 @@ public:
     void UpdateUIInfo(QSqlQuery QueryEquipment);
     void InitTEdit();
     void LoadDiagnoseParameter();
-    void ReplaceMarkToTag();
     void ReloadLib();
     DialogPageNameSet dlgPageNameSet;
     QString StrProTag,CurEquipment_ID,LibEquipment_ID;
@@ -57,11 +57,21 @@ private slots:
 
     void on_BtnDeletePara_clicked();
 
+    void on_BtnUpdatePortVars_clicked();
+
     void on_BtnCompile_clicked();
 
     void on_BtnValidateTModel_clicked();
 
     void on_tableRepairInfo_clicked(const QModelIndex &index);
+
+    void showRepairInfoContextMenu(const QPoint &pos);
+
+    void onAddRepairInfo();
+
+    void onDeleteRepairInfo();
+
+    void onAutoFillFromTModel();
 
     void on_TextEdRepairPlan_textChanged();
 
@@ -104,6 +114,19 @@ private slots:
     void on_BtnSaveTerm_clicked();
 
     void fillUnitPicTable(const QString &picture, const QString &supplier);
+
+    void showConstantsContextMenu(const QPoint &pos);
+
+    void onAddConstant();
+
+    void onDeleteConstants();
+
+    void onInsertConstantName();
+
+    //void setupConstantsTable();
+    void loadConstants(const QString &constantsData);
+    QString saveConstants() const;
+    bool validateConstantName(const QString &name, int excludeRow = -1) const;
 
 signals:
     void UpdateProjectUnits();
