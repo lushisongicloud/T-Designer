@@ -2606,6 +2606,13 @@ QDoubleSpinBox{
           </property>
          </widget>
         </item>
+        <item>
+         <widget class="QPushButton" name="BtnBatchAutoGenerate">
+          <property name="text">
+           <string>批量自动编写</string>
+          </property>
+         </widget>
+        </item>
        </layout>
       </widget>
       <widget class="QWidget" name="layoutWidget2">

@@ -216,6 +216,8 @@ private slots:
 
     void onInsertConstantName();
 
+    void on_BtnBatchAutoGenerate_clicked();
+
 private:
     void performTModelValidation();
     //void setupConstantsTable();

@@ -70,22 +70,16 @@ void TModelAutoGenerator::startAutoGeneration()
     loadComponents();
 
     if (m_components.isEmpty()) {
-        QMessageBox::information(nullptr, "提示", "没有需要处理的器件");
+        logMessage("没有需要处理的器件。");
         emit finished();
         return;
     }
 
-    // 创建并显示对话框
-    m_dialog = new AiModelGeneratorDialog();
-    m_dialog->setWindowModality(Qt::NonModal);
-    m_dialog->show();
-
     logMessage(QString("开始自动生成，共 %1 个器件").arg(m_components.size()));
-    // 端口列表预览：在第一阶段请求前先向对话框展示第一个器件的端口列表，方便用户确认
-    if (m_dialog && !m_components.isEmpty()) {
+    if (!m_components.isEmpty()) {
         const ComponentInfo &first = m_components.first();
         QString preview = buildPortListPreview(first);
-        m_dialog->appendInput("=== 端口列表预览 ===\n" + preview + "\n");
+        logMessage("=== 端口列表预览 ===\n" + preview + "\n");
     }
 
     // 开始处理第一个组件

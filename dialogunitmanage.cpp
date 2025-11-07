@@ -2309,26 +2309,12 @@ void DialogUnitManage::on_BtnAutoGenerate_clicked()
     // 检查 API Key
     QString apiKey = qEnvironmentVariable("DEEPSEEK_API_KEY");
     if (apiKey.isEmpty()) {
-        QMessageBox::warning(this, "配置错误", 
-            "未设置 DEEPSEEK_API_KEY 环境变量。\n\n"
-            "请在系统环境变量（用户变量）中设置 DEEPSEEK_API_KEY，然后重启应用程序。");
+        qWarning().noquote() << "[AutoGenerate] DEEPSEEK_API_KEY 未设置，已跳过自动生成。";
         return;
     }
     
-    // 确认对话框
-    QMessageBox::StandardButton reply = QMessageBox::question(this, "确认", 
-        "此操作将使用 DeepSeek AI 为器件库中的器件自动生成 T 语言模型。\n\n"
-        "注意:\n"
-        "1. 会跳过没有端口定义或没有描述信息的器件\n"
-        "2. 自动设置端口类型并生成模型\n"
-        "3. 每个器件最多尝试 3 次\n"
-        "4. 会生成日志文件记录处理过程\n\n"
-        "是否继续？",
-        QMessageBox::Yes | QMessageBox::No);
-    
-    if (reply != QMessageBox::Yes) {
-        return;
-    }
+    qInfo().noquote() << "[AutoGenerate] 启动自动生成流程："
+                      << "跳过无端口/无描述器件，最多重试 3 次，日志输出请参阅 generator。";
     
     // 创建生成器并启动：优先使用当前选中器件的 Equipment_ID（单器件模式）
     int selectedId = CurEquipment_ID.isEmpty() ? 0 : CurEquipment_ID.toInt();
@@ -2351,12 +2337,12 @@ void DialogUnitManage::on_BtnAutoGenerate_clicked()
         generator = new TModelAutoGenerator(T_LibDatabase, this); // 回退到批量模式
     }
     connect(generator, &TModelAutoGenerator::finished, [this, generator]() {
-        QMessageBox::information(this, "完成", "T 语言模型自动生成已完成，请查看日志文件了解详情。");
+        qInfo().noquote() << "[AutoGenerate] 自动生成流程完成，详细请查看日志。";
         generator->deleteLater();
     });
     
     generator->startAutoGeneration();
-    on_tableWidgetUnit_clicked(ui->tableWidgetUnit->currentIndex());
+    //on_tableWidgetUnit_clicked(ui->tableWidgetUnit->currentIndex());
 }
 
 void DialogUnitManage::performTModelValidation()
@@ -3386,7 +3372,6 @@ void DialogUnitManage::onAutoFillFromTModel()
         QMessageBox::information(this, "提示", "没有新的故障模式需要添加");
     }
 }
-
 
 void DialogUnitManage::on_BtnBatchAutoGenerate_clicked()
 {
