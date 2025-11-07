@@ -27,6 +27,8 @@ struct PortTypeConfig {
     QString connectMacro;   // electric-connect / hydraulic-connect / mechanical-connect
 };
 
+class DialogUnitManage; // 前向声明以避免循环包含
+
 class TModelAutoGenerator : public QObject
 {
     Q_OBJECT
@@ -67,10 +69,11 @@ private:
     static const int MAX_RETRIES = 3;
     
     enum ProcessStage {
-        Stage_PortType,         // 识别端口类型
-        Stage_InternalVars,     // 生成内部变量定义
-        Stage_NormalMode,       // 生成正常模式
-        Stage_FailureMode       // 生成故障模式
+        Stage_PortType,         // 第一步：仅端口类型识别
+        Stage_InternalVars,     // 保留旧阶段（兼容）
+        Stage_NormalMode,       // 保留旧阶段（兼容）
+        Stage_FailureMode,      // 保留旧阶段（兼容）
+        Stage_ModelFull         // 第二步：一次性生成 常量定义 + 内部变量定义 + 正常模式 + 故障模式
     };
     ProcessStage m_currentStage;
     
@@ -90,13 +93,15 @@ private:
     
     // 阶段处理
     void startPortTypeIdentification();
-    void startInternalVarsGeneration();
-    void startNormalModeGeneration();
-    void startFailureModeGeneration();
+    void startInternalVarsGeneration(); // 旧流程兼容
+    void startNormalModeGeneration();   // 旧流程兼容
+    void startFailureModeGeneration();  // 旧流程兼容
+    void startModelGeneration();        // 新：第二步一次性生成模型
     
     // 保存与校验
     bool savePortConfigs(int equipmentId);
     bool saveTModel(int equipmentId, const QString &tmodel);
+    bool saveFullModel(int equipmentId, const QString &tmodel, const QMap<QString, QString> &constantsMap); // 新：同时保存常量与完整模型到 Equipment
     bool validateTModel(int equipmentId, const QString &tmodel, QString &errorMsg);
     
     // 提示词生成（保持与实现文件同步，若新增阶段请在此处添加声明）
@@ -104,10 +109,18 @@ private:
     QString buildInternalVarsPrompt(const ComponentInfo &comp);
     QString buildNormalModePrompt(const ComponentInfo &comp);
     QString buildFailureModePrompt(const ComponentInfo &comp);
-    QString buildSystemPrompt();
+    QString buildSystemPrompt(); // 旧：端口类型阶段继续复用，已裁剪为仅端口类型内容
+    QString buildModelSystemPrompt();   // 新：模型生成阶段系统提示
+    QString buildModelUserPrompt(const ComponentInfo &comp, const QString &portVarsDef);
     
     // 解析输出
     bool parsePortTypeResponse(const QString &output);
+    bool parseModelFullResponse(const QString &output, QString &constantsJson, QString &modelBody);
+    QString buildPortVarsSection(const ComponentInfo &comp) const; // 从 m_portConfigs 构造 ";;端口变量定义" 部分（不含末尾空行）
+    QString extractPortVarsFromDialog() const; // 如果提供了 DialogUnitManage 指针，则从其 QsciEdit 中抽取端口变量定义
+    // JSON 提取兼容：支持裸 JSON、```json fenced、``` fenced、'''json、''' 包裹形式及混杂文本
+    bool findFirstJson(const QString &text, QString &jsonOut, int &endPos) const; // 解析首个对象或数组，返回结束位置（结束字符后一个索引）
+    QString stripFenceWrappers(const QString &text) const; // 去除反引号或单引号围栏
     
     // 辅助函数
     void logMessage(const QString &msg);
@@ -125,6 +138,18 @@ private:
 
 public: // 仅暴露轻量配置接口
     void setPreloadedPorts(const QList<QPair<QString, QString>> &ports) { m_preloadedPorts = ports; }
+    void setUnitManageDialog(DialogUnitManage *dlg) { m_unitManageDialog = dlg; }
+
+signals:
+    void constantsExtracted(const QMap<QString, QString> &constants); // 第二步解析出的常量
+    void modelGenerated(const QString &tmodel); // 完整 T 模型文本（含端口变量定义）
+
+private:
+    DialogUnitManage *m_unitManageDialog = nullptr; // 可选：用于调用 on_BtnUpdatePortVars_clicked 及抽取端口变量
+    bool m_isFinished = false; // 防止对象结束后仍接收网络事件
+
+    QString serializeConstants(const QMap<QString, QString> &constantsMap) const; // name,value,unit,remark; 单元与备注为空
+    QString deduplicateLines(const QString &text) const; // 去重端口变量重复声明
 };
 
 #endif // TMODEAUTOGENERATOR_H
