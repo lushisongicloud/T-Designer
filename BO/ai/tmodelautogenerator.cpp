@@ -398,6 +398,8 @@ void TModelAutoGenerator::onResponseComplete(const QString &reasoning, const QSt
                 }
             }
         }
+        // 规范化常量（科学计数法与布尔）
+        normalizeConstantsMap(constantsMap);
         emit constantsExtracted(constantsMap);
         QString portVarsDef = buildPortVarsSection(comp);
         portVarsDef = deduplicateLines(portVarsDef); // 去重
@@ -406,6 +408,11 @@ void TModelAutoGenerator::onResponseComplete(const QString &reasoning, const QSt
         if (validateTModel(comp.equipmentId, fullTModel, errorMsg)) {
             if (saveFullModel(comp.equipmentId, fullTModel, constantsMap)) { logMessage("完整 T 模型与常量保存成功"); emit modelGenerated(fullTModel); }
             else { logMessage("完整 T 模型保存失败"); }
+            // 刷新 UI 器件信息
+            if (m_unitManageDialog) {
+                QMetaObject::invokeMethod(m_unitManageDialog, "on_tableWidgetUnit_clicked", Qt::QueuedConnection,
+                                          Q_ARG(QModelIndex, m_unitManageDialog->findChild<QTableView*>("tableWidgetUnit") ? m_unitManageDialog->findChild<QTableView*>("tableWidgetUnit")->currentIndex() : QModelIndex()));
+            }
             moveToNextComponent();
         } else {
             logMessage("完整 T 模型校验失败: " + errorMsg);
@@ -527,6 +534,11 @@ bool TModelAutoGenerator::savePortConfigs(int equipmentId)
             continue;
         }
 
+        // 标准化变量集合：拆分后独立存储 JSON 数组
+        QStringList varList = config.variables.split(QRegExp("[,;，；]"), QString::SkipEmptyParts);
+        QJsonArray varArray; for (QString v : varList) { v = v.trimmed(); if (!v.isEmpty()) { QJsonObject o; o["name"] = v; varArray.append(o); } }
+        QString variablesJson = QString::fromUtf8(QJsonDocument(varArray).toJson(QJsonDocument::Compact));
+
         if (query.next()) {
             // 更新
             int portConfigId = query.value(0).toInt();
@@ -535,7 +547,7 @@ bool TModelAutoGenerator::savePortConfigs(int equipmentId)
                 "WHERE port_config_id = ?"
             );
             query.addBindValue(config.portType);
-            query.addBindValue(QString("[{\"name\":\"%1\"}]").arg(config.variables));
+            query.addBindValue(variablesJson);
             query.addBindValue(config.connectMacro);
             query.addBindValue(portConfigId);
         } else {
@@ -549,7 +561,7 @@ bool TModelAutoGenerator::savePortConfigs(int equipmentId)
             query.addBindValue(config.functionBlock);
             query.addBindValue(config.portName);
             query.addBindValue(config.portType);
-            query.addBindValue(QString("[{\"name\":\"%1\"}]").arg(config.variables));
+            query.addBindValue(variablesJson);
             query.addBindValue(config.connectMacro);
         }
 
@@ -850,6 +862,34 @@ bool TModelAutoGenerator::saveFullModel(int equipmentId, const QString &tmodel, 
     return true;
 }
 
+QString TModelAutoGenerator::normalizeConstantValue(const QString &value) const
+{
+    QString v = value.trimmed();
+    if (v.compare("true", Qt::CaseInsensitive)==0) return "true";
+    if (v.compare("false", Qt::CaseInsensitive)==0) return "false";
+    // 科学计数法匹配：可含正负号与小数点
+    static QRegularExpression sciRe("^[+-]?(?:\\d+\\.?\\d*|\\d*\\.?\\d+)[eE][+-]?\\d+$");
+    if (sciRe.match(v).hasMatch()) {
+        bool ok=false; double d = v.toDouble(&ok);
+        if (ok) {
+            // 使用最大精度避免科学计数法，再去除尾部多余0
+            QString plain = QString::number(d, 'f', 15); // 15位小数
+            // 去除多余尾随0与可能的点
+            while (plain.contains('.') && plain.endsWith('0')) plain.chop(1);
+            if (plain.endsWith('.')) plain.chop(1);
+            return plain;
+        }
+    }
+    return v;
+}
+
+void TModelAutoGenerator::normalizeConstantsMap(QMap<QString, QString> &map) const
+{
+    for (auto it = map.begin(); it != map.end(); ++it) {
+        it.value() = normalizeConstantValue(it.value());
+    }
+}
+
 QString TModelAutoGenerator::stripFenceWrappers(const QString &text) const
 {
     QString t=text.trimmed();
@@ -1061,12 +1101,19 @@ void TModelAutoGenerator::loadExistingPortTypes(int equipmentId)
             cfg.functionBlock = q.value(0).toString();
             cfg.portName = q.value(1).toString();
             cfg.portType = q.value(2).toString();
-            // 变量回填：如果库里有变量结构，则简单拼接 name 字段；否则用默认变量集合
+            // 变量回填：解析数组，兼容旧格式单条包含逗号的情况
             const QString varsJson = q.value(3).toString();
             if (!varsJson.trimmed().isEmpty()) {
                 QJsonDocument doc = QJsonDocument::fromJson(varsJson.toUtf8());
                 if (doc.isArray()) {
-                    QStringList varNames; for (auto v : doc.array()) if (v.isObject()) varNames << v.toObject().value("name").toString();
+                    QStringList varNames;
+                    for (auto v : doc.array()) if (v.isObject()) {
+                        QString nm = v.toObject().value("name").toString().trimmed();
+                        if (nm.contains(',')) {
+                            QStringList parts = nm.split(QRegExp("[,;，；]"), QString::SkipEmptyParts);
+                            for (QString p : parts) { p = p.trimmed(); if (!p.isEmpty()) varNames << p; }
+                        } else if (!nm.isEmpty()) varNames << nm;
+                    }
                     cfg.variables = varNames.join(",");
                 }
             }

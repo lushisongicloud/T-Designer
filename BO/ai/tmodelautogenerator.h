@@ -150,6 +150,8 @@ private:
 
     QString serializeConstants(const QMap<QString, QString> &constantsMap) const; // name,value,unit,remark; 单元与备注为空
     QString deduplicateLines(const QString &text) const; // 去重端口变量重复声明
+    QString normalizeConstantValue(const QString &value) const; // 科学计数法与布尔转化
+    void normalizeConstantsMap(QMap<QString, QString> &map) const; // 批量规范化
 };
 
 #endif // TMODEAUTOGENERATOR_H

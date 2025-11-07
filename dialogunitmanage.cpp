@@ -2356,6 +2356,7 @@ void DialogUnitManage::on_BtnAutoGenerate_clicked()
     });
     
     generator->startAutoGeneration();
+    on_tableWidgetUnit_clicked(ui->tableWidgetUnit->currentIndex());
 }
 
 void DialogUnitManage::performTModelValidation()
@@ -3386,3 +3387,8 @@ void DialogUnitManage::onAutoFillFromTModel()
     }
 }
 
+
+void DialogUnitManage::on_BtnBatchAutoGenerate_clicked()
+{
+
+}
