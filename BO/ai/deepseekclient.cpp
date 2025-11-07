@@ -208,7 +208,7 @@ void DeepSeekClient::processStreamLine(const QString &line)
 QJsonObject DeepSeekClient::buildRequestBody(const QString &systemPrompt, const QString &userMessage, bool stream)
 {
     QJsonObject body;
-    body["model"] = "deepseek-reasoner";
+    body["model"] = "deepseek-chat";
     body["stream"] = stream;
     
     QJsonArray messages;

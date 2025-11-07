@@ -2,6 +2,8 @@
 #include "widget/aimodelgeneratordialog.h"
 #include "BO/function/tmodelparser.h"
 #include "widget/codecheckdialog.h"
+#include "BO/containerrepository.h"
+#include "widget/containerhierarchyutils.h"
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QMessageBox>
@@ -511,6 +513,18 @@ bool TModelAutoGenerator::parsePortTypeResponse(const QString &output)
     QJsonArray ports = obj["ports"].toArray();
     m_portConfigs.clear();
     
+    // 预加载端口用于匹配映射（优先按端号/portName）
+    auto canonical = [](const QString &s) {
+        QString r; r.reserve(s.size());
+        for (QChar c : s) if (c.isLetterOrNumber()) r.append(c.toLower());
+        return r;
+    };
+    // 建立 portName -> functionBlock 列表
+    QMultiMap<QString, QString> preloadedByPort;
+    for (const auto &p : m_preloadedPorts) {
+        preloadedByPort.insert(p.second.trimmed().toLower(), p.first.trimmed());
+    }
+
     for (const QJsonValue &val : ports) {
         if (!val.isObject()) continue;
         
@@ -523,14 +537,36 @@ bool TModelAutoGenerator::parsePortTypeResponse(const QString &output)
             continue;
         }
         
+        // 尝试根据端号匹配实际功能子块（忽略 AI 可能的笔误）
+        QString resolvedFuncBlock = funcBlock;
+        const QString portKeyLower = portName.toLower();
+        const auto candidates = preloadedByPort.values(portKeyLower);
+        if (!candidates.isEmpty()) {
+            if (candidates.size() == 1) {
+                resolvedFuncBlock = candidates.first();
+            } else {
+                // 多个候选时按与 AI 给出的 funcBlock 的规范化接近度挑选
+                QString aiCan = canonical(funcBlock);
+                int bestDist = INT_MAX; QString best;
+                for (const QString &cand : candidates) {
+                    QString candCan = canonical(cand);
+                    // 简易距离：长度差 + 前缀差异
+                    int dist = qAbs(candCan.size() - aiCan.size());
+                    for (int i=0;i<qMin(candCan.size(), aiCan.size()); ++i) if (candCan[i]!=aiCan[i]) { dist++; if (dist>bestDist) break; }
+                    if (dist < bestDist) { bestDist = dist; best = cand; }
+                }
+                if (!best.isEmpty()) resolvedFuncBlock = best;
+            }
+        }
+
         PortTypeConfig config;
-        config.functionBlock = funcBlock;
+        config.functionBlock = resolvedFuncBlock;
         config.portName = portName;
         config.portType = portType;
         config.variables = getDefaultVariables(portType);
         config.connectMacro = getDefaultMacro(portType);
         
-        QString key = funcBlock + "." + portName;
+        QString key = resolvedFuncBlock + "." + portName;
         m_portConfigs[key] = config;
     }
     
@@ -664,36 +700,19 @@ void TModelAutoGenerator::finishGeneration()
 
 int TModelAutoGenerator::resolveContainerId(int equipmentId, bool createIfMissing)
 {
-    QSqlQuery query(m_db);
-    
-    // 查询是否已存在
-    query.prepare(
-        "SELECT container_id FROM component_container "
-        "WHERE entity_type = 'equipment_template' AND entity_id = ?"
-    );
-    query.addBindValue(equipmentId);
-    
-    if (query.exec() && query.next()) {
-        return query.value(0).toInt();
-    }
-    
-    if (!createIfMissing) {
+    // 复用系统统一的 ContainerRepository + ContainerHierarchy 逻辑，避免手写 SQL 导致列/结构不匹配
+    ContainerRepository repo(m_db);
+    if (!repo.ensureTables()) {
+        qWarning() << "ensureTables failed";
         return 0;
     }
-    
-    // 创建新容器
-    query.prepare(
-        "INSERT INTO component_container (entity_type, entity_id, container_level) "
-        "VALUES ('equipment_template', ?, 'component')"
-    );
-    query.addBindValue(equipmentId);
-    
-    if (!query.exec()) {
-        qWarning() << "创建容器失败:" << query.lastError();
-        return 0;
+    int existing = repo.componentContainerIdForEquipment(equipmentId);
+    if (existing != 0 || !createIfMissing) return existing;
+    int created = ContainerHierarchy::ensureComponentContainer(repo, m_db, equipmentId);
+    if (created == 0) {
+        qWarning() << "ensureComponentContainer failed for equipment" << equipmentId;
     }
-    
-    return query.lastInsertId().toInt();
+    return created;
 }
 
 QString TModelAutoGenerator::getDefaultVariables(const QString &portType)
