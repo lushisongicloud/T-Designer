@@ -31,7 +31,7 @@ TModelAutoGenerator::TModelAutoGenerator(const QSqlDatabase &db, QObject *parent
     connect(m_deepseekClient, &DeepSeekClient::contentDelta, this, &TModelAutoGenerator::onContentDelta);
     connect(m_deepseekClient, &DeepSeekClient::responseComplete, this, &TModelAutoGenerator::onResponseComplete);
     connect(m_deepseekClient, &DeepSeekClient::errorOccurred, this, &TModelAutoGenerator::onErrorOccurred);
-    
+
     // 从环境变量获取 API Key
     QString apiKey = qEnvironmentVariable("DEEPSEEK_API_KEY");
     if (apiKey.isEmpty()) {
@@ -61,21 +61,21 @@ void TModelAutoGenerator::startAutoGeneration()
 {
     // 初始化日志
     initLogFile();
-    
+
     // 加载组件
     loadComponents();
-    
+
     if (m_components.isEmpty()) {
         QMessageBox::information(nullptr, "提示", "没有需要处理的器件");
         emit finished();
         return;
     }
-    
+
     // 创建并显示对话框
     m_dialog = new AiModelGeneratorDialog();
     m_dialog->setWindowModality(Qt::NonModal);
     m_dialog->show();
-    
+
     logMessage(QString("开始自动生成，共 %1 个器件").arg(m_components.size()));
     // 端口列表预览：在第一阶段请求前先向对话框展示第一个器件的端口列表，方便用户确认
     if (m_dialog && !m_components.isEmpty()) {
@@ -93,7 +93,7 @@ void TModelAutoGenerator::initLogFile()
 {
     QString logPath = QString("tmodel_auto_gen_%1.log")
         .arg(QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss"));
-    
+
     m_logFile = new QFile(logPath);
     if (m_logFile->open(QIODevice::WriteOnly | QIODevice::Text)) {
         m_logStream = new QTextStream(m_logFile);
@@ -222,20 +222,20 @@ void TModelAutoGenerator::processNextComponent()
         finishGeneration();
         return;
     }
-    
+
     const ComponentInfo &comp = m_components[m_currentIndex];
-    
+
     if (m_dialog) {
         m_dialog->clearAll();
         m_dialog->setCurrentComponent(comp.code, m_currentIndex + 1, m_components.size());
     }
-    
+
     logMessage(QString("\n========== 处理器件 [%1/%2]: %3 (%4) ==========")
         .arg(m_currentIndex + 1)
         .arg(m_components.size())
         .arg(comp.code)
         .arg(comp.name));
-    
+
     // 重置状态
     m_retryCount = 0;
     m_currentStage = Stage_PortType;
@@ -243,7 +243,7 @@ void TModelAutoGenerator::processNextComponent()
     m_internalVarsDef.clear();
     m_normalModeDef.clear();
     m_failureModeDef.clear();
-    
+
     // 开始第一阶段：识别端口类型
     startPortTypeIdentification();
 }
@@ -254,21 +254,21 @@ void TModelAutoGenerator::startPortTypeIdentification()
     m_currentStage = Stage_PortType;
     m_currentReasoning.clear();
     m_currentOutput.clear();
-    
+
     if (m_dialog) {
         m_dialog->setStatus("识别端口类型...");
     }
-    
+
     logMessage("阶段1: 识别端口类型");
-    
+
     QString systemPrompt = buildSystemPrompt();
     QString userPrompt = buildPortTypePrompt(comp);
-    
+
     if (m_dialog) {
         m_dialog->appendInput("=== 系统提示 ===\n" + systemPrompt);
         m_dialog->appendInput("\n=== 用户输入 ===\n" + userPrompt);
     }
-    
+
     m_deepseekClient->chatCompletion(systemPrompt, userPrompt, true);
 }
 
@@ -278,22 +278,22 @@ void TModelAutoGenerator::startInternalVarsGeneration()
     m_currentStage = Stage_InternalVars;
     m_currentReasoning.clear();
     m_currentOutput.clear();
-    
+
     if (m_dialog) {
         m_dialog->setStatus("生成内部变量定义...");
     }
-    
+
     logMessage("阶段2: 生成内部变量定义");
-    
+
     QString systemPrompt = buildSystemPrompt();
     QString userPrompt = buildInternalVarsPrompt(comp);
-    
+
     if (m_dialog) {
         m_dialog->appendInput("\n\n=== 新请求 ===\n");
         m_dialog->appendInput("=== 系统提示 ===\n" + systemPrompt);
         m_dialog->appendInput("\n=== 用户输入 ===\n" + userPrompt);
     }
-    
+
     m_deepseekClient->chatCompletion(systemPrompt, userPrompt, true);
 }
 
@@ -303,22 +303,22 @@ void TModelAutoGenerator::startNormalModeGeneration()
     m_currentStage = Stage_NormalMode;
     m_currentReasoning.clear();
     m_currentOutput.clear();
-    
+
     if (m_dialog) {
         m_dialog->setStatus("生成正常模式...");
     }
-    
+
     logMessage("阶段3: 生成正常模式");
-    
+
     QString systemPrompt = buildSystemPrompt();
     QString userPrompt = buildNormalModePrompt(comp);
-    
+
     if (m_dialog) {
         m_dialog->appendInput("\n\n=== 新请求 ===\n");
         m_dialog->appendInput("=== 系统提示 ===\n" + systemPrompt);
         m_dialog->appendInput("\n=== 用户输入 ===\n" + userPrompt);
     }
-    
+
     m_deepseekClient->chatCompletion(systemPrompt, userPrompt, true);
 }
 
@@ -328,22 +328,22 @@ void TModelAutoGenerator::startFailureModeGeneration()
     m_currentStage = Stage_FailureMode;
     m_currentReasoning.clear();
     m_currentOutput.clear();
-    
+
     if (m_dialog) {
         m_dialog->setStatus("生成故障模式...");
     }
-    
+
     logMessage("阶段4: 生成故障模式");
-    
+
     QString systemPrompt = buildSystemPrompt();
     QString userPrompt = buildFailureModePrompt(comp);
-    
+
     if (m_dialog) {
         m_dialog->appendInput("\n\n=== 新请求 ===\n");
         m_dialog->appendInput("=== 系统提示 ===\n" + systemPrompt);
         m_dialog->appendInput("\n=== 用户输入 ===\n" + userPrompt);
     }
-    
+
     m_deepseekClient->chatCompletion(systemPrompt, userPrompt, true);
 }
 
@@ -368,55 +368,53 @@ void TModelAutoGenerator::onResponseComplete(const QString &reasoning, const QSt
     logMessage("AI 响应完成");
     logMessage("思考内容: " + reasoning);
     logMessage("输出内容: " + content);
-    
+
     m_currentReasoning = reasoning;
     m_currentOutput = content;
-    
+
     const ComponentInfo &comp = m_components[m_currentIndex];
-    
+
     switch (m_currentStage) {
-    case Stage_PortType:
-        // 解析端口类型
+    case Stage_PortType: {
+        // 新增：迭代端口类型识别逻辑
         if (parsePortTypeResponse(content)) {
-            // 保存端口配置
-            if (savePortConfigs(comp.equipmentId)) {
-                logMessage("端口配置保存成功");
-                // 进入下一阶段
-                startInternalVarsGeneration();
+            if (!m_pendingPorts.isEmpty() && m_portTypeAttempt < MAX_RETRIES-1) {
+                m_portTypeAttempt++;
+                logMessage(QString("仍有未识别端口，启动第 %1 轮识别 (最多 %2 轮)").arg(m_portTypeAttempt+1).arg(MAX_RETRIES));
+                startPortTypeIdentification();
             } else {
-                logMessage("端口配置保存失败");
-                moveToNextComponent();
+                if (!m_portConfigs.isEmpty()) {
+                    if (savePortConfigs(comp.equipmentId)) logMessage("端口配置保存成功"); else logMessage("端口配置保存失败");
+                }
+                startInternalVarsGeneration();
             }
         } else {
             logMessage("端口类型解析失败");
-            if (m_retryCount < MAX_RETRIES) {
-                m_retryCount++;
-                logMessage(QString("重试 %1/%2").arg(m_retryCount).arg(MAX_RETRIES));
+            if (m_portTypeAttempt < MAX_RETRIES-1) {
+                m_portTypeAttempt++;
                 startPortTypeIdentification();
             } else {
-                logMessage("达到最大重试次数，跳过此器件");
-                moveToNextComponent();
+                if (!m_portConfigs.isEmpty()) savePortConfigs(comp.equipmentId);
+                startInternalVarsGeneration();
             }
         }
-        break;
-        
+        break; }
+
     case Stage_InternalVars:
         m_internalVarsDef = content;
         logMessage("内部变量定义已获取");
         startNormalModeGeneration();
         break;
-        
+
     case Stage_NormalMode:
         m_normalModeDef = content;
         logMessage("正常模式已获取");
         startFailureModeGeneration();
         break;
-        
-    case Stage_FailureMode:
+
+    case Stage_FailureMode: {
         m_failureModeDef = content;
         logMessage("故障模式已获取");
-        
-        // 组装完整的 T 模型
         QString fullTModel = QString(
             ";; 端口变量（由系统自动生成）\n"
             "%PORT_VARS%\n\n"
@@ -427,11 +425,8 @@ void TModelAutoGenerator::onResponseComplete(const QString &reasoning, const QSt
             ";; 故障模式\n"
             "%3\n"
         ).arg(m_internalVarsDef, m_normalModeDef, m_failureModeDef);
-        
-        // 校验
         QString errorMsg;
         if (validateTModel(comp.equipmentId, fullTModel, errorMsg)) {
-            // 保存
             if (saveTModel(comp.equipmentId, fullTModel)) {
                 logMessage("T 模型生成并保存成功");
                 moveToNextComponent();
@@ -444,29 +439,28 @@ void TModelAutoGenerator::onResponseComplete(const QString &reasoning, const QSt
             if (m_retryCount < MAX_RETRIES) {
                 m_retryCount++;
                 logMessage(QString("重试 %1/%2").arg(m_retryCount).arg(MAX_RETRIES));
-                // 从内部变量开始重新生成
                 startInternalVarsGeneration();
             } else {
                 logMessage("达到最大重试次数，跳过此器件");
                 moveToNextComponent();
             }
         }
-        break;
+        break; }
     }
 }
 
 void TModelAutoGenerator::onErrorOccurred(const QString &error)
 {
     logMessage("错误: " + error);
-    
+
     if (m_dialog) {
         m_dialog->setStatus("错误: " + error);
     }
-    
+
     if (m_retryCount < MAX_RETRIES) {
         m_retryCount++;
         logMessage(QString("重试 %1/%2").arg(m_retryCount).arg(MAX_RETRIES));
-        
+
         // 重试当前阶段
         switch (m_currentStage) {
         case Stage_PortType:
@@ -490,88 +484,50 @@ void TModelAutoGenerator::onErrorOccurred(const QString &error)
 
 bool TModelAutoGenerator::parsePortTypeResponse(const QString &output)
 {
-    // 期望输出格式为 JSON:
-    // {
-    //   "ports": [
-    //     {"functionBlock": "Coil", "portName": "A1", "portType": "electric"},
-    //     ...
-    //   ]
-    // }
-    
+    // 期望输出格式为 JSON，仅包含本轮新填写的端口（即原来 portType 为空的那些条目）
     QJsonDocument doc = QJsonDocument::fromJson(output.toUtf8());
     if (!doc.isObject()) {
         logMessage("输出不是有效的 JSON 对象");
         return false;
     }
-    
     QJsonObject obj = doc.object();
     if (!obj.contains("ports")) {
         logMessage("JSON 中缺少 ports 字段");
         return false;
     }
-    
     QJsonArray ports = obj["ports"].toArray();
-    m_portConfigs.clear();
-    
-    // 预加载端口用于匹配映射（优先按端号/portName）
-    auto canonical = [](const QString &s) {
-        QString r; r.reserve(s.size());
-        for (QChar c : s) if (c.isLetterOrNumber()) r.append(c.toLower());
-        return r;
-    };
-    // 建立 portName -> functionBlock 列表
-    QMultiMap<QString, QString> preloadedByPort;
-    for (const auto &p : m_preloadedPorts) {
-        preloadedByPort.insert(p.second.trimmed().toLower(), p.first.trimmed());
+    if (ports.isEmpty()) {
+        logMessage("返回端口列表为空，可能模型未按要求输出");
+        return false;
     }
-
+    QList<QPair<QString, QString>> candidates = m_pendingPorts;
     for (const QJsonValue &val : ports) {
         if (!val.isObject()) continue;
-        
         QJsonObject portObj = val.toObject();
         QString funcBlock = portObj["functionBlock"].toString();
         QString portName = portObj["portName"].toString();
         QString portType = portObj["portType"].toString();
-        
-        if (funcBlock.isEmpty() || portName.isEmpty() || portType.isEmpty()) {
-            continue;
+        if (portName.isEmpty() || portType.isEmpty()) continue;
+        // 精确端号匹配
+        QString chosenFunctionBlock; QList<QPair<QString,QString>> exactMatches;
+        for (auto &c : candidates) if (c.second.compare(portName, Qt::CaseInsensitive)==0) exactMatches.append(c);
+        if (exactMatches.size()==1) { chosenFunctionBlock = exactMatches.first().first; }
+        else if (exactMatches.size()>1) {
+            int best=INT_MAX; QString bestFb; QString aiCan = canonicalKey(funcBlock);
+            for (auto &m : exactMatches) { int dist = levenshteinDistance(aiCan, canonicalKey(m.first)); if (dist<best){best=dist;bestFb=m.first;} }
+            chosenFunctionBlock = bestFb;
+        } else {
+            int bestDist=INT_MAX; QString bestFb; for (auto &c : candidates) { int dist = levenshteinDistance(canonicalKey(portName), canonicalKey(c.second)); if (dist<bestDist){bestDist=dist;bestFb=c.first;} }
+            chosenFunctionBlock = bestFb.isEmpty()?funcBlock:bestFb;
         }
-        
-        // 尝试根据端号匹配实际功能子块（忽略 AI 可能的笔误）
-        QString resolvedFuncBlock = funcBlock;
-        const QString portKeyLower = portName.toLower();
-        const auto candidates = preloadedByPort.values(portKeyLower);
-        if (!candidates.isEmpty()) {
-            if (candidates.size() == 1) {
-                resolvedFuncBlock = candidates.first();
-            } else {
-                // 多个候选时按与 AI 给出的 funcBlock 的规范化接近度挑选
-                QString aiCan = canonical(funcBlock);
-                int bestDist = INT_MAX; QString best;
-                for (const QString &cand : candidates) {
-                    QString candCan = canonical(cand);
-                    // 简易距离：长度差 + 前缀差异
-                    int dist = qAbs(candCan.size() - aiCan.size());
-                    for (int i=0;i<qMin(candCan.size(), aiCan.size()); ++i) if (candCan[i]!=aiCan[i]) { dist++; if (dist>bestDist) break; }
-                    if (dist < bestDist) { bestDist = dist; best = cand; }
-                }
-                if (!best.isEmpty()) resolvedFuncBlock = best;
-            }
-        }
-
-        PortTypeConfig config;
-        config.functionBlock = resolvedFuncBlock;
-        config.portName = portName;
-        config.portType = portType;
-        config.variables = getDefaultVariables(portType);
-        config.connectMacro = getDefaultMacro(portType);
-        
-        QString key = resolvedFuncBlock + "." + portName;
-        m_portConfigs[key] = config;
+        QString key = chosenFunctionBlock + "." + portName;
+        PortTypeConfig cfg; if (m_portConfigs.contains(key)) cfg = m_portConfigs.value(key); else { cfg.functionBlock=chosenFunctionBlock; cfg.portName=portName; }
+        cfg.portType = portType; cfg.variables = getDefaultVariables(portType); cfg.connectMacro = getDefaultMacro(portType);
+        m_portConfigs.insert(key, cfg);
+        for (int i=0;i<m_pendingPorts.size(); ++i) if (m_pendingPorts[i].second.compare(portName, Qt::CaseInsensitive)==0) { m_pendingPorts.removeAt(i); break; }
     }
-    
-    logMessage(QString("解析到 %1 个端口配置").arg(m_portConfigs.size()));
-    return !m_portConfigs.isEmpty();
+    logMessage(QString("本轮解析端口: %1, 剩余待识别: %2").arg(ports.size()).arg(m_pendingPorts.size()));
+    return true;
 }
 
 bool TModelAutoGenerator::savePortConfigs(int equipmentId)
@@ -582,12 +538,12 @@ bool TModelAutoGenerator::savePortConfigs(int equipmentId)
         logMessage("无法获取 container_id");
         return false;
     }
-    
+
     QSqlQuery query(m_db);
-    
+
     for (auto it = m_portConfigs.constBegin(); it != m_portConfigs.constEnd(); ++it) {
         const PortTypeConfig &config = it.value();
-        
+
         // 检查是否已存在
         query.prepare(
             "SELECT port_config_id FROM port_config "
@@ -596,12 +552,12 @@ bool TModelAutoGenerator::savePortConfigs(int equipmentId)
         query.addBindValue(containerId);
         query.addBindValue(config.functionBlock);
         query.addBindValue(config.portName);
-        
+
         if (!query.exec()) {
             logMessage("查询端口配置失败: " + query.lastError().text());
             continue;
         }
-        
+
         if (query.next()) {
             // 更新
             int portConfigId = query.value(0).toInt();
@@ -627,13 +583,13 @@ bool TModelAutoGenerator::savePortConfigs(int equipmentId)
             query.addBindValue(QString("[{\"name\":\"%1\"}]").arg(config.variables));
             query.addBindValue(config.connectMacro);
         }
-        
+
         if (!query.exec()) {
             logMessage("保存端口配置失败: " + query.lastError().text());
             return false;
         }
     }
-    
+
     return true;
 }
 
@@ -643,12 +599,12 @@ bool TModelAutoGenerator::saveTModel(int equipmentId, const QString &tmodel)
     query.prepare("UPDATE Equipment_Template SET TModel = ? WHERE Equipment_ID = ?");
     query.addBindValue(tmodel);
     query.addBindValue(equipmentId);
-    
+
     if (!query.exec()) {
         logMessage("保存 T 模型失败: " + query.lastError().text());
         return false;
     }
-    
+
     return true;
 }
 
@@ -660,9 +616,9 @@ bool TModelAutoGenerator::validateTModel(int equipmentId, const QString &tmodel,
         errorMsg = "T 模型为空";
         return false;
     }
-    
+
     // TODO: 调用 CodeCheckDialog 或 TModelParser 进行完整校验
-    
+
     return true;
 }
 
@@ -670,7 +626,7 @@ void TModelAutoGenerator::logMessage(const QString &msg)
 {
     QString timestampedMsg = QDateTime::currentDateTime().toString("[yyyy-MM-dd hh:mm:ss] ") + msg;
     qDebug().noquote() << timestampedMsg;
-    
+
     if (m_logStream) {
         *m_logStream << timestampedMsg << "\n";
         m_logStream->flush();
@@ -687,14 +643,14 @@ void TModelAutoGenerator::finishGeneration()
 {
     logMessage("\n========== 自动生成完成 ==========");
     logMessage(QString("共处理 %1 个器件").arg(m_components.size()));
-    
+
     if (m_dialog) {
         m_dialog->setStatus("全部完成");
         m_dialog->setCurrentComponent("完成", m_components.size(), m_components.size());
         // 启用关闭按钮
         m_dialog->enableCloseButton();
     }
-    
+
     emit finished();
 }
 
@@ -771,64 +727,65 @@ QString TModelAutoGenerator::buildPortListPreview(const ComponentInfo &comp)
 
 QString TModelAutoGenerator::buildSystemPrompt()
 {
-    return 
+    return
         "你是一个专业的测试性建模专家，精通 SMT-LIB2 语法和器件建模。\n"
         "你的任务是根据器件信息生成符合规范的 T 语言模型。\n\n"
         "基本规则:\n"
         "1. 端口类型有三种: electric(电气)、hydraulic(液压)、mechanical(机械)\n"
         "2. 电气端口变量: i(电流)、u(电压)\n"
         "3. 液压端口变量: p(压力)、q(流量)\n"
-        "4. 机械端口变量: F(力)、x(位移)\n"
+        "4. 机械端口变量: F(力)、x(位移或运动)\n"
         "5. 使用 SMT-LIB2 语法\n"
-        "6. 变量命名格式: %Name%.FunctionBlock.PortName.Variable\n"
+        "6. 变量命名格式: %Name%.PortName.Variable\n"
         "7. 输出必须是有效的 JSON 格式（对于端口类型识别任务）或 SMT-LIB2 代码（对于模型生成任务）\n";
 }
 
 QString TModelAutoGenerator::buildPortTypePrompt(const ComponentInfo &comp)
 {
+    // 1. 基本器件信息
     QString prompt = QString(
         "器件信息:\n"
         "- 代号: %1\n"
         "- 名称: %2\n"
         "- 描述: %3\n\n"
-        "端口列表:\n"
+        "端口列表(JSON，portType为空表示待识别):\n"
     ).arg(comp.code, comp.name, comp.description);
-    // 如果端口为空，尝试动态回退查询 TermInfo (旧模板) 与 Symb2TermInfo (项目侧) 补充
-    if (comp.ports.isEmpty()) {
-        QSqlQuery q(m_db);
-        // 回退1: TermInfo 与 Equipment_ID
-        q.prepare("SELECT DISTINCT Spurr_DT, TermNum FROM TermInfo WHERE Equipment_ID = ? AND TermNum != ''");
-        q.addBindValue(comp.equipmentId);
-        if (q.exec()) {
-            while (q.next()) {
-                QString fb = q.value(0).toString();
-                QString pn = q.value(1).toString();
-                if (!fb.isEmpty() && !pn.isEmpty()) {
-                    prompt += QString("- 功能子块: %1, 端口: %2\n").arg(fb, pn);
-                }
-            }
-        }
-        // 回退2: Symb2TermInfo 需要通过 Symbol 查找，此处简化尝试直接列出逻辑端口（若以后需要可扩展）
-        // 若仍为空，加入占位说明避免让大模型误判
-        if (!prompt.contains("功能子块:")) {
-            prompt += "(当前数据未找到端口定义，请依据描述猜测可能的端口: 启动回路输入, 反馈回路输入, 数字量信号输出)\n";
-        }
-    } else {
-        for (const auto &port : comp.ports) {
-            prompt += QString("- 功能子块: %1, 端口: %2\n").arg(port.first, port.second);
-        }
+
+    // 2. 构造当前端口 JSON（已有类型保留，未识别为空）
+    QString portsJson = buildPortTypeJson(comp);
+
+    // 如果为空数组，执行旧的回退策略，填充占位端口供模型推断
+    QJsonDocument doc = QJsonDocument::fromJson(portsJson.toUtf8());
+    bool needFallback = true;
+    if (doc.isObject()) {
+        QJsonArray arr = doc.object().value("ports").toArray();
+        if (!arr.isEmpty()) needFallback = false;
     }
-    
-    prompt += 
-        "\n请根据器件描述和端口名称，判断每个端口的类型（electric/hydraulic/mechanical）。\n"
-        "输出格式为 JSON:\n"
+    if (needFallback) {
+        QJsonArray arr;
+        auto addPlaceholder = [&](const QString &fb, const QString &pn){ QJsonObject o; o["functionBlock"] = fb; o["portName"] = pn; o["portType"] = ""; arr.append(o); };
+        addPlaceholder("启动回路", "IN");
+        addPlaceholder("启动回路", "OUT");
+        addPlaceholder("反馈回路", "IN");
+        addPlaceholder("数字输出", "OUT");
+        QJsonObject root; root["ports"] = arr;
+        portsJson = QString::fromUtf8(QJsonDocument(root).toJson(QJsonDocument::Indented));
+    }
+
+    prompt += portsJson + "\n\n";
+
+    // 3. 任务说明：仅补全本轮仍为空的端口类型，并且只输出新增识别条目
+    prompt +=
+        "任务: 根据器件描述与端口名称，推断所有 portType 为空的端口的类型(electric/hydraulic/mechanical)。\n"
+        "输出要求: 只输出一个 JSON 对象，包含本轮新识别出的端口条目（即先前 portType 为空且你已填写的那些），其它已有类型的端口不要重复输出。\n"
+        "输出示例:\n"
         "{\n"
         "  \"ports\": [\n"
-        "    {\"functionBlock\": \"Coil\", \"portName\": \"A1\", \"portType\": \"electric\"},\n"
-        "    ...\n"
+        "    {\"functionBlock\": \"Coil\", \"portName\": \"A1\", \"portType\": \"electric\"}\n"
         "  ]\n"
-        "}\n";
-    
+        "}\n"
+        "注意: 不要添加说明文字、不要输出空数组、不要包含已有类型的端口。";
+
     return prompt;
 }
 
@@ -850,15 +807,15 @@ QString TModelAutoGenerator::buildInternalVarsPrompt(const ComponentInfo &comp)
                 .arg(config.functionBlock, config.portName, config.portType, config.variables);
         }
     }
-    
-    prompt += 
+
+    prompt +=
         "\n请生成该器件的内部变量定义（SMT-LIB2 格式）。\n"
         "内部变量可能包括: 电阻R、液阻r、阻尼Z 等。\n"
         "示例:\n"
         "(declare-const %Name%.R Real) ; 电阻\n"
         "(assert (> %Name%.R 0)) ; 电阻大于0\n\n"
         "注意: 只输出 SMT-LIB2 代码，不要包含其他说明文字。\n";
-    
+
     return prompt;
 }
 
@@ -880,10 +837,10 @@ QString TModelAutoGenerator::buildNormalModePrompt(const ComponentInfo &comp)
                 .arg(config.functionBlock, config.portName, config.portType, config.variables);
         }
     }
-    
+
     prompt += QString("\n内部变量定义:\n%1\n").arg(m_internalVarsDef);
-    
-    prompt += 
+
+    prompt +=
         "\n请生成该器件的正常模式约束（SMT-LIB2 格式）。\n"
         "正常模式描述器件正常工作时端口变量和内部变量之间的关系。\n"
         "示例:\n"
@@ -893,7 +850,7 @@ QString TModelAutoGenerator::buildNormalModePrompt(const ComponentInfo &comp)
         "  )\n"
         ")\n\n"
         "注意: 只输出 SMT-LIB2 代码，不要包含其他说明文字。\n";
-    
+
     return prompt;
 }
 
@@ -915,11 +872,11 @@ QString TModelAutoGenerator::buildFailureModePrompt(const ComponentInfo &comp)
                 .arg(config.functionBlock, config.portName, config.portType, config.variables);
         }
     }
-    
+
     prompt += QString("\n内部变量定义:\n%1\n").arg(m_internalVarsDef);
     prompt += QString("\n正常模式:\n%1\n").arg(m_normalModeDef);
-    
-    prompt += 
+
+    prompt +=
         "\n请生成该器件的常见故障模式（SMT-LIB2 格式）。\n"
         "故障模式描述器件发生故障时的行为，常见故障包括: 开路、短路、参数漂移等。\n"
         "每个故障模式用一个 define-fun 定义。\n"
@@ -931,6 +888,89 @@ QString TModelAutoGenerator::buildFailureModePrompt(const ComponentInfo &comp)
         "  (= %Name%.Coil.A1.u %Name%.Coil.A2.u) ; 短路\n"
         ")\n\n"
         "注意: 只输出 SMT-LIB2 代码，不要包含其他说明文字。\n";
-    
+
     return prompt;
+}
+
+// ========== 新增：端口类型识别辅助实现（此前声明但未实现） ==========
+
+QString TModelAutoGenerator::canonicalKey(const QString &s) const
+{
+    QString r; r.reserve(s.size());
+    for (QChar c : s) {
+        if (c.isLetterOrNumber()) r.append(c.toLower());
+    }
+    return r;
+}
+
+int TModelAutoGenerator::levenshteinDistance(const QString &a, const QString &b) const
+{
+    const int n = a.size();
+    const int m = b.size();
+    if (n == 0) return m;
+    if (m == 0) return n;
+    QVector<int> prev(m + 1), cur(m + 1);
+    for (int j = 0; j <= m; ++j) prev[j] = j;
+    for (int i = 1; i <= n; ++i) {
+        cur[0] = i;
+        for (int j = 1; j <= m; ++j) {
+            int cost = (a[i - 1] == b[j - 1]) ? 0 : 1;
+            cur[j] = qMin(qMin(cur[j - 1] + 1, prev[j] + 1), prev[j - 1] + cost);
+        }
+        prev = cur;
+    }
+    return cur[m];
+}
+
+void TModelAutoGenerator::loadExistingPortTypes(int equipmentId)
+{
+    m_portConfigs.clear();
+    int containerId = resolveContainerId(equipmentId, false);
+    if (containerId <= 0) return;
+    QSqlQuery q(m_db);
+    q.prepare("SELECT function_block, port_name, port_type, variables_json, connect_macro FROM port_config WHERE container_id=?");
+    q.addBindValue(containerId);
+    if (q.exec()) {
+        while (q.next()) {
+            PortTypeConfig cfg;
+            cfg.functionBlock = q.value(0).toString();
+            cfg.portName = q.value(1).toString();
+            cfg.portType = q.value(2).toString();
+            // 变量回填：如果库里有变量结构，则简单拼接 name 字段；否则用默认变量集合
+            const QString varsJson = q.value(3).toString();
+            if (!varsJson.trimmed().isEmpty()) {
+                QJsonDocument doc = QJsonDocument::fromJson(varsJson.toUtf8());
+                if (doc.isArray()) {
+                    QStringList varNames; for (auto v : doc.array()) if (v.isObject()) varNames << v.toObject().value("name").toString();
+                    cfg.variables = varNames.join(",");
+                }
+            }
+            if (cfg.variables.trimmed().isEmpty()) cfg.variables = getDefaultVariables(cfg.portType);
+            cfg.connectMacro = q.value(4).toString();
+            if (cfg.connectMacro.trimmed().isEmpty()) cfg.connectMacro = getDefaultMacro(cfg.portType);
+            QString key = cfg.functionBlock + "." + cfg.portName;
+            m_portConfigs.insert(key, cfg);
+        }
+    }
+}
+
+QString TModelAutoGenerator::buildPortTypeJson(const ComponentInfo &comp)
+{
+    // 使用预加载端口或组件端口作为基准
+    QList<QPair<QString, QString>> sourcePorts = !m_preloadedPorts.isEmpty() ? m_preloadedPorts : comp.ports;
+    QJsonArray arr;
+    for (const auto &p : sourcePorts) {
+        QString key = p.first + "." + p.second;
+        QJsonObject obj;
+        obj["functionBlock"] = p.first;
+        obj["portName"] = p.second;
+        if (m_portConfigs.contains(key) && !m_portConfigs.value(key).portType.trimmed().isEmpty()) {
+            obj["portType"] = m_portConfigs.value(key).portType;
+        } else {
+            obj["portType"] = ""; // 空表示待识别
+        }
+        arr.append(obj);
+    }
+    QJsonObject root; root["ports"] = arr;
+    return QString::fromUtf8(QJsonDocument(root).toJson(QJsonDocument::Indented));
 }

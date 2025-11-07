@@ -59,6 +59,9 @@ private:
     QList<ComponentInfo> m_components;
     // 从外部（例如 DialogUnitManage 已经加载到 UI 的 tableTerm）预加载的端口，优先用于单器件模式
     QList<QPair<QString, QString>> m_preloadedPorts; // functionBlock, portName
+    // 端口类型识别阶段的待补充端口（functionBlock, portName）
+    QList<QPair<QString, QString>> m_pendingPorts;
+    int m_portTypeAttempt = 0; // 端口类型识别迭代次数
     int m_currentIndex;
     int m_retryCount;
     static const int MAX_RETRIES = 3;
@@ -83,6 +86,7 @@ private:
     // 初始化
     void initLogFile();
     void loadComponents();
+    void loadExistingPortTypes(int equipmentId); // 读取已存在的端口类型填充 m_portConfigs 并设置 m_pendingPorts
     
     // 阶段处理
     void startPortTypeIdentification();
@@ -115,6 +119,9 @@ private:
 
     // 预览端口列表（在对话框刚显示时向用户提示将要作为提示词输入的端口集合）
     QString buildPortListPreview(const ComponentInfo &comp);
+    QString buildPortTypeJson(const ComponentInfo &comp); // 构造完整端口 JSON，包括已知类型与空类型
+    int levenshteinDistance(const QString &a, const QString &b) const;
+    QString canonicalKey(const QString &s) const; // 去除非字母数字并小写
 
 public: // 仅暴露轻量配置接口
     void setPreloadedPorts(const QList<QPair<QString, QString>> &ports) { m_preloadedPorts = ports; }
