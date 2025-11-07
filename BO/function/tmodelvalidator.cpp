@@ -237,8 +237,51 @@ TModelValidationResult TModelValidator::validate(const QString &tmodelText,
         return result;
     }
 
-    const QString normalized = tmodelText;
+    // ---------------- 新逻辑：基于分段识别端口变量声明 ----------------
+    // 仅在 ";;端口变量定义" 部分内解析端口变量声明；
+    // ";;内部变量定义" 部分中的声明即便语法类似也视为内部变量，不参与端口方向匹配，不记为错误。
+    TModelParser sectionParser; sectionParser.parse(tmodelText);
+    const QString portVarsSection = sectionParser.getPortVariables();
+    const QString internalVarsSection = sectionParser.getInternalVariables();
 
+    // 正则用于端口变量声明 (限制范围为端口变量定义段)
+    QRegularExpression declPattern(
+        QString("\\(\\s*declare-fun\\s+(?:%[A-Za-z0-9_]+%|[A-Za-z0-9_]+)"
+                       "\\.((?:[A-Za-z0-9_\\-]+\\.)*[A-Za-z0-9_\\-]+)\\.([A-Za-z0-9_\\-]+)\\s*\\("));
+    auto declIter = declPattern.globalMatch(portVarsSection);
+    while (declIter.hasNext()) {
+        const QRegularExpressionMatch match = declIter.next();
+        const QString portPath = normalizePortToken(match.captured(1));
+        const QString direction = normalizeDirection(match.captured(2));
+        const QString token = match.captured(0);
+        if (bindingMap.contains(portPath)) {
+            PortVariableBinding &binding = bindingMap[portPath];
+            if (isDirectionAllowed(binding, direction)) {
+                binding.declaredDirections.insert(direction);
+                binding.tokens.insert(token);
+            } else {
+                // 在端口变量区声明了一个非期望方向，记录为未匹配端口变量
+                result.undefinedVariables.append(token);
+            }
+        } else {
+            // 端口变量区出现了不属于端口列表的声明，记录为未匹配
+            result.undefinedVariables.append(token);
+        }
+    }
+
+    // 收集内部变量声明（用于后续忽略其匹配产生的“未匹配端口变量”）
+    // 简单匹配所有 declare-fun 行，不要求三段式，仅抓取整行。
+    QSet<QString> internalDeclaredTokens;
+    QRegularExpression internalDeclRe("\\(\\s*declare-fun[^(]*\\(");
+    auto internalIter = internalDeclRe.globalMatch(internalVarsSection);
+    while (internalIter.hasNext()) {
+        const QRegularExpressionMatch m = internalIter.next();
+        internalDeclaredTokens.insert(m.captured(0));
+    }
+
+    // 变量引用扫描仍可遍历全模型文本；如果匹配到三段式，但 direction 不在期望集合，
+    // 且该 token 所在的原始行出现在内部变量定义段，则忽略，不记为错误。
+    const QString normalized = tmodelText;
     QRegularExpression varPattern(
         QString("(?:%[A-Za-z0-9_]+%|[A-Za-z0-9_]+)\\.((?:[A-Za-z0-9_\\-]+\\.)*[A-Za-z0-9_\\-]+)\\.([A-Za-z0-9_\\-]+)\\b"));
     auto varMatchIter = varPattern.globalMatch(normalized);
@@ -248,39 +291,25 @@ TModelValidationResult TModelValidator::validate(const QString &tmodelText,
         const QString direction = normalizeDirection(match.captured(2));
         const QString token = match.captured(0);
 
+        // 判断该匹配是否出现在内部变量段的某一行
+        bool inInternalSection = internalVarsSection.contains(token);
+
         if (bindingMap.contains(portPath)) {
             PortVariableBinding &binding = bindingMap[portPath];
             if (isDirectionAllowed(binding, direction)) {
                 binding.referencedDirections.insert(direction);
                 binding.tokens.insert(token);
             } else {
-                result.undefinedVariables.append(token);
+                if (!inInternalSection) {
+                    // 不是内部变量区域的“扩展命名”，视为未匹配端口变量
+                    result.undefinedVariables.append(token);
+                }
+                // 内部变量区域的额外三段式命名视为内部变量引用，忽略
             }
         } else {
-            result.undefinedVariables.append(token);
-        }
-    }
-
-    QRegularExpression declPattern(
-        QString("\\(\\s*declare-fun\\s+(?:%[A-Za-z0-9_]+%|[A-Za-z0-9_]+)"
-                       "\\.((?:[A-Za-z0-9_\\-]+\\.)*[A-Za-z0-9_\\-]+)\\.([A-Za-z0-9_\\-]+)\\s*\\("));
-    auto declIter = declPattern.globalMatch(normalized);
-    while (declIter.hasNext()) {
-        const QRegularExpressionMatch match = declIter.next();
-        const QString portPath = normalizePortToken(match.captured(1));
-        const QString direction = normalizeDirection(match.captured(2));
-        const QString token = match.captured(0);
-
-        if (bindingMap.contains(portPath)) {
-            PortVariableBinding &binding = bindingMap[portPath];
-            if (isDirectionAllowed(binding, direction)) {
-                binding.declaredDirections.insert(direction);
-                binding.tokens.insert(token);
-            } else {
+            if (!inInternalSection) {
                 result.undefinedVariables.append(token);
             }
-        } else {
-            result.undefinedVariables.append(token);
         }
     }
 
