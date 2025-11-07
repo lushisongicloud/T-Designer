@@ -12,13 +12,13 @@ public:
     SystemStructure(const QString& systemDescription, const QString& linkTextforCrop);
 
     bool isSystemConsistent() const { return systemConsistenct; }    // 判断systemDescription是否自洽的方法
-    QStringList getDeviceLineList() { return deviceLineList; }
-    QStringList getConnectionLineList() { return connectionLineList; }
-    QSet<QString> getDeviceSetInDefinition() { return deviceSetInDefinition; }
-    QSet<QString> getComponentSetInConnection() { return componentSetInConnection; }
-    QStringList getBoundaryComponentList() { return boundaryComponentList; }
-    QString getCroppedSystemDescription() { return croppedSystemDescription; }
-    QList<QStringList> getPortListInConnectionList(){return portListInConnectionList;}
+    QStringList getDeviceLineList() const { return deviceLineList; }
+    QStringList getConnectionLineList() const { return connectionLineList; }
+    QSet<QString> getDeviceSetInDefinition() const { return deviceSetInDefinition; }
+    QSet<QString> getComponentSetInConnection() const { return componentSetInConnection; }
+    QStringList getBoundaryComponentList() const { return boundaryComponentList; }
+    QString getCroppedSystemDescription() const { return croppedSystemDescription; }
+    QList<QStringList> getPortListInConnectionList() const {return portListInConnectionList;}
 
 private:
     QString inputSystemDescription;

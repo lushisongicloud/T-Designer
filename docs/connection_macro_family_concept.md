@@ -141,7 +141,7 @@ CREATE TABLE port_connect_macro_family (
 4. 系统自动填充默认变量集和默认宏族：
    - 电气 → i,u + electric-connect
    - 液压 → p,q + hydraulic-connect
-   - 机械 → F,v/n/x + mechanical-connect
+   - 机械 → F,x + mechanical-connect
 5. 用户可选择其他可用的宏族或保持默认
 6. 配置保存到port_config表
 

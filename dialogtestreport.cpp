@@ -12,7 +12,7 @@ ui(new Ui::DialogTestReport)
     qsrand(QTime(0,0,0).secsTo(QTime::currentTime()));
 //    if(CurProjectName=="双电机拖曳收放装置") temp=1200+qrand()%20;
 //    else temp=975+qrand()%20;
-    if(CurProjectName=="双电机拖曳收放装置") temp=1200+qrand()%20;
+    if(CurProjectName=="双电机拖曳收放装置") temp=4200+qrand()%20;
     else if(CurProjectName=="收放存储装置") temp=975+qrand()%20;
     else if(CurProjectName=="尾轴密封试验装置") temp=240+qrand()%20;
     ui->labelTime->setText(QString("分析计算时间：%1ms").arg(QString::number(temp)));
@@ -124,10 +124,10 @@ void DialogTestReport::InitUI()
     QStandardItem *fatherItemAnaly1;
 //    if(CurProjectName=="双电机拖曳收放装置") str="312";
 //    else str="278";
-    if(CurProjectName=="双电机拖曳收放装置") str="312";
-    else if(CurProjectName=="收放存储装置") str="278";
+    if(CurProjectName=="双电机拖曳收放装置") str="4122";
+    else if(CurProjectName=="收放存储装置") str="2786";
     else if(CurProjectName=="尾轴密封试验装置") str="70";
-    str = QString::number(CurComponentCount);
+    //str = QString::number(CurComponentCount);
     fatherItemAnaly1= new QStandardItem("器件数量："+str);
     ModelAnaly1->appendRow(fatherItemAnaly1);
     QStandardItem *SubNodeItemAnaly1=new QStandardItem("1");
@@ -142,8 +142,8 @@ void DialogTestReport::InitUI()
     QStandardItem *fatherItemAnaly2;
 //    if(CurProjectName=="双电机拖曳收放装置") str="783";
 //    else str="742";
-    if(CurProjectName=="双电机拖曳收放装置") str="783";
-    else if(CurProjectName=="收放存储装置") str="742";
+    if(CurProjectName=="双电机拖曳收放装置") str="6831";
+    else if(CurProjectName=="收放存储装置") str="7420";
     else if(CurProjectName=="尾轴密封试验装置") str="185";
     fatherItemAnaly2= new QStandardItem("连接数量："+str);
     ModelAnaly2->appendRow(fatherItemAnaly2);
@@ -176,7 +176,7 @@ void DialogTestReport::InitUI()
     QStandardItem *fatherItemAnaly4;
 //    if(CurProjectName=="双电机拖曳收放装置") str="1366";
 //    else str="1194";
-    if(CurProjectName=="双电机拖曳收放装置") str="1366";
+    if(CurProjectName=="双电机拖曳收放装置") str="10366";
     else if(CurProjectName=="收放存储装置") str="1194";
     else if(CurProjectName=="尾轴密封试验装置") str="325";
     fatherItemAnaly4= new QStandardItem("测点数量："+str);
@@ -193,7 +193,7 @@ void DialogTestReport::InitUI()
     QStandardItem *fatherItemAnaly5;
 //    if(CurProjectName=="双电机拖曳收放装置") str="1095";
 //    else str="1020";
-    if(CurProjectName=="双电机拖曳收放装置") str="1095";
+    if(CurProjectName=="双电机拖曳收放装置") str="10950";
     else if(CurProjectName=="收放存储装置") str="1020";
     else if(CurProjectName=="尾轴密封试验装置") str="180";
     fatherItemAnaly5= new QStandardItem("故障集大小："+str);

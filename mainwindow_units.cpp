@@ -2280,7 +2280,10 @@ void MainWindow::on_Btn_ContainerTree_clicked()
 
 void MainWindow::on_BtnFunctionManage_clicked()
 {
-    FunctionManagerDialog dialog(T_ProjectDatabase, this);
+    const QString systemDescription = ui->textEditSystemDiscription
+            ? ui->textEditSystemDiscription->toPlainText()
+            : QString();
+    FunctionManagerDialog dialog(T_ProjectDatabase, systemDescription, this);
     dialog.exec();
     UpdateFuncTable();
     LoadAllFunction();
@@ -2417,4 +2420,3 @@ void MainWindow::actionAttachComponentsToHigher()
 
     QMessageBox::information(this, tr("完成"), tr("添加到高层级：%1，跳过：%2").arg(attached).arg(skipped));
 }
-

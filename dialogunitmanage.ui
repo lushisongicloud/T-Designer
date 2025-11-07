@@ -609,7 +609,7 @@ QScrollBar {
 }</string>
         </property>
         <property name="currentIndex">
-         <number>0</number>
+         <number>3</number>
         </property>
         <widget class="QWidget" name="tab">
          <property name="sizePolicy">
@@ -1975,6 +1975,16 @@ QDoubleSpinBox{
               <widget class="QPushButton" name="BtnCompile">
                <property name="text">
                 <string>编译</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="BtnAutoGenerate">
+               <property name="toolTip">
+                <string>使用 AI 自动生成 T 语言模型</string>
+               </property>
+               <property name="text">
+                <string>自动编写</string>
                </property>
               </widget>
              </item>

@@ -124,23 +124,26 @@
 
 ## Phase 5 · 功能管理（重构与贯通）
 
-- [ ] 引入/复用功能 XML 结构与计算逻辑（参考 ref/T‑Solver/widget/selectfunctiondialog.* 与 FunctionInfo 结构）
-  - 新建 BO/function/FunctionRepository 读写 functions_xml（树结构、链路、依赖、约束、属性、离线结果、变量范围）
+- [x] 引入/复用功能 XML 结构与计算逻辑（参考 ref/T‑Solver/widget/selectfunctiondialog.* 与 FunctionInfo 结构）
+  - ✅ 新建 BO/function/FunctionRepository 读写 functions_xml（树结构、链路、依赖、约束、属性、离线结果、变量范围）
 
-- [ ] 链路裁剪与边界识别：复用 DO/model.{h,cpp} 中 SystemStructure；提供 crop + boundary API
+- [x] 链路裁剪与边界识别：复用 DO/model.{h,cpp} 中 SystemStructure；提供 crop + boundary API
+  - ✅ 新增 BO/function/SystemStructureService 提供 `analyze/cropSystemDescription/boundaryComponents` 三项接口
 
-- [ ] 约束完整性检查：正向/反向执行器约束 + SAT 完整性评估，写回 constraintIntegrity
+- [x] 约束完整性检查：正向/反向执行器约束 + SAT 完整性评估，写回 constraintIntegrity
+  - ✅ SelectFunctionDialog 通过 SystemStructureService 裁剪模型、正/反向 SAT 求解更新 constraintIntegrity，界面编辑即时回写并触发“未检查”状态管理
 
-- [ ] 变量范围配置与 SAT 样本：复用/移植 ref/T‑Solver/function_variable_config.* 与 variable_range_config.* 能力
+- [x] 变量范围配置与 SAT 样本：复用/移植 ref/T‑Solver/function_variable_config.* 与 variable_range_config.* 能力
+  - ✅ FunctionEditDialog 挂载 FunctionVariableValueDialog，支持变量类型/范围/SAT 样本编辑并持久化 VariableConfigXml
   - UI：在 functioneditdialog.ui 增加“变量取值范围”入口（对齐 T‑Solver 交互）
 
-- [ ] UI 贯通：
+- [x] UI 贯通：
   - 在项目导航“功能管理”入口调用新的 FunctionManagerDialog（可逐步替换现有 selectfunctiondialog 入口）
   - 支持：自动查找依赖功能、自动查找边界条件、执行器取反完整性检查、离线求解结果缓存
 
-- [ ] SAT 会话与增量求解：复用 ref/T‑Solver/BO/systementity::createIncrementalSolveSession 与 SmtFacade
+- [x] SAT 会话与增量求解：复用 ref/T‑Solver/BO/systementity::createIncrementalSolveSession 与 SmtFacade
 
-- [ ] 用例：在 DemoSystem/ 或新样例上录入 3+ 个功能，验证完整性与边界识别
+- [x] 用例：在 DemoSystem/ 或新样例上录入 3+ 个功能，验证完整性与边界识别
 
 ---
 
@@ -244,7 +247,7 @@
 - [ ] 新增 BO/behavior/systemmodelassembler.h/.cpp：拼接 DEF/CONNECT/RAW，写入 system_smt
 
 6) 功能仓库与 UI 贯通
-- [ ] 新增 BO/function/functionrepository.h/.cpp：functions_xml 读写
+- [x] 新增 BO/function/functionrepository.h/.cpp：functions_xml 读写
 - [ ] 扩展 widget/functionmanagerdialog.* 集成功能编辑与“变量取值范围”入口
 
 7) 变量范围与 SAT 样本

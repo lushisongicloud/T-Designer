@@ -3691,7 +3691,7 @@ void MainWindow::on_BtnDataAnalyse_clicked()
 
     // 设置计时器在1200毫秒后触发
     int waitTime = 200;
-    if(CurProjectName=="双电机拖曳收放装置") waitTime=1200;
+    if(CurProjectName=="双电机拖曳收放装置") waitTime=4200;
     else if(CurProjectName=="收放存储装置") waitTime=975;
     else if(CurProjectName=="尾轴密封试验装置") waitTime=240;
     QTimer::singleShot(waitTime, this, [this, waitDialog]() {

@@ -1,6 +1,16 @@
 #include "selectfunctiondialog.h"
 #include "ui_selectfunctiondialog.h"
 
+#include <QCheckBox>
+#include <QMessageBox>
+#include <QPlainTextEdit>
+#include <QTextEdit>
+#include <algorithm>
+#include <functional>
+
+#include "BO/function/constraintutils.h"
+#include "BO/function/systemstructureservice.h"
+
 extern QMap<QString, QStringList> obsTemplates;
 extern bool isPenetrativeSolve;
 SelectFunctionDialog::SelectFunctionDialog(SystemEntity* systemEntity,const QString& systemDescription, const QString& functionDescription, QWidget *parent) :
@@ -26,6 +36,8 @@ SelectFunctionDialog::SelectFunctionDialog(SystemEntity* systemEntity,const QStr
     ui->table_FunctionDependency->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(ui->table_FunctionDependency, &QTableWidget::customContextMenuRequested,
             this, &SelectFunctionDialog::onTableFunctionDependencyContextMenu);
+    connect(ui->table_FunctionDependency, &QTableWidget::itemChanged,
+            this, &SelectFunctionDialog::onFunctionDependencyItemChanged);
     ui->textEditComponentDependency->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(ui->textEditComponentDependency, &QTableWidget::customContextMenuRequested,
             this, &SelectFunctionDialog::onTextEditComponentDependencyContextMenu);
@@ -36,6 +48,13 @@ SelectFunctionDialog::SelectFunctionDialog(SystemEntity* systemEntity,const QStr
     connect(systemEntity, &SystemEntity::progressUpdated, this, &SelectFunctionDialog::onProgressUpdated);
     connect(systemEntity, &SystemEntity::resultEntityListUpdated, this, &SelectFunctionDialog::onResultEntityListUpdated);
     connect(systemEntity, &SystemEntity::outlierObsUpdated, this, &SelectFunctionDialog::onOutlierObsUpdated);
+
+    connect(ui->textEditFunctionDescription, &QPlainTextEdit::textChanged, this, &SelectFunctionDialog::markConstraintIntegrityUnknown);
+    connect(ui->textEditLink, &QPlainTextEdit::textChanged, this, &SelectFunctionDialog::markConstraintIntegrityUnknown);
+    connect(ui->textEditComponentDependency, &QTextEdit::textChanged, this, &SelectFunctionDialog::markConstraintIntegrityUnknown);
+    connect(ui->textEditAllComponent, &QPlainTextEdit::textChanged, this, &SelectFunctionDialog::markConstraintIntegrityUnknown);
+    connect(ui->textEditFaultProbability, &QPlainTextEdit::textChanged, this, &SelectFunctionDialog::markConstraintIntegrityUnknown);
+    connect(ui->checkBoxPersistent, &QCheckBox::stateChanged, this, &SelectFunctionDialog::markConstraintIntegrityUnknown);
 
 }
 
@@ -60,8 +79,16 @@ void SelectFunctionDialog::keyPressEvent(QKeyEvent* event) {
         if (select->hasSelection())
         {
             QModelIndexList selectedRows = select->selectedRows();
+            QList<int> rowsToDelete;
             for (const auto& index : selectedRows) {
-                ui->table_FunctionDependency->removeRow(index.row());
+                rowsToDelete.append(index.row());
+            }
+            std::sort(rowsToDelete.begin(), rowsToDelete.end(), std::greater<int>());
+            if (!rowsToDelete.isEmpty()) {
+                for (int row : rowsToDelete) {
+                    ui->table_FunctionDependency->removeRow(row);
+                }
+                markConstraintIntegrityUnknown();
             }
         }
         QItemSelectionModel *selectConstraint = ui->table_test->selectionModel();
@@ -221,6 +248,7 @@ void SelectFunctionDialog::updateFunctionDependencyTable(const QString &componen
 
     ui->table_FunctionDependency->resizeColumnsToContents();
     ui->table_FunctionDependency->setUpdatesEnabled(true); // Re-enable updates
+    markConstraintIntegrityUnknown();
 }
 
 void SelectFunctionDialog::insertIntoFunctionDependencyTable(const QString &componentAndFunctionString){
@@ -245,6 +273,8 @@ void SelectFunctionDialog::insertIntoFunctionDependencyTable(const QString &comp
     cbComponentName->setTableItem(item);
     ui->table_FunctionDependency->setItem(crrRow, 0, item);
     ui->table_FunctionDependency->setCellWidget(crrRow, 0, cbComponentName);
+    connect(cbComponentName, &MyComboBox::editFinish,
+            this, &SelectFunctionDialog::onFunctionDependencyComboEdited);
 
     // 使cbFunctionName->setList()为当前cbComponentName选中的器件所对应的所有功能（通过查询functionActuatorNameMap可知）
     // 如果当前cbComponentName选中的器件在functionActuatorNameMap没有对应的功能，则使cbFunctionName->setList()为全部所有功能(functionNameList)
@@ -263,10 +293,13 @@ void SelectFunctionDialog::insertIntoFunctionDependencyTable(const QString &comp
     cbFunctionName->setTableItem(item2);
     ui->table_FunctionDependency->setItem(crrRow, 1, item2);
     ui->table_FunctionDependency->setCellWidget(crrRow, 1, cbFunctionName);
+    connect(cbFunctionName, &MyComboBox::editFinish,
+            this, &SelectFunctionDialog::onFunctionDependencyComboEdited);
 
     // 处理新添加的相关端口部分
     QTableWidgetItem *relativePortItem = new QTableWidgetItem(relativePorts);
     ui->table_FunctionDependency->setItem(crrRow, 2, relativePortItem);
+    markConstraintIntegrityUnknown();
 }
 
 void SelectFunctionDialog::insertIntoResultTable(const QString& componentNames, const QString& failureModes, const double& probability)
@@ -397,6 +430,7 @@ void SelectFunctionDialog::insertIntoFunctionTable(const QString& variable, cons
     testItemList.append(newItem);
 
     if(variable!="")checkDuplicateAndUpdateColor();
+    markConstraintIntegrityUnknown();
 }
 void SelectFunctionDialog::onTableFunctionItemChanged(QTableWidgetItem* item) {
     ui->table_test->disconnect(SIGNAL(itemChanged(QTableWidgetItem*)));
@@ -500,6 +534,7 @@ void SelectFunctionDialog::onTableFunctionItemChanged(QTableWidgetItem* item) {
         CbTestVal1->tableItem->setToolTip(tooltip); // 设置值的悬停提示
         CbTestVal2->tableItem->setToolTip(tooltip);
     }
+    markConstraintIntegrityUnknown();
 }
 
 void SelectFunctionDialog::on_btn_AddObs_clicked() {
@@ -537,12 +572,14 @@ void SelectFunctionDialog::on_btn_DelObs_clicked() {
         if (redRowDeleted) {
             checkDuplicateAndUpdateColor();
         }
+        markConstraintIntegrityUnknown();
     }
 }
 
 void SelectFunctionDialog::on_functionTree_itemClicked(QTreeWidgetItem *item, int column) {
     // 这个函数会在用户点击树形列表中的一个节点时被调用。
     currentFunctionName = item->text(0);
+    currentConstraintIntegrityStatus = functionConstraintIntegrityMap.value(currentFunctionName, QStringLiteral("未检查"));
     // 获取节点数据
     QString functionData = item->data(0, Qt::UserRole).toString();
 
@@ -553,6 +590,7 @@ void SelectFunctionDialog::on_functionTree_itemClicked(QTreeWidgetItem *item, in
         qDebug()<<"functionData:"<<qPrintable(functionData);
         return;
     }
+    isLoading = true;
 
     // 更新函数描述
     QString functionDesc = doc.firstChildElement("functiondefine").firstChildElement("describe").text();
@@ -637,10 +675,20 @@ void SelectFunctionDialog::on_functionTree_itemClicked(QTreeWidgetItem *item, in
         localResultEntityList.append(resultItem);
     }
     resultProcessAndUpdateColor();
+    isLoading = false;
 }
 
 
-QDomDocument createFunctionXML(const QString& functionName, const QString& functionDesc, const QString& link, const QString& functionDependency, const QString& componentDependency,const QString& allComponent,const QString& attributeString,const QList<TestItem>& testItemList, const QList<resultEntity>& resultEntityList)
+QDomDocument createFunctionXML(const QString& functionName,
+                              const QString& functionDesc,
+                              const QString& link,
+                              const QString& functionDependency,
+                              const QString& componentDependency,
+                              const QString& allComponent,
+                              const QString& attributeString,
+                              const QList<TestItem>& testItemList,
+                              const QList<resultEntity>& resultEntityList,
+                              const QString& constraintIntegrity)
 {
     QDomDocument doc;
     QDomElement functionElement = doc.createElement("functiondefine");
@@ -677,6 +725,10 @@ QDomDocument createFunctionXML(const QString& functionName, const QString& funct
     QDomElement attributeElement = doc.createElement("attribute");
     attributeElement.appendChild(doc.createTextNode(attributeString));
     functionElement.appendChild(attributeElement);
+
+    QDomElement integrityElement = doc.createElement("constraintIntegrity");
+    integrityElement.appendChild(doc.createTextNode(constraintIntegrity));
+    functionElement.appendChild(integrityElement);
 
     // 添加每个约束
     for (const auto &item : testItemList) {
@@ -807,8 +859,10 @@ void SelectFunctionDialog::addFunction(bool isSubFunction) {
     QTreeWidgetItem *newItem = new QTreeWidgetItem();
     newItem->setText(0, functionName);
 
+    functionConstraintIntegrityMap.insert(functionName, QStringLiteral("未检查"));
+
     // 使用createFunctionXML生成QDomDocument
-    QDomDocument doc = createFunctionXML(functionName, functionDesc, link, functionDependency, componentDependency,allComponentDependency,attributeString, testItemList, localResultEntityList);
+    QDomDocument doc = createFunctionXML(functionName, functionDesc, link, functionDependency, componentDependency,allComponentDependency,attributeString, testItemList, localResultEntityList, functionConstraintIntegrityMap.value(functionName, QStringLiteral("未检查")));
 
     // 将XML保存到树形列表节点的data中
     newItem->setData(0, Qt::UserRole, doc.toString());
@@ -881,6 +935,11 @@ void SelectFunctionDialog::on_btn_UpdateSubFunc_clicked()
         mFunc.persistent = persistent;
         mFunc.faultProbability = faultProbability.toDouble();
         functionFaultProbabilityMap.insert(mFunc.functionName, mFunc.faultProbability);
+
+        QString constraintIntegrity = functionDefine.firstChildElement("constraintIntegrity").text().trimmed();
+        if (constraintIntegrity.isEmpty()) constraintIntegrity = QStringLiteral("未检查");
+        mFunc.constraintIntegrity = constraintIntegrity;
+        functionConstraintIntegrityMap.insert(mFunc.functionName, constraintIntegrity);
 
         // 获取constraints
         QDomNodeList constraints = doc.elementsByTagName("constraint");
@@ -991,6 +1050,7 @@ void SelectFunctionDialog::processTreeItem(QTreeWidgetItem *item) {
 //更新树形节点
 void SelectFunctionDialog::updateFunctionTree()
 {
+    functionConstraintIntegrityMap.clear();
     QDomDocument doc;
     //qDebug()<<"updateFunctionTree localFunctionDescription:"<<qPrintable(localFunctionDescription);
     //qDebug()<<"doc.setContent(localFunctionDescription):"<<doc.setContent(localFunctionDescription);
@@ -1054,6 +1114,9 @@ void SelectFunctionDialog::addTreeItemsFromXML(QDomElement &element, QTreeWidget
             QString allComponentDependency = allComponentDependencyElement.text();
 
             QString attributeString = functionElement.firstChildElement("attribute").text();
+            QString constraintIntegrity = functionElement.firstChildElement("constraintIntegrity").text().trimmed();
+            if (constraintIntegrity.isEmpty()) constraintIntegrity = QStringLiteral("未检查");
+            functionConstraintIntegrityMap.insert(functionName, constraintIntegrity);
 
             QList<TestItem> testItemList;
             QDomNodeList constraints = functionElement.elementsByTagName("constraint");
@@ -1078,7 +1141,7 @@ void SelectFunctionDialog::addTreeItemsFromXML(QDomElement &element, QTreeWidget
             }
 
             // 使用createFunctionXML生成QDomDocument
-            QDomDocument doc = createFunctionXML(functionName, functionDesc, link, functionDependency,componentDependency,allComponentDependency, attributeString, testItemList, resultEntityList);
+            QDomDocument doc = createFunctionXML(functionName, functionDesc, link, functionDependency,componentDependency,allComponentDependency, attributeString, testItemList, resultEntityList, constraintIntegrity);
 
             // 将XML保存到树形列表节点的data中
             newItem->setData(0, Qt::UserRole, doc.toString());
@@ -1123,12 +1186,17 @@ void SelectFunctionDialog::on_btn_DelFunc_clicked()
         return;
 
     // 执行删除操作
+    for (QTreeWidgetItem *item : ui->functionTree->selectedItems()) {
+        functionConstraintIntegrityMap.remove(item->text(0));
+        functionInfoMap.remove(item->text(0));
+    }
     foreach(QTreeWidgetItem *item, ui->functionTree->selectedItems()) {
         delete item;
     }
 }
 
 void SelectFunctionDialog::on_btn_Ok_clicked() {
+    writeCurrentFunctionToTree();
     // 创建一个QDomDocument来保存所有的功能
     QDomDocument doc;
 
@@ -1218,36 +1286,7 @@ void SelectFunctionDialog::on_btn_SaveFunc_clicked()
         return;
     }
     qDebug()<<"on_btn_SaveFunc_clicked";
-    QString attributeString = ui->checkBoxPersistent->isChecked() ? "Persistent" : "NotPersistent";
-    attributeString += ","+ ui->textEditFaultProbability->toPlainText();
-    //qDebug()<<"localResultEntityList.size():"<<localResultEntityList.size();
-    QDomDocument doc = createFunctionXML(
-                currentItem->text(0),
-                ui->textEditFunctionDescription->toPlainText(),
-                ui->textEditLink->toPlainText(),
-                generateQStringFromFunctionDependencyTable(),
-                ui->textEditComponentDependency->toPlainText(),
-                ui->textEditAllComponent->toPlainText(),
-                attributeString,
-                testItemList,
-                localResultEntityList
-                );
-
-    currentItem->setData(0, Qt::UserRole, doc.toString());
-
-    // 如果当前节点不是顶级节点，则在修改当前节点的基础上，同时也修改与当前节点名称相同的顶级节点数据。
-    if(currentItem->parent() != nullptr) {
-        QString currentItemName = currentItem->text(0);
-        // 遍历所有顶级节点
-        for(int i = 0; i < ui->functionTree->topLevelItemCount(); ++i) {
-            QTreeWidgetItem* topLevelItem = ui->functionTree->topLevelItem(i);
-            // 找到与当前节点名称相同的顶级节点并修改其数据
-            if(topLevelItem->text(0) == currentItemName) {
-                topLevelItem->setData(0, Qt::UserRole, doc.toString());
-                break;
-            }
-        }
-    }
+    writeCurrentFunctionToTree();
 }
 void SelectFunctionDialog::onTextEditComponentDependencyContextMenu(const QPoint& pos)
 {
@@ -1302,6 +1341,7 @@ void SelectFunctionDialog::onTableFunctionDependencyContextMenu(const QPoint& po
 
         // 删除全部行
         ui->table_FunctionDependency->setRowCount(0);
+        markConstraintIntegrityUnknown();
     }
     if(selectedItem == actionAddToConstraint)
     {
@@ -1518,6 +1558,111 @@ QList<TestItem> SelectFunctionDialog::processTestItemListForPenetrativeSolve(QLi
     initialTestItemList = uniqueItemsVec.toList();
     qDebug().noquote().nospace() << "initialTestItemList:" << initialTestItemList;
     return initialTestItemList;
+}
+
+QList<TestItem> SelectFunctionDialog::buildConstraintCheckItems(bool invertActuator) const
+{
+    QList<TestItem> assembled;
+    for (const TestItem &item : testItemList) {
+        TestItem converted = item;
+        if (converted.testType == QStringLiteral("依赖功能")) {
+            if (converted.value == QStringLiteral("功能正常")) {
+                const QStringList meta = functionActuatorConstraintMap.value(converted.variable);
+                if (meta.size() >= 2) {
+                    converted.variable = meta.at(0);
+                    converted.value = meta.at(1);
+                    converted.testType = QStringLiteral("一般变量");
+                    converted.checkState = Qt::Unchecked;
+                    assembled.append(converted);
+                }
+            }
+            continue;
+        }
+
+        if (invertActuator && converted.testType == QStringLiteral("功能执行器")) {
+            const QString type = systemEntity->obsVarsMap.value(converted.variable);
+            if (type == QStringLiteral("Bool")) {
+                converted.value = (converted.value.trimmed().compare(QStringLiteral("true"), Qt::CaseInsensitive) == 0)
+                        ? QStringLiteral("false")
+                        : QStringLiteral("true");
+            } else {
+                converted.value = functionconstraints::negateRange(converted.value);
+            }
+        }
+        assembled.append(converted);
+    }
+    return assembled;
+}
+
+void SelectFunctionDialog::markConstraintIntegrityUnknown()
+{
+    if (isLoading)
+        return;
+    QTreeWidgetItem *currentItem = ui->functionTree->currentItem();
+    if (!currentItem) return;
+
+    currentFunctionName = currentItem->text(0);
+    currentConstraintIntegrityStatus = QStringLiteral("未检查");
+    functionConstraintIntegrityMap.insert(currentFunctionName, currentConstraintIntegrityStatus);
+    if (functionInfoMap.contains(currentFunctionName)) {
+        functionInfoMap[currentFunctionName].constraintIntegrity = currentConstraintIntegrityStatus;
+    }
+    writeCurrentFunctionToTree();
+}
+
+void SelectFunctionDialog::onFunctionDependencyComboEdited()
+{
+    markConstraintIntegrityUnknown();
+}
+
+void SelectFunctionDialog::onFunctionDependencyItemChanged(QTableWidgetItem *item)
+{
+    if (!item || isLoading)
+        return;
+    if (item->column() != 2)
+        return;
+    markConstraintIntegrityUnknown();
+}
+
+void SelectFunctionDialog::writeCurrentFunctionToTree()
+{
+    QTreeWidgetItem *currentItem = ui->functionTree->currentItem();
+    if (!currentItem) return;
+
+    const QString functionName = currentItem->text(0);
+    const QString integrity = functionConstraintIntegrityMap.value(functionName, QStringLiteral("未检查"));
+
+    QString attributeString = ui->checkBoxPersistent->isChecked() ? QStringLiteral("Persistent") : QStringLiteral("NotPersistent");
+    attributeString += QStringLiteral(",") + ui->textEditFaultProbability->toPlainText();
+
+    QDomDocument doc = createFunctionXML(
+                functionName,
+                ui->textEditFunctionDescription->toPlainText(),
+                ui->textEditLink->toPlainText(),
+                generateQStringFromFunctionDependencyTable(),
+                ui->textEditComponentDependency->toPlainText(),
+                ui->textEditAllComponent->toPlainText(),
+                attributeString,
+                testItemList,
+                localResultEntityList,
+                integrity);
+
+    currentItem->setData(0, Qt::UserRole, doc.toString());
+
+    if (currentItem->parent() != nullptr) {
+        const QString currentItemName = currentItem->text(0);
+        for (int i = 0; i < ui->functionTree->topLevelItemCount(); ++i) {
+            QTreeWidgetItem *topLevelItem = ui->functionTree->topLevelItem(i);
+            if (topLevelItem->text(0) == currentItemName) {
+                topLevelItem->setData(0, Qt::UserRole, doc.toString());
+                break;
+            }
+        }
+    }
+
+    if (functionInfoMap.contains(functionName)) {
+        functionInfoMap[functionName].constraintIntegrity = integrity;
+    }
 }
 
 //采用穿透式诊断进行离线求解
@@ -1796,58 +1941,43 @@ void SelectFunctionDialog::on_btn_CalBoundaryConditions_clicked()
 
 void SelectFunctionDialog::on_btn_CheckConstraints_clicked()
 {
-    SystemStructure currentSystemStructure(systemDescription,ui->textEditLink->toPlainText());
-    if(!currentSystemStructure.isSystemConsistent())
-    {
-        QMessageBox::warning(this,"错误","模型描述错误");
+    if (currentFunctionName.isEmpty()) {
+        QMessageBox::warning(this, tr("检查约束完整性"), tr("请先选择功能节点。"));
         return;
     }
-    QString croppedSystemDescription = currentSystemStructure.getCroppedSystemDescription();
-    systemEntity->prepareModel(croppedSystemDescription);
-    //将testItemList中项拷贝到testItemListToCheck中，同时需要对type为"功能执行器"的项的value取反
-    QList<TestItem> testItemListToCheck;
 
-    // 遍历testItemList
-    for (const TestItem &item : testItemList)
-    {
-        TestItem newItem = item;
-        if(newItem.testType=="依赖功能")
-        {
-            if(newItem.value=="功能正常")
-            {
-                if(functionActuatorConstraintMap.value(item.variable).size()==2){
-                    newItem.variable = functionActuatorConstraintMap.value(item.variable)[0];
-                    newItem.value = functionActuatorConstraintMap.value(item.variable)[1];
-                    testItemListToCheck.append(newItem);
-                }
-            }
-        }
-        else
-        {
-            QString type =  systemEntity->obsVarsMap[item.variable];
-            // 检查每一项的类型是否为"功能执行器"
-            if (newItem.testType == "功能执行器") {
-                //将其value取反,需要分情况讨论
-                if (type == "Bool") {
-                    if(newItem.value == "true")newItem.value="false";
-                    else newItem.value="true";
-                }else
-                {
-                    qDebug()<<"暂不支持的功能执行器变量类型："<<type;
-                }
-            }
-            testItemListToCheck.append(newItem);
-        }
+    const QString linkText = ui->textEditLink->toPlainText();
+    const SystemCropResult analysis = SystemStructureService::analyze(systemDescription, linkText);
+    if (!analysis.isConsistent) {
+        QMessageBox::warning(this, tr("错误"), tr("模型描述错误"));
+        return;
     }
 
-    qDebug().noquote()<<"testItemListToCheck:"<<testItemListToCheck;
-    if(systemEntity->satisfiabilitySolve(croppedSystemDescription, testItemListToCheck)){
-        QMessageBox::warning(this,"检查约束完整性","不完整");
+    const QString croppedSystemDescription = analysis.croppedSystemDescription;
+    const QList<TestItem> positiveItems = buildConstraintCheckItems(false);
+    const bool positiveSat = systemEntity->satisfiabilitySolve(croppedSystemDescription, positiveItems);
+
+    QString status;
+    if (!positiveSat) {
+        status = QStringLiteral("不正确");
+    } else {
+        const QList<TestItem> negativeItems = buildConstraintCheckItems(true);
+        const bool negativeSat = systemEntity->satisfiabilitySolve(croppedSystemDescription, negativeItems);
+        status = negativeSat ? QStringLiteral("不完整") : QStringLiteral("完整");
     }
-    else
-    {
-        QMessageBox::information(this,"检查约束完整性","完整");
+
+    if (status == QStringLiteral("完整")) {
+        QMessageBox::information(this, tr("检查约束完整性"), status);
+    } else {
+        QMessageBox::warning(this, tr("检查约束完整性"), status);
     }
+
+    currentConstraintIntegrityStatus = status;
+    functionConstraintIntegrityMap.insert(currentFunctionName, status);
+    if (functionInfoMap.contains(currentFunctionName)) {
+        functionInfoMap[currentFunctionName].constraintIntegrity = status;
+    }
+    writeCurrentFunctionToTree();
 }
 
 QList<TestItem> SelectFunctionDialog::getLocalTestItemList(){

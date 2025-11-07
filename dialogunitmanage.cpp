@@ -2303,6 +2303,61 @@ void DialogUnitManage::on_BtnCompile_clicked()
     performTModelValidation();
 }
 
+//自动编写T语言模型
+void DialogUnitManage::on_BtnAutoGenerate_clicked()
+{
+    // 检查 API Key
+    QString apiKey = qEnvironmentVariable("DEEPSEEK_API_KEY");
+    if (apiKey.isEmpty()) {
+        QMessageBox::warning(this, "配置错误", 
+            "未设置 DEEPSEEK_API_KEY 环境变量。\n\n"
+            "请在系统环境变量（用户变量）中设置 DEEPSEEK_API_KEY，然后重启应用程序。");
+        return;
+    }
+    
+    // 确认对话框
+    QMessageBox::StandardButton reply = QMessageBox::question(this, "确认", 
+        "此操作将使用 DeepSeek AI 为器件库中的器件自动生成 T 语言模型。\n\n"
+        "注意:\n"
+        "1. 会跳过没有端口定义或没有描述信息的器件\n"
+        "2. 自动设置端口类型并生成模型\n"
+        "3. 每个器件最多尝试 3 次\n"
+        "4. 会生成日志文件记录处理过程\n\n"
+        "是否继续？",
+        QMessageBox::Yes | QMessageBox::No);
+    
+    if (reply != QMessageBox::Yes) {
+        return;
+    }
+    
+    // 创建生成器并启动：优先使用当前选中器件的 Equipment_ID（单器件模式）
+    int selectedId = CurEquipment_ID.isEmpty() ? 0 : CurEquipment_ID.toInt();
+    TModelAutoGenerator *generator = nullptr;
+    if (selectedId > 0) {
+        generator = new TModelAutoGenerator(T_LibDatabase, selectedId, this);
+        // 收集当前 UI 表格端口作为预加载端口，避免 DB 中尚未写入或旧关联导致为空
+        QList<QPair<QString, QString>> preloadedPorts;
+        for (int row = 0; row < ui->tableTerm->rowCount(); ++row) {
+            QTableWidgetItem *fbItem = ui->tableTerm->item(row, 0);
+            QTableWidgetItem *portItem = ui->tableTerm->item(row, 1);
+            if (!portItem) continue;
+            QString functionBlock = fbItem ? fbItem->text().trimmed() : QString();
+            QString portName = portItem->text().trimmed();
+            if (portName.isEmpty()) continue;
+            preloadedPorts.append(qMakePair(functionBlock, portName));
+        }
+        generator->setPreloadedPorts(preloadedPorts);
+    } else {
+        generator = new TModelAutoGenerator(T_LibDatabase, this); // 回退到批量模式
+    }
+    connect(generator, &TModelAutoGenerator::finished, [this, generator]() {
+        QMessageBox::information(this, "完成", "T 语言模型自动生成已完成，请查看日志文件了解详情。");
+        generator->deleteLater();
+    });
+    
+    generator->startAutoGeneration();
+}
+
 void DialogUnitManage::performTModelValidation()
 {
     auto makePortKey = [](const QString &functionBlock, const QString &portName) -> QString {

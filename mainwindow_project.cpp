@@ -11,6 +11,8 @@
 #include <QSet>
 #include <QInputDialog>
 #include <QShortcut>
+#include <QLabel>
+#include <QPushButton>
 #include "BO/containerrepository.h"
 #include "widget/containertreedialog.h"
 #include "DO/containerentity.h"

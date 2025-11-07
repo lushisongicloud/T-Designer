@@ -2,8 +2,11 @@
 #define SYSTEMENTITY_H
 
 #include <QList>
+#include <QHash>
+#include <memory>
 #include "BO/componententity.h"
 #include "BO/function/functioninfo.h"
+#include "BO/function/variable_range_config.h"
 #include "sqlitedatabase.h"
 #include <z3++.h>
 #include "DO/component.h"
@@ -60,10 +63,34 @@ public:
     QList<ComponentEntity> prepareModel(const QString& modelDescription);
     void solveConflictSets(const QString& modelDescription ,const QList<TestItem>& testItemList);
     void solveConflictSets(const QString& modelDescription, const QString& testDescription, QList<QStringList>& list);
+    QString getUnchangingCode() const { return unchangingCode; }
+    QList<obsEntity> buildObsEntityList(const QList<TestItem> &testItemList);
+
+    struct IncrementalSolveSession
+    {
+        std::shared_ptr<z3::context> context;
+        std::shared_ptr<z3::solver> solver;
+        QString baseLogic;
+        std::vector<std::pair<QString, QString>> declaredFunctions;
+        bool valid = false;
+    };
+
+    IncrementalSolveSession createIncrementalSolveSession(const QString &modelDescription,
+                                                          const QList<TestItem> &testItemList,
+                                                          const QStringList &variableWhitelist,
+                                                          QString &errorMessage,
+                                                          int timeoutMs = -1);
+    bool checkIncrementalSession(IncrementalSolveSession &session,
+                                 const QStringList &extraAssertions,
+                                 QString &errorMessage,
+                                 int timeoutMs = -1,
+                                 QMap<QString, QString> *modelOut = nullptr) const;
 
     void setMainWindow(MainWindow* window);
     void setCurrentModel(model* mo){currentModel = mo;}
     void setFunctionInfoMap(QMap<QString,FunctionInfo>& funcMap){functionInfoMap = funcMap;}
+    void setVariableRangeConfig(const rangeconfig::VariableRangeConfig &config);
+    const rangeconfig::VariableRangeConfig &variableRangeConfigRef() const { return variableRangeConfig; }
     QMap<QString, double> solveOutlierObs(QList<obsEntity>& obsEntityList,QList<resultEntity>& resultEntityList) const;
     QList<TestItem> RecommendObs(QString currentfunctionName, QList<QStringList> portListInConnectionList, QMap<QString, QString> functionLinkMap, QMap<QString, QString> functionComponentDependencyMap, QMap<QString, QString> functionDependencyMap, QMap<QString, double> componentFailureProbability, QList<resultEntity> currentResultEntityList);
 
@@ -120,10 +147,13 @@ public:
     QString systemLinkCode;
     QString unchangingCode;
     QString allComponentCode;
+    rangeconfig::VariableRangeConfig variableRangeConfig;
+    QHash<QString, QString> variableRangeTypeMap;
 
     QString GetAns();
     bool singleFailureSolve(const FailureEntity& entity, const QString& testCode, QStringList& ans,  QList<resultEntity>& resultEntityList);
     bool doubleFailureSolve(const FailureEntity& entity1, const FailureEntity& entity2, const QString& testCode, QStringList& ans,  QList<resultEntity>& resultEntityList);
+    QString buildVariableRangeCode(const QStringList &variables, const QList<TestItem> &testItemList) const;
 
 public slots:
     QList<resultEntity> completeSolve(const QString& modelDescription, const QList<TestItem>& testItemList, int truncateMode = 1, bool includeObs = true);
@@ -145,6 +175,5 @@ signals:
 
     void startSolvingConflictSets(const QString& modelDescription, const QList<TestItem>& testItemList, int truncateMode);
 };
-
 
 #endif // SYSTEMENTITY_H

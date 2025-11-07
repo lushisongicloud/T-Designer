@@ -17,7 +17,7 @@ QString defaultVariablesForType(const QString &type)
     else if (type == "hydraulic")
         return "p,q";
     else if (type == "mechanical")
-        return "F,v";
+        return "F,x";
     return "";
 }
 

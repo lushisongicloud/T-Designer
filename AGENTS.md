@@ -63,7 +63,7 @@
 - Implement at container level first：元件级容器代理单一实体元件的接口/行为；将新 SMT 建模、功能管理与 D‑矩阵逻辑尽量落在容器与 BO 层，减少对实体元件内部侵入。
 
 ## Port/Variable Naming Rules
-- Electrical: `.i` current, `.u` voltage；Hydraulic: `.p` pressure, `.q` flow；Mechanical: `.F` force, `.v`/`.n`/`.x`（选其一）。
+- Electrical: `.i` current, `.u` voltage；Hydraulic: `.p` pressure, `.q` flow；Mechanical: `.F` force, `.x` displacement。
 - Example relay KA1 with Coil(A1|A2) and Contact(11|14|12): declare variables `KA1.Coil.A1.i/u`, `KA1.Coil.A2.i/u`, `KA1.Contact.11.i/u`, `KA1.Contact.14.i/u`, `KA1.Contact.12.i/u`.
 - Support default and custom variable sets per port type；user‑defined connect macro families are allowed and must expand to valid SMT constraints.
 
@@ -72,7 +72,7 @@
 - **内置宏族**（存储在 port_connect_macro_family 表，is_builtin=1）：
   - `electric-connect`: 包含 connect2e/3e/4e 等，生成电流守恒（Σi=0）+ 电压等势（u相等）约束
   - `hydraulic-connect`: 包含 connect2h/3h/4h 等，生成流量守恒（Σq=0）+ 压力等势（p相等）约束
-  - `mechanical-connect`: 包含 connect2m/3m/4m 等，生成力守恒（ΣF=0）+ 速度/转速/位移等势（v/n/x相等）约束
+  - `mechanical-connect`: 包含 connect2m/3m/4m 等，生成力守恒（ΣF=0）+ 位移等势（x相等）约束
 - **自定义宏族**: 用户可通过 PortConfigEditDialog 添加自定义宏族，支持特殊连接语义。
 - **宏族数据结构**:
   - family_name: 宏族名称（如 "electric-connect"）

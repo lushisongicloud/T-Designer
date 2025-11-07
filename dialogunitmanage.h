@@ -27,6 +27,7 @@
 #include "dialogtag.h"
 #include "widget/codecheckdialog.h"
 #include "BO/function/tmodelparser.h"
+#include "BO/ai/tmodelautogenerator.h"
 
 extern QSqlDatabase  T_Database;
 
@@ -144,6 +145,8 @@ private slots:
     void on_BtnUpdatePortVars_clicked();
 
     void on_BtnCompile_clicked();
+
+    void on_BtnAutoGenerate_clicked();
 
     void on_tableRepairInfo_clicked(const QModelIndex &index);
 

@@ -111,15 +111,23 @@ SOURCES += \
     demo_projectbuilder.cpp \
     widget/functionmanagerdialog.cpp \
     widget/functioneditdialog.cpp \
+    widget/functionvariablevaluedialog.cpp \
     widget/portconfigpanel.cpp \
     widget/portconfigeditdialog.cpp \
     widget/tmodelcompiledisplaydialog.cpp \
+    widget/aimodelgeneratordialog.cpp \
     BO/container/containerdata.cpp \
     BO/container/behavioraggregator.cpp \
     BO/behavior/z3simplifier.cpp \
+    BO/ai/deepseekclient.cpp \
+    BO/ai/tmodelautogenerator.cpp \
     BO/function/functiondependencyresolver.cpp \
     BO/function/tmodelvalidator.cpp \
     BO/function/functionrepository.cpp \
+    BO/function/function_variable_config.cpp \
+    BO/function/variable_range_config.cpp \
+    BO/function/systemstructureservice.cpp \
+    BO/function/constraintutils.cpp \
     BO/function/functionanalysisservice.cpp \
     BO/function/SmtSyntaxChecker.cpp \
     BO/function/tmodelcheckservice.cpp \
@@ -128,6 +136,7 @@ SOURCES += \
     BO/test/testdefinition.cpp \
     BO/test/testgeneratorservice.cpp \
     BO/test/diagnosticmatrixbuilder.cpp \
+    testability/smt_facade.cpp \
     BO/containerrepository.cpp \
     BO/componententity.cpp \
     BO/systementity.cpp \
@@ -209,18 +218,25 @@ HEADERS += \
     widget/testeditdialog.h \
     widget/functionsymbolpickerdialog.h \
     demo_projectbuilder.h \
-    widget/functionmanagerdialog.h \
     widget/functioneditdialog.h \
+    widget/functionvariablevaluedialog.h \
     widget/portconfigpanel.h \
     widget/portconfigeditdialog.h \
     widget/tmodelcompiledisplaydialog.h \
+    widget/aimodelgeneratordialog.h \
     BO/container/containerdata.h \
     BO/container/behavioraggregator.h \
     BO/behavior/z3simplifier.h \
+    BO/ai/deepseekclient.h \
+    BO/ai/tmodelautogenerator.h \
     BO/function/functiondependencyresolver.h \
     BO/function/functioninfo.h \
     BO/function/tmodelvalidator.h \
     BO/function/functionrepository.h \
+    BO/function/function_variable_config.h \
+    BO/function/variable_range_config.h \
+    BO/function/systemstructureservice.h \
+    BO/function/constraintutils.h \
     BO/function/functionanalysisservice.h \
     BO/function/SmtSyntaxChecker.h \
     BO/function/tmodelcheckservice.h \
@@ -229,6 +245,8 @@ HEADERS += \
     BO/test/testdefinition.h \
     BO/test/testgeneratorservice.h \
     BO/test/diagnosticmatrixbuilder.h \
+    testability/smt_facade.h \
+    testability/testability_types.h \
     BO/containerrepository.h \
     BO/componententity.h \
     BO/systementity.h \
@@ -294,6 +312,7 @@ FORMS += \
     widget/testeditdialog.ui \
     widget/functionmanagerdialog.ui \
     widget/functioneditdialog.ui \
+    widget/functionvariablevaluedialog.ui \
     widget/portconfigpanel.ui \
     widget/portconfigeditdialog.ui \
     widget/codecheckdialog.ui

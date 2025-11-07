@@ -94,6 +94,8 @@ private slots:
     void on_btn_CalBoundaryConditions_clicked();
 
     void onSolvingStarted();
+    void onFunctionDependencyComboEdited();
+    void onFunctionDependencyItemChanged(QTableWidgetItem *item);
     void onSolvingFinished(QStringList ans);
     void onProgressUpdated(int progress);
     void onResultEntityListUpdated(const QList<resultEntity>& resultEntityList);
@@ -122,6 +124,9 @@ private:
     QString CalFunctionDependency();
     QString CalComponentDependency(QString linkText, QString allComponent = "");
     QList<TestItem> processTestItemListForPenetrativeSolve(QList<TestItem> &currentTestItemList, QString& LinkText);
+    QList<TestItem> buildConstraintCheckItems(bool invertActuator) const;
+    void markConstraintIntegrityUnknown();
+    void writeCurrentFunctionToTree();
 
     QList<TestItem> testItemList; // To hold the local version of the test items
     QList<resultEntity> localResultEntityList;
@@ -136,6 +141,9 @@ private:
     QMap<QString, QString> functionDependencyMap;//功能-功能依赖关系，
     QMap<QString, double> functionFaultProbabilityMap;//功能-失效概率
     QMap<QString,FunctionInfo> functionInfoMap;
+    QMap<QString, QString> functionConstraintIntegrityMap;
+    QString currentConstraintIntegrityStatus = QStringLiteral("未检查");
+    bool isLoading = false;
 };
 
 #endif // SELECTFUNCTIONDIALOG_H

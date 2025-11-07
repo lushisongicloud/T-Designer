@@ -69,23 +69,23 @@ builtin_families = [
     {
         'family_name': 'mechanical-connect',
         'domain': 'mechanical',
-        'description': '机械端口连接宏族（速度变量）',
+        'description': '机械端口连接宏族（位移变量）',
         'is_builtin': 1,
         'macros': [
             {
                 'arity': 2,
                 'macro_name': 'connect2m',
-                'expansion': '(assert (= (+ {0}.F {1}.F) 0))\n(assert (= {0}.v {1}.v))'
+                'expansion': '(assert (= (+ {0}.F {1}.F) 0))\n(assert (= {0}.x {1}.x))'
             },
             {
                 'arity': 3,
                 'macro_name': 'connect3m',
-                'expansion': '(assert (= (+ {0}.F {1}.F {2}.F) 0))\n(assert (= {0}.v {1}.v))\n(assert (= {1}.v {2}.v))'
+                'expansion': '(assert (= (+ {0}.F {1}.F {2}.F) 0))\n(assert (= {0}.x {1}.x))\n(assert (= {1}.x {2}.x))'
             },
             {
                 'arity': 4,
                 'macro_name': 'connect4m',
-                'expansion': '(assert (= (+ {0}.F {1}.F {2}.F {3}.F) 0))\n(assert (= {0}.v {1}.v))\n(assert (= {1}.v {2}.v))\n(assert (= {2}.v {3}.v))'
+                'expansion': '(assert (= (+ {0}.F {1}.F {2}.F {3}.F) 0))\n(assert (= {0}.x {1}.x))\n(assert (= {1}.x {2}.x))\n(assert (= {2}.x {3}.x))'
             }
         ]
     }

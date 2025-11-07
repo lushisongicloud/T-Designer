@@ -2,6 +2,7 @@
 #include "ui_functioneditdialog.h"
 
 #include "widget/functionsymbolpickerdialog.h"
+#include "widget/functionvariablevaluedialog.h"
 
 #include <QMessageBox>
 #include <QSqlQuery>
@@ -9,6 +10,7 @@
 #include <QTableWidgetItem>
 #include <QSet>
 #include <QtDebug>
+#include <QDomDocument>
 
 FunctionEditDialog::FunctionEditDialog(const QSqlDatabase &db, QWidget *parent)
     : QDialog(parent)
@@ -30,6 +32,7 @@ FunctionEditDialog::FunctionEditDialog(const QSqlDatabase &db, QWidget *parent)
     connect(ui->buttonBox, &QDialogButtonBox::accepted, this, &FunctionEditDialog::onAccepted);
     connect(ui->listExecs, &QListWidget::itemChanged, this, &FunctionEditDialog::updateExecList);
     connect(ui->btnAutoAnalyze, &QPushButton::clicked, this, &FunctionEditDialog::onAutoAnalyze);
+    connect(ui->btnVariableValues, &QPushButton::clicked, this, &FunctionEditDialog::onEditVariableValues);
 
     ui->btnAutoAnalyze->setEnabled(false);
 }
@@ -57,6 +60,8 @@ void FunctionEditDialog::setInitialRecord(const FunctionRecord &record)
     ui->checkPersistent->setChecked(record.persistent);
     ui->spinFaultProbability->setValue(record.faultProbability);
     ui->btnAutoAnalyze->setEnabled(record.symbolId > 0);
+
+    setCurrentVariableConfig(variableConfigFromXml(record.variableConfigXml));
 }
 
 void FunctionEditDialog::setSymbol(int symbolId, const QString &symbolName)
@@ -177,6 +182,75 @@ void FunctionEditDialog::populateInputs(const QString &cmdValList)
     }
 }
 
+QMap<QString, QString> FunctionEditDialog::currentConstraintMap() const
+{
+    QMap<QString, QString> map;
+    for (int row = 0; row < ui->tableInputs->rowCount(); ++row) {
+        QTableWidgetItem *varItem = ui->tableInputs->item(row, 0);
+        QTableWidgetItem *valItem = ui->tableInputs->item(row, 1);
+        const QString variable = varItem ? varItem->text().trimmed() : QString();
+        const QString value = valItem ? valItem->text().trimmed() : QString();
+        if (variable.isEmpty())
+            continue;
+        map.insert(variable, value);
+    }
+    return map;
+}
+
+QStringList FunctionEditDialog::variableSuggestions() const
+{
+    QStringList suggestions;
+    const QMap<QString, QString> constraintMap = currentConstraintMap();
+    for (auto it = constraintMap.constBegin(); it != constraintMap.constEnd(); ++it) {
+        if (!it.key().trimmed().isEmpty())
+            suggestions.append(it.key().trimmed());
+    }
+
+    const QStringList execs = m_record.execsList.split(',', QString::SkipEmptyParts);
+    for (const QString &exec : execs) {
+        const QString trimmed = exec.trimmed();
+        if (!trimmed.isEmpty())
+            suggestions.append(trimmed);
+    }
+
+    for (const QString &variable : m_variableConfig.variableNames()) {
+        suggestions.append(variable);
+    }
+
+    suggestions.removeDuplicates();
+    return suggestions;
+}
+
+QVector<FunctionVariableRow> FunctionEditDialog::collectVariableRows() const
+{
+    QVector<FunctionVariableRow> rows;
+    QSet<QString> seen;
+    const QStringList variables = m_variableConfig.variableNames();
+    for (const QString &variable : variables) {
+        FunctionVariableRow row;
+        row.variable = variable;
+        row.entry = m_variableConfig.entry(variable);
+        rows.append(row);
+        seen.insert(variable);
+    }
+
+    const QMap<QString, QString> constraints = currentConstraintMap();
+    for (auto it = constraints.constBegin(); it != constraints.constEnd(); ++it) {
+        const QString variable = it.key().trimmed();
+        if (variable.isEmpty() || seen.contains(variable))
+            continue;
+        FunctionVariableRow row;
+        row.variable = variable;
+        functionvalues::VariableEntry entry;
+        entry.constraintValue = it.value();
+        row.entry = entry;
+        rows.append(row);
+        seen.insert(variable);
+    }
+
+    return rows;
+}
+
 QString FunctionEditDialog::buildCmdValList() const
 {
     QStringList pairs;
@@ -211,6 +285,43 @@ void FunctionEditDialog::updateExecList()
     Q_UNUSED(this);
 }
 
+void FunctionEditDialog::setCurrentVariableConfig(const functionvalues::FunctionVariableConfig &config)
+{
+    m_variableConfig = config;
+}
+
+functionvalues::FunctionVariableConfig FunctionEditDialog::variableConfigFromXml(const QString &xml) const
+{
+    functionvalues::FunctionVariableConfig config;
+    const QString trimmed = xml.trimmed();
+    if (trimmed.isEmpty())
+        return config;
+
+    QDomDocument doc;
+    if (!doc.setContent(trimmed)) {
+        const QString wrapped = QStringLiteral("<root>%1</root>").arg(trimmed);
+        if (!doc.setContent(wrapped))
+            return config;
+        QDomElement wrapper = doc.documentElement();
+        return functionvalues::FunctionVariableConfig::fromXml(wrapper.firstChildElement(QStringLiteral("variableValueConfig")));
+    }
+    QDomElement root = doc.documentElement();
+    if (root.tagName() == QStringLiteral("variableValueConfig")) {
+        return functionvalues::FunctionVariableConfig::fromXml(root);
+    }
+    return functionvalues::FunctionVariableConfig::fromXml(root.firstChildElement(QStringLiteral("variableValueConfig")));
+}
+
+QString FunctionEditDialog::variableConfigToXml(const functionvalues::FunctionVariableConfig &config) const
+{
+    if (config.isEmpty())
+        return QString();
+    QDomDocument doc(QStringLiteral("VariableValueConfig"));
+    QDomElement root = config.toXml(doc);
+    doc.appendChild(root);
+    return doc.toString(2);
+}
+
 void FunctionEditDialog::onAutoAnalyze()
 {
     if (m_record.symbolId == 0) {
@@ -227,6 +338,26 @@ void FunctionEditDialog::onAutoAnalyze()
 void FunctionEditDialog::analyzeCurrentSymbol()
 {
     onAutoAnalyze();
+}
+
+void FunctionEditDialog::onEditVariableValues()
+{
+    QVector<FunctionVariableRow> rows = collectVariableRows();
+    FunctionVariableValueDialog dialog(rows, this);
+    dialog.setConstraintMap(currentConstraintMap());
+    dialog.setVariableSuggestions(variableSuggestions());
+    if (dialog.exec() != QDialog::Accepted)
+        return;
+
+    const QVector<FunctionVariableRow> resultRows = dialog.rows();
+    functionvalues::FunctionVariableConfig config;
+    for (const FunctionVariableRow &row : resultRows) {
+        const QString variable = row.variable.trimmed();
+        if (variable.isEmpty())
+            continue;
+        config.setEntry(variable, row.entry);
+    }
+    setCurrentVariableConfig(config);
 }
 
 void FunctionEditDialog::onAccepted()
@@ -250,7 +381,7 @@ void FunctionEditDialog::onAccepted()
     m_record.functionDependency = ui->editFunctionDependency->text().trimmed();
     m_record.persistent = ui->checkPersistent->isChecked();
     m_record.faultProbability = ui->spinFaultProbability->value();
+    m_record.variableConfigXml = variableConfigToXml(m_variableConfig);
 
     accept();
 }
-

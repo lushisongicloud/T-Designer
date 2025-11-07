@@ -1,6 +1,273 @@
 #include "systementity.h"
 #include "mainwindow.h"
 
+#include <QDateTime>
+#include <QDir>
+#include <QFile>
+#include <QMutex>
+#include <QMutexLocker>
+#include <QTextStream>
+#include <QMessageBox>
+#include <QDebug>
+#include <QObject>
+#include <QRegularExpression>
+#include <QSet>
+#include <vector>
+#include <utility>
+#include <stdexcept>
+#include <cmath>
+#include <z3_api.h>
+
+namespace {
+
+QMutex g_z3LogMutex;
+thread_local const QString *g_currentZ3Logic = nullptr;
+thread_local bool g_z3ErrorLogged = false;
+thread_local QString g_lastZ3ErrorMessage;
+
+QString writeZ3FailureLog(const QString &logic, const QString &errorMessage)
+{
+    QMutexLocker locker(&g_z3LogMutex);
+    QDir baseDir(QDir::current());
+    const QString logDir = QStringLiteral("logs");
+    if (!baseDir.exists(logDir)) {
+        baseDir.mkpath(logDir);
+    }
+    baseDir.cd(logDir);
+
+    const QString timestamp = QDateTime::currentDateTimeUtc().toString(QStringLiteral("yyyyMMdd_HHmmsszzz"));
+    const QString fileName = QStringLiteral("z3_error_%1.txt").arg(timestamp);
+
+    QFile file(baseDir.filePath(fileName));
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        qWarning() << "Failed to open Z3 log file.";
+        return QString();
+    }
+
+    QTextStream stream(&file);
+    stream << "Z3 Error: " << errorMessage << "\n";
+    stream << "----------- Logic -----------\n";
+    stream << logic;
+    file.close();
+    return file.fileName();
+}
+
+void errorHandler(Z3_context ctx, Z3_error_code err)
+{
+    const char *msg = Z3_get_error_msg(ctx, err);
+    const QString message = QString::fromUtf8(msg ? msg : "unknown error");
+    if (!g_z3ErrorLogged && g_currentZ3Logic) {
+        const QString path = writeZ3FailureLog(*g_currentZ3Logic, message);
+        if (!path.isEmpty()) {
+            qWarning() << "Z3 error logged to" << QDir::toNativeSeparators(path);
+        }
+        g_z3ErrorLogged = true;
+        g_lastZ3ErrorMessage = message;
+    }
+}
+
+void skipWhitespace(const QString &text, int &pos)
+{
+    while (pos < text.size() && text.at(pos).isSpace()) {
+        ++pos;
+    }
+}
+
+QString readSymbolToken(const QString &text, int &pos)
+{
+    skipWhitespace(text, pos);
+    const int start = pos;
+    while (pos < text.size()) {
+        const QChar ch = text.at(pos);
+        if (ch.isSpace() || ch == '(' || ch == ')') {
+            break;
+        }
+        ++pos;
+    }
+    return text.mid(start, pos - start);
+}
+
+QString readBalancedToken(const QString &text, int &pos)
+{
+    skipWhitespace(text, pos);
+    if (pos >= text.size()) {
+        return QString();
+    }
+    if (text.at(pos) != '(') {
+        return readSymbolToken(text, pos);
+    }
+    const int start = pos;
+    int depth = 0;
+    while (pos < text.size()) {
+        const QChar ch = text.at(pos);
+        if (ch == '(') {
+            ++depth;
+        } else if (ch == ')') {
+            --depth;
+        }
+        ++pos;
+        if (depth == 0) {
+            break;
+        }
+    }
+    return text.mid(start, pos - start);
+}
+
+QStringList splitTopLevelTokens(const QString &text)
+{
+    QStringList tokens;
+    QString current;
+    int depth = 0;
+    for (int i = 0; i < text.size(); ++i) {
+        const QChar ch = text.at(i);
+        if (ch.isSpace() && depth == 0) {
+            if (!current.trimmed().isEmpty()) {
+                tokens.append(current.trimmed());
+                current.clear();
+            }
+            continue;
+        }
+        current.append(ch);
+        if (ch == '(') {
+            ++depth;
+        } else if (ch == ')') {
+            --depth;
+        }
+    }
+    if (!current.trimmed().isEmpty()) {
+        tokens.append(current.trimmed());
+    }
+    return tokens;
+}
+
+z3::sort parseSortString(z3::context &ctx, const QString &sortText)
+{
+    const QString trimmed = sortText.trimmed();
+    if (trimmed.isEmpty()) {
+        throw std::runtime_error("empty sort string");
+    }
+    if (trimmed.compare(QStringLiteral("Real"), Qt::CaseInsensitive) == 0) {
+        return ctx.real_sort();
+    }
+    if (trimmed.compare(QStringLiteral("Int"), Qt::CaseInsensitive) == 0) {
+        return ctx.int_sort();
+    }
+    if (trimmed.compare(QStringLiteral("Bool"), Qt::CaseInsensitive) == 0) {
+        return ctx.bool_sort();
+    }
+    if (trimmed.startsWith(QStringLiteral("(Array"), Qt::CaseInsensitive)) {
+        QString inner = trimmed.mid(QStringLiteral("(Array").size());
+        if (inner.endsWith(')')) {
+            inner.chop(1);
+        }
+        inner = inner.trimmed();
+        const QStringList parts = splitTopLevelTokens(inner);
+        if (parts.size() != 2) {
+            throw std::runtime_error(QString("unable to parse array sort: %1").arg(trimmed).toStdString());
+        }
+        z3::sort domain = parseSortString(ctx, parts.at(0));
+        z3::sort range = parseSortString(ctx, parts.at(1));
+        return ctx.array_sort(domain, range);
+    }
+    throw std::runtime_error(QString("unsupported sort: %1").arg(trimmed).toStdString());
+}
+
+std::vector<std::pair<QString, QString>> collectFunctionDeclarations(const QString &logic)
+{
+    std::vector<std::pair<QString, QString>> declarations;
+    QSet<QString> seen;
+    int pos = 0;
+    while (pos < logic.size()) {
+        skipWhitespace(logic, pos);
+        if (pos >= logic.size()) {
+            break;
+        }
+        if (logic.midRef(pos, 12) == QStringLiteral("(declare-fun")) {
+            pos += 12;
+            QString name = readSymbolToken(logic, pos);
+            QString argsToken = readBalancedToken(logic, pos);
+            QString sortToken = readBalancedToken(logic, pos);
+            if (!name.isEmpty() && !sortToken.isEmpty() && !seen.contains(name)) {
+                declarations.emplace_back(name.trimmed(), sortToken.trimmed());
+                seen.insert(name.trimmed());
+            }
+            skipWhitespace(logic, pos);
+            if (pos < logic.size() && logic.at(pos) == ')') {
+                ++pos;
+            }
+            continue;
+        }
+        ++pos;
+    }
+    return declarations;
+}
+
+QString formatRangeValue(double number)
+{
+    if (std::fabs(number) < 1e-12) {
+        number = 0.0;
+    }
+    QString text = QString::number(number, 'f', 12);
+    if (text.contains(QLatin1Char('.'))) {
+        while (text.endsWith(QLatin1Char('0'))) {
+            text.chop(1);
+        }
+        if (text.endsWith(QLatin1Char('.'))) {
+            text.chop(1);
+        }
+    }
+    if (text == QLatin1String("-0")) {
+        text = QStringLiteral("0");
+    }
+    if (text.isEmpty()) {
+        text = QStringLiteral("0");
+    }
+    return text;
+}
+
+QString formatModelExpr(const z3::expr &value)
+{
+    if (value.is_bool()) {
+        switch (value.bool_value()) {
+        case Z3_L_TRUE:
+            return QStringLiteral("true");
+        case Z3_L_FALSE:
+            return QStringLiteral("false");
+        default:
+            return QStringLiteral("unknown");
+        }
+    }
+    if (value.is_int() || value.is_real()) {
+        const std::string text = value.to_string();
+        bool ok = false;
+        double number = QString::fromStdString(text).toDouble(&ok);
+        if (ok) {
+            return formatRangeValue(number);
+        }
+        return QString::fromStdString(text);
+    }
+    if (value.is_app() && value.num_args() == 0) {
+        return QString::fromStdString(value.to_string());
+    }
+    if (value.is_array()) {
+        QStringList entries;
+        z3::expr asArray = value;
+        while (asArray.is_app() && asArray.decl().decl_kind() == Z3_OP_STORE) {
+            z3::expr index = asArray.arg(1);
+            z3::expr val = asArray.arg(2);
+            entries.append(QStringLiteral("(%1 -> %2)")
+                               .arg(QString::fromStdString(index.to_string()),
+                                    QString::fromStdString(val.to_string())));
+            asArray = asArray.arg(0);
+        }
+        entries.append(QStringLiteral("else -> %1").arg(QString::fromStdString(asArray.to_string())));
+        return QStringLiteral("{%1}").arg(entries.join(QStringLiteral(", ")));
+    }
+    return QString::fromStdString(value.to_string());
+}
+
+} // namespace
+
 QList<QList<ComponentEntity>> candidateConflictList ;
 QList<QList<ComponentEntity>> ConflictList;
 
@@ -10,7 +277,7 @@ SystemEntity::SystemEntity(SQliteDatabase *database)
 }
 
 int ProgressNum;
-bool z3Solve(QString logic);
+bool z3Solve(const QString &logic, int timeoutMs, QMap<QString, QString> *modelOut);
 bool isSuperSet(QList<ComponentEntity>& set,QList<ComponentEntity>& superSet);
 QString unchangingCode;
 bool ThreadSolveResult[3];
@@ -57,6 +324,225 @@ QList<ComponentEntity> SystemEntity::prepareModel(const QString& modelDescriptio
     //QString out = "PrepareTime:"+QString::number(time.elapsed()/1000.0);
     //qDebug() << out << endl;
     return componentEntityList;
+}
+
+QList<obsEntity> SystemEntity::buildObsEntityList(const QList<TestItem> &testItemList)
+{
+    return creatObsEntity(testItemList);
+}
+
+void SystemEntity::setVariableRangeConfig(const rangeconfig::VariableRangeConfig &config)
+{
+    variableRangeConfig = config;
+}
+
+SystemEntity::IncrementalSolveSession SystemEntity::createIncrementalSolveSession(const QString &modelDescription,
+                                                                                  const QList<TestItem> &testItemList,
+                                                                                  const QStringList &variableWhitelist,
+                                                                                  QString &errorMessage,
+                                                                                  int timeoutMs)
+{
+    IncrementalSolveSession session;
+    errorMessage.clear();
+
+    prepareModel(modelDescription);
+
+    QString testCode;
+    obsEntityList = creatObsEntity(testItemList);
+    for (const auto &obs : obsEntityList) {
+        testCode += obs.getDescription();
+    }
+
+    const QString rangeCode = buildVariableRangeCode(variableWhitelist, testItemList);
+    if (!rangeCode.isEmpty()) {
+        testCode += rangeCode;
+    }
+
+    QString componentCode;
+    for (const ComponentEntity &entity : componentEntityList) {
+        componentCode += entity.getDescription();
+    }
+
+    session.baseLogic = unchangingCode + componentCode + testCode;
+
+    session.context = std::make_shared<z3::context>();
+    if (!session.context) {
+        errorMessage = QStringLiteral("无法创建Z3上下文");
+        return session;
+    }
+
+    session.solver = std::make_shared<z3::solver>(*session.context);
+    if (!session.solver) {
+        errorMessage = QStringLiteral("无法创建Z3求解器");
+        session.context.reset();
+        return session;
+    }
+
+    Z3_set_error_handler(*session.context, errorHandler);
+
+    if (timeoutMs > 0) {
+        z3::params params(*session.context);
+        params.set("timeout", static_cast<unsigned>(timeoutMs));
+        session.solver->set(params);
+    }
+
+    g_currentZ3Logic = &session.baseLogic;
+    session.declaredFunctions = collectFunctionDeclarations(session.baseLogic);
+    g_z3ErrorLogged = false;
+    g_lastZ3ErrorMessage.clear();
+
+    try {
+        z3::expr_vector baseExprs = session.context->parse_string(session.baseLogic.toStdString().c_str());
+        for (unsigned i = 0; i < baseExprs.size(); ++i) {
+            session.solver->add(baseExprs[i]);
+        }
+    } catch (const z3::exception &ex) {
+        errorMessage = QString::fromUtf8(ex.msg());
+        g_currentZ3Logic = nullptr;
+        return session;
+    }
+
+    if (g_z3ErrorLogged) {
+        errorMessage = g_lastZ3ErrorMessage;
+        g_currentZ3Logic = nullptr;
+        return session;
+    }
+
+    const z3::check_result result = session.solver->check();
+    g_currentZ3Logic = nullptr;
+    if (result == z3::check_result::sat) {
+        session.valid = true;
+        return session;
+    }
+
+    if (result == z3::check_result::unsat) {
+        errorMessage = QStringLiteral("基础约束不可满足");
+    } else {
+        errorMessage = QStringLiteral("Z3 返回 unknown 结果");
+    }
+    session.context.reset();
+    session.solver.reset();
+    session.baseLogic.clear();
+    session.valid = false;
+    return session;
+}
+
+bool SystemEntity::checkIncrementalSession(IncrementalSolveSession &session,
+                                           const QStringList &extraAssertions,
+                                           QString &errorMessage,
+                                           int timeoutMs,
+                                           QMap<QString, QString> *modelOut) const
+{
+    errorMessage.clear();
+    if (modelOut) {
+        modelOut->clear();
+    }
+    if (!session.valid || !session.context || !session.solver) {
+        errorMessage = QStringLiteral("增量求解会话未初始化");
+        return false;
+    }
+
+    if (timeoutMs > 0) {
+        z3::params params(*session.context);
+        params.set("timeout", static_cast<unsigned>(timeoutMs));
+        session.solver->set(params);
+    }
+
+    session.solver->push();
+    bool popped = false;
+    auto ensurePop = [&]() {
+        if (!popped) {
+            session.solver->pop();
+            popped = true;
+        }
+    };
+
+    QString incrementalLogic;
+    if (!extraAssertions.isEmpty()) {
+        incrementalLogic = extraAssertions.join(QStringLiteral("\n"));
+        try {
+            z3::sort_vector sortVector(*session.context);
+            z3::func_decl_vector declVector(*session.context);
+            for (const auto &decl : session.declaredFunctions) {
+                z3::sort range = parseSortString(*session.context, decl.second);
+                z3::func_decl func = session.context->function(decl.first.toStdString().c_str(), 0, nullptr, range);
+                declVector.push_back(func);
+            }
+            z3::expr_vector parsed = session.context->parse_string(incrementalLogic.toStdString().c_str(),
+                                                                   sortVector,
+                                                                   declVector);
+            for (unsigned i = 0; i < parsed.size(); ++i) {
+                session.solver->add(parsed[i]);
+            }
+        } catch (const std::exception &ex) {
+            errorMessage = QString::fromUtf8(ex.what());
+            ensurePop();
+            return false;
+        }
+    }
+
+    QString combinedLogic;
+    if (!incrementalLogic.isEmpty()) {
+        combinedLogic = session.baseLogic + incrementalLogic;
+    } else {
+        combinedLogic = session.baseLogic;
+    }
+
+    g_currentZ3Logic = &combinedLogic;
+    g_z3ErrorLogged = false;
+    g_lastZ3ErrorMessage.clear();
+
+    z3::check_result result;
+    try {
+        result = session.solver->check();
+    } catch (const z3::exception &ex) {
+        errorMessage = QString::fromUtf8(ex.msg());
+        ensurePop();
+        g_currentZ3Logic = nullptr;
+        return false;
+    }
+
+    g_currentZ3Logic = nullptr;
+
+    if (g_z3ErrorLogged) {
+        errorMessage = g_lastZ3ErrorMessage;
+        ensurePop();
+        return false;
+    }
+
+    bool sat = false;
+    if (result == z3::check_result::sat) {
+        sat = true;
+        if (modelOut) {
+            modelOut->clear();
+            z3::model model = session.solver->get_model();
+            const unsigned count = model.size();
+            for (unsigned i = 0; i < count; ++i) {
+                z3::func_decl decl = model.get_const_decl(i);
+                const QString name = QString::fromStdString(decl.name().str());
+                z3::expr value = model.get_const_interp(decl);
+                modelOut->insert(name, formatModelExpr(value));
+            }
+        }
+    } else if (result == z3::check_result::unsat) {
+        sat = false;
+        if (modelOut) {
+            modelOut->clear();
+        }
+    } else {
+        errorMessage = QStringLiteral("Z3 返回 unknown 结果");
+        sat = false;
+    }
+
+    ensurePop();
+    return sat;
+}
+
+QString SystemEntity::buildVariableRangeCode(const QStringList &variables, const QList<TestItem> &testItemList) const
+{
+    Q_UNUSED(variables);
+    Q_UNUSED(testItemList);
+    return QString();
 }
 
 QMap<QString, double> SystemEntity::solveOutlierObs(QList<obsEntity>& obsEntityList,QList<resultEntity>& resultEntityList) const {
@@ -678,7 +1164,7 @@ QList<resultEntity> SystemEntity::completeSolve(const QString& modelDescription,
 
     qDebug()<<"开始求解多故障";
     //双故障求解
-    int totalDoubleIterations = failurePairs.size();
+    int totalDoubleIterations = static_cast<int>(failurePairs.size());
     int currentDoubleIteration = 0;
 
     while(!failurePairs.empty()) {
@@ -1790,53 +2276,91 @@ QList<QList<ComponentEntity>> SystemEntity::AnlysisSystemLink(const QString& sys
     return  myVector;
 }
 
-// 自定义错误处理函数
-void errorHandler(Z3_context ctx, Z3_error_code err)
+bool z3Solve(const QString &logic, int timeoutMs, QMap<QString, QString> *modelOut)
 {
-    std::cerr << "Z3 error: " << Z3_get_error_msg(ctx, err) << std::endl;
-
-    // 根据需要选择退出或返回错误标志
-    exit(1);
-}
-
-bool z3Solve(QString logic)
-{
-    //qDebug().noquote() << "=============================\nz3 solving code:\n" <<logic;
-    z3::context c;
-    z3::solver s(c);
-    Z3_set_error_handler(c, errorHandler);
-
-    bool ans;
-    s.from_string(const_cast<char*>(logic.toStdString().c_str()));
-    //    std::string logicString = logic.toStdString();
-    //    const char* logicChars = logicString.c_str();
-    //    bool ans;
-    //    qDebug() << "Logic expression: " << QString::fromStdString(logicString);
-    //    s.from_string(logicChars);
-    switch (s.check())
-    {
-    case z3::check_result::unsat:
-        ans = false;
-        break;
-    case z3::check_result::sat:
-        ans = true;
-        //Lu 输出sat Model
-        //qDebug()<<"\nSat Model:"<<QString::fromStdString(s.get_model().to_string());
-        break;
-    case z3::unknown:
-        ans = true;
-        QMessageBox::information(nullptr, "Z3 Solver Result", "Z3 Solver Result Unknown");
-        break;
-    default:
-        ans = true;
-        QMessageBox::information(nullptr, "Z3 Solver Result", "Z3 Solver Result Unexpected");
-        break;
+    g_currentZ3Logic = &logic;
+    g_z3ErrorLogged = false;
+    g_lastZ3ErrorMessage.clear();
+    if (modelOut) {
+        modelOut->clear();
     }
 
-    //Z3_finalize_memory();
-    //if(ans==false) qDebug()<<logic;
+    try {
+        z3::context c;
+        z3::solver s(c);
+        Z3_set_error_handler(c, errorHandler);
 
-    return ans;
+        if (timeoutMs > 0) {
+            z3::params params(c);
+            params.set("timeout", static_cast<unsigned>(timeoutMs));
+            s.set(params);
+        }
+
+        s.from_string(const_cast<char*>(logic.toStdString().c_str()));
+        if (g_z3ErrorLogged) {
+            g_currentZ3Logic = nullptr;
+            return false;
+        }
+
+        const z3::check_result checkResult = s.check();
+        if (g_z3ErrorLogged) {
+            g_currentZ3Logic = nullptr;
+            return false;
+        }
+
+        bool sat = false;
+        switch (checkResult) {
+        case z3::check_result::sat:
+            sat = true;
+            break;
+        case z3::check_result::unsat:
+            sat = false;
+            break;
+        case z3::check_result::unknown:
+            QMessageBox::information(nullptr, QObject::tr("Z3求解"), QObject::tr("Z3 返回 unknown 结果"));
+            sat = false;
+            break;
+        default:
+            QMessageBox::information(nullptr, QObject::tr("Z3求解"), QObject::tr("Z3 返回未知结果"));
+            sat = false;
+            break;
+        }
+
+        if (sat && modelOut) {
+            modelOut->clear();
+            z3::model model = s.get_model();
+            const unsigned count = model.size();
+            for (unsigned i = 0; i < count; ++i) {
+                z3::func_decl decl = model.get_const_decl(i);
+                const QString name = QString::fromStdString(decl.name().str());
+                z3::expr value = model.get_const_interp(decl);
+                modelOut->insert(name, formatModelExpr(value));
+            }
+        } else if (!sat && modelOut) {
+            modelOut->clear();
+        }
+
+        g_currentZ3Logic = nullptr;
+        g_z3ErrorLogged = false;
+        g_lastZ3ErrorMessage.clear();
+        return sat;
+    } catch (const z3::exception &ex) {
+        const QString message = QString::fromUtf8(ex.msg());
+        if (modelOut) {
+            modelOut->clear();
+        }
+        if (g_currentZ3Logic && !g_z3ErrorLogged) {
+            const QString path = writeZ3FailureLog(*g_currentZ3Logic, message);
+            if (!path.isEmpty()) {
+                qWarning() << "Z3 exception logged to" << QDir::toNativeSeparators(path);
+            }
+        }
+        qWarning() << "Z3 exception:" << message;
+        g_currentZ3Logic = nullptr;
+        g_z3ErrorLogged = false;
+        g_lastZ3ErrorMessage.clear();
+        return false;
+    }
 }
 
 
