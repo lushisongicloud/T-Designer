@@ -147,6 +147,12 @@
 
 ---
 
+## Phase AI · DeepSeek 自动建模
+
+- [x] 批量自动编写：BtnBatchAutoGenerate 轮询最小类别（每轮每类最多 10 个）+ DeepSeek 长连 session 复用 + 日志断点续作（复用单器件自动编写逻辑）
+
+---
+
 ## Phase 6 · D 矩阵（构建/查看/存储）
 
 - [ ] 移植并适配 DMatrixBuilder（ref/T‑Solver/testability/d_matrix_builder.*）

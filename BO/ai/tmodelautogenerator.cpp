@@ -17,6 +17,8 @@
 #include <QCoreApplication>
 #include <QTimer>
 #include <QSet>
+#include <QTableView>
+#include <cstdio>
 
 TModelAutoGenerator::TModelAutoGenerator(const QSqlDatabase &db, QObject *parent)
     : QObject(parent)
@@ -30,6 +32,9 @@ TModelAutoGenerator::TModelAutoGenerator(const QSqlDatabase &db, QObject *parent
     , m_currentStage(Stage_PortType)
     , m_isFinished(false)
 {
+    m_nextComponentTimer.setSingleShot(true);
+    connect(&m_nextComponentTimer, &QTimer::timeout, this, &TModelAutoGenerator::processNextComponent);
+
     // 连接 DeepSeek 客户端信号
     connect(m_deepseekClient, &DeepSeekClient::reasoningDelta, this, &TModelAutoGenerator::onReasoningDelta);
     connect(m_deepseekClient, &DeepSeekClient::contentDelta, this, &TModelAutoGenerator::onContentDelta);
@@ -61,10 +66,40 @@ TModelAutoGenerator::~TModelAutoGenerator()
     }
 }
 
+void TModelAutoGenerator::setLogFileOverride(const QString &path, bool appendMode)
+{
+    m_logOverridePath = path;
+    m_logAppendMode = appendMode;
+    m_logInitialized = false;
+    if (m_logStream) {
+        delete m_logStream;
+        m_logStream = nullptr;
+    }
+    if (m_logFile) {
+        m_logFile->close();
+        delete m_logFile;
+        m_logFile = nullptr;
+    }
+}
+
+void TModelAutoGenerator::cancelGeneration()
+{
+    m_isFinished = true;
+    m_nextComponentTimer.stop();
+    if (m_deepseekClient) {
+        m_deepseekClient->cancelRequest();
+    }
+}
+
 void TModelAutoGenerator::startAutoGeneration()
 {
-    // 初始化日志
-    initLogFile();
+    m_isFinished = false;
+    m_components.clear();
+
+    if (!m_logInitialized) {
+        initLogFile();
+        m_logInitialized = true;
+    }
 
     // 加载组件
     loadComponents();
@@ -89,11 +124,21 @@ void TModelAutoGenerator::startAutoGeneration()
 
 void TModelAutoGenerator::initLogFile()
 {
-    QString logPath = QString("tmodel_auto_gen_%1.log")
-        .arg(QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss"));
+    QString logPath = m_logOverridePath;
+    if (logPath.isEmpty()) {
+        logPath = QString("tmodel_auto_gen_%1.log")
+            .arg(QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss"));
+    } else if (!m_logAppendMode && QFile::exists(logPath)) {
+        QFile::remove(logPath);
+    }
+
+    QFile::OpenMode mode = QIODevice::WriteOnly | QIODevice::Text;
+    if (!m_logOverridePath.isEmpty() && m_logAppendMode) {
+        mode |= QIODevice::Append;
+    }
 
     m_logFile = new QFile(logPath);
-    if (m_logFile->open(QIODevice::WriteOnly | QIODevice::Text)) {
+    if (m_logFile->open(mode)) {
         m_logStream = new QTextStream(m_logFile);
         m_logStream->setCodec("UTF-8");
     } else {
@@ -252,6 +297,8 @@ void TModelAutoGenerator::startPortTypeIdentification()
     m_currentStage = Stage_PortType;
     m_currentReasoning.clear();
     m_currentOutput.clear();
+    m_reasoningStreamStarted = false;
+    m_contentStreamStarted = false;
 
     if (m_dialog) {
         m_dialog->setStatus("识别端口类型...");
@@ -262,6 +309,9 @@ void TModelAutoGenerator::startPortTypeIdentification()
     QString systemPrompt = buildSystemPrompt();
     QString userPrompt = buildPortTypePrompt(comp);
 
+    logMessage("=== DeepSeek Request ===");
+    logMessage("System Prompt:\n" + systemPrompt);
+    logMessage("User Prompt:\n" + userPrompt);
     if (m_dialog) {
         m_dialog->appendInput("=== 系统提示 ===\n" + systemPrompt);
         m_dialog->appendInput("\n=== 用户输入 ===\n" + userPrompt);
@@ -281,6 +331,14 @@ void TModelAutoGenerator::startModelGeneration()
     m_currentStage = Stage_ModelFull;
     m_currentReasoning.clear();
     m_currentOutput.clear();
+    m_reasoningStreamStarted = false;
+    m_contentStreamStarted = false;
+
+    if (!clearExistingTModel(comp.equipmentId)) {
+        logMessage("警告：清除旧的 T 模型失败，继续尝试生成新模型。");
+    }
+    if (m_unitManageDialog)
+        m_unitManageDialog->clearTModelEditor();
 
     if (m_dialog) {
         m_dialog->setStatus("生成完整 T 模型...");
@@ -290,7 +348,7 @@ void TModelAutoGenerator::startModelGeneration()
     // 调用 UI 的端口变量构建逻辑
     QString portVarsDef;
     if (m_unitManageDialog) {
-        QMetaObject::invokeMethod(m_unitManageDialog, "on_BtnUpdatePortVars_clicked", Qt::DirectConnection);
+        m_unitManageDialog->regeneratePortVariables(false);
         portVarsDef = extractPortVarsFromDialog();
         if (portVarsDef.trimmed().isEmpty()) {
             portVarsDef = buildPortVarsSection(comp);
@@ -302,15 +360,14 @@ void TModelAutoGenerator::startModelGeneration()
     QString systemPrompt = buildModelSystemPrompt();
     QString userPrompt = buildModelUserPrompt(comp, portVarsDef);
 
+    logMessage("=== DeepSeek Request ===");
+    logMessage("System Prompt:\n" + systemPrompt);
+    logMessage("User Prompt:\n" + userPrompt);
     if (m_dialog) {
         m_dialog->appendInput("\n\n=== 新请求（完整模型） ===\n");
         m_dialog->appendInput("=== 系统提示 ===\n" + systemPrompt);
         m_dialog->appendInput("\n=== 用户输入 ===\n" + userPrompt);
     }
-
-    // 终端调试打印输入
-    logMessage("[模型生成 系统提示]\n" + systemPrompt);
-    logMessage("[模型生成 用户输入]\n" + userPrompt);
 
     m_deepseekClient->chatCompletion(systemPrompt, userPrompt, true);
 }
@@ -319,6 +376,13 @@ void TModelAutoGenerator::onReasoningDelta(const QString &delta)
 {
     if (m_isFinished) return; // 防止结束后仍接收
     m_currentReasoning += delta;
+    if (!delta.isEmpty()) {
+        if (!m_reasoningStreamStarted) {
+            qInfo().noquote() << "[DeepSeek][reasoning-stream]";
+            m_reasoningStreamStarted = true;
+        }
+        writeUtf8ToStdout(delta);
+    }
     if (m_dialog) {
         m_dialog->appendReasoning(delta);
     }
@@ -328,6 +392,13 @@ void TModelAutoGenerator::onContentDelta(const QString &delta)
 {
     if (m_isFinished) return; // 防止结束后仍接收
     m_currentOutput += delta;
+    if (!delta.isEmpty()) {
+        if (!m_contentStreamStarted) {
+            qInfo().noquote() << "[DeepSeek][content-stream]";
+            m_contentStreamStarted = true;
+        }
+        writeUtf8ToStdout(delta);
+    }
     if (m_dialog) {
         m_dialog->appendOutput(delta);
     }
@@ -375,7 +446,7 @@ void TModelAutoGenerator::onResponseComplete(const QString &reasoning, const QSt
         if (!parseModelFullResponse(content, constantsJson, modelBody)) {
             logMessage("完整模型响应解析失败");
             if (m_retryCount < MAX_RETRIES) { m_retryCount++; startModelGeneration(); }
-            else { moveToNextComponent(); }
+            else { moveToNextComponent(false, tr("模型解析失败")); }
             break; }
         // 解析常量映射
         QMap<QString, QString> constantsMap;
@@ -400,18 +471,24 @@ void TModelAutoGenerator::onResponseComplete(const QString &reasoning, const QSt
         QString fullTModel = QString(";;端口变量定义\n%1\n\n%2").arg(portVarsDef, modelBody.trimmed());
         QString errorMsg;
         if (validateTModel(comp.equipmentId, fullTModel, errorMsg)) {
-            if (saveFullModel(comp.equipmentId, fullTModel, constantsMap)) { logMessage("完整 T 模型与常量保存成功"); emit modelGenerated(fullTModel); }
-            else { logMessage("完整 T 模型保存失败"); }
+            bool saved = false;
+            if (saveFullModel(comp.equipmentId, fullTModel, constantsMap)) {
+                logMessage("完整 T 模型与常量保存成功");
+                emit modelGenerated(fullTModel);
+                saved = true;
+            } else {
+                logMessage("完整 T 模型保存失败");
+            }
             // 刷新 UI 器件信息
             if (m_unitManageDialog) {
                 QMetaObject::invokeMethod(m_unitManageDialog, "on_tableWidgetUnit_clicked", Qt::QueuedConnection,
                                           Q_ARG(QModelIndex, m_unitManageDialog->findChild<QTableView*>("tableWidgetUnit") ? m_unitManageDialog->findChild<QTableView*>("tableWidgetUnit")->currentIndex() : QModelIndex()));
             }
-            moveToNextComponent();
+            moveToNextComponent(saved, saved ? tr("生成完成") : tr("保存失败"));
         } else {
             logMessage("完整 T 模型校验失败: " + errorMsg);
             if (m_retryCount < MAX_RETRIES) { m_retryCount++; startModelGeneration(); }
-            else moveToNextComponent();
+            else moveToNextComponent(false, errorMsg);
         }
         break; }
     }
@@ -443,7 +520,7 @@ void TModelAutoGenerator::onErrorOccurred(const QString &error)
         }
     } else {
         logMessage("达到最大重试次数，跳过此器件");
-        moveToNextComponent();
+        moveToNextComponent(false, tr("达到最大重试次数"));
     }
 }
 
@@ -606,16 +683,38 @@ void TModelAutoGenerator::logMessage(const QString &msg)
         *m_logStream << timestampedMsg << "\n";
         m_logStream->flush();
     }
+
+    emit logLine(timestampedMsg);
 }
 
-void TModelAutoGenerator::moveToNextComponent()
+void TModelAutoGenerator::writeUtf8ToStdout(const QString &text)
 {
+    static QTextStream qstdout(stdout);
+    static bool codecSet = false;
+    if (!codecSet) {
+        qstdout.setCodec("UTF-8");
+        codecSet = true;
+    }
+    qstdout << text;
+    qstdout.flush();
+}
+
+void TModelAutoGenerator::moveToNextComponent(bool success, const QString &message)
+{
+    if (m_currentIndex < m_components.size()) {
+        const ComponentInfo &comp = m_components[m_currentIndex];
+        emit componentFinished(comp.equipmentId, comp.code, success, message);
+    }
+
     m_currentIndex++;
-    QTimer::singleShot(500, this, &TModelAutoGenerator::processNextComponent);
+    if (!m_isFinished) {
+        m_nextComponentTimer.start(500);
+    }
 }
 
 void TModelAutoGenerator::finishGeneration()
 {
+    m_nextComponentTimer.stop();
     logMessage("\n========== 自动生成完成 ==========");
     logMessage(QString("共处理 %1 个器件").arg(m_components.size()));
 
@@ -884,6 +983,18 @@ void TModelAutoGenerator::normalizeConstantsMap(QMap<QString, QString> &map) con
     }
 }
 
+bool TModelAutoGenerator::clearExistingTModel(int equipmentId)
+{
+    QSqlQuery query(m_db);
+    query.prepare("UPDATE Equipment SET TModel = '' WHERE Equipment_ID = ?");
+    query.addBindValue(equipmentId);
+    if (!query.exec()) {
+        logMessage("清空旧 T 模型失败: " + query.lastError().text());
+        return false;
+    }
+    return true;
+}
+
 QString TModelAutoGenerator::stripFenceWrappers(const QString &text) const
 {
     QString t=text.trimmed();
@@ -1038,14 +1149,14 @@ QString TModelAutoGenerator::buildFailureModePrompt(const ComponentInfo &comp)
     prompt +=
         "\n请生成该器件的常见故障模式（SMT-LIB2 格式）。\n"
         "故障模式描述器件发生故障时的行为，常见故障包括: 开路、短路、参数漂移等。\n"
-        "每个故障模式用一个 define-fun 定义。\n"
+        "每个故障模式用一个或一组 assert 定义，且一个器件的多个故障模式名称不均不能相同。\n"
         "示例:\n"
-        "(define-fun %Name%_fault_open () Bool\n"
-        "  (= %Name%.Coil.A1.i 0) ; 开路\n"
-        ")\n\n"
-        "(define-fun %Name%_fault_short () Bool\n"
-        "  (= %Name%.Coil.A1.u %Name%.Coil.A2.u) ; 短路\n"
-        ")\n\n"
+        ";;开路"
+        "(assert (> %Name%.Coil.R 1000000))\n"
+        "\n"
+        ";;短路"
+        "(assert (and (> %Name%.Coil.R -1) (< %Name%.Coil.R 1)))\n"
+        "\n\n"
         "注意: 只输出 SMT-LIB2 代码，不要包含其他说明文字。\n";
 
     return prompt;

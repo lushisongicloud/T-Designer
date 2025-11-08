@@ -5,8 +5,10 @@
 #include <QSqlDatabase>
 #include <QString>
 #include <QMap>
+#include <QTimer>
 #include <QFile>
 #include <QTextStream>
+#include <QSet>
 #include "BO/ai/deepseekclient.h"
 
 class AiModelGeneratorDialog;
@@ -40,9 +42,14 @@ public:
 
     // 开始自动生成（显示对话框）
     void startAutoGeneration();
+    void setSelectedEquipmentId(int equipmentId) { m_selectedEquipmentId = equipmentId; }
+    void setLogFileOverride(const QString &path, bool appendMode);
+    void cancelGeneration();
 
 signals:
     void finished();
+    void logLine(const QString &line);
+    void componentFinished(int equipmentId, const QString &code, bool success, const QString &message);
 
 private slots:
     void processNextComponent();
@@ -124,7 +131,7 @@ private:
     
     // 辅助函数
     void logMessage(const QString &msg);
-    void moveToNextComponent();
+    void moveToNextComponent(bool success = false, const QString &message = QString());
     void finishGeneration();
     int resolveContainerId(int equipmentId, bool createIfMissing);
     QString getDefaultVariables(const QString &portType);
@@ -147,11 +154,19 @@ signals:
 private:
     DialogUnitManage *m_unitManageDialog = nullptr; // 可选：用于调用 on_BtnUpdatePortVars_clicked 及抽取端口变量
     bool m_isFinished = false; // 防止对象结束后仍接收网络事件
+    bool m_logInitialized = false;
+    QString m_logOverridePath;
+    bool m_logAppendMode = false;
+    QTimer m_nextComponentTimer;
 
     QString serializeConstants(const QMap<QString, QString> &constantsMap) const; // name,value,unit,remark; 单元与备注为空
     QString deduplicateLines(const QString &text) const; // 去重端口变量重复声明
     QString normalizeConstantValue(const QString &value) const; // 科学计数法与布尔转化
     void normalizeConstantsMap(QMap<QString, QString> &map) const; // 批量规范化
+    bool clearExistingTModel(int equipmentId);
+    bool m_reasoningStreamStarted = false;
+    bool m_contentStreamStarted = false;
+    void writeUtf8ToStdout(const QString &text);
 };
 
 #endif // TMODEAUTOGENERATOR_H
