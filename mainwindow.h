@@ -615,7 +615,7 @@ private slots:
 
     void on_BtnPutText_clicked();
 
-    void on_BtnClearDB_clicked();
+    void on_BtnClearDB_clicked();    
 
     void on_CbTestType_currentIndexChanged(const QString &arg1);
 

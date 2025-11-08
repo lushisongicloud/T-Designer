@@ -44,7 +44,7 @@ void DialogNewProject::on_BtnOK_clicked()
     SourceFileName=LocalDataBasePath;
     SourceFileName.append("/project.db");
     */
-    SourceFileName = "./templete/project.db";
+    SourceFileName = "D:/SynologyDrive/Project/T_DESIGNER/templete/project.db";
     DestFileName=ui->LbProjectPath->text()+"/"+ui->EdProjectName->text()+".db";
     QFile::copy(SourceFileName,DestFileName);
     //建立ProjectStructure中的工程记录
