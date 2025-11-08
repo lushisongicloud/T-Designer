@@ -1,5 +1,7 @@
 #include "common.h"
 
+#include <QSqlError>
+
 QString m_dragText;
 common::common()
 {
@@ -2526,7 +2528,10 @@ int UpdateSymbolInfoBySymb2Lib_ID(QString Symb2Lib_ID,QAxWidget* tmp_MxDrawWidge
 //ListSymbolSpurInfo:SourceConn,SourcePrior,ExecConn,TestCost,InterConnect
 int AddSymbTblAndSymb2TermInfoTbl(QString LibEquipment_ID,QString MaxEquipment_ID,QString EquipmentTemplate_ID,QStringList ListSymbolSpurInfo)//dataFunc 从器件库中加载数据到工程库
 {
-    qDebug()<<"AddSymbTblAndSymb2TermInfoTbl";
+    qDebug()<<"=======================================";
+    qDebug()<<"[AddSymbTbl] LibEquipment_ID="<<LibEquipment_ID<<" MaxEquipment_ID="<<MaxEquipment_ID
+            <<" EquipmentTemplate_ID="<<EquipmentTemplate_ID<<" ListSymbolSpurInfo="<<ListSymbolSpurInfo;
+    qDebug()<<"[AddSymbTbl] begin";
     //更新T_ProjectDatabase数据库的Symbol表
     QSqlQuery QueryEquipmentTemplate = QSqlQuery(T_LibDatabase);//设置数据库选择模型
     QString tempSQL;
@@ -2534,12 +2539,20 @@ int AddSymbTblAndSymb2TermInfoTbl(QString LibEquipment_ID,QString MaxEquipment_I
         tempSQL = QString("SELECT * FROM EquipmentTemplate WHERE EquipmentTemplate_ID = "+EquipmentTemplate_ID);
     else
         tempSQL = QString("SELECT * FROM EquipmentTemplate WHERE Equipment_ID = '"+LibEquipment_ID+"'");
-    QueryEquipmentTemplate.exec(tempSQL);
+    if(!QueryEquipmentTemplate.exec(tempSQL))
+    {
+        qWarning()<<"[AddSymbTbl] EquipmentTemplate query failed"<<tempSQL<<QueryEquipmentTemplate.lastError();
+        return -1;
+    }
     int Symbol_ID=-1;
     QStringList ListInterConnectInfo;
     QStringList ListHisSymbolID;
+    int templateRow = 0;
     while(QueryEquipmentTemplate.next())
     {
+        ++templateRow;
+        const QString equipmentTemplateId = QueryEquipmentTemplate.value("EquipmentTemplate_ID").toString();
+        qDebug()<<"[AddSymbTbl] processing template row"<<templateRow<<"EquipmentTemplate_ID="<<equipmentTemplateId;
         QString connNumStr = QueryEquipmentTemplate.value("ConnNum").toString();
         QString connDescStr = QueryEquipmentTemplate.value("ConnDesc").toString();
         QString spurTestCost =QueryEquipmentTemplate.value("TestCost").toString();
@@ -2547,12 +2560,24 @@ int AddSymbTblAndSymb2TermInfoTbl(QString LibEquipment_ID,QString MaxEquipment_I
         //找到当前最大的Symbol_ID
         bool FindFunctionDefineClass=false;
         Symbol_ID=GetMaxIDOfDB(T_ProjectDatabase,"Symbol","Symbol_ID");
+        qDebug()<<"[AddSymbTbl] next Symbol_ID="<<Symbol_ID;
         ListHisSymbolID.append(QString::number(Symbol_ID)+","+QueryEquipmentTemplate.value("EquipmentTemplate_ID").toString()+","+QueryEquipmentTemplate.value("InterConnect").toString());
         QSqlQuery QueryVar = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
         QSqlQuery QueryFunctionDefineClass = QSqlQuery(T_LibDatabase);//设置数据库选择模型
         tempSQL = QString("SELECT * FROM FunctionDefineClass WHERE FunctionDefineCode = '"+QueryEquipmentTemplate.value("FunDefine").toString()+"'");
-        QueryFunctionDefineClass.exec(tempSQL);
-        if(QueryFunctionDefineClass.next()) FindFunctionDefineClass=true;
+        if(!QueryFunctionDefineClass.exec(tempSQL))
+        {
+            qWarning()<<"[AddSymbTbl] FunctionDefineClass query failed"<<tempSQL<<QueryFunctionDefineClass.lastError();
+        }
+        if(QueryFunctionDefineClass.next())
+        {
+            FindFunctionDefineClass=true;
+            qDebug()<<"[AddSymbTbl] found FunctionDefineClass"<<QueryFunctionDefineClass.value("FunctionDefineName").toString();
+        }
+        else
+        {
+            qDebug()<<"[AddSymbTbl] FunctionDefineClass not found for"<<QueryEquipmentTemplate.value("FunDefine").toString();
+        }
 
         QSqlQuery QuerySymbol = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
         tempSQL = QString("INSERT INTO Symbol (Symbol_ID,Page_ID,Equipment_ID,Symbol,Symbol_Category,Symbol_Desc,Show_DT,Designation,Symbol_Handle,Symbol_Remark,FunDefine,FuncType,SourceConn,ExecConn,SourcePrior,InterConnect)"
@@ -2569,17 +2594,28 @@ int AddSymbTblAndSymb2TermInfoTbl(QString LibEquipment_ID,QString MaxEquipment_I
         else
             Symbol=QueryEquipmentTemplate.value("Symbol").toString();
         QuerySymbol.bindValue(":Symbol",Symbol);
+        qDebug()<<"[AddSymbTbl] resolved symbol name"<<Symbol;
         if(FindFunctionDefineClass)
         {
             //查找FunctionDefineClass中的ParentNo确定Symbol_Category
             QSqlQuery QuerySymbol_Category = QSqlQuery(T_LibDatabase);//设置数据库选择模型
             tempSQL = "SELECT * FROM FunctionDefineClass WHERE FunctionDefineClass_ID = '"+QueryFunctionDefineClass.value("ParentNo").toString()+"'";
-            QuerySymbol_Category.exec(tempSQL);
+            if(!QuerySymbol_Category.exec(tempSQL))
+            {
+                qWarning()<<"[AddSymbTbl] Symbol_Category query failed"<<tempSQL<<QuerySymbol_Category.lastError();
+            }
             if(QuerySymbol_Category.next())
             {
                 tempSQL = "SELECT * FROM FunctionDefineClass WHERE FunctionDefineClass_ID = '"+QuerySymbol_Category.value("ParentNo").toString()+"'";
-                QuerySymbol_Category.exec(tempSQL);
-                if(QuerySymbol_Category.next()) QuerySymbol.bindValue(":Symbol_Category",QuerySymbol_Category.value("FunctionDefineName").toString());
+                if(!QuerySymbol_Category.exec(tempSQL))
+                {
+                    qWarning()<<"[AddSymbTbl] Symbol_Category parent query failed"<<tempSQL<<QuerySymbol_Category.lastError();
+                }
+                if(QuerySymbol_Category.next())
+                {
+                    QuerySymbol.bindValue(":Symbol_Category",QuerySymbol_Category.value("FunctionDefineName").toString());
+                    qDebug()<<"[AddSymbTbl] Symbol_Category"<<QuerySymbol_Category.value("FunctionDefineName").toString();
+                }
             }
         }
         else QuerySymbol.bindValue(":Symbol_Category","虚拟端口");
@@ -2598,9 +2634,9 @@ int AddSymbTblAndSymb2TermInfoTbl(QString LibEquipment_ID,QString MaxEquipment_I
         QString DwgPath;
         if(Symbol.contains("SPS_")) DwgPath="C:/TBD/SPS/"+Symbol+".dwg";
         else if(Symbol.contains("ES2_")) DwgPath="C:/TBD/SYMB2LIB/"+Symbol+".dwg";
-        qDebug()<<"Symbol="<<Symbol;
+        qDebug()<<"[AddSymbTbl] DwgPath"<<DwgPath;
         QuerySymbol.bindValue(":Symbol_Remark",GetDwgDicData(DwgPath,Symbol,"推荐名称"));
-        qDebug()<<"Symbol_Remark="<<Symbol_Remark;
+        qDebug()<<"[AddSymbTbl] Symbol_Remark raw="<<Symbol_Remark;
         if(FindFunctionDefineClass) QuerySymbol.bindValue(":FunDefine",QueryFunctionDefineClass.value("FunctionDefineName").toString());
         else QuerySymbol.bindValue(":FunDefine",QueryEquipmentTemplate.value("FunDefine").toString());
         QuerySymbol.bindValue(":FuncType",QueryEquipmentTemplate.value("FuncType").toString());
@@ -2608,8 +2644,13 @@ int AddSymbTblAndSymb2TermInfoTbl(QString LibEquipment_ID,QString MaxEquipment_I
         QuerySymbol.bindValue(":ExecConn",QueryEquipmentTemplate.value("ExecConn").toBool());
         QuerySymbol.bindValue(":SourcePrior",QueryEquipmentTemplate.value("SourcePrior").toString());
         QuerySymbol.bindValue(":InterConnect","");
-
-        QuerySymbol.exec();
+        qDebug()<<"[AddSymbTbl] inserting Symbol row"<<Symbol_ID<<"for equipment"<<MaxEquipment_ID;
+        if(!QuerySymbol.exec())
+        {
+            qWarning()<<"[AddSymbTbl] insert Symbol failed"<<QuerySymbol.lastError()<<"values:"<<Symbol_ID<<MaxEquipment_ID<<Symbol;
+            continue;
+        }
+        qDebug()<<"[AddSymbTbl] inserted Symbol"<<Symbol_ID;
 
         //==========加载端口==========
         QStringList listConnNum = connNumStr.simplified().split("￤");
@@ -2617,13 +2658,13 @@ int AddSymbTblAndSymb2TermInfoTbl(QString LibEquipment_ID,QString MaxEquipment_I
 
         //根据Symbol dwg文件确定连接点数量
         int TermCount=GetDwgTermCount(DwgPath,Symbol);
-        qDebug()<<"TermCount="<<TermCount;
+        qDebug()<<"[AddSymbTbl] TermCount"<<TermCount<<"connNum count"<<listConnNum.count();
 
         //拆分ConnNumInEquipmentTemplate
         bool isEquaDWGPortAndConnNum= true;
         if(listConnNum.count()!=TermCount){
             isEquaDWGPortAndConnNum =false;
-            qDebug()<<"Error: listConnNum.count()!=TermCount";
+            qWarning()<<"[AddSymbTbl] mismatch connNum vs term count"<<listConnNum.count()<<TermCount;
         }
 
         for(int i=0;i<listConnNum.count();i++)
@@ -2650,6 +2691,8 @@ int AddSymbTblAndSymb2TermInfoTbl(QString LibEquipment_ID,QString MaxEquipment_I
             }
             QuerySymb2TermInfo.bindValue(":ConnNum",listConnNum.at(i));
             QuerySymb2TermInfo.bindValue(":ConnDesc",connDesc);
+            qDebug()<<"[AddSymbTbl] inserting Symb2TermInfo"<<"Symbol_ID="<<Symbol_ID
+                    <<"logic"<<i+1<<"ConnNum="<<listConnNum.at(i)<<"ConnDesc="<<connDesc;
 
             //根据dwg文件确定连接点连线方向
             int mInternal = 0;
@@ -2663,15 +2706,21 @@ int AddSymbTblAndSymb2TermInfoTbl(QString LibEquipment_ID,QString MaxEquipment_I
                     if(listTermInfo.at(1)=="是")mInternal=1;
                     else mInternal=0;
                 }
-                else qDebug()<<"Error: listTermInfo.count()!=2";//数据不对的情况
+                else qWarning()<<"[AddSymbTbl] invalid term info"<<listTermInfo<<"for"<<Symbol<<"index"<<i+1;//数据不对的情况
             }
             QuerySymb2TermInfo.bindValue(":ConnDirection",mConnDirection);
             QuerySymb2TermInfo.bindValue(":Internal",mInternal);
 
             QSqlQuery QueryTermInfo = QSqlQuery(T_LibDatabase);//设置数据库选择模型
             QString tempSQL = "SELECT * FROM TermInfo WHERE Equipment_ID = "+LibEquipment_ID + " AND EquipmentTemplate_ID = "+QueryEquipmentTemplate.value("EquipmentTemplate_ID").toString()+" AND TermNum = '"+listConnNum.at(i)+"'";
-            QueryTermInfo.exec(tempSQL);
-            QueryTermInfo.next();
+            if(!QueryTermInfo.exec(tempSQL))
+            {
+                qWarning()<<"[AddSymbTbl] TermInfo query failed"<<tempSQL<<QueryTermInfo.lastError();
+            }
+            if(!QueryTermInfo.next())
+            {
+                qWarning()<<"[AddSymbTbl] TermInfo missing for term"<<listConnNum.at(i)<<"template"<<equipmentTemplateId;
+            }
 
             QString mTestCost = QueryTermInfo.value("TestCost").toString();
             if(mTestCost.isEmpty())mTestCost = spurTestCost;
@@ -2682,7 +2731,15 @@ int AddSymbTblAndSymb2TermInfoTbl(QString LibEquipment_ID,QString MaxEquipment_I
             QuerySymb2TermInfo.bindValue(":TagPos",QueryTermInfo.value("TagPos").toString());
             QuerySymb2TermInfo.bindValue(":TagEdge",QueryTermInfo.value("TagEdge").toString());
             QuerySymb2TermInfo.bindValue(":TagColor",QueryTermInfo.value("TagColor").toString());
-            QuerySymb2TermInfo.exec();
+            if(!QuerySymb2TermInfo.exec())
+            {
+                qWarning()<<"[AddSymbTbl] insert Symb2TermInfo failed"<<QuerySymb2TermInfo.lastError()
+                         <<"Symbol_ID"<<Symbol_ID<<"ConnNum"<<listConnNum.at(i);
+            }
+            else
+            {
+                qDebug()<<"[AddSymbTbl] inserted Symb2TermInfo for Symbol_ID"<<Symbol_ID<<"ConnNum"<<listConnNum.at(i);
+            }
         }//end of for(int i=0;i<listConnNum.count();i++)
     }
     //==========加载端口结束
@@ -2699,7 +2756,11 @@ int AddSymbTblAndSymb2TermInfoTbl(QString LibEquipment_ID,QString MaxEquipment_I
                 QString tempSQL="UPDATE Symbol SET InterConnect=:InterConnect WHERE Symbol_ID = "+ListHisSymbolID.at(i).split(",").at(0);
                 QuerySymbol.prepare(tempSQL);
                 QuerySymbol.bindValue(":InterConnect",ListHisSymbolID.at(j).split(",").at(0));
-                QuerySymbol.exec();
+                if(!QuerySymbol.exec())
+                    qWarning()<<"[AddSymbTbl] update InterConnect failed"<<QuerySymbol.lastError()<<"target"<<ListHisSymbolID.at(i);
+                else
+                    qDebug()<<"[AddSymbTbl] updated InterConnect"<<ListHisSymbolID.at(i).split(",").at(0)
+                           <<"->"<<ListHisSymbolID.at(j).split(",").at(0);
                 break;
             }
         }
@@ -2719,10 +2780,14 @@ int AddSymbTblAndSymb2TermInfoTbl(QString LibEquipment_ID,QString MaxEquipment_I
                 QuerySymbol.bindValue(":InterConnect",ListHisSymbolID.at(ListSymbolSpurInfo.at(i).split(",").at(4).toInt()-1).split(",").at(0));
             else
                 QuerySymbol.bindValue(":InterConnect","");
-            QuerySymbol.exec();
+            if(!QuerySymbol.exec())
+                qWarning()<<"[AddSymbTbl] update Symbol flags failed"<<QuerySymbol.lastError()<<"Symbol_ID"<<ListHisSymbolID.at(i).split(",").at(0);
+            else
+                qDebug()<<"[AddSymbTbl] updated Symbol flags"<<ListHisSymbolID.at(i).split(",").at(0);
             QSqlQuery QuerySearch(T_ProjectDatabase);
             tempSQL="SELECT * FROM Symb2TermInfo WHERE Symbol_ID = '"+ListHisSymbolID.at(i).split(",").at(0)+"'";
-            QuerySearch.exec(tempSQL);
+            if(!QuerySearch.exec(tempSQL))
+                qWarning()<<"[AddSymbTbl] query Symb2TermInfo for update failed"<<tempSQL<<QuerySearch.lastError();
             int Symb2TermIndex=0;
             while(QuerySearch.next())
             {
@@ -2732,7 +2797,12 @@ int AddSymbTblAndSymb2TermInfoTbl(QString LibEquipment_ID,QString MaxEquipment_I
                 QuerySymb2TermInfo.prepare(tempSQL);
                 QString StrTestCost=ListSymbolSpurInfo.at(i).split(",").at(3).split("￤").at(Symb2TermIndex);
                 QuerySymb2TermInfo.bindValue(":TestCost",StrTestCost.remove(" "));
-                QuerySymb2TermInfo.exec();
+                if(!QuerySymb2TermInfo.exec())
+                    qWarning()<<"[AddSymbTbl] update Symb2TermInfo TestCost failed"<<QuerySymb2TermInfo.lastError()
+                             <<"Symb2TermInfo_ID"<<QuerySearch.value("Symb2TermInfo_ID").toString();
+                else
+                    qDebug()<<"[AddSymbTbl] updated Symb2TermInfo TestCost"<<QuerySearch.value("Symb2TermInfo_ID").toString()
+                           <<"cost"<<StrTestCost;
                 Symb2TermIndex++;
             }//while(QuerySearch.next())
         }//for(int i=0;i<ListSymbolSpurInfo.count();i++)

@@ -1314,26 +1314,26 @@ void DialogUnitAttr::on_BtnUnitChoose_clicked() //dataFunc 从器件库中载入
             ListInterConnectInfo.append(QString::number(ui->tableWidgetSpur->rowCount()-1)+":"+QueryEquipmentTemplate.value("InterConnect").toString());
         }
         qDebug()<<"跳过端子配置";
-        //更新端子配置
-//        QSqlQuery QueryTermInfo= QSqlQuery(T_LibDatabase);
-//        SqlStr=QString("SELECT * FROM TermInfo WHERE EquipmentTemplate_ID = '"+QueryEquipmentTemplate.value("EquipmentTemplate_ID").toString()+"'");
-//        QueryTermInfo.exec(SqlStr);
-//        while(QueryTermInfo.next())
-//        {
-//            ui->tableTerm->setRowCount(ui->tableTerm->rowCount()+1);
-//            ui->tableTerm->setItem(ui->tableTerm->rowCount()-1,0,new QTableWidgetItem(QueryEquipmentTemplate.value("SpurDT").toString()));
-//            ui->tableTerm->item(ui->tableTerm->rowCount()-1,0)->setData(Qt::UserRole,QueryEquipmentTemplate.value("EquipmentTemplate_ID").toString());
-//            ui->tableTerm->setItem(ui->tableTerm->rowCount()-1,1,new QTableWidgetItem(QueryTermInfo.value("TermNum").toString()));
-//            ui->tableTerm->setItem(ui->tableTerm->rowCount()-1,2,new QTableWidgetItem(QueryTermInfo.value("TestCost").toString()));
-//            ui->tableTerm->setItem(ui->tableTerm->rowCount()-1,3,new QTableWidgetItem(QueryTermInfo.value("TermPicPath").toString()));
-//            if(QueryTermInfo.value("TagType").toString()!="")
-//            {
-//                ui->tableTerm->setItem(ui->tableTerm->rowCount()-1,4,new QTableWidgetItem("是"));
-//                ui->tableTerm->item(ui->tableTerm->rowCount()-1,4)->setData(Qt::UserRole,QueryTermInfo.value("TagType").toString()+"|"+QueryTermInfo.value("TagColor").toString()+"|"+QueryTermInfo.value("TagPos").toString()+"|"+QueryTermInfo.value("TagEdge").toString());
-//            }
-//            else
-//                ui->tableTerm->setItem(ui->tableTerm->rowCount()-1,4,new QTableWidgetItem("否"));
-//        }
+        //更新端子配置 Lu打开注释
+        QSqlQuery QueryTermInfo= QSqlQuery(T_LibDatabase);
+        SqlStr=QString("SELECT * FROM TermInfo WHERE EquipmentTemplate_ID = '"+QueryEquipmentTemplate.value("EquipmentTemplate_ID").toString()+"'");
+        QueryTermInfo.exec(SqlStr);
+        while(QueryTermInfo.next())
+        {
+            ui->tableTerm->setRowCount(ui->tableTerm->rowCount()+1);
+            ui->tableTerm->setItem(ui->tableTerm->rowCount()-1,0,new QTableWidgetItem(QueryEquipmentTemplate.value("SpurDT").toString()));
+            ui->tableTerm->item(ui->tableTerm->rowCount()-1,0)->setData(Qt::UserRole,QueryEquipmentTemplate.value("EquipmentTemplate_ID").toString());
+            ui->tableTerm->setItem(ui->tableTerm->rowCount()-1,1,new QTableWidgetItem(QueryTermInfo.value("TermNum").toString()));
+            ui->tableTerm->setItem(ui->tableTerm->rowCount()-1,2,new QTableWidgetItem(QueryTermInfo.value("TestCost").toString()));
+            ui->tableTerm->setItem(ui->tableTerm->rowCount()-1,3,new QTableWidgetItem(QueryTermInfo.value("TermPicPath").toString()));
+            if(QueryTermInfo.value("TagType").toString()!="")
+            {
+                ui->tableTerm->setItem(ui->tableTerm->rowCount()-1,4,new QTableWidgetItem("是"));
+                ui->tableTerm->item(ui->tableTerm->rowCount()-1,4)->setData(Qt::UserRole,QueryTermInfo.value("TagType").toString()+"|"+QueryTermInfo.value("TagColor").toString()+"|"+QueryTermInfo.value("TagPos").toString()+"|"+QueryTermInfo.value("TagEdge").toString());
+            }
+            else
+                ui->tableTerm->setItem(ui->tableTerm->rowCount()-1,4,new QTableWidgetItem("否"));
+        }
     }
     qDebug()<<"ListInterConnectInfo="<<ListInterConnectInfo;
     for(int i=0;i<ListInterConnectInfo.count();i++)
