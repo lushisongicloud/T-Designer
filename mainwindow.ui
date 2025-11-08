@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>T-Builder机电系统建模环境</string>
+   <string>测试性建模与交互式故障诊断一体化集成开发环境软件 V1.0</string>
   </property>
   <property name="windowIcon">
    <iconset resource="image.qrc">
@@ -420,7 +420,7 @@ rgba(17,255,255,128));
 </string>
             </property>
             <property name="currentIndex">
-             <number>1</number>
+             <number>0</number>
             </property>
             <widget class="QWidget" name="tab_8">
              <property name="styleSheet">
@@ -762,7 +762,7 @@ QTreeView::branch:open:has-children{
                  <string notr="true"/>
                 </property>
                 <property name="currentIndex">
-                 <number>0</number>
+                 <number>1</number>
                 </property>
                 <widget class="QWidget" name="tab_13">
                  <property name="styleSheet">
