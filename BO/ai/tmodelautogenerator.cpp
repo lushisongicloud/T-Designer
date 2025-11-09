@@ -101,6 +101,7 @@ void TModelAutoGenerator::setLogFileOverride(const QString &path, bool appendMod
 {
     m_logOverridePath = path;
     m_logAppendMode = appendMode;
+    m_disableLogFile = path.isEmpty() && !appendMode;  // 空路径且不追加模式 = 禁用日志文件
     m_logInitialized = false;
     if (m_logStream) {
         delete m_logStream;
@@ -168,6 +169,11 @@ void TModelAutoGenerator::startAutoGeneration()
 
 void TModelAutoGenerator::initLogFile()
 {
+    // 如果已明确禁用日志文件，直接返回
+    if (m_disableLogFile) {
+        return;
+    }
+    
     QString logPath = m_logOverridePath;
     if (logPath.isEmpty()) {
         // 增加毫秒和线程ID，确保多线程环境下文件名唯一
@@ -690,7 +696,14 @@ bool TModelAutoGenerator::savePortConfigs(int equipmentId)
 {
     // 无数据库模式：发出信号请求保存
     if (!m_useDatabaseMode) {
-        logMessage("无数据库模式：请求保存端口配置");
+        logMessage(QString("无数据库模式：请求保存端口配置，配置数=%1").arg(m_portConfigs.size()));
+        if (!m_portConfigs.isEmpty()) {
+            logMessage("端口配置详情：");
+            for (auto it = m_portConfigs.constBegin(); it != m_portConfigs.constEnd(); ++it) {
+                const PortTypeConfig &cfg = it.value();
+                logMessage(QString("  %1.%2: %3 (%4)").arg(cfg.functionBlock, cfg.portName, cfg.portType, cfg.variables));
+            }
+        }
         emit requestSavePortConfigs(equipmentId, m_portConfigs);
         return true;
     }
@@ -762,29 +775,29 @@ bool TModelAutoGenerator::savePortConfigs(int equipmentId)
     return true;
 }
 
-bool TModelAutoGenerator::saveTModel(int equipmentId, const QString &tmodel)
-{
-    // 无数据库模式：发出信号请求保存
-    if (!m_useDatabaseMode) {
-        logMessage("无数据库模式：请求保存 T 模型");
-        QMap<QString, QString> constants;  // 暂时为空，如需要可扩展
-        emit requestSaveModel(equipmentId, tmodel, constants);
-        return true;
-    }
+// bool TModelAutoGenerator::saveTModel(int equipmentId, const QString &tmodel)
+// {
+//     // 无数据库模式：发出信号请求保存
+//     if (!m_useDatabaseMode) {
+//         logMessage("无数据库模式：请求保存 T 模型");
+//         QMap<QString, QString> constants;  // 暂时为空，如需要可扩展
+//         emit requestSaveModel(equipmentId, tmodel, constants);
+//         return true;
+//     }
 
-    // 数据库模式：直接保存
-    QSqlQuery query(m_db);
-    query.prepare("UPDATE Equipment_Template SET TModel = ? WHERE Equipment_ID = ?");
-    query.addBindValue(tmodel);
-    query.addBindValue(equipmentId);
+//     // 数据库模式：直接保存
+//     QSqlQuery query(m_db);
+//     query.prepare("UPDATE Equipment_Template SET TModel = ? WHERE Equipment_ID = ?");
+//     query.addBindValue(tmodel);
+//     query.addBindValue(equipmentId);
 
-    if (!query.exec()) {
-        logMessage("保存 T 模型失败: " + query.lastError().text());
-        return false;
-    }
+//     if (!query.exec()) {
+//         logMessage("保存 T 模型失败: " + query.lastError().text());
+//         return false;
+//     }
 
-    return true;
-}
+//     return true;
+// }
 
 bool TModelAutoGenerator::validateTModel(int /*equipmentId*/, const QString &tmodel, QString &errorMsg)
 {
@@ -997,6 +1010,8 @@ QString TModelAutoGenerator::buildModelSystemPrompt()
         "- 完整描述器件正常工作时的约束关系\n"
         "- 引用常量用 %常量名%（如 %Resistance%、%RatedVoltage%）\n"
         "- 引用端口变量用完整路径（如 %Name%.A1.i、%Name%.A1.u）\n"
+        "- 重要约束：;;正常模式中使用的所有变量，必须来自 ';;端口变量定义' 或 ';;内部变量定义,不允许使用未声明的变量！\n"
+        "- 常见约束关系：\n"
         "- 基尔霍夫电流定律：(assert (= (+ %Name%.1.i %Name%.2.i) 0))\n"
         "- 欧姆定律：(assert (= (* %Name%.i %Name%.R) %Name%.u))\n"
         "- 条件约束用 ite：(assert (ite 条件 结果1 结果2))\n"
@@ -1006,6 +1021,7 @@ QString TModelAutoGenerator::buildModelSystemPrompt()
         "- 每个故障独立完整建模（不要只修改正常模式的某个值）\n"
         "- 可选：在 ;;故障模式 后添加 ;;公共开始，写公共约束，然后每个故障模式只需写差异部分\n"
         "- 每个故障以 ;;故障名称 开头（如 ;;线圈开路、;;绕组开路、;;转轴卡滞）\n"
+        "- 重要约束：;;故障模式中使用的所有变量，必须来自 ';;端口变量定义' 或 ';;内部变量定义,不允许使用未声明的变量！\n"
         "- 常见故障类型：\n"
         "  * 开路：电阻 > 100000000\n"
         "  * 短路：电阻 < 1 或阻值很小\n"
@@ -1052,7 +1068,10 @@ QString TModelAutoGenerator::buildModelSystemPrompt()
         
         "【注意事项】\n"
         "- 不要重复输出 ;;端口变量定义（已在用户输入中提供）\n"
-        "- 所有变量必须在端口变量定义或内部变量定义中声明\n"
+        "- 严格约束：;;正常模式和;;故障模式中使用的所有变量，必须且仅能来自以下两个范围：\n"
+        "  1. ';;端口变量定义' - 用户输入中已提供的端口变量（如 %Name%.A1.i、%Name%.A1.u）\n"
+        "  2. ';;内部变量定义' - 你在输出中定义的内部变量（如 %Name%.act、%Name%.R）\n"
+        "  禁止使用任何未在这两部分声明的变量！\n"
         "- 数值计算注意物理单位一致性\n"
         "- 故障模式要覆盖器件的主要失效模式\n"
         "- 记住：单分号(;)用于普通注释，双分号(;;)仅用于关键字标记\n"
@@ -1076,7 +1095,12 @@ QString TModelAutoGenerator::buildModelUserPrompt(const ComponentInfo &comp, con
     s += "已有 ';;端口变量定义' 内容 (保持不变, 不要重复声明):\n";
     s += portVarsDef + "\n\n";
     s += "请输出 JSON 常量定义 + 三个分段 (内部变量/正常模式/故障模式)。\n";
-    s += "重要：JSON 不要用代码块标记（```json 或 '''json），直接输出裸 JSON 对象。";
+    s += "重要：JSON 不要用代码块标记（```json 或 '''json），直接输出裸 JSON 对象。\n\n";
+    s += "变量使用严格约束：\n";
+    s += "在 ;;正常模式 和 ;;故障模式 中使用的所有变量，必须来自：\n";
+    s += "1. 上述 ';;端口变量定义' 中已声明的端口变量\n";
+    s += "2. 你在 ';;内部变量定义' 中声明的内部变量\n";
+    s += "禁止使用任何未声明的变量！";
     return s;
 }
 

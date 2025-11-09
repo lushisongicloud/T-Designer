@@ -1,5 +1,7 @@
 #include "batchautogeneratemanager.h"
 #include "../ai/tmodelautogenerator.h"  // 包含 PortTypeConfig 完整定义
+#include "BO/containerrepository.h"
+#include "widget/containerhierarchyutils.h"
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QDateTime>
@@ -28,8 +30,6 @@ BatchAutoGenerateManager::BatchAutoGenerateManager(const QSqlDatabase &db, QObje
     // 注册元类型，以便在跨线程信号槽中使用
     qRegisterMetaType<EquipmentProcessResult>("EquipmentProcessResult");
     qRegisterMetaType<QMap<QString, PortTypeConfig>>("QMap<QString,PortTypeConfig>");
-    
-    qInfo() << QString("[BatchManager] 构造函数 - 连接名: %1").arg(m_connectionName);
 }
 
 BatchAutoGenerateManager::~BatchAutoGenerateManager()
@@ -43,10 +43,12 @@ BatchAutoGenerateManager::~BatchAutoGenerateManager()
 
 void BatchAutoGenerateManager::start(const QString &logFilePath, 
                                       bool resumeFromLog, 
-                                      int workerCount)
+                                      int workerCount,
+                                      bool enableWorkerLog)
 {
     m_logFilePath = logFilePath;
     m_workerCount = qMax(1, workerCount);
+    m_enableWorkerLog = enableWorkerLog;
     m_stopped = false;
     
     // 1. 初始化日志文件
@@ -218,10 +220,34 @@ void BatchAutoGenerateManager::loadTaskQueue()
         }
     }
     
-    // 初始加载第一批任务（loadBatchTasks 内部会加锁）
+    // 初始加载任务，持续加载直到队列有足够任务或没有更多数据
     qInfo() << "[BatchManager] 开始初始加载任务...";
-    int loaded = loadBatchTasks(20);
-    qInfo() << QString("[BatchManager] 初始加载任务完成: %1 个器件").arg(loaded);
+    const int targetInitialTasks = 20;  // 目标初始任务数
+    const int maxLoadAttempts = 1000;   // 最多尝试加载次数，支持更多已处理器件
+    int totalLoaded = 0;
+    int attempts = 0;
+    
+    while (m_taskQueue.size() < targetInitialTasks && attempts < maxLoadAttempts) {
+        int loaded = loadBatchTasks(20);
+        attempts++;
+        
+        // loaded == -1 表示已到数据库末尾或查询失败
+        if (loaded == -1) {
+            qInfo() << "[BatchManager] 已到达数据库末尾或查询失败，停止加载";
+            break;
+        }
+        
+        if (loaded > 0) {
+            totalLoaded += loaded;
+        }
+        
+        // 如果本次查询有结果但加载了 0 个任务，说明全部被跳过，继续尝试下一批
+        if (loaded == 0) {
+            qInfo() << QString("[BatchManager] 本批次全部跳过，继续加载 (尝试 %1/%2)").arg(attempts).arg(maxLoadAttempts);
+        }
+    }
+    
+    qInfo() << QString("[BatchManager] 初始加载任务完成: %1 个器件 (尝试次数: %2)").arg(totalLoaded).arg(attempts);
     qInfo() << QString("[BatchManager] 当前队列大小: %1").arg(m_taskQueue.size());
 }
 
@@ -229,10 +255,8 @@ int BatchAutoGenerateManager::loadBatchTasks(int batchSize)
 {
     QSqlDatabase db = QSqlDatabase::database(m_connectionName);
     
-    qInfo() << QString("[BatchManager] loadBatchTasks: batchSize=%1, lastLoadedId=%2")
-        .arg(batchSize).arg(m_lastLoadedEquipmentId);
-    
     int loadedCount = 0;
+    int rowCount = 0;
     
     // 从上次加载的位置继续，按 Equipment_ID 升序加载
     QSqlQuery query(db);
@@ -248,12 +272,9 @@ int BatchAutoGenerateManager::loadBatchTasks(int batchSize)
     
     if (!query.exec()) {
         qWarning() << "[BatchManager] 加载器件任务失败:" << query.lastError().text();
-        return 0;
+        return -1;  // 返回 -1 表示查询失败
     }
     
-    qInfo() << "[BatchManager] SQL查询执行成功，开始遍历结果...";
-    
-    int rowCount = 0;
     while (query.next()) {
         rowCount++;
         int equipmentId = query.value(0).toInt();
@@ -261,7 +282,6 @@ int BatchAutoGenerateManager::loadBatchTasks(int batchSize)
         // 跳过已处理的器件
         if (m_processedEquipmentIds.contains(equipmentId)) {
             m_lastLoadedEquipmentId = equipmentId;
-            qInfo() << QString("[BatchManager] 跳过已处理器件: ID=%1").arg(equipmentId);
             continue;
         }
         
@@ -275,15 +295,12 @@ int BatchAutoGenerateManager::loadBatchTasks(int batchSize)
         m_taskQueue.enqueue(task);
         m_lastLoadedEquipmentId = equipmentId;
         loadedCount++;
-        
-        if (loadedCount <= 3 || loadedCount == batchSize) {
-            qInfo() << QString("[BatchManager] 加载任务 #%1: ID=%2, Code=%3, Name=%4")
-                .arg(loadedCount).arg(equipmentId).arg(task.code).arg(task.name);
-        }
     }
     
-    qInfo() << QString("[BatchManager] loadBatchTasks 完成: 查询返回%1行, 加载%2个任务")
-        .arg(rowCount).arg(loadedCount);
+    // 如果查询返回 0 行，说明已经到达数据库末尾，返回 -1 作为标记
+    if (rowCount == 0) {
+        return -1;
+    }
     
     return loadedCount;
 }
@@ -293,19 +310,44 @@ bool BatchAutoGenerateManager::loadMoreTasksIfNeeded()
     // 当队列少于10个时，尝试加载更多
     const int QUEUE_LOW_THRESHOLD = 10;
     const int BATCH_SIZE = 20;
+    const int MAX_RELOAD_ATTEMPTS = 50;  // 最多重试次数
     
     if (m_taskQueue.size() < QUEUE_LOW_THRESHOLD) {
-        int loaded = loadBatchTasks(BATCH_SIZE);
-        if (loaded > 0) {
-            qInfo() << QString("[BatchManager] 队列补充: 加载了 %1 个新任务，当前队列: %2")
-                .arg(loaded).arg(m_taskQueue.size());
+        int attempts = 0;
+        int totalLoaded = 0;
+        
+        // 持续尝试加载，直到队列足够或到达末尾
+        while (m_taskQueue.size() < QUEUE_LOW_THRESHOLD && attempts < MAX_RELOAD_ATTEMPTS) {
+            int loaded = loadBatchTasks(BATCH_SIZE);
+            attempts++;
+            
+            // loaded == -1 表示已到数据库末尾
+            if (loaded == -1) {
+                qInfo() << "[BatchManager] 已到达数据库末尾，无更多器件可加载";
+                return false;
+            }
+            
+            if (loaded > 0) {
+                totalLoaded += loaded;
+            }
+            
+            // 如果本批次全部跳过但还没到末尾，继续尝试
+            if (loaded == 0) {
+                qInfo() << QString("[BatchManager] 队列补充: 本批次全部跳过，继续尝试 (%1/%2)")
+                    .arg(attempts).arg(MAX_RELOAD_ATTEMPTS);
+            }
+        }
+        
+        if (totalLoaded > 0) {
+            qInfo() << QString("[BatchManager] 队列补充完成: 加载了 %1 个新任务，当前队列: %2")
+                .arg(totalLoaded).arg(m_taskQueue.size());
             
             // 更新总数（因为可能有新加载的）
             m_totalCount = m_skippedCount + m_processedCount + m_taskQueue.size();
             
             return true;
         } else {
-            qInfo() << "[BatchManager] 没有更多器件可加载";
+            qInfo() << QString("[BatchManager] 队列补充失败: 尝试了%1次，未找到新任务").arg(attempts);
             return false;
         }
     }
@@ -336,33 +378,19 @@ QString BatchAutoGenerateManager::getCategoryPathInternal(int equipmentId)
 
 void BatchAutoGenerateManager::createWorkers()
 {
-    qInfo() << QString("[BatchManager] createWorkers: 创建 %1 个工作线程").arg(m_workerCount);
-    qInfo() << QString("[BatchManager] 当前队列大小: %1").arg(m_taskQueue.size());
-    
     for (int i = 0; i < m_workerCount; ++i) {
-        qInfo() << QString("[BatchManager] 启动 Worker%1...").arg(i);
         startNextTask(i);
     }
-    
-    qInfo() << "[BatchManager] createWorkers 完成";
 }
 
 void BatchAutoGenerateManager::startNextTask(int workerId)
 {
-    qInfo() << QString("[BatchManager] startNextTask: Worker%1 开始").arg(workerId);
-    
     if (m_stopped) {
-        qInfo() << QString("[BatchManager] Worker%1: 已停止，退出").arg(workerId);
         return;
     }
     
-    qInfo() << QString("[BatchManager] Worker%1: 当前队列大小=%2").arg(workerId).arg(m_taskQueue.size());
-    
     // 队列不足时尝试加载更多
-    qInfo() << QString("[BatchManager] Worker%1: 检查是否需要加载更多任务...").arg(workerId);
     loadMoreTasksIfNeeded();
-    
-    qInfo() << QString("[BatchManager] Worker%1: 检查后队列大小=%2").arg(workerId).arg(m_taskQueue.size());
     
     // 从队列取任务
     if (m_taskQueue.isEmpty()) {
@@ -372,36 +400,21 @@ void BatchAutoGenerateManager::startNextTask(int workerId)
             qInfo() << "[BatchManager] 所有任务已完成";
             writeLogEnd();
             emit finished();
-        } else {
-            qInfo() << QString("[BatchManager] 队列为空，但还有 %1 个 Worker 正在运行").arg(m_workers.size());
         }
         return;
     }
     
     EquipmentTask task = m_taskQueue.dequeue();
-    qInfo() << QString("[BatchManager] Worker%1 从队列取出任务: ID=%2, Code=%3, Name=%4")
-        .arg(workerId).arg(task.equipmentId).arg(task.code).arg(task.name);
     assignTaskToWorker(workerId, task);
 }
 
 void BatchAutoGenerateManager::assignTaskToWorker(int workerId, const EquipmentTask &task)
 {
-    qInfo() << QString("[BatchManager] assignTaskToWorker: Worker%1, 器件=%2")
-        .arg(workerId).arg(task.code);
-    
-    // 调试：检查当前线程
-    qInfo() << QString("[BatchManager] assignTaskToWorker 在线程 %1 中执行")
-        .arg((quintptr)QThread::currentThreadId());
-    
     // 1. 从数据库加载输入数据
-    qInfo() << QString("[BatchManager] Worker%1: 开始加载器件数据...").arg(workerId);
     EquipmentInputData inputData = loadEquipmentInputData(task);
-    qInfo() << QString("[BatchManager] Worker%1: 加载完成, 端口数=%2, 配置数=%3")
-        .arg(workerId).arg(inputData.ports.size()).arg(inputData.portConfigs.size());
     
     // 2. 检查是否有有效端口（提前过滤）
     if (inputData.ports.isEmpty()) {
-        qInfo() << QString("[Worker%1] 器件 %2 无有效端号，跳过").arg(workerId).arg(task.code);
         
         EquipmentProcessResult result;
         result.equipmentId = task.equipmentId;
@@ -427,10 +440,8 @@ void BatchAutoGenerateManager::assignTaskToWorker(int workerId, const EquipmentT
     }
     
     // 3. 创建新线程和Worker
-    qInfo() << QString("[BatchManager] 创建Worker%1 - 传递连接名: %2").arg(workerId).arg(m_connectionName);
-    
     QThread *thread = new QThread(this);
-    SingleEquipmentWorker *worker = new SingleEquipmentWorker(m_connectionName, inputData);
+    SingleEquipmentWorker *worker = new SingleEquipmentWorker(m_connectionName, inputData, m_enableWorkerLog);
     
     worker->moveToThread(thread);
     
@@ -566,9 +577,6 @@ void BatchAutoGenerateManager::writeLogEnd()
 
 EquipmentInputData BatchAutoGenerateManager::loadEquipmentInputData(const EquipmentTask &task)
 {
-    qInfo() << QString("[BatchManager] loadEquipmentInputData: ID=%1, Code=%2")
-        .arg(task.equipmentId).arg(task.code);
-    
     QSqlDatabase db = QSqlDatabase::database(m_connectionName);
     
     EquipmentInputData data;
@@ -578,28 +586,18 @@ EquipmentInputData BatchAutoGenerateManager::loadEquipmentInputData(const Equipm
     data.categoryName = task.categoryPath;
     
     // 1. 查询器件描述
-    qInfo() << QString("[BatchManager] 查询器件描述: ID=%1").arg(task.equipmentId);
     QSqlQuery equipQuery(db);
     equipQuery.prepare("SELECT Desc FROM Equipment WHERE Equipment_ID = ?");
     equipQuery.addBindValue(task.equipmentId);
     if (equipQuery.exec() && equipQuery.next()) {
         data.description = equipQuery.value(0).toString();
-        qInfo() << QString("[BatchManager] 器件描述: %1").arg(data.description.left(50));
-    } else {
-        qInfo() << QString("[BatchManager] 查询器件描述失败或无数据");
     }
     
-    // 2. 复用 TModelAutoGenerator::loadPortsFromDatabase 加载端口列表
-    qInfo() << QString("[BatchManager] 加载端口列表: ID=%1").arg(task.equipmentId);
-    TModelAutoGenerator::loadPortsFromDatabase(db, task.equipmentId, data.ports);
-    qInfo() << QString("[BatchManager] 端口数量: %1").arg(data.ports.size());
+    // 2. 复用 TModelAutoGenerator::loadPortsFromDatabase 加载端口列表和描述
+    TModelAutoGenerator::loadPortsFromDatabase(db, task.equipmentId, data.ports, &data.portDescriptions);
     
     // 3. 复用 TModelAutoGenerator::loadPortConfigsForEquipment 加载端口配置
-    qInfo() << QString("[BatchManager] 加载端口配置: ID=%1").arg(task.equipmentId);
     TModelAutoGenerator::loadPortConfigsForEquipment(db, task.equipmentId, data.portConfigs);
-    qInfo() << QString("[BatchManager] 端口配置数量: %1").arg(data.portConfigs.size());
-    
-    qInfo() << QString("[BatchManager] loadEquipmentInputData 完成: ID=%1").arg(task.equipmentId);
     
     return data;
 }
@@ -646,28 +644,58 @@ bool BatchAutoGenerateManager::savePortConfigs(int containerId,
     for (auto it = configs.constBegin(); it != configs.constEnd(); ++it) {
         const PortTypeConfig &config = it.value();
         
-        // 构建 variables_json
-        QJsonArray varsArray;
-        QStringList vars = config.variables.split(",", QString::SkipEmptyParts);
-        for (const QString &var : vars) {
-            QJsonObject obj;
-            obj["name"] = var.trimmed();
-            varsArray.append(obj);
+        // 标准化变量集合：拆分后独立存储 JSON 数组（与手动模式一致）
+        QStringList varList = config.variables.split(QRegExp("[,;，；]"), QString::SkipEmptyParts);
+        QJsonArray varArray;
+        for (QString v : varList) {
+            v = v.trimmed();
+            if (!v.isEmpty()) {
+                QJsonObject o;
+                o["name"] = v;
+                varArray.append(o);
+            }
         }
-        QString varsJson = QString::fromUtf8(QJsonDocument(varsArray).toJson(QJsonDocument::Compact));
+        QString variablesJson = QString::fromUtf8(QJsonDocument(varArray).toJson(QJsonDocument::Compact));
         
-        // INSERT OR REPLACE
+        // 检查是否已存在（与手动模式一致）
         query.prepare(
-            "INSERT OR REPLACE INTO port_config "
-            "(container_id, function_block, port_name, port_type, variables_json, connect_macro) "
-            "VALUES (?, ?, ?, ?, ?, ?)"
+            "SELECT port_config_id FROM port_config "
+            "WHERE container_id = ? AND function_block = ? AND port_name = ?"
         );
         query.addBindValue(containerId);
         query.addBindValue(config.functionBlock);
         query.addBindValue(config.portName);
-        query.addBindValue(config.portType);
-        query.addBindValue(varsJson);
-        query.addBindValue(config.connectMacro);
+        
+        if (!query.exec()) {
+            qWarning() << "[BatchManager] 查询端口配置失败:" << query.lastError().text();
+            continue;
+        }
+        
+        if (query.next()) {
+            // 更新已存在的记录
+            int portConfigId = query.value(0).toInt();
+            query.prepare(
+                "UPDATE port_config SET port_type = ?, variables_json = ?, connect_macro = ? "
+                "WHERE port_config_id = ?"
+            );
+            query.addBindValue(config.portType);
+            query.addBindValue(variablesJson);
+            query.addBindValue(config.connectMacro);
+            query.addBindValue(portConfigId);
+        } else {
+            // 插入新记录（包含 direction 和 variable_profile 字段）
+            query.prepare(
+                "INSERT INTO port_config (container_id, function_block, port_name, port_type, "
+                "direction, variable_profile, variables_json, connect_macro) "
+                "VALUES (?, ?, ?, ?, 'bidirectional', 'default', ?, ?)"
+            );
+            query.addBindValue(containerId);
+            query.addBindValue(config.functionBlock);
+            query.addBindValue(config.portName);
+            query.addBindValue(config.portType);
+            query.addBindValue(variablesJson);
+            query.addBindValue(config.connectMacro);
+        }
         
         if (!query.exec()) {
             qWarning() << "[BatchManager] 保存端口配置失败:" << query.lastError().text();
@@ -680,8 +708,12 @@ bool BatchAutoGenerateManager::savePortConfigs(int containerId,
 
 bool BatchAutoGenerateManager::saveTModel(int equipmentId, const QString &tmodel)
 {
+    // 注意：此方法已废弃，实际使用 onWorkerRequestSaveModel 来保存
+    // 保留此方法仅为兼容性，实际不应被调用
     QSqlDatabase db = QSqlDatabase::database(m_connectionName);
     QSqlQuery query(db);
+    
+    // 与手动模式的 saveFullModel 一致：保存到 Equipment 表
     query.prepare("UPDATE Equipment SET TModel = ? WHERE Equipment_ID = ?");
     query.addBindValue(tmodel);
     query.addBindValue(equipmentId);
@@ -698,38 +730,32 @@ int BatchAutoGenerateManager::resolveContainerId(int equipmentId)
 {
     QSqlDatabase db = QSqlDatabase::database(m_connectionName);
     
-    // 查询是否已有容器映射
-    QSqlQuery query(db);
-    query.prepare("SELECT container_id FROM equipment_containers WHERE equipment_id = ?");
-    query.addBindValue(equipmentId);
-    
-    if (query.exec() && query.next()) {
-        int containerId = query.value(0).toInt();
-        if (containerId > 0) {
-            return containerId;
-        }
-    }
-    
-    // 不存在则创建新容器ID（简化：使用 equipment_id 作为 container_id）
-    int newContainerId = equipmentId;
-    
-    query.prepare("INSERT OR REPLACE INTO equipment_containers (equipment_id, container_id) VALUES (?, ?)");
-    query.addBindValue(equipmentId);
-    query.addBindValue(newContainerId);
-    
-    if (!query.exec()) {
-        qWarning() << "[BatchManager] 创建容器映射失败:" << query.lastError().text();
+    // 使用与手动模式相同的逻辑：ContainerRepository + ContainerHierarchy
+    ContainerRepository repo(db);
+    if (!repo.ensureTables()) {
+        qWarning() << "[BatchManager] ensureTables failed";
         return 0;
     }
     
-    return newContainerId;
+    // 查询是否已有容器映射
+    int existing = repo.componentContainerIdForEquipment(equipmentId);
+    if (existing != 0) {
+        return existing;
+    }
+    
+    // 不存在则创建新容器（使用统一的容器层次结构）
+    int created = ContainerHierarchy::ensureComponentContainer(repo, db, equipmentId);
+    if (created == 0) {
+        qWarning() << "[BatchManager] ensureComponentContainer failed for equipment" << equipmentId;
+        return 0;
+    }
+    
+    return created;
 }
 
 void BatchAutoGenerateManager::onWorkerRequestSavePortConfigs(int equipmentId, const QMap<QString, PortTypeConfig> &configs)
 {
     QSqlDatabase db = QSqlDatabase::database(m_connectionName);
-    qInfo() << QString("[BatchManager] Worker请求保存端口配置: equipmentId=%1, 配置数=%2")
-        .arg(equipmentId).arg(configs.size());
     
     if (!db.isOpen()) {
         qWarning() << "[BatchManager] 数据库未打开，无法保存端口配置";
@@ -742,14 +768,15 @@ void BatchAutoGenerateManager::onWorkerRequestSavePortConfigs(int equipmentId, c
         return;
     }
     
-    savePortConfigs(containerId, configs);
+    bool success = savePortConfigs(containerId, configs);
+    if (!success) {
+        qWarning() << "[BatchManager] 端口配置保存失败: equipmentId=" << equipmentId;
+    }
 }
 
 void BatchAutoGenerateManager::onWorkerRequestSaveModel(int equipmentId, const QString &tmodel, const QMap<QString, QString> &constants)
 {
     QSqlDatabase db = QSqlDatabase::database(m_connectionName);
-    qInfo() << QString("[BatchManager] Worker请求保存T模型: equipmentId=%1, 模型长度=%2, 常量数=%3")
-        .arg(equipmentId).arg(tmodel.length()).arg(constants.size());
     
     if (!db.isOpen()) {
         qWarning() << "[BatchManager] 数据库未打开，无法保存T模型";
@@ -767,7 +794,6 @@ void BatchAutoGenerateManager::onWorkerRequestSaveModel(int equipmentId, const Q
             items << QString("%1,%2,,").arg(name, value); // 单位与备注留空
         }
         structureData = items.join(";");
-        qInfo() << QString("[BatchManager] 序列化常量数据: %1").arg(structureData);
     }
     
     // 2. 保存 TModel 和 Structure
@@ -779,10 +805,7 @@ void BatchAutoGenerateManager::onWorkerRequestSaveModel(int equipmentId, const Q
     
     if (!query.exec()) {
         qWarning() << "[BatchManager] 保存T模型和常量失败:" << query.lastError().text();
-        return;
     }
-    
-    qInfo() << QString("[BatchManager] T模型和常量保存成功: equipmentId=%1").arg(equipmentId);
 }
 
 void BatchAutoGenerateManager::onWorkerRequestClearModel(int equipmentId)
@@ -793,8 +816,6 @@ void BatchAutoGenerateManager::onWorkerRequestClearModel(int equipmentId)
         qWarning() << QString("[BatchManager] Worker请求清空T模型失败: equipmentId=%1, 数据库未打开").arg(equipmentId);
         return;
     }
-    
-    qInfo() << QString("[BatchManager] Worker请求清空T模型与常量: equipmentId=%1").arg(equipmentId);
     
     // 同时清空 TModel 和 Structure（常量表）
     QSqlQuery query(db);
@@ -807,7 +828,5 @@ void BatchAutoGenerateManager::onWorkerRequestClearModel(int equipmentId)
     
     if (!query.exec()) {
         qWarning() << "[BatchManager] 清空T模型与常量exec失败:" << query.lastError().text();
-    } else {
-        qInfo() << QString("[BatchManager] T模型与常量清空成功: equipmentId=%1").arg(equipmentId);
     }
 }

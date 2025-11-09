@@ -11,6 +11,8 @@
 #include <QTabWidget>
 #include <QSplitter>
 #include <QMap>
+#include <QSpinBox>
+#include <QScrollBar>
 
 // Worker Tab 页的内容
 struct WorkerTabContent {
@@ -27,6 +29,8 @@ public:
 
     QString logPath() const;
     bool resumeMode() const;
+    bool enableWorkerLog() const;     // 是否启用 Worker 详细日志
+    int threadCount() const;          // 获取线程数配置
 
     void setLogPath(const QString &path, bool resume);
     void appendLog(const QString &text);  // 追加到 Manager 主日志
@@ -67,7 +71,12 @@ private:
     QPlainTextEdit *m_managerLogViewer; // Manager 主日志（在第一个 Tab）
     QMap<int, WorkerTabContent> m_workerTabs; // workerId -> Tab 内容
     
+    // 新增配置项
+    QCheckBox *m_chkEnableWorkerLog;   // 是否启用 Worker 详细日志文件
+    QSpinBox *m_spinThreadCount;       // 线程数配置
+    
     bool m_resumeMode = false;
+    int m_lastActiveTabIndex = -1;     // 记录用户最后选择的 Tab 索引，-1 表示跟随更新
 
     QString makeDefaultLogPath() const;
     void ensureButtons();

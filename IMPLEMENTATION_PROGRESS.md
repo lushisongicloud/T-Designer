@@ -78,7 +78,7 @@ BatchAutoGenerateManager
   - 解析 AI 响应
 - [ ] 实现数据保存
   - savePortConfigs() - 保存到 port_config 表
-  - saveTModel() - 保存到 Equipment_Template 表
+  - saveFullModel() - 保存到 Equipment 表
 - [ ] 完善错误处理和重试逻辑
 
 #### 1.2 BatchAutoGenerateManager  

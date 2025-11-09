@@ -5,11 +5,14 @@
 #include <QDebug>
 #include <QThread>
 #include <QSqlError>
+#include <QDir>
+#include <QApplication>
 
-SingleEquipmentWorker::SingleEquipmentWorker(const QString &dbConnectionName, const EquipmentInputData &inputData, QObject *parent)
+SingleEquipmentWorker::SingleEquipmentWorker(const QString &dbConnectionName, const EquipmentInputData &inputData, bool enableWorkerLog, QObject *parent)
     : QObject(parent)
     , m_dbConnectionName(dbConnectionName)
     , m_inputData(inputData)
+    , m_enableWorkerLog(enableWorkerLog)
     , m_generator(nullptr)
     , m_timeoutTimer(nullptr)
     , m_isFinished(false)
@@ -69,9 +72,10 @@ void SingleEquipmentWorker::process()
         return;
     }
     
-    log(QString("输入数据: 端口数=%1, 已配置端口数=%2")
+    log(QString("输入数据: 端口数=%1, 已配置端口数=%2, 端口描述数=%3")
         .arg(m_inputData.ports.size())
-        .arg(m_inputData.portConfigs.size()));
+        .arg(m_inputData.portConfigs.size())
+        .arg(m_inputData.portDescriptions.size()));
     
     // 创建 TModelAutoGenerator（无数据库模式）
     m_generator = new TModelAutoGenerator(this);
@@ -83,13 +87,28 @@ void SingleEquipmentWorker::process()
     compInfo.name = m_inputData.name;
     compInfo.description = m_inputData.description;
     compInfo.ports = m_inputData.ports;
+    compInfo.portDescriptions = m_inputData.portDescriptions;  // 传递端口描述（ConnDesc）
     m_generator->setComponentData(compInfo, m_inputData.portConfigs);
     
     // 设置为批量模式（不操作UI）
     m_generator->setBatchMode(true);
     
-    // 设置日志输出（禁用文件日志，只通过信号输出）
-    m_generator->setLogFileOverride("", false);  // 空路径表示不写文件
+    // 根据配置决定是否启用 Worker 日志文件
+    if (m_enableWorkerLog) {
+        // 生成带有线程ID和毫秒的唯一日志文件名
+        qint64 msec = QDateTime::currentMSecsSinceEpoch();
+        quintptr threadId = (quintptr)QThread::currentThreadId();
+        QString logFileName = QString("worker_%1_%2_%3.log")
+            .arg(m_inputData.code)
+            .arg(msec)
+            .arg(threadId);
+        QString logFilePath = QDir(QApplication::applicationDirPath()).filePath("logs/" + logFileName);
+        m_generator->setLogFileOverride(logFilePath, true);
+        log(QString("Worker 日志文件: %1").arg(logFilePath));
+    } else {
+        // 禁用文件日志，只通过信号输出
+        m_generator->setLogFileOverride("", false);
+    }
     
     // 连接信号
     connect(m_generator, &TModelAutoGenerator::logLine,

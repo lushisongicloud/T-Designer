@@ -158,7 +158,7 @@ class DeepSeekClient:
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
             ],
-            "temperature": 0.2,
+            "temperature": 0.2,  # 较低温度以提高T语言生成的准确性和一致性
         }
         response = requests.post(
             DEESEEK_API_URL,

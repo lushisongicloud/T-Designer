@@ -1269,6 +1269,14 @@ void DialogUnitManage::on_BtnSearch_clicked()
 {
     //在table中检索
     if((ui->EdSearchUnitCode->text()=="")&&(ui->EdSearchUnitFactory->text()=="")&&(ui->EdSearchUnitName->text()=="")&&(ui->EdSearchUnitOrderNumber->text()=="")&&(ui->EdSearchUnitType->text()=="")) return;
+    
+    // 先显示所有行，重置之前的过滤状态
+    for(int i=0;i<ui->tableWidgetUnit->rowCount();i++)
+    {
+        ui->tableWidgetUnit->showRow(i);
+    }
+    
+    // 再根据查询条件隐藏不匹配的行
     for(int i=0;i<ui->tableWidgetUnit->rowCount();i++)
     {
         if(ui->EdSearchUnitCode->text()!="")
@@ -3484,10 +3492,16 @@ void DialogUnitManage::startBatchAutoGenerationNew(const QString &logPath, bool 
         });
     }
     
-    // 启动批量处理（2线程模式）
+    // 启动批量处理 - 使用用户配置的线程数和日志选项
+    int threadCount = m_batchDialog->threadCount();
+    bool enableWorkerLog = m_batchDialog->enableWorkerLog();
+    
+    m_batchDialog->appendLog(QString("线程数: %1").arg(threadCount));
+    m_batchDialog->appendLog(QString("Worker 详细日志: %1").arg(enableWorkerLog ? "启用" : "禁用"));
+    
     m_batchRunning = true;
     m_batchDialog->setRunning(true);
-    m_batchManager->start(effectivePath, resume, 4);  // 1个工作线程
+    m_batchManager->start(effectivePath, resume, threadCount, enableWorkerLog);
 }
 
 void DialogUnitManage::stopBatchAutoGenerationNew()

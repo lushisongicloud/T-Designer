@@ -120,7 +120,7 @@ private:
     
     // 保存与校验
     bool savePortConfigs(int equipmentId);
-    bool saveTModel(int equipmentId, const QString &tmodel);
+    //bool saveTModel(int equipmentId, const QString &tmodel);
     bool saveFullModel(int equipmentId, const QString &tmodel, const QMap<QString, QString> &constantsMap); // 新：同时保存常量与完整模型到 Equipment
     bool validateTModel(int equipmentId, const QString &tmodel, QString &errorMsg);
     
@@ -176,6 +176,7 @@ private:
     bool m_logInitialized = false;
     QString m_logOverridePath;
     bool m_logAppendMode = false;
+    bool m_disableLogFile = false;  // 完全禁用日志文件
     QTimer m_nextComponentTimer;
 
     QString serializeConstants(const QMap<QString, QString> &constantsMap) const; // name,value,unit,remark; 单元与备注为空

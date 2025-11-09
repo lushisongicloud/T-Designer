@@ -20,6 +20,7 @@ struct EquipmentInputData {
     QString description;
     QString categoryName;  // 最小类别名称
     QList<QPair<QString, QString>> ports;  // functionBlock, portName
+    QMap<QString, QString> portDescriptions;  // key: functionBlock -> ConnDesc
     QMap<QString, PortTypeConfig> portConfigs;  // key: "functionBlock.portName"
 };
 
@@ -66,7 +67,7 @@ class SingleEquipmentWorker : public QObject
     Q_OBJECT
 
 public:
-    explicit SingleEquipmentWorker(const QString &dbConnectionName, const EquipmentInputData &inputData, QObject *parent = nullptr);
+    explicit SingleEquipmentWorker(const QString &dbConnectionName, const EquipmentInputData &inputData, bool enableWorkerLog = false, QObject *parent = nullptr);
     ~SingleEquipmentWorker();
 
     int getEquipmentId() const { return m_inputData.equipmentId; }
@@ -101,6 +102,7 @@ private:
     QString m_threadConnectionName;  // 工作线程中的数据库连接名
     QSqlDatabase m_threadDb;  // 线程独立的数据库连接（保持生命周期）
     EquipmentInputData m_inputData;
+    bool m_enableWorkerLog;  // 是否启用 Worker 详细日志文件
     
     // 处理结果（累积）
     EquipmentProcessResult m_result;

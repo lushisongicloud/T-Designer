@@ -210,6 +210,7 @@ QJsonObject DeepSeekClient::buildRequestBody(const QString &systemPrompt, const 
     QJsonObject body;
     body["model"] = "deepseek-chat";
     body["stream"] = stream;
+    body["temperature"] = 0.1;  // 设置较低温度以提高准确性和一致性
     
     QJsonArray messages;
     

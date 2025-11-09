@@ -31,7 +31,7 @@ public:
     ~BatchAutoGenerateManager();
 
     // 开始批量处理
-    void start(const QString &logFilePath, bool resumeFromLog, int workerCount = 1);
+    void start(const QString &logFilePath, bool resumeFromLog, int workerCount = 1, bool enableWorkerLog = false);
     
     // 停止处理
     void stop();
@@ -74,6 +74,7 @@ private:
     
     // 工作线程管理
     int m_workerCount;
+    bool m_enableWorkerLog;  // 是否启用 Worker 详细日志文件
     QMap<int, QThread*> m_workerThreads;         // workerId -> QThread
     QMap<int, SingleEquipmentWorker*> m_workers; // workerId -> Worker
     QMap<QObject*, int> m_workerIds;             // Worker -> workerId
