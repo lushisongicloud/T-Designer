@@ -122,6 +122,8 @@ SOURCES += \
     BO/behavior/z3simplifier.cpp \
     BO/ai/deepseekclient.cpp \
     BO/ai/tmodelautogenerator.cpp \
+    BO/batch/singleequipmentworker.cpp \
+    BO/batch/batchautogeneratemanager.cpp \
     BO/function/functiondependencyresolver.cpp \
     BO/function/tmodelvalidator.cpp \
     BO/function/functionrepository.cpp \
@@ -231,6 +233,8 @@ HEADERS += \
     BO/behavior/z3simplifier.h \
     BO/ai/deepseekclient.h \
     BO/ai/tmodelautogenerator.h \
+    BO/batch/singleequipmentworker.h \
+    BO/batch/batchautogeneratemanager.h \
     BO/function/functiondependencyresolver.h \
     BO/function/functioninfo.h \
     BO/function/tmodelvalidator.h \

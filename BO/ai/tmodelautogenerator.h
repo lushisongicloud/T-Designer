@@ -19,6 +19,7 @@ struct ComponentInfo {
     QString name;
     QString description;
     QList<QPair<QString, QString>> ports;  // (functionBlock, portName)
+    QMap<QString, QString> portDescriptions;  // key: functionBlock -> ConnDesc
 };
 
 struct PortTypeConfig {
@@ -38,13 +39,23 @@ class TModelAutoGenerator : public QObject
 public:
     explicit TModelAutoGenerator(const QSqlDatabase &db, QObject *parent = nullptr);
     explicit TModelAutoGenerator(const QSqlDatabase &db, int selectedEquipmentId, QObject *parent = nullptr);
+    // 新增：无数据库构造函数（用于批量模式，所有数据由外部提供）
+    explicit TModelAutoGenerator(QObject *parent = nullptr);
     ~TModelAutoGenerator();
 
     // 开始自动生成（显示对话框）
     void startAutoGeneration();
     void setSelectedEquipmentId(int equipmentId) { m_selectedEquipmentId = equipmentId; }
+    void setBatchMode(bool isBatch) { m_isBatchMode = isBatch; }  // 设置批量模式标志
     void setLogFileOverride(const QString &path, bool appendMode);
     void cancelGeneration();
+    
+    // 新增：设置组件数据（无数据库模式）
+    void setComponentData(const ComponentInfo &comp, const QMap<QString, PortTypeConfig> &portConfigs);
+
+    // 端口加载函数（静态方法，可被其他模块复用）
+    static void loadPortsFromDatabase(const QSqlDatabase &db, int equipmentId, QList<QPair<QString, QString>> &ports, QMap<QString, QString> *portDescriptions = nullptr);
+    static void loadPortConfigsForEquipment(const QSqlDatabase &db, int equipmentId, QMap<QString, PortTypeConfig> &portConfigs);
 
 signals:
     void finished();
@@ -92,6 +103,8 @@ private:
     QString m_normalModeDef;     // 正常模式 SMT 片段
     QString m_failureModeDef;    // 故障模式 SMT 片段
     int m_selectedEquipmentId = 0; // 当前用户选中的器件ID（单个生成模式）
+    bool m_isBatchMode = false;    // 批量模式标志（批量模式不执行UI操作）
+    bool m_useDatabaseMode = true; // 是否使用数据库（false 时所有数据由外部提供，不进行任何数据库操作）
     
     // 初始化
     void initLogFile();
@@ -150,6 +163,12 @@ public: // 仅暴露轻量配置接口
 signals:
     void constantsExtracted(const QMap<QString, QString> &constants); // 第二步解析出的常量
     void modelGenerated(const QString &tmodel); // 完整 T 模型文本（含端口变量定义）
+    void streamDelta(const QString &delta); // AI 流式输出的增量文本（用于实时显示）
+    
+    // 数据库操作请求信号（仅在非数据库模式下使用）
+    void requestSavePortConfigs(int equipmentId, const QMap<QString, PortTypeConfig> &configs);
+    void requestSaveModel(int equipmentId, const QString &tmodel, const QMap<QString, QString> &constants);
+    void requestClearModel(int equipmentId);
 
 private:
     DialogUnitManage *m_unitManageDialog = nullptr; // 可选：用于调用 on_BtnUpdatePortVars_clicked 及抽取端口变量
