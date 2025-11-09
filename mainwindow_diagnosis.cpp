@@ -2301,6 +2301,10 @@ void MainWindow::initDiagnoseUI()
     ui->tableWidget_tool_select->setFocusPolicy(Qt::NoFocus);
     LoadAllFunction();
     LoadAllTools();
+    
+    // 隐藏工具选择相关UI元素
+    ui->label_tool_select_2->setVisible(false);
+    ui->tableWidget_tool_select->setVisible(false);
 }
 
 void MainWindow::LoadAllFunction()

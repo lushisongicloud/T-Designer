@@ -17,6 +17,16 @@ dialogDiagnoseUI::dialogDiagnoseUI(QWidget *parent) :
     ui->tableWidget_tool_select->setFocusPolicy(Qt::NoFocus);
     LoadAllFunction();
     LoadAllTools();
+    
+    // 隐藏工具选择相关UI元素
+    ui->label_tool_select_2->setVisible(false);
+    ui->tableWidget_tool_select->setVisible(false);
+    
+    // 隐藏测试页面中的图片显示控件
+    ui->widget_test_module_image->setVisible(false);
+    
+    // 设置初始页面为功能选择页面
+    ui->stackedWidget_main->setCurrentIndex(0);
 }
 
 dialogDiagnoseUI::~dialogDiagnoseUI()
