@@ -36,6 +36,7 @@
 #include <QMultiMap>
 #include "graphadjlist.h"
 #include "widget/selectfunctiondialog.h"
+#include "BO/diagnosisengine.h"
 
 namespace Ui {
 class MainWindow;
@@ -124,6 +125,8 @@ public:
     void LoadAllFunction();
     void LoadAllTools();
     void SetStackIndex(int index);
+    void displayCurrentTest();  // 显示当前推荐的测试
+    void recordCurrentTestResult(DiagnosisTreeNode::TestOutcome outcome);  // 记录测试结果并获取下一个测试
     void init_symptom_list();//初始化征兆信号UI列表
     void AddOrModifyExec(int Mode,QString StrSelectedCmd,QString StrExecState,QString StrExecStateVal);//Mode=1:add Mode=2:modify
     void LoadTestPointInfo(QString TestPointName,QString CurrentInOutName,QStringList ListTermStr);
@@ -184,6 +187,9 @@ public:
 
     //static QMap<QString, QStringList> obsTemplates;
     SelectFunctionDialog *pDlgSelectFunctionDialog = nullptr;
+    
+    // 故障诊断引擎
+    DiagnosisEngine *diagnosisEngine = nullptr;
 
 private:
     void initializeMxModules();

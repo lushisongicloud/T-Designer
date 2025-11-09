@@ -74,6 +74,17 @@ MainWindow::MainWindow(QWidget *parent) :
     dlgUnitAttr=new DialogUnitAttr(this);
     dlgFunctionManage=new dialogFunctionManage(this);
     //connect(dlgFunctionManage,SIGNAL(UpdateSystemDefine(QStringList)),this,SLOT(UpdateFuncStrSystemDefine(QStringList)));
+    
+    // 初始化诊断引擎
+    diagnosisEngine = new DiagnosisEngine(T_ProjectDatabase, this);
+    connect(diagnosisEngine, &DiagnosisEngine::testRecommended, this, [this](const DiagnosisTreeNode& testNode) {
+        // 当推荐新测试时，更新UI显示测试信息
+        qDebug() << "推荐测试:" << testNode.getTestDescription();
+    });
+    connect(diagnosisEngine, &DiagnosisEngine::faultIsolated, this, [this](const DiagnosisTreeNode& faultNode) {
+        // 当完成故障定位时，显示诊断结果
+        qDebug() << "故障定位:" << faultNode.getFaultHypothesis();
+    });
 
     SetStackIndex(0);
     //connect(dlgDiagnoseUI,SIGNAL(signalUpdateExec(QString)),this,SLOT(UpdateXmplInfo(QString)));
@@ -191,6 +202,7 @@ MainWindow::~MainWindow()
     delete dlgDialogSymbols;
     delete dlgUnitAttr;
     delete dlgFunctionManage;
+    delete diagnosisEngine; // 清理诊断引擎
 }
 
 
