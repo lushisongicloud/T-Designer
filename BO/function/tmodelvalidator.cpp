@@ -244,21 +244,33 @@ TModelValidationResult TModelValidator::validate(const QString &tmodelText,
     const QString portVarsSection = sectionParser.getPortVariables();
     const QString internalVarsSection = sectionParser.getInternalVariables();
 
-    // 正则用于端口变量声明 (限制范围为端口变量定义段)
-    // 注意：端口名可能包含 +、-、*、~、#、_ 等符号，如 L0+、L0-、A*、B~、C# 等
+    // 优化后的正则：直接提取 %Name%. 和 " ()" 之间的完整路径
+    // 支持任意字符（包括 +、*、/、- 等特殊字符）作为端口名和变量名
+    // 格式：(declare-fun %Name%.端口路径.变量名 () 类型)
     QRegularExpression declPattern(
-        QString("\\(\\s*declare-fun\\s+(?:%[A-Za-z0-9_]+%|[A-Za-z0-9_]+)"
-                       "\\.((?:[A-Za-z0-9_~#\\*\\+\\-]+\\.)*[A-Za-z0-9_~#\\*\\+\\-]+)\\.([A-Za-z0-9_\\-]+)\\s*\\("));
+        QStringLiteral("\\(\\s*declare-fun\\s+(?:%[A-Za-z0-9_]+%|[A-Za-z0-9_]+)\\.([^\\s()]+)\\s*\\("));
+    
     auto declIter = declPattern.globalMatch(portVarsSection);
     while (declIter.hasNext()) {
         const QRegularExpressionMatch match = declIter.next();
-        const QString portPath = normalizePortToken(match.captured(1));
-        const QString direction = normalizeDirection(match.captured(2));
+        const QString fullPath = match.captured(1);  // 完整路径，如 "L0+.i" 或 "Coil.A1.u"
+        
+        // 分离端口路径和变量名：最后一个点之前是端口，之后是变量
+        const int lastDot = fullPath.lastIndexOf('.');
+        if (lastDot < 0) {
+            // 没有点分隔符，无法解析，跳过
+            continue;
+        }
+        
+        const QString portPath = fullPath.left(lastDot);     // 端口路径，如 "L0+" 或 "Coil.A1"
+        const QString direction = fullPath.mid(lastDot + 1);  // 变量名，如 "i" 或 "u"
+        const QString normalizedDirection = normalizeDirection(direction);
         const QString token = match.captured(0);
+        
         if (bindingMap.contains(portPath)) {
             PortVariableBinding &binding = bindingMap[portPath];
-            if (isDirectionAllowed(binding, direction)) {
-                binding.declaredDirections.insert(direction);
+            if (isDirectionAllowed(binding, normalizedDirection)) {
+                binding.declaredDirections.insert(normalizedDirection);
                 binding.tokens.insert(token);
             } else {
                 // 在端口变量区声明了一个非期望方向，记录为未匹配端口变量
@@ -283,14 +295,26 @@ TModelValidationResult TModelValidator::validate(const QString &tmodelText,
     // 变量引用扫描仍可遍历全模型文本；如果匹配到三段式，但 direction 不在期望集合，
     // 且该 token 所在的原始行出现在内部变量定义段，则忽略，不记为错误。
     const QString normalized = tmodelText;
-    // 注意：端口名可能包含 +、-、*、~、#、_ 等符号，如 L0+、L0-、A*、B~、C# 等
+    
+    // 优化后的变量引用正则：支持任意字符的端口名
+    // 匹配格式：%Name%.端口路径.变量名 或 ComponentName.端口路径.变量名
     QRegularExpression varPattern(
-        QString("(?:%[A-Za-z0-9_]+%|[A-Za-z0-9_]+)\\.((?:[A-Za-z0-9_~#\\*\\+\\-]+\\.)*[A-Za-z0-9_~#\\*\\+\\-]+)\\.([A-Za-z0-9_\\-]+)\\b"));
+        QStringLiteral("(?:%[A-Za-z0-9_]+%|[A-Za-z0-9_]+)\\.([^\\s()]+\\.[^\\s()]+)\\b"));
+    
     auto varMatchIter = varPattern.globalMatch(normalized);
     while (varMatchIter.hasNext()) {
         const QRegularExpressionMatch match = varMatchIter.next();
-        const QString portPath = normalizePortToken(match.captured(1));
-        const QString direction = normalizeDirection(match.captured(2));
+        const QString fullPath = match.captured(1);  // 完整路径，如 "L0+.i" 或 "Coil.A1.u"
+        
+        // 分离端口路径和变量名
+        const int lastDot = fullPath.lastIndexOf('.');
+        if (lastDot < 0) {
+            continue;
+        }
+        
+        const QString portPath = fullPath.left(lastDot);
+        const QString direction = fullPath.mid(lastDot + 1);
+        const QString normalizedDirection = normalizeDirection(direction);
         const QString token = match.captured(0);
 
         // 判断该匹配是否出现在内部变量段的某一行
@@ -298,12 +322,12 @@ TModelValidationResult TModelValidator::validate(const QString &tmodelText,
 
         if (bindingMap.contains(portPath)) {
             PortVariableBinding &binding = bindingMap[portPath];
-            if (isDirectionAllowed(binding, direction)) {
-                binding.referencedDirections.insert(direction);
+            if (isDirectionAllowed(binding, normalizedDirection)) {
+                binding.referencedDirections.insert(normalizedDirection);
                 binding.tokens.insert(token);
             } else {
                 if (!inInternalSection) {
-                    // 不是内部变量区域的“扩展命名”，视为未匹配端口变量
+                    // 不是内部变量区域的"扩展命名"，视为未匹配端口变量
                     result.undefinedVariables.append(token);
                 }
                 // 内部变量区域的额外三段式命名视为内部变量引用，忽略

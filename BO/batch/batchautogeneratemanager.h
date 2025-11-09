@@ -114,7 +114,6 @@ private:
     bool saveEquipmentResult(const EquipmentProcessResult &result);
     bool savePortConfigs(int containerId, const QMap<QString, PortTypeConfig> &configs);
     bool saveTModel(int equipmentId, const QString &tmodel);
-    bool saveConstants(int equipmentId, const QMap<QString, QString> &constants);
     int resolveContainerId(int equipmentId);
 };
 

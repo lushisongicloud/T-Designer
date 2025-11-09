@@ -694,41 +694,6 @@ bool BatchAutoGenerateManager::saveTModel(int equipmentId, const QString &tmodel
     return true;
 }
 
-bool BatchAutoGenerateManager::saveConstants(int equipmentId, const QMap<QString, QString> &constants)
-{
-    if (constants.isEmpty()) {
-        return true;  // 无常量也算成功
-    }
-    
-    QSqlDatabase db = QSqlDatabase::database(m_connectionName);
-    
-    // 序列化常量: name,value,unit,remark;
-    QStringList items;
-    for (auto it = constants.begin(); it != constants.end(); ++it) {
-        const QString &name = it.key();
-        const QString &value = it.value();
-        if (name.trimmed().isEmpty()) continue;
-        items << QString("%1,%2,,").arg(name, value);  // 单位和备注留空
-    }
-    QString structureData = items.join(";");
-    
-    QSqlQuery query(db);
-    query.prepare("UPDATE Equipment SET Structure = ? WHERE Equipment_ID = ?");
-    query.addBindValue(structureData);
-    query.addBindValue(equipmentId);
-    
-    if (!query.exec()) {
-        qWarning() << "[BatchManager] 更新常量表失败:" << query.lastError().text();
-        return false;
-    }
-    
-    qInfo() << QString("[BatchManager] 保存常量成功: %1 个常量 (%2)")
-        .arg(constants.size())
-        .arg(constants.keys().join(", "));
-    
-    return true;
-}
-
 int BatchAutoGenerateManager::resolveContainerId(int equipmentId)
 {
     QSqlDatabase db = QSqlDatabase::database(m_connectionName);
@@ -791,16 +756,33 @@ void BatchAutoGenerateManager::onWorkerRequestSaveModel(int equipmentId, const Q
         return;
     }
     
-    // 保存 T 模型
-    if (!saveTModel(equipmentId, tmodel)) {
-        qWarning() << "[BatchManager] 保存T模型失败";
+    // 1. 序列化常量为 Structure 字段格式 (name,value,unit,remark;...)
+    QString structureData;
+    if (!constants.isEmpty()) {
+        QStringList items;
+        for (auto it = constants.constBegin(); it != constants.constEnd(); ++it) {
+            const QString &name = it.key();
+            const QString &value = it.value();
+            if (name.trimmed().isEmpty()) continue;
+            items << QString("%1,%2,,").arg(name, value); // 单位与备注留空
+        }
+        structureData = items.join(";");
+        qInfo() << QString("[BatchManager] 序列化常量数据: %1").arg(structureData);
+    }
+    
+    // 2. 保存 TModel 和 Structure
+    QSqlQuery query(db);
+    query.prepare("UPDATE Equipment SET TModel = :TModel, Structure = :Structure WHERE Equipment_ID = :EID");
+    query.bindValue(":TModel", tmodel);
+    query.bindValue(":Structure", structureData);
+    query.bindValue(":EID", equipmentId);
+    
+    if (!query.exec()) {
+        qWarning() << "[BatchManager] 保存T模型和常量失败:" << query.lastError().text();
         return;
     }
     
-    // 保存常量
-    if (!saveConstants(equipmentId, constants)) {
-        qWarning() << "[BatchManager] 保存常量失败";
-    }
+    qInfo() << QString("[BatchManager] T模型和常量保存成功: equipmentId=%1").arg(equipmentId);
 }
 
 void BatchAutoGenerateManager::onWorkerRequestClearModel(int equipmentId)
@@ -812,17 +794,20 @@ void BatchAutoGenerateManager::onWorkerRequestClearModel(int equipmentId)
         return;
     }
     
-    qInfo() << QString("[BatchManager] Worker请求清空T模型: equipmentId=%1").arg(equipmentId);
+    qInfo() << QString("[BatchManager] Worker请求清空T模型与常量: equipmentId=%1").arg(equipmentId);
     
+    // 同时清空 TModel 和 Structure（常量表）
     QSqlQuery query(db);
-    if (!query.prepare("UPDATE Equipment SET TModel = '' WHERE Equipment_ID = ?")) {
-        qWarning() << "[BatchManager] 清空T模型prepare失败:" << query.lastError().text();
+    if (!query.prepare("UPDATE Equipment SET TModel = '', Structure = '' WHERE Equipment_ID = ?")) {
+        qWarning() << "[BatchManager] 清空T模型与常量prepare失败:" << query.lastError().text();
         return;
     }
     
     query.addBindValue(equipmentId);
     
     if (!query.exec()) {
-        qWarning() << "[BatchManager] 清空T模型exec失败:" << query.lastError().text();
+        qWarning() << "[BatchManager] 清空T模型与常量exec失败:" << query.lastError().text();
+    } else {
+        qInfo() << QString("[BatchManager] T模型与常量清空成功: equipmentId=%1").arg(equipmentId);
     }
 }
