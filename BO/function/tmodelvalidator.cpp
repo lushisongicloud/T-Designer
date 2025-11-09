@@ -245,9 +245,10 @@ TModelValidationResult TModelValidator::validate(const QString &tmodelText,
     const QString internalVarsSection = sectionParser.getInternalVariables();
 
     // 正则用于端口变量声明 (限制范围为端口变量定义段)
+    // 注意：端口名可能包含 +、-、*、~、#、_ 等符号，如 L0+、L0-、A*、B~、C# 等
     QRegularExpression declPattern(
         QString("\\(\\s*declare-fun\\s+(?:%[A-Za-z0-9_]+%|[A-Za-z0-9_]+)"
-                       "\\.((?:[A-Za-z0-9_\\-]+\\.)*[A-Za-z0-9_\\-]+)\\.([A-Za-z0-9_\\-]+)\\s*\\("));
+                       "\\.((?:[A-Za-z0-9_~#\\*\\+\\-]+\\.)*[A-Za-z0-9_~#\\*\\+\\-]+)\\.([A-Za-z0-9_\\-]+)\\s*\\("));
     auto declIter = declPattern.globalMatch(portVarsSection);
     while (declIter.hasNext()) {
         const QRegularExpressionMatch match = declIter.next();
@@ -282,8 +283,9 @@ TModelValidationResult TModelValidator::validate(const QString &tmodelText,
     // 变量引用扫描仍可遍历全模型文本；如果匹配到三段式，但 direction 不在期望集合，
     // 且该 token 所在的原始行出现在内部变量定义段，则忽略，不记为错误。
     const QString normalized = tmodelText;
+    // 注意：端口名可能包含 +、-、*、~、#、_ 等符号，如 L0+、L0-、A*、B~、C# 等
     QRegularExpression varPattern(
-        QString("(?:%[A-Za-z0-9_]+%|[A-Za-z0-9_]+)\\.((?:[A-Za-z0-9_\\-]+\\.)*[A-Za-z0-9_\\-]+)\\.([A-Za-z0-9_\\-]+)\\b"));
+        QString("(?:%[A-Za-z0-9_]+%|[A-Za-z0-9_]+)\\.((?:[A-Za-z0-9_~#\\*\\+\\-]+\\.)*[A-Za-z0-9_~#\\*\\+\\-]+)\\.([A-Za-z0-9_\\-]+)\\b"));
     auto varMatchIter = varPattern.globalMatch(normalized);
     while (varMatchIter.hasNext()) {
         const QRegularExpressionMatch match = varMatchIter.next();

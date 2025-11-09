@@ -220,7 +220,7 @@ void BatchAutoGenerateManager::loadTaskQueue()
     
     // 初始加载第一批任务（loadBatchTasks 内部会加锁）
     qInfo() << "[BatchManager] 开始初始加载任务...";
-    int loaded = loadBatchTasks(100);
+    int loaded = loadBatchTasks(20);
     qInfo() << QString("[BatchManager] 初始加载任务完成: %1 个器件").arg(loaded);
     qInfo() << QString("[BatchManager] 当前队列大小: %1").arg(m_taskQueue.size());
 }
@@ -292,7 +292,7 @@ bool BatchAutoGenerateManager::loadMoreTasksIfNeeded()
 {
     // 当队列少于10个时，尝试加载更多
     const int QUEUE_LOW_THRESHOLD = 10;
-    const int BATCH_SIZE = 100;
+    const int BATCH_SIZE = 20;
     
     if (m_taskQueue.size() < QUEUE_LOW_THRESHOLD) {
         int loaded = loadBatchTasks(BATCH_SIZE);
@@ -694,6 +694,41 @@ bool BatchAutoGenerateManager::saveTModel(int equipmentId, const QString &tmodel
     return true;
 }
 
+bool BatchAutoGenerateManager::saveConstants(int equipmentId, const QMap<QString, QString> &constants)
+{
+    if (constants.isEmpty()) {
+        return true;  // 无常量也算成功
+    }
+    
+    QSqlDatabase db = QSqlDatabase::database(m_connectionName);
+    
+    // 序列化常量: name,value,unit,remark;
+    QStringList items;
+    for (auto it = constants.begin(); it != constants.end(); ++it) {
+        const QString &name = it.key();
+        const QString &value = it.value();
+        if (name.trimmed().isEmpty()) continue;
+        items << QString("%1,%2,,").arg(name, value);  // 单位和备注留空
+    }
+    QString structureData = items.join(";");
+    
+    QSqlQuery query(db);
+    query.prepare("UPDATE Equipment SET Structure = ? WHERE Equipment_ID = ?");
+    query.addBindValue(structureData);
+    query.addBindValue(equipmentId);
+    
+    if (!query.exec()) {
+        qWarning() << "[BatchManager] 更新常量表失败:" << query.lastError().text();
+        return false;
+    }
+    
+    qInfo() << QString("[BatchManager] 保存常量成功: %1 个常量 (%2)")
+        .arg(constants.size())
+        .arg(constants.keys().join(", "));
+    
+    return true;
+}
+
 int BatchAutoGenerateManager::resolveContainerId(int equipmentId)
 {
     QSqlDatabase db = QSqlDatabase::database(m_connectionName);
@@ -756,8 +791,16 @@ void BatchAutoGenerateManager::onWorkerRequestSaveModel(int equipmentId, const Q
         return;
     }
     
-    saveTModel(equipmentId, tmodel);
-    // TODO: 如需保存 constants，可在此扩展
+    // 保存 T 模型
+    if (!saveTModel(equipmentId, tmodel)) {
+        qWarning() << "[BatchManager] 保存T模型失败";
+        return;
+    }
+    
+    // 保存常量
+    if (!saveConstants(equipmentId, constants)) {
+        qWarning() << "[BatchManager] 保存常量失败";
+    }
 }
 
 void BatchAutoGenerateManager::onWorkerRequestClearModel(int equipmentId)

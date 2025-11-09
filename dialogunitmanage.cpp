@@ -3487,7 +3487,7 @@ void DialogUnitManage::startBatchAutoGenerationNew(const QString &logPath, bool 
     // 启动批量处理（2线程模式）
     m_batchRunning = true;
     m_batchDialog->setRunning(true);
-    m_batchManager->start(effectivePath, resume, 3);  // 1个工作线程
+    m_batchManager->start(effectivePath, resume, 4);  // 1个工作线程
 }
 
 void DialogUnitManage::stopBatchAutoGenerationNew()
