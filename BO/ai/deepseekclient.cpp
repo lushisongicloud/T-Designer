@@ -102,12 +102,17 @@ void DeepSeekClient::onNetworkReplyFinished()
     }
     
     if (m_currentReply->error() != QNetworkReply::NoError) {
-        QString errorMsg = m_currentReply->errorString();
-        if (m_currentReply->error() == QNetworkReply::SslHandshakeFailedError) {
-            errorMsg += " | 提示: 请确认应用目录存在 OpenSSL 1.1.1 DLL (libcrypto-1_1-x64.dll, libssl-1_1-x64.dll) 且系统时间正确";
+        // 忽略用户主动取消的错误，避免无意义的错误日志
+        if (m_currentReply->error() == QNetworkReply::OperationCanceledError) {
+            //qDebug() << "DeepSeek API 请求已取消（正常）";
+        } else {
+            QString errorMsg = m_currentReply->errorString();
+            if (m_currentReply->error() == QNetworkReply::SslHandshakeFailedError) {
+                errorMsg += " | 提示: 请确认应用目录存在 OpenSSL 1.1.1 DLL (libcrypto-1_1-x64.dll, libssl-1_1-x64.dll) 且系统时间正确";
+            }
+            qWarning() << "DeepSeek API 错误:" << errorMsg;
+            emit errorOccurred(errorMsg);
         }
-        qWarning() << "DeepSeek API 错误:" << errorMsg;
-        emit errorOccurred(errorMsg);
     } else {
         // 非流式输出，直接解析完整响应
         QByteArray responseData = m_currentReply->readAll();

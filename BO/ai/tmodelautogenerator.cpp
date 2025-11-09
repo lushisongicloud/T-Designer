@@ -1688,7 +1688,7 @@ void TModelAutoGenerator::loadPortsFromDatabase(const QSqlDatabase &db, int equi
     
     // 按照新的逻辑从 EquipmentTemplate 表加载端口和描述
     QSqlQuery query(db);
-    query.prepare("SELECT SpurDT, ConnNum, ConnDesc FROM EquipmentTemplate WHERE Equipment_ID = ?");
+    query.prepare("SELECT SpurDT, ConnNum, ConnDesc, FunDefine FROM EquipmentTemplate WHERE Equipment_ID = ?");
     query.addBindValue(equipmentId);
     
     if (!query.exec()) {
@@ -1700,6 +1700,7 @@ void TModelAutoGenerator::loadPortsFromDatabase(const QSqlDatabase &db, int equi
         QString spurDT = query.value("SpurDT").toString().trimmed();
         QString connNum = query.value("ConnNum").toString().trimmed();
         QString connDesc = query.value("ConnDesc").toString().trimmed();
+        QString funDefine = query.value("FunDefine").toString().trimmed();
         
         // 功能子块名称：优先使用 SpurDT，如果为空则使用 ConnNum
         QString functionBlock = spurDT.isEmpty() ? connNum : spurDT;
@@ -1708,9 +1709,40 @@ void TModelAutoGenerator::loadPortsFromDatabase(const QSqlDatabase &db, int equi
             continue;
         }
         
-        // 保存端口描述（如果 ConnDesc 不为空且与 ConnNum 不完全相同）
-        if (portDescriptions && !connDesc.isEmpty() && connDesc != connNum) {
-            portDescriptions->insert(functionBlock, connDesc);
+        // 构造功能子块描述：查询 FunctionDefineName 并与 ConnDesc 结合
+        QString blockDescription;
+        
+        // 1. 尝试查询 FunctionDefineName（如果 FunDefine 不为空）
+        QString functionDefineName;
+        if (!funDefine.isEmpty()) {
+            QSqlQuery funcQuery(db);
+            funcQuery.prepare("SELECT FunctionDefineName FROM FunctionDefineClass WHERE FunctionDefineCode = ?");
+            funcQuery.addBindValue(funDefine);
+            
+            if (funcQuery.exec() && funcQuery.next()) {
+                functionDefineName = funcQuery.value("FunctionDefineName").toString().trimmed();
+            }
+        }
+        
+        // 2. 判断 ConnDesc 是否有效（不为空且与 ConnNum 不完全相同）
+        bool hasValidConnDesc = !connDesc.isEmpty() && connDesc != connNum;
+        
+        // 3. 组合描述内容
+        if (!functionDefineName.isEmpty() && hasValidConnDesc) {
+            // 两者都有效：先 FunctionDefineName，再 ConnDesc
+            blockDescription = functionDefineName + "," + connDesc;
+        } else if (!functionDefineName.isEmpty()) {
+            // 只有 FunctionDefineName 有效
+            blockDescription = functionDefineName;
+        } else if (hasValidConnDesc) {
+            // 只有 ConnDesc 有效
+            blockDescription = connDesc;
+        }
+        // 如果两者都无效，blockDescription 保持为空
+        
+        // 4. 保存端口描述（仅当有有效描述时）
+        if (portDescriptions && !blockDescription.isEmpty()) {
+            portDescriptions->insert(functionBlock, blockDescription);
         }
         
         // 将 ConnNum 按 ￤ 分解为多个端口

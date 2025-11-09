@@ -97,25 +97,33 @@ void BatchAutoGenerateManager::stop()
     m_stopped = true;
     qInfo() << "[BatchManager] 停止批量处理";
     
-    // 先断开所有信号连接，避免在清理过程中触发回调
+    // 1. 先断开所有信号连接，避免在清理过程中触发回调
     for (auto worker : m_workers) {
         if (worker) {
+            // 断开所有与 manager 的连接
             disconnect(worker, nullptr, this, nullptr);
         }
     }
     
-    // 停止所有工作线程
+    // 2. 请求所有工作线程优雅退出
     for (auto thread : m_workerThreads) {
         if (thread && thread->isRunning()) {
             thread->quit();
+        }
+    }
+    
+    // 3. 等待所有线程退出（给每个线程3秒时间）
+    for (auto thread : m_workerThreads) {
+        if (thread && thread->isRunning()) {
             if (!thread->wait(3000)) {  // 等待最多3秒
-                qWarning() << "[BatchManager] 工作线程未能正常退出，强制终止";
+                qWarning() << "[BatchManager] 工作线程未能在3秒内退出，强制终止";
                 thread->terminate();
-                thread->wait();
+                thread->wait(1000);  // 等待终止完成
             }
         }
     }
     
+    // 4. 清理映射
     m_workerThreads.clear();
     m_workers.clear();
     m_workerIds.clear();

@@ -36,9 +36,16 @@ SingleEquipmentWorker::~SingleEquipmentWorker()
 {
     if (m_timeoutTimer) {
         m_timeoutTimer->stop();
+        m_timeoutTimer->deleteLater();
+        m_timeoutTimer = nullptr;
     }
+    
+    // 确保 generator 完全清理，避免向已删除对象发送信号
     if (m_generator) {
+        // 断开所有信号连接，防止析构过程中发送信号
+        disconnect(m_generator, nullptr, this, nullptr);
         m_generator->deleteLater();
+        m_generator = nullptr;
     }
     
     // 关闭并移除线程独立的数据库连接
@@ -157,7 +164,9 @@ void SingleEquipmentWorker::onGeneratorFinished(int equipmentId, const QString &
     m_isFinished = true;
     
     // 停止超时定时器
-    m_timeoutTimer->stop();
+    if (m_timeoutTimer) {
+        m_timeoutTimer->stop();
+    }
     
     log(QString("TModelAutoGenerator 完成: %1 - %2").arg(success ? "成功" : "失败", message));
     
@@ -176,6 +185,12 @@ void SingleEquipmentWorker::onGeneratorFinished(int equipmentId, const QString &
     }
     
     m_result.elapsedSeconds = m_timer.elapsed() / 1000;
+    
+    // 断开 generator 的所有连接，防止后续清理时发送信号到已删除对象
+    if (m_generator) {
+        disconnect(m_generator, nullptr, this, nullptr);
+    }
+    
     emit finished(m_result);
 }
 
@@ -214,13 +229,20 @@ void SingleEquipmentWorker::finishWithError(const QString &errorMessage)
     }
     m_isFinished = true;
     
-    m_timeoutTimer->stop();
+    if (m_timeoutTimer) {
+        m_timeoutTimer->stop();
+    }
     
     m_result.status = EquipmentProcessResult::Failed;
     m_result.errorMessage = errorMessage;
     m_result.elapsedSeconds = m_timer.elapsed() / 1000;
     
     log(QString("处理失败: %1").arg(errorMessage));
+    
+    // 断开 generator 的所有连接，防止后续清理时发送信号到已删除对象
+    if (m_generator) {
+        disconnect(m_generator, nullptr, this, nullptr);
+    }
     
     emit finished(m_result);
 }
