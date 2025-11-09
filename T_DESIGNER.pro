@@ -144,8 +144,11 @@ SOURCES += \
     BO/componententity.cpp \
     BO/systementity.cpp \
     BO/worker.cpp \
+    BO/diagnosisengine.cpp \
     DO/component.cpp \
     DO/diagnosisgraph.cpp \
+    DO/diagnosistree.cpp \
+    DO/diagnosistreenode.cpp \
     DO/model.cpp \
     DO/parameter.cpp \
     sqlitedatabase.cpp \
@@ -257,8 +260,11 @@ HEADERS += \
     BO/componententity.h \
     BO/systementity.h \
     BO/worker.h \
+    BO/diagnosisengine.h \
     DO/component.h \
     DO/diagnosisgraph.h \
+    DO/diagnosistree.h \
+    DO/diagnosistreenode.h \
     DO/model.h \
     DO/parameter.h \
     DO/containerentity.h \

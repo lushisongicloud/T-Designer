@@ -420,7 +420,7 @@ rgba(17,255,255,128));
 </string>
             </property>
             <property name="currentIndex">
-             <number>0</number>
+             <number>3</number>
             </property>
             <widget class="QWidget" name="tab_8">
              <property name="styleSheet">
@@ -1269,7 +1269,7 @@ QTreeView::branch:open:has-children{
 }</string>
                 </property>
                 <property name="currentIndex">
-                 <number>1</number>
+                 <number>0</number>
                 </property>
                 <widget class="QWidget" name="tab_15">
                  <property name="styleSheet">

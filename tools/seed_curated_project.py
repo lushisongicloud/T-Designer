@@ -15,6 +15,7 @@ import sqlite3
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
+from collections import defaultdict
 from typing import Dict, Iterable, List, Sequence, Tuple
 
 PROJECT_DB = Path("MyProjects/集中油源动力系统/集中油源动力系统.db")
@@ -234,6 +235,8 @@ def reset_autogen_data(conn: sqlite3.Connection) -> None:
     delete_where_in(conn, "Symb2TermInfo", "Symbol_ID", symbol_ids)
     delete_where_in(conn, "Symbol", "Symbol_ID", symbol_ids)
 
+    conn.execute("DELETE FROM JXB")
+
     eq_rows = conn.execute("SELECT Equipment_ID FROM Equipment WHERE Factory='AutoGen'").fetchall()
     eq_ids = [row[0] for row in eq_rows]
     if not eq_ids:
@@ -387,6 +390,79 @@ def ensure_base_containers(conn: sqlite3.Connection) -> Dict[str, int]:
     return mapping
 
 
+def should_skip_symbol(symbol: str) -> bool:
+    if not symbol:
+        return True
+    suffixes = (":C", ":G")
+    return any(symbol.endswith(sfx) for sfx in suffixes)
+
+
+def populate_jxb(conn: sqlite3.Connection) -> None:
+    conn.execute("DELETE FROM JXB")
+    page_to_project: Dict[int, str] = {}
+    cursor = conn.execute("SELECT Page_ID, ProjectStructure_ID FROM Page")
+    for row in cursor.fetchall():
+        page_to_project[int(row[0])] = str(row[1])
+
+    cursor = conn.execute(
+        "SELECT ConnectLine_ID, Page_ID, Cable_ID, ConnectionNumber, ConnectionNumber_Handle, "
+        "Symb1_ID, Symb2_ID, Wires_Type, Wires_Color, Wires_Diameter, Wires_Category, "
+        "Symb1_Category, Symb2_Category "
+        "FROM ConnectLine WHERE IFNULL(Page_ID,'') <> '' ORDER BY ConnectionNumber"
+    )
+    next_jxb_id = conn.execute("SELECT IFNULL(MAX(JXB_ID),0) FROM JXB").fetchone()[0] + 1
+    seen_numbers = set()
+    seen_blank = defaultdict(set)
+
+    for row in cursor.fetchall():
+        page_id = row[1]
+        project_structure_id = page_to_project.get(int(page_id)) if page_id is not None else None
+        if not project_structure_id:
+            continue
+        symb1_id = row[5] or ""
+        symb2_id = row[6] or ""
+        if should_skip_symbol(symb1_id) or should_skip_symbol(symb2_id):
+            continue
+
+        connection_number = row[3] or ""
+        symb1_cat = row[11] or ""
+        symb2_cat = row[12] or ""
+        if connection_number:
+            key = (project_structure_id, connection_number)
+            if key in seen_numbers:
+                continue
+            seen_numbers.add(key)
+        else:
+            endpoint_key = tuple(sorted(((symb1_id, symb1_cat), (symb2_id, symb2_cat))))
+            blank_set = seen_blank[project_structure_id]
+            if endpoint_key in blank_set:
+                continue
+            blank_set.add(endpoint_key)
+
+        conn.execute(
+            "INSERT INTO JXB (JXB_ID, ProjectStructure_ID, Page_ID, Cable_ID, ConnectionNumber, ConnectionNumber_Handle, "
+            "Symb1_ID, Symb2_ID, Wires_Type, Wires_Color, Wires_Diameter, Wires_Category, Symb1_Category, Symb2_Category) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (
+                next_jxb_id,
+                project_structure_id,
+                row[1],
+                row[2],
+                connection_number,
+                row[4] or "",
+                symb1_id,
+                symb2_id,
+                row[7] or "",
+                row[8] or "",
+                row[9] or "",
+                row[10] or "",
+                symb1_cat,
+                symb2_cat,
+            ),
+        )
+        next_jxb_id += 1
+
+
 def main() -> None:
     if not PROJECT_DB.exists():
         raise FileNotFoundError(f"Project DB not found: {PROJECT_DB}")
@@ -419,6 +495,7 @@ def main() -> None:
         instances: List[Dict[str, int]] = []
         category_indexes: Dict[str, List[int]] = {}
         total_equipment = 0
+        symbol_ports: Dict[int, Tuple[int, int]] = {}
 
         for config in CATEGORIES:
             remaining = MAX_EQUIPMENT - total_equipment
@@ -530,6 +607,7 @@ def main() -> None:
                     ),
                 )
 
+                port_ids: List[int] = []
                 for port_index, direction in enumerate(("向上", "向下"), start=1):
                     project_conn.execute(
                         "INSERT INTO Symb2TermInfo (Symb2TermInfo_ID, Symbol_ID, ConnNum_Logic, ConnNum, ConnDirection, Internal, ConnDesc) "
@@ -545,6 +623,11 @@ def main() -> None:
                         ),
                     )
                     next_symbterm_id += 1
+                    port_ids.append(next_symbterm_id - 1)
+
+                if len(port_ids) < 2:
+                    raise RuntimeError(f"符号 {mark} 端口数量不足")
+                symbol_ports[symbol_id] = (port_ids[0], port_ids[1])
 
                 instance_index = len(instances)
                 instances.append(
@@ -553,6 +636,7 @@ def main() -> None:
                         symbol_id=symbol_id,
                         category=config.key,
                         page_id=page_id,
+                        ports=(port_ids[0], port_ids[1]),
                     )
                 )
                 category_indexes.setdefault(config.key, []).append(instance_index)
@@ -564,6 +648,8 @@ def main() -> None:
             nonlocal next_connectline_id, connections_made
             if connections_made >= MAX_CONNECTIONS:
                 return False
+            port_a = inst_a["ports"][0]
+            port_b = inst_b["ports"][1]
             connection_number = f"CL-{next_connectline_id:06d}"
             equipotential = str((next_connectline_id % 48) + 1)
             color = WIRE_COLORS[next_connectline_id % len(WIRE_COLORS)]
@@ -579,14 +665,14 @@ def main() -> None:
                     equipotential,
                     connection_number,
                     f"HND-{connection_number}",
-                    f"{inst_a['symbol_id']}:1",
-                    f"{inst_b['symbol_id']}:2",
+                    str(port_a),
+                    str(port_b),
                     wire_type,
                     color,
                     "2.5mm2",
                     wire_category,
-                    "component",
-                    "component",
+                    "0",
+                    "0",
                 ),
             )
             next_connectline_id += 1
@@ -631,10 +717,12 @@ def main() -> None:
         if connections_available:
             connect_categories("network_module", "plc", 40, "network", "通讯线")
 
+        populate_jxb(project_conn)
         project_conn.commit()
+        jxb_count = project_conn.execute("SELECT COUNT(*) FROM JXB").fetchone()[0]
         print(
-            f"Inserted {total_equipment} equipment entries and {connections_made} connections "
-            f"(limits: equipment<{MAX_EQUIPMENT}, connections<{MAX_CONNECTIONS})."
+            f"Inserted {total_equipment} equipment entries, {connections_made} connections, "
+            f"and {jxb_count} JXB rows (limits: equipment<{MAX_EQUIPMENT}, connections<{MAX_CONNECTIONS})."
         )
     finally:
         project_conn.close()
