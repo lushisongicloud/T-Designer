@@ -14,7 +14,8 @@ SingleEquipmentWorker::SingleEquipmentWorker(const QString &dbConnectionName, co
     , m_inputData(inputData)
     , m_enableWorkerLog(enableWorkerLog)
     , m_generator(nullptr)
-    , m_timeoutTimer(nullptr)
+    , m_totalTimeoutTimer(nullptr)
+    , m_activityTimeoutTimer(nullptr)
     , m_isFinished(false)
 {
     // 初始化结果
@@ -25,19 +26,31 @@ SingleEquipmentWorker::SingleEquipmentWorker(const QString &dbConnectionName, co
     m_result.status = EquipmentProcessResult::Failed;
     m_result.elapsedSeconds = 0;
     
-    // 创建超时定时器（5分钟超时）
-    m_timeoutTimer = new QTimer(this);
-    m_timeoutTimer->setSingleShot(true);
-    m_timeoutTimer->setInterval(5 * 60 * 1000);  // 5分钟
-    connect(m_timeoutTimer, &QTimer::timeout, this, &SingleEquipmentWorker::onTimeout);
+    // 创建总体超时定时器（5分钟）
+    m_totalTimeoutTimer = new QTimer(this);
+    m_totalTimeoutTimer->setSingleShot(true);
+    m_totalTimeoutTimer->setInterval(5 * 60 * 1000);  // 5分钟
+    connect(m_totalTimeoutTimer, &QTimer::timeout, this, &SingleEquipmentWorker::onTotalTimeout);
+    
+    // 创建活跃度超时定时器（30秒无流式输出）
+    m_activityTimeoutTimer = new QTimer(this);
+    m_activityTimeoutTimer->setSingleShot(false);  // 可重复触发
+    m_activityTimeoutTimer->setInterval(30 * 1000);  // 30秒
+    connect(m_activityTimeoutTimer, &QTimer::timeout, this, &SingleEquipmentWorker::onActivityTimeout);
 }
 
 SingleEquipmentWorker::~SingleEquipmentWorker()
 {
-    if (m_timeoutTimer) {
-        m_timeoutTimer->stop();
-        m_timeoutTimer->deleteLater();
-        m_timeoutTimer = nullptr;
+    if (m_totalTimeoutTimer) {
+        m_totalTimeoutTimer->stop();
+        m_totalTimeoutTimer->deleteLater();
+        m_totalTimeoutTimer = nullptr;
+    }
+    
+    if (m_activityTimeoutTimer) {
+        m_activityTimeoutTimer->stop();
+        m_activityTimeoutTimer->deleteLater();
+        m_activityTimeoutTimer = nullptr;
     }
     
     // 确保 generator 完全清理，避免向已删除对象发送信号
@@ -65,8 +78,9 @@ void SingleEquipmentWorker::process()
     log(QString("========== 开始处理: %1 (%2) ==========")
         .arg(m_inputData.code, m_inputData.name));
     
-    // 启动超时定时器
-    m_timeoutTimer->start();
+    // 启动双重超时保护
+    m_totalTimeoutTimer->start();      // 总体5分钟超时
+    m_activityTimeoutTimer->start();   // 30秒无活动超时
     
     // 检查是否有有效端号
     if (m_inputData.ports.isEmpty()) {
@@ -74,7 +88,8 @@ void SingleEquipmentWorker::process()
         m_result.status = EquipmentProcessResult::NoPorts;
         m_result.errorMessage = "无有效端号";
         m_result.elapsedSeconds = m_timer.elapsed() / 1000;
-        m_timeoutTimer->stop();
+        m_totalTimeoutTimer->stop();
+        m_activityTimeoutTimer->stop();
         emit finished(m_result);
         return;
     }
@@ -163,9 +178,12 @@ void SingleEquipmentWorker::onGeneratorFinished(int equipmentId, const QString &
     }
     m_isFinished = true;
     
-    // 停止超时定时器
-    if (m_timeoutTimer) {
-        m_timeoutTimer->stop();
+    // 停止所有超时定时器
+    if (m_totalTimeoutTimer) {
+        m_totalTimeoutTimer->stop();
+    }
+    if (m_activityTimeoutTimer) {
+        m_activityTimeoutTimer->stop();
     }
     
     log(QString("TModelAutoGenerator 完成: %1 - %2").arg(success ? "成功" : "失败", message));
@@ -208,18 +226,34 @@ void SingleEquipmentWorker::onModelGenerated(const QString &tmodel)
 
 void SingleEquipmentWorker::onStreamDelta(const QString &delta)
 {
-    // 直接转发流式输出
+    // 收到流式输出，重置活跃度定时器
+    if (m_activityTimeoutTimer && m_activityTimeoutTimer->isActive()) {
+        m_activityTimeoutTimer->stop();
+        m_activityTimeoutTimer->start();  // 重新开始30秒倒计时
+    }
+    
+    // 转发流式输出
     emit streamDelta(delta);
 }
 
-void SingleEquipmentWorker::onTimeout()
+void SingleEquipmentWorker::onTotalTimeout()
 {
     if (m_isFinished) {
         return;  // 已经完成，忽略超时
     }
     
-    log("错误: 处理超时（5分钟无响应）");
-    finishWithError("处理超时");
+    log("错误: 处理总体超时（5分钟无响应）");
+    finishWithError("处理超时（超过5分钟）");
+}
+
+void SingleEquipmentWorker::onActivityTimeout()
+{
+    if (m_isFinished) {
+        return;  // 已经完成，忽略超时
+    }
+    
+    log("错误: 流式输出超时（30秒无新数据）");
+    finishWithError("流式输出超时（30秒无响应）");
 }
 
 void SingleEquipmentWorker::finishWithError(const QString &errorMessage)
@@ -229,8 +263,12 @@ void SingleEquipmentWorker::finishWithError(const QString &errorMessage)
     }
     m_isFinished = true;
     
-    if (m_timeoutTimer) {
-        m_timeoutTimer->stop();
+    // 停止所有定时器
+    if (m_totalTimeoutTimer) {
+        m_totalTimeoutTimer->stop();
+    }
+    if (m_activityTimeoutTimer) {
+        m_activityTimeoutTimer->stop();
     }
     
     m_result.status = EquipmentProcessResult::Failed;

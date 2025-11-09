@@ -3657,45 +3657,54 @@ void MainWindow::LoadProject()
 
 void MainWindow::createDemoProject()
 {
-    const QString projectName = QString("DemoWorkflow");
-    const QString projectDir = QString("%1/%2").arg(QString(LocalProjectDefaultPath), projectName);
+    auto loadProjectFromDir = [&](const QString &projectDir,
+                                  const QString &projectName,
+                                  const QString &successMessage) {
+        if (T_ProjectDatabase.isOpen()) {
+            const QString connName = T_ProjectDatabase.connectionName();
+            T_ProjectDatabase.close();
+            QSqlDatabase::removeDatabase(connName);
+        }
 
-    QString error;
-    if (!DemoProjectBuilder::buildDemoProject(projectDir, projectName, &error)) {
-        QMessageBox::warning(this, tr("演示项目生成失败"), error);
-        qDebug()<<"演示项目生成失败:"<<error;
+        QDir dataDir(QString(LocalDataBasePath));
+        if (!dataDir.exists())
+            dataDir.mkpath(QString("."));
+        QFile historyFile(dataDir.filePath(QString("历史工程记录.dat")));
+        if (!historyFile.exists()) {
+            if (historyFile.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
+                QTextStream historyStream(&historyFile);
+                historyStream.setCodec("UTF-8");
+                historyStream.setGenerateByteOrderMark(true);
+                historyStream.flush();
+                historyFile.close();
+            }
+        }
+
+        CurProjectPath = projectDir;
+        CurProjectName = projectName;
+
+        LoadProject();
+
+        QMessageBox::information(this,
+                                 tr("演示项目就绪"),
+                                 successMessage);
+    };
+
+    const QString curatedProjectName = QString("集中油源动力系统");
+    const QString curatedProjectDir = QString("%1/%2").arg(QString(LocalProjectDefaultPath), curatedProjectName);
+    const QString curatedDbPath = curatedProjectDir + "/" + curatedProjectName + ".db";
+    if (!QFileInfo::exists(curatedDbPath)) {
+        QMessageBox::warning(this,
+                             tr("演示项目生成失败"),
+                             tr("未找到示范工程数据库：%1\n请先创建或复制“%2”工程。")
+                                 .arg(curatedDbPath, curatedProjectName));
+        qDebug() << "未找到示范工程数据库:" << curatedDbPath;
         return;
     }
 
-    if (T_ProjectDatabase.isOpen()) {
-        const QString connName = T_ProjectDatabase.connectionName();
-        T_ProjectDatabase.close();
-        QSqlDatabase::removeDatabase(connName);
-    }
-
-    QDir dataDir(QString(LocalDataBasePath));
-    if (!dataDir.exists())
-        dataDir.mkpath(QString("."));
-    QFile historyFile(dataDir.filePath(QString("历史工程记录.dat")));
-    if (!historyFile.exists()) {
-        if (historyFile.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
-            QTextStream historyStream(&historyFile);
-            historyStream.setCodec("UTF-8");
-            historyStream.setGenerateByteOrderMark(true);
-            historyStream.flush();
-            historyFile.close();
-        }
-    }
-
-    CurProjectPath = projectDir;
-    CurProjectName = projectName;
-
-    LoadProject();
-
-    QMessageBox::information(this,
-                             tr("演示项目已创建"),
-                             tr("已在 %1 创建并加载演示项目，您可以按照 workflow_demo.md 的步骤体验完整流程。")
-                                 .arg(projectDir));
+    loadProjectFromDir(curatedProjectDir,
+                       curatedProjectName,
+                       tr("已加载示范工程“%1”。").arg(curatedProjectName));
 }
 
 void MainWindow::LoadLastOpenedProject()

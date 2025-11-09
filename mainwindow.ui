@@ -762,7 +762,7 @@ QTreeView::branch:open:has-children{
                  <string notr="true"/>
                 </property>
                 <property name="currentIndex">
-                 <number>1</number>
+                 <number>0</number>
                 </property>
                 <widget class="QWidget" name="tab_13">
                  <property name="styleSheet">
@@ -9884,7 +9884,7 @@ min-width: 100px;
 }</string>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>4</number>
       </property>
       <widget class="QWidget" name="ProjectManager">
        <property name="styleSheet">

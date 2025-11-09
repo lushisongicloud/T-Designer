@@ -4,6 +4,7 @@
 #include <QDialog>
 #include <QtCharts>
 #include <QChartView>
+#include <QElapsedTimer>
 #include "common.h"
 namespace Ui {
 class DialogTestReport;
@@ -15,16 +16,19 @@ class DialogTestReport : public QDialog
 
 public:
     explicit DialogTestReport(QWidget *parent = nullptr);
-    //explicit DialogTestReport(int rowCount, QWidget *parent = nullptr); // 添加rowCount参数
+    explicit DialogTestReport(qint64 startTimestamp, QWidget *parent = nullptr);
     ~DialogTestReport();
     void iniBarChart();
     void build_FIR_Chart();
     void InitUI();
-    QStandardItemModel *Model1FIR,*Model2FIR,*Model3FIR,*ModelMTBF,*ModelMTTR,*ModelAnaly1,*ModelAnaly2,*ModelAnaly3,*ModelAnaly4,*ModelAnaly5;
+    void InitUIWithActualTime(qint64 elapsedMs);
+    QStandardItemModel *ModelFDR,*Model1FIR,*Model2FIR,*Model3FIR,*ModelMTBF,*ModelMTTR,*ModelAnaly1,*ModelAnaly2,*ModelAnaly3,*ModelAnaly4,*ModelAnaly5;
 
 private:
     Ui::DialogTestReport *ui;
     int rowCount_;
+    qint64 startTimestamp_;
+    qint64 actualElapsedTime_;
 };
 
 #endif // DIALOGTESTREPORT_H

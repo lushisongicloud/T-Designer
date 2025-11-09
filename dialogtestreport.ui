@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>591</width>
-    <height>462</height>
+    <width>592</width>
+    <height>479</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -21,7 +21,7 @@
     <rect>
      <x>1</x>
      <y>3</y>
-     <width>131</width>
+     <width>171</width>
      <height>26</height>
     </rect>
    </property>
@@ -87,7 +87,7 @@
     <rect>
      <x>207</x>
      <y>3</y>
-     <width>151</width>
+     <width>161</width>
      <height>26</height>
     </rect>
    </property>
@@ -104,7 +104,7 @@
     <string>2.测试性分析</string>
    </property>
    <property name="alignment">
-    <set>Qt::AlignCenter</set>
+    <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
    </property>
   </widget>
   <widget class="Line" name="line_6">
@@ -230,7 +230,7 @@
      <rect>
       <x>1</x>
       <y>10</y>
-      <width>112</width>
+      <width>141</width>
       <height>26</height>
      </rect>
     </property>
@@ -350,9 +350,9 @@
   <widget class="QChartView" name="chartView">
    <property name="geometry">
     <rect>
-     <x>205</x>
-     <y>130</y>
-     <width>371</width>
+     <x>210</x>
+     <y>170</y>
+     <width>361</width>
      <height>301</height>
     </rect>
    </property>
@@ -367,7 +367,7 @@
      <x>214</x>
      <y>37</y>
      <width>350</width>
-     <height>90</height>
+     <height>120</height>
     </rect>
    </property>
    <property name="styleSheet">
@@ -379,15 +379,15 @@
    <property name="frameShadow">
     <enum>QFrame::Raised</enum>
    </property>
-   <widget class="QTreeView" name="treeView2LRU">
+   <widget class="QTreeView" name="treeViewFDR">
     <property name="enabled">
      <bool>false</bool>
     </property>
     <property name="geometry">
      <rect>
       <x>0</x>
-      <y>31</y>
-      <width>363</width>
+      <y>2</y>
+      <width>361</width>
       <height>25</height>
      </rect>
     </property>
@@ -416,7 +416,50 @@
      <bool>false</bool>
     </property>
    </widget>
-   <widget class="QTreeView" name="treeView3LRU">
+   <widget class="QTreeView" name="treeView1LRU">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>31</y>
+      <width>363</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="minimumSize">
+     <size>
+      <width>0</width>
+      <height>25</height>
+     </size>
+    </property>
+    <property name="maximumSize">
+     <size>
+      <width>16777215</width>
+      <height>25</height>
+     </size>
+    </property>
+    <property name="styleSheet">
+     <string notr="true"/>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::NoFrame</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Sunken</enum>
+    </property>
+    <property name="verticalScrollBarPolicy">
+     <enum>Qt::ScrollBarAlwaysOff</enum>
+    </property>
+    <property name="horizontalScrollBarPolicy">
+     <enum>Qt::ScrollBarAlwaysOff</enum>
+    </property>
+    <property name="autoScroll">
+     <bool>false</bool>
+    </property>
+   </widget>
+   <widget class="QTreeView" name="treeView2LRU">
     <property name="enabled">
      <bool>false</bool>
     </property>
@@ -453,14 +496,14 @@
      <bool>false</bool>
     </property>
    </widget>
-   <widget class="QTreeView" name="treeView1LRU">
+   <widget class="QTreeView" name="treeView3LRU">
     <property name="enabled">
      <bool>false</bool>
     </property>
     <property name="geometry">
      <rect>
       <x>0</x>
-      <y>2</y>
+      <y>89</y>
       <width>363</width>
       <height>25</height>
      </rect>
@@ -477,14 +520,8 @@
       <height>25</height>
      </size>
     </property>
-    <property name="styleSheet">
-     <string notr="true"/>
-    </property>
     <property name="frameShape">
      <enum>QFrame::NoFrame</enum>
-    </property>
-    <property name="frameShadow">
-     <enum>QFrame::Sunken</enum>
     </property>
     <property name="verticalScrollBarPolicy">
      <enum>Qt::ScrollBarAlwaysOff</enum>
@@ -521,7 +558,7 @@
       <x>0</x>
       <y>0</y>
       <width>201</width>
-      <height>151</height>
+      <height>155</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout">
@@ -715,8 +752,8 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>434</y>
-     <width>561</width>
+     <y>450</y>
+     <width>211</width>
      <height>20</height>
     </rect>
    </property>

@@ -3662,13 +3662,11 @@ void MainWindow::on_Btn_SetTerminal_clicked()
 
 void MainWindow::on_BtnDataAnalyse_clicked()
 {
-//    DialogTestReport *dlg=new DialogTestReport();
-//    dlg->setWindowTitle("系统统计信息");
-//    dlg->setModal(true);
-//    Sleep(1200);
-//    dlg->show();
-//    dlg->exec();
-//    delete dlg;
+    int wT = 200;
+    if(CurProjectName=="双电机拖曳收放装置") wT=4200;
+    else if(CurProjectName=="收放存储装置") wT=975;
+    else if(CurProjectName=="尾轴密封试验装置") wT=240;
+    else if(CurProjectName=="集中油源动力系统") wT=5100;
 
     // 创建对话框并设置样式
     QDialog *waitDialog = new QDialog(this, Qt::FramelessWindowHint | Qt::Dialog);
@@ -3686,22 +3684,18 @@ void MainWindow::on_BtnDataAnalyse_clicked()
     // 设置对话框为模态
     waitDialog->setWindowModality(Qt::WindowModal);
 
+    // 记录开始时间戳
+    qint64 startTimestamp = QDateTime::currentMSecsSinceEpoch();
+
     // 显示对话框
     waitDialog->show();
 
-    // 设置计时器在1200毫秒后触发
-    int waitTime = 200;
-    if(CurProjectName=="双电机拖曳收放装置") waitTime=4200;
-    else if(CurProjectName=="收放存储装置") waitTime=975;
-    else if(CurProjectName=="尾轴密封试验装置") waitTime=240;
-    QTimer::singleShot(waitTime, this, [this, waitDialog]() {
-        // 关闭等待对话框
+    QTimer::singleShot(wT, this, [this, waitDialog, startTimestamp]() {
         waitDialog->accept();
-        // 删除对话框
         waitDialog->deleteLater();
-        // 显示报告对话框
+
         CurComponentCount = ui->tableWidgetUnit->rowCount(); // 获取行数
-        DialogTestReport *dlg = new DialogTestReport(); // 通过构造函数传递行数
+        DialogTestReport *dlg = new DialogTestReport(startTimestamp); // 传递开始时间戳进行计时
         dlg->setWindowTitle("系统统计信息");
         dlg->setModal(true);
         dlg->exec();

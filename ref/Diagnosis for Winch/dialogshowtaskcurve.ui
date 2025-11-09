@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>DialogShowTaskCurve</class>
+ <widget class="QDialog" name="DialogShowTaskCurve">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1600</width>
+    <height>950</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>工况历史数据</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">#DialogShowTaskCurve{
+border-image: url(:/widget/调距桨背景.png);
+}
+
+QGroupBox{
+	background-color: rgba(16, 57, 70, 1);
+	border: 0px solid rgb(111, 255, 255);
+	margin-top:3.3ex;
+	color: rgba(102, 249, 247, 1);
+	font: 12pt &quot;微软雅黑&quot;;
+}
+
+QGroupBox::title{
+	subcontrol-origin: margin;
+	subcontrol-position: top center;
+	background-color: rgba(19, 67, 79, 1);
+	padding: 7 1000px;
+}
+
+QLineEdit{
+	background-color: rgba(255, 255, 255,0.2);
+	border-width:0;
+	border-style:outset;
+	color: rgba(102, 249, 247, 1);
+	font: 12pt &quot;微软雅黑&quot;;
+}
+
+QLabel{
+	color: rgba(102, 249, 247, 1);
+	font: 12pt &quot;微软雅黑&quot;;
+}
+
+QRadioButton{
+	color: rgba(102, 249, 247, 1);
+	font: 12pt &quot;微软雅黑&quot;;
+}
+
+QRadioButton::indicator{
+	border-color: rgba(255, 255, 255,0);
+	background:transparent;
+}
+
+
+QRadioButton::indicator:checked{
+	border-image:url(:/widget/images/green.png)
+}
+
+QRadioButton::indicator:unchecked{
+	border-image:url(:/widget/images/unchecked.png)
+}
+
+QPushButton{
+	border: 2px solid rgba(61, 255, 255,0.4);
+	background-color: rgba(12, 34, 45, 0.6);
+	font: 12pt &quot;微软雅黑&quot;;
+	color: rgba(102, 249, 247, 1);
+	text-align：center;
+}
+
+QPushButton::disabled{
+	border: 0px;
+	color: rgba(102, 249, 247, 0.3);
+	text-align：center;
+}
+
+QPushButton::pressed{
+	border: 2px solid rgba(61, 255, 255,0.8);
+	background-color: rgba(12, 34, 45, 1);
+	font: 12pt &quot;微软雅黑&quot;;
+}
+
+QPushButton::hover{
+	border: 2.5px solid rgba(61, 255, 255,0.8);
+	background-color: rgba(12, 34, 45, 0.6);
+	font: 75 12pt &quot;微软雅黑&quot;;
+}
+
+QDoubleSpinBox{
+	border: 0px solid rgba(61, 255, 255,0.4);
+	background-color: rgba(255, 255, 255, 0.2);
+	font: 12pt &quot;Times New Roman&quot;;
+	color: rgba(102, 249, 247, 1);
+	text-align：center;
+	padding-left:10px;
+}
+
+
+QTabWidget{
+	background-color: rgba(19, 67, 79, 1);
+	border-color: rgba(19, 67, 79, 1);
+	border:0px;
+	margin:0px;
+}
+
+QTabWidget::pane{
+	border:0px;
+	margin:0px;
+}
+
+QTabWidget::tab-bar {
+	left: 2px;
+	border:0px;
+	margin:0px;
+}
+
+QTabBar::tab:first {
+	background-color: rgba(11, 49, 61, 1);
+	border-color: rgba(11, 49, 61, 1);
+	color: rgba(102, 249, 247, 1);
+	min-width: 4em;
+	min-height:1em;
+}
+QTabBar::tab {
+	font: 12pt &quot;微软雅黑&quot;;
+	background-color: rgba(11, 49, 61, 255);
+	border-color: rgba(11, 49, 61, 255);
+	color: rgba(102, 249, 247, 1);
+	min-width: 4em;
+	min-height:1em;
+}
+
+QTabBar::tab:first:selected {
+	min-width: 4em;
+	min-height:1em;
+}
+
+QTabBar::tab:selected {
+margin-bottom:0.2em;
+}
+
+QTabBar::tab:!selected{
+	min-width: 4em;
+	min-height:1em;
+}
+
+</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QWidget" name="widget" native="true">
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>60</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>16777215</width>
+       <height>50</height>
+      </size>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <property name="spacing">
+       <number>0</number>
+      </property>
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="QWidget" name="widgetSearch" native="true">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+        <layout class="QHBoxLayout" name="horizontalLayout_3">
+         <property name="spacing">
+          <number>0</number>
+         </property>
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>5</number>
+         </property>
+         <item>
+          <widget class="QLabel" name="label_13">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>40</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>起始检索时间：</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QDateEdit" name="WarndateEditStart">
+           <property name="minimumSize">
+            <size>
+             <width>100</width>
+             <height>40</height>
+            </size>
+           </property>
+           <property name="focusPolicy">
+            <enum>Qt::NoFocus</enum>
+           </property>
+           <property name="keyboardTracking">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_11">
+           <property name="text">
+            <string>结束检索时间：</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QDateEdit" name="WarndateEditEnd">
+           <property name="minimumSize">
+            <size>
+             <width>100</width>
+             <height>40</height>
+            </size>
+           </property>
+           <property name="focusPolicy">
+            <enum>Qt::NoFocus</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="BtnWarnSearch">
+           <property name="minimumSize">
+            <size>
+             <width>100</width>
+             <height>30</height>
+            </size>
+           </property>
+           <property name="text">
+            <string> 检索</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QCustomPlot" name="customPlot" native="true"/>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QCustomPlot</class>
+   <extends>QWidget</extends>
+   <header location="global">qcustomplot.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

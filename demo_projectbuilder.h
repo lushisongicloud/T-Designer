@@ -3,6 +3,8 @@
 
 #include <QString>
 
+struct DemoProjectModelAccess;
+
 class DemoProjectBuilder
 {
 public:
@@ -27,6 +29,8 @@ private:
     static QString actuatorBehaviorJson();
     static QString subsystemBehaviorJson();
     static QStringList demoTestJsonList();
+
+    friend struct DemoProjectModelAccess;
 };
 
 #endif // DEMO_PROJECTBUILDER_H

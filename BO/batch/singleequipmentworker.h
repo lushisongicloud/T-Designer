@@ -94,7 +94,8 @@ private slots:
     void onStreamDelta(const QString &delta);
 
 private slots:
-    void onTimeout();  // 超时处理
+    void onTotalTimeout();     // 总体超时处理（5分钟）
+    void onActivityTimeout();  // 活跃度超时处理（30秒无流式输出）
 
 private:
     // 输入数据
@@ -112,8 +113,9 @@ private:
     
     // 处理状态
     QElapsedTimer m_timer;
-    QTimer *m_timeoutTimer;  // 超时定时器
-    bool m_isFinished;       // 防止重复完成
+    QTimer *m_totalTimeoutTimer;    // 总体超时定时器（5分钟）
+    QTimer *m_activityTimeoutTimer; // 活跃度超时定时器（30秒无流式输出）
+    bool m_isFinished;              // 防止重复完成
     
     // 辅助方法
     void log(const QString &message);
