@@ -140,7 +140,7 @@ border-image: url(:/new/prefix1/Diagnosis_Image/BG_new.png);}
          <property name="maximumSize">
           <size>
            <width>16777215</width>
-           <height>200</height>
+           <height>1000</height>
           </size>
          </property>
          <property name="font">

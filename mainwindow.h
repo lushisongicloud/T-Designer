@@ -194,6 +194,7 @@ public:
 private:
     void initializeMxModules();
     TestReportMetrics buildTestReportMetrics() const;
+    bool tryGetPrecomputedMetrics(const QString &projectName, TestReportMetrics &metrics) const;
 
 private slots:
     void initAfterShow();

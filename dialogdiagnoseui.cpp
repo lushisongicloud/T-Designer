@@ -80,22 +80,46 @@ void dialogDiagnoseUI::LoadAllFunction()
 {
     ui->tableWidget_function_select->setRowCount(0);
     
+    // 调试：检查数据库连接
+    qDebug() << "=== 开始加载诊断功能列表 ===";
+    qDebug() << "数据库是否打开:" << T_ProjectDatabase.isOpen();
+    qDebug() << "数据库名称:" << T_ProjectDatabase.databaseName();
+    qDebug() << "数据库连接名:" << T_ProjectDatabase.connectionName();
+    
+    // 检查 diagnosis_tree 表是否存在
+    QSqlQuery checkTable(T_ProjectDatabase);
+    checkTable.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='diagnosis_tree'");
+    if (checkTable.next()) {
+        qDebug() << "diagnosis_tree 表存在";
+    } else {
+        qWarning() << "diagnosis_tree 表不存在！";
+    }
+    
+    // 检查表中的记录数
+    QSqlQuery countQuery(T_ProjectDatabase);
+    countQuery.exec("SELECT COUNT(*) FROM diagnosis_tree");
+    if (countQuery.next()) {
+        qDebug() << "diagnosis_tree 表中有" << countQuery.value(0).toInt() << "条记录";
+    }
+    
     // 从 diagnosis_tree 表加载功能列表（已关联到功能的诊断树）
     QSqlQuery query(T_ProjectDatabase);
     QString sqlStr = 
         "SELECT dt.tree_id, dt.name, dt.description, dt.function_id, "
-        "       COALESCE(fd.name, f.FunctionName) as func_name, "
+        "       COALESCE(f.FunctionName, dt.name) as func_name, "
         "       COALESCE(f.ExecsList, '') as execs_list, "
         "       COALESCE(f.CmdValList, '') as cmd_val_list, "
         "       COALESCE(f.Remark, dt.description) as remark "
         "FROM diagnosis_tree dt "
-        "LEFT JOIN function_definition fd ON dt.function_id = fd.function_id "
         "LEFT JOIN Function f ON dt.function_id = f.FunctionID "
         "WHERE dt.root_node_id IS NOT NULL "
         "ORDER BY dt.tree_id";
     
+    qDebug() << "执行SQL:" << sqlStr;
+    
     if (!query.exec(sqlStr)) {
         qWarning() << "加载功能列表失败:" << query.lastError().text();
+        qWarning() << "SQL:" << sqlStr;
         return;
     }
     
