@@ -2791,7 +2791,8 @@ void MainWindow::on_toolButton_start_diagnosis_clicked()
     
     // 跳过征兆选择，直接进入测试执行页面
     // 检查是否有推荐的测试
-    if (diagnosisEngine->getCurrentRecommendedTest().isValid()) {
+    DiagnosisTreeNode* firstTest = diagnosisEngine->getCurrentRecommendedTest();
+    if (firstTest) {
         // 切换到测试执行页面（index=2，根据原有代码推断）
         SetStackIndex(2);
         // 显示第一个推荐的测试
@@ -4062,7 +4063,7 @@ void MainWindow::displayCurrentTest()
             if (!path.isEmpty()) {
                 resultText += "\n\n诊断路径:\n";
                 for (int i = 0; i < path.size(); ++i) {
-                    DiagnosisTreeNode* node = path[i].node;
+                    DiagnosisTreeNode* node = path[i].testNode;  // 使用testNode而非node
                     TestOutcome outcome = path[i].outcome;
                     QString outcomeStr = (outcome == TestOutcome::Pass) ? "通过" : "失败";
                     resultText += QString("%1. %2 -> %3\n")
@@ -4100,21 +4101,29 @@ void MainWindow::displayCurrentTest()
              << ", 描述=" << testDesc;
 }
 
-void MainWindow::recordCurrentTestResult(DiagnosisTreeNode::TestOutcome outcome)
+void MainWindow::recordCurrentTestResult(TestOutcome outcome)
 {
     if (!diagnosisEngine) {
         qCritical() << "DiagnosisEngine is null in recordCurrentTestResult";
         return;
     }
     
-    DiagnosisTreeNode currentTest = diagnosisEngine->getCurrentRecommendedTest();
-    if (!currentTest.isValid()) {
+    DiagnosisTreeNode* currentTest = diagnosisEngine->getCurrentRecommendedTest();
+    if (!currentTest) {
         qWarning() << "当前没有有效的测试可记录结果";
         return;
     }
     
-    qDebug() << "记录测试结果: node_id=" << currentTest.getNodeId() 
-             << ", outcome=" << DiagnosisTreeNode::outcomeString(outcome);
+    QString outcomeStr;
+    switch(outcome) {
+        case TestOutcome::Pass: outcomeStr = "通过"; break;
+        case TestOutcome::Fail: outcomeStr = "失败"; break;
+        case TestOutcome::Skip: outcomeStr = "跳过"; break;
+        default: outcomeStr = "未知"; break;
+    }
+    
+    qDebug() << "记录测试结果: node_id=" << currentTest->nodeId() 
+             << ", outcome=" << outcomeStr;
     
     // 记录测试结果并移动到下一个节点
     if (!diagnosisEngine->recordTestResult(outcome)) {
@@ -4132,17 +4141,17 @@ void MainWindow::recordCurrentTestResult(DiagnosisTreeNode::TestOutcome outcome)
 void MainWindow::on_btnTestPass_clicked()
 {
     qDebug() << "用户点击: 测试通过";
-    recordCurrentTestResult(DiagnosisTreeNode::TestOutcome::Pass);
+    recordCurrentTestResult(TestOutcome::Pass);
 }
 
 void MainWindow::on_btnTestFail_clicked()
 {
     qDebug() << "用户点击: 测试失败";
-    recordCurrentTestResult(DiagnosisTreeNode::TestOutcome::Fail);
+    recordCurrentTestResult(TestOutcome::Fail);
 }
 
 void MainWindow::on_btnSkipTest_clicked()
 {
     qDebug() << "用户点击: 跳过测试";
-    recordCurrentTestResult(DiagnosisTreeNode::TestOutcome::Skip);
+    recordCurrentTestResult(TestOutcome::Skip);
 }
