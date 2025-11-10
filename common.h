@@ -170,6 +170,7 @@ extern bool IsSourceConn(QString Symb2TermInfo_ID,int Category);
 extern bool IsExecConn(QString Symb2TermInfo_ID,int Category);
 extern void UpdateKnownLineValidRoadCnt(QStringList &listLinkRoad,QStringList &KnownLineValidRoadCnt);
 extern QString GetUnitSpurStrBySymbol_ID(QSqlQuery QuerySymbol);
+extern QString GetUnitSpurStrBySymbol_ID_Cached(class ProjectDataCache* cache, int symbolId, const QString& designation);
 extern int GetSourcePriorBySymbolID(QString SymbolID);
 extern QString GetLibIDBySymbolID(int SymbolID);
 extern void UpdateComponentString(QString &StrDefinedComponent,QString SymbolID,QString Category,QString MirrorCount);

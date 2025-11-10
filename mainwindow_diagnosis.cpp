@@ -72,21 +72,19 @@ int parsePortId(const QString &text, bool *okOut)
 double computeMtbf(int componentCount, int connectionCount)
 {
     constexpr double kComponentWeight = 1.0;
-    constexpr double kConnectionWeight = 0.55;
-    constexpr double kBaselineShift = 1.0;
-    constexpr double kReferenceCount = 6500.0;
-    constexpr double kShapeExponent = 1.12;
+    constexpr double kConnectionWeight = 0.5;
+    constexpr double kHalfCount = 90.0;
+    constexpr double kShapeExponent = 1.7;
     constexpr double kMaxMtbf = 80000.0;
     constexpr double kMinMtbf = 1000.0;
 
     const double weightedElements =
             std::max(0, componentCount) * kComponentWeight +
             std::max(0, connectionCount) * kConnectionWeight;
-    const double shifted = std::max(0.0, weightedElements - kBaselineShift);
-    const double normalized = shifted / kReferenceCount;
-    const double decay = std::exp(-std::pow(normalized, kShapeExponent));
+    const double ratio = (weightedElements <= 0.0) ? 0.0 : (weightedElements / kHalfCount);
+    const double denom = 1.0 + std::pow(ratio, kShapeExponent);
 
-    double mtbf = kMinMtbf + (kMaxMtbf - kMinMtbf) * decay;
+    double mtbf = kMinMtbf + (kMaxMtbf - kMinMtbf) / denom;
     if (mtbf > kMaxMtbf) mtbf = kMaxMtbf;
     if (mtbf < kMinMtbf) mtbf = kMinMtbf;
     return mtbf;

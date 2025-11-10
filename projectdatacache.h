@@ -45,6 +45,20 @@ public:
     };
     
     /**
+     * @brief Structure 详细信息结构 (用于 LoadModelLineDT 优化)
+     */
+    struct StructureInfo {
+        int projectStructureId;
+        QString structureInt;      // Structure_INT (用户输入的名称)
+        int parentId;              // Parent_ID
+        bool isValid;
+        
+        StructureInfo() : projectStructureId(0), parentId(0), isValid(false) {}
+        StructureInfo(int id, const QString& name, int parent)
+            : projectStructureId(id), structureInt(name), parentId(parent), isValid(true) {}
+    };
+    
+    /**
      * @brief Symbol 信息结构
      */
     struct SymbolInfo {
@@ -103,12 +117,24 @@ public:
      * 替代: LoadModelLineDT 中的 ProjectStructure 查询
      */
     LocationInfo getStructureLocation(int projectStructureId) const;
+    
+    /**
+     * @brief 根据 ProjectStructure_ID 获取 Structure 详细信息
+     * 用于: LoadModelLineDT 中需要访问 Parent_ID 的场景
+     */
+    StructureInfo getStructureInfo(int projectStructureId) const;
 
     /**
      * @brief 根据 Symbol_ID 获取 Symbol 信息（包含 Symb2TermInfo）
      * 替代: GetUnitSpurStrBySymbol_ID() 中的查询
      */
     SymbolInfo getSymbolInfo(int symbolId) const;
+    
+    /**
+     * @brief 根据 Symbol_ID 获取 ConnNum 列表
+     * 用于: GetUnitSpurStrBySymbol_ID_Cached() 中的 Symb2TermInfo 查询
+     */
+    QStringList getTermInfos(int symbolId) const;
 
     /**
      * @brief 根据 Equipment_ID 获取所有 Symbol_ID 列表
@@ -134,6 +160,9 @@ private:
     
     // ProjectStructure 缓存 (key: ProjectStructure_ID)
     QHash<int, LocationInfo> m_structures;
+    
+    // ProjectStructure 详细信息缓存 (key: ProjectStructure_ID) - 用于 LoadModelLineDT
+    QHash<int, StructureInfo> m_structureDetails;
     
     // Equipment 位置缓存 (key: Equipment_ID)
     QHash<int, LocationInfo> m_equipmentLocations;

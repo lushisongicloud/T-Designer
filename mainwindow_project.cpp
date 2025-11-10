@@ -1418,6 +1418,11 @@ void MainWindow::LoadModelLineDT()
     
     int jxbCount = 0;
     int structureQueryCount = 0;
+    
+    // 使用 QHash 缓存节点,避免 O(n²) 的查找
+    QHash<QString, QStandardItem*> gaocengCache;  // key: 高层名称
+    QHash<QString, QStandardItem*> posCache;      // key: "高层名称|位置名称"
+    
     timer.checkpoint("JXB表查询开始");
     
     while(QueryJXB.next())
@@ -1426,54 +1431,58 @@ void MainWindow::LoadModelLineDT()
         QString ProjectStructure_ID=QueryJXB.value("ProjectStructure_ID").toString();
 
         QString StrGaoceng,StrPos;
-        QSqlQuery queryPos=QSqlQuery(T_ProjectDatabase);
-        QString SqlStr="SELECT * FROM ProjectStructure WHERE ProjectStructure_ID = "+ProjectStructure_ID;
-        queryPos.exec(SqlStr);
-        structureQueryCount++;
-        if(queryPos.next()) StrPos=queryPos.value("Structure_INT").toString();
-        QSqlQuery queryGaoceng=QSqlQuery(T_ProjectDatabase);
-        SqlStr="SELECT * FROM ProjectStructure WHERE ProjectStructure_ID = "+queryPos.value("Parent_ID").toString();
-        queryGaoceng.exec(SqlStr);
-        structureQueryCount++;
-        if(queryGaoceng.next()) StrGaoceng=queryGaoceng.value("Structure_INT").toString();
+        
+        // 使用缓存版本避免重复查询
+        if (m_projectCache && m_useCacheOptimization) {
+            int structureId = ProjectStructure_ID.toInt();
+            auto structInfo = m_projectCache->getStructureInfo(structureId);
+            if (structInfo.isValid) {
+                StrPos = structInfo.structureInt;
+                // 获取父节点信息
+                if (structInfo.parentId > 0) {
+                    auto parentInfo = m_projectCache->getStructureInfo(structInfo.parentId);
+                    if (parentInfo.isValid) {
+                        StrGaoceng = parentInfo.structureInt;
+                    }
+                }
+            }
+        } else {
+            // 原有实现
+            QSqlQuery queryPos=QSqlQuery(T_ProjectDatabase);
+            QString SqlStr="SELECT * FROM ProjectStructure WHERE ProjectStructure_ID = "+ProjectStructure_ID;
+            queryPos.exec(SqlStr);
+            structureQueryCount++;
+            if(queryPos.next()) StrPos=queryPos.value("Structure_INT").toString();
+            QSqlQuery queryGaoceng=QSqlQuery(T_ProjectDatabase);
+            SqlStr="SELECT * FROM ProjectStructure WHERE ProjectStructure_ID = "+queryPos.value("Parent_ID").toString();
+            queryGaoceng.exec(SqlStr);
+            structureQueryCount++;
+            if(queryGaoceng.next()) StrGaoceng=queryGaoceng.value("Structure_INT").toString();
+        }
 
-        //查看ModelLineDT是否有该高层节点
-        bool GaoCengExisted=false;
+        // 使用 Hash 缓存查找节点 (O(1) vs O(n))
         QStandardItem *GaoCengNodeItem;
-        for(int i=0;i<fatherItem->rowCount();i++)
-        {
-            if((fatherItem->child(i,0)->data(Qt::WhatsThisRole).toString()=="高层")&&(fatherItem->child(i,0)->data(Qt::DisplayRole).toString()==StrGaoceng))
-            {
-                GaoCengExisted=true;
-                GaoCengNodeItem=fatherItem->child(i,0);
-                break;
-            }
-        }
-        if(!GaoCengExisted)
-        {
-            GaoCengNodeItem=new QStandardItem(QIcon("C:/TBD/data/高层图标.png"),StrGaoceng);
-            GaoCengNodeItem->setData(QVariant("高层"),Qt::WhatsThisRole);
+        if (gaocengCache.contains(StrGaoceng)) {
+            GaoCengNodeItem = gaocengCache[StrGaoceng];
+        } else {
+            GaoCengNodeItem = new QStandardItem(QIcon("C:/TBD/data/高层图标.png"), StrGaoceng);
+            GaoCengNodeItem->setData(QVariant("高层"), Qt::WhatsThisRole);
             fatherItem->appendRow(GaoCengNodeItem);
+            gaocengCache[StrGaoceng] = GaoCengNodeItem;
         }
-        if(GaoCengNodeItem==nullptr) continue;
-        bool PosExisted=false;
+        if (GaoCengNodeItem == nullptr) continue;
+        
         QStandardItem *PosNodeItem;
-        for(int i=0;i<GaoCengNodeItem->rowCount();i++)
-        {
-            if((GaoCengNodeItem->child(i,0)->data(Qt::WhatsThisRole).toString()=="位置")&&(GaoCengNodeItem->child(i,0)->data(Qt::DisplayRole).toString()==StrPos))
-            {
-                PosExisted=true;
-                PosNodeItem=GaoCengNodeItem->child(i,0);
-                break;
-            }
-        }
-        if(!PosExisted)
-        {
-            PosNodeItem=new QStandardItem(QIcon("C:/TBD/data/位置图标.png"),StrPos);
-            PosNodeItem->setData(QVariant("位置"),Qt::WhatsThisRole);
+        QString posKey = StrGaoceng + "|" + StrPos;
+        if (posCache.contains(posKey)) {
+            PosNodeItem = posCache[posKey];
+        } else {
+            PosNodeItem = new QStandardItem(QIcon("C:/TBD/data/位置图标.png"), StrPos);
+            PosNodeItem->setData(QVariant("位置"), Qt::WhatsThisRole);
             GaoCengNodeItem->appendRow(PosNodeItem);
+            posCache[posKey] = PosNodeItem;
         }
-        if(PosNodeItem==nullptr) continue;
+        if (PosNodeItem == nullptr) continue;
         //在PosNodeItem下插入连线
         InsertLineToItem(PosNodeItem,QueryJXB);
     }
@@ -1508,6 +1517,11 @@ void MainWindow::LoadModelLineByUnits()
     
     int jxbCount = 0;
     int getGaocengPosCallCount = 0;
+    
+    // 使用 QHash 缓存节点,避免 O(n²) 的查找
+    QHash<QString, QStandardItem*> gaocengCacheByUnits;  // key: 高层名称
+    QHash<QString, QStandardItem*> posCacheByUnits;      // key: "高层名称|位置名称"
+    
     timer.checkpoint("JXB表查询开始");
     
     while(QueryJXB.next())
@@ -1520,7 +1534,7 @@ void MainWindow::LoadModelLineByUnits()
             {
                 if(QueryJXB.value("Symb1_ID").toString()!="")
                 {
-                    GetUnitTermimalGaocengAndPos_Cached(m_projectDataCache, QueryJXB.value("Symb1_Category").toInt(),QueryJXB.value("Symb1_ID").toInt(),StrGaoceng,StrPos);
+                    GetUnitTermimalGaocengAndPos_Cached(m_projectCache, QueryJXB.value("Symb1_Category").toInt(),QueryJXB.value("Symb1_ID").toInt(),StrGaoceng,StrPos);
                     getGaocengPosCallCount++;
                 }
                 else continue;
@@ -1529,49 +1543,36 @@ void MainWindow::LoadModelLineByUnits()
             {
                 if(QueryJXB.value("Symb2_ID").toString()!="")
                 {
-                    GetUnitTermimalGaocengAndPos_Cached(m_projectDataCache, QueryJXB.value("Symb2_Category").toInt(),QueryJXB.value("Symb2_ID").toInt(),StrGaoceng,StrPos);
+                    GetUnitTermimalGaocengAndPos_Cached(m_projectCache, QueryJXB.value("Symb2_Category").toInt(),QueryJXB.value("Symb2_ID").toInt(),StrGaoceng,StrPos);
                     getGaocengPosCallCount++;
                 }
                 else continue;
             }
             //qDebug()<<"StrGaoceng="<<StrGaoceng<<",StrPos="<<StrPos<<",index="<<index<<",ConnectionNumber="<<QueryJXB.value("ConnectionNumber").toString();
-            //查看ModelLineByUnits是否有该高层节点
-            bool GaoCengExisted=false;
+            
+            // 使用 Hash 缓存查找节点 (O(1) vs O(n))
             QStandardItem *GaoCengNodeItem;
-            for(int i=0;i<fatherItem->rowCount();i++)
-            {
-                if((fatherItem->child(i,0)->data(Qt::WhatsThisRole).toString()=="高层")&&(fatherItem->child(i,0)->data(Qt::DisplayRole).toString()==StrGaoceng))
-                {
-                    GaoCengExisted=true;
-                    GaoCengNodeItem=fatherItem->child(i,0);
-                    break;
-                }
-            }
-            if(!GaoCengExisted)
-            {
-                GaoCengNodeItem=new QStandardItem(QIcon("C:/TBD/data/高层图标.png"),StrGaoceng);
-                GaoCengNodeItem->setData(QVariant("高层"),Qt::WhatsThisRole);
+            if (gaocengCacheByUnits.contains(StrGaoceng)) {
+                GaoCengNodeItem = gaocengCacheByUnits[StrGaoceng];
+            } else {
+                GaoCengNodeItem = new QStandardItem(QIcon("C:/TBD/data/高层图标.png"), StrGaoceng);
+                GaoCengNodeItem->setData(QVariant("高层"), Qt::WhatsThisRole);
                 fatherItem->appendRow(GaoCengNodeItem);
+                gaocengCacheByUnits[StrGaoceng] = GaoCengNodeItem;
             }
-            if(GaoCengNodeItem==nullptr) continue;
-            bool PosExisted=false;
+            if (GaoCengNodeItem == nullptr) continue;
+            
             QStandardItem *PosNodeItem;
-            for(int i=0;i<GaoCengNodeItem->rowCount();i++)
-            {
-                if((GaoCengNodeItem->child(i,0)->data(Qt::WhatsThisRole).toString()=="位置")&&(GaoCengNodeItem->child(i,0)->data(Qt::DisplayRole).toString()==StrPos))
-                {
-                    PosExisted=true;
-                    PosNodeItem=GaoCengNodeItem->child(i,0);
-                    break;
-                }
-            }
-            if(!PosExisted)
-            {
-                PosNodeItem=new QStandardItem(QIcon("C:/TBD/data/位置图标.png"),StrPos);
-                PosNodeItem->setData(QVariant("位置"),Qt::WhatsThisRole);
+            QString posKey = StrGaoceng + "|" + StrPos;
+            if (posCacheByUnits.contains(posKey)) {
+                PosNodeItem = posCacheByUnits[posKey];
+            } else {
+                PosNodeItem = new QStandardItem(QIcon("C:/TBD/data/位置图标.png"), StrPos);
+                PosNodeItem->setData(QVariant("位置"), Qt::WhatsThisRole);
                 GaoCengNodeItem->appendRow(PosNodeItem);
+                posCacheByUnits[posKey] = PosNodeItem;
             }
-            if(PosNodeItem==nullptr) continue;
+            if (PosNodeItem == nullptr) continue;
             //在PosNodeItem下插入器件
             InsertUnitTerminalToItem(PosNodeItem,QueryJXB,index);
         }//for(int index=0;index<2;index++)
@@ -1905,6 +1906,10 @@ void MainWindow::LoadProjectUnits()
     
     timer.checkpoint("根节点创建完成");
     
+    // 使用 QHash 缓存节点,避免 O(n²) 的查找
+    QHash<QString, QStandardItem*> gaocengNodeCache;  // key: 高层名称
+    QHash<QString, QStandardItem*> posNodeCache;      // key: "高层名称|位置名称"
+    
     //在Equipment表中检索元件
     QSqlQuery QueryEquipment = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
     temp = QString("SELECT * FROM Equipment ORDER BY DT");
@@ -1942,51 +1947,52 @@ void MainWindow::LoadProjectUnits()
         if(UnitType!="") UnitNodeStr+=",";
         UnitNodeStr+=UnitName;
         if((UnitType!="")||(UnitName!="")) UnitNodeStr+=")";
-        //在treeViewUnits中查看位置是否存在，不存在则新增位置节点
-        bool GaocengNodeExist=false;
-        bool PosNodeExist=false;
-        QStandardItem *PosNodeItem,*GaocengNodeItem;
-        for(int i=0;i<ModelUnits->item(0,0)->rowCount();i++)
-        {
-            if(ModelUnits->item(0,0)->child(i,0)->data(Qt::DisplayRole).toString()==GaocengStr)
-            {
-                GaocengNodeExist=true;
-                GaocengNodeItem=ModelUnits->item(0,0)->child(i,0);
-                break;
-            }
-        }
-        if(!GaocengNodeExist) //新增高层节点
-        {
-            GaocengNodeItem=new QStandardItem(QIcon("C:/TBD/data/高层图标.png"),GaocengStr);
-            GaocengNodeItem->setData(QVariant("高层"),Qt::WhatsThisRole);
-            GaocengNodeItem->setData(QVariant(QueryGaoceng.value("ProjectStructure_ID").toInt()),Qt::UserRole);
+        //在treeViewUnits中查看位置是否存在，不存在则新增位置节点 (使用缓存优化)
+        QStandardItem *PosNodeItem, *GaocengNodeItem;
+        
+        // 使用 Hash 查找高层节点 (O(1) vs O(n))
+        if (gaocengNodeCache.contains(GaocengStr)) {
+            GaocengNodeItem = gaocengNodeCache[GaocengStr];
+        } else {
+            // 新增高层节点
+            GaocengNodeItem = new QStandardItem(QIcon("C:/TBD/data/高层图标.png"), GaocengStr);
+            GaocengNodeItem->setData(QVariant("高层"), Qt::WhatsThisRole);
+            GaocengNodeItem->setData(QVariant(QueryGaoceng.value("ProjectStructure_ID").toInt()), Qt::UserRole);
             fatherItem->appendRow(GaocengNodeItem);
+            gaocengNodeCache[GaocengStr] = GaocengNodeItem;
         }
-        if(GaocengNodeItem==nullptr) continue;
-        for(int i=0;i<listGaocengExpendID.count();i++)
-        {
-            if(listGaocengExpendID.at(i)==QueryGaoceng.value("ProjectStructure_ID").toInt()) {ui->treeViewUnits->expand(GaocengNodeItem->index());break;}
-        }
-        for(int i=0;i<GaocengNodeItem->rowCount();i++)//在高层节点下查找位置节点，不存在则新增位置节点
-        {
-            if(GaocengNodeItem->child(i,0)->data(Qt::DisplayRole).toString()==PosStr)
-            {
-                PosNodeExist=true;
-                PosNodeItem=GaocengNodeItem->child(i,0);
+        
+        if (GaocengNodeItem == nullptr) continue;
+        
+        // 检查是否需要展开高层节点
+        for (int i = 0; i < listGaocengExpendID.count(); i++) {
+            if (listGaocengExpendID.at(i) == QueryGaoceng.value("ProjectStructure_ID").toInt()) {
+                ui->treeViewUnits->expand(GaocengNodeItem->index());
                 break;
             }
         }
-        if(!PosNodeExist) //新增位置节点
-        {
-            PosNodeItem=new QStandardItem(QIcon("C:/TBD/data/位置图标.png"),PosStr);
-            PosNodeItem->setData(QVariant("位置"),Qt::WhatsThisRole);
-            PosNodeItem->setData(QVariant(QueryPos.value("ProjectStructure_ID").toInt()),Qt::UserRole);
+        
+        // 使用 Hash 查找位置节点 (O(1) vs O(m))
+        QString posKey = GaocengStr + "|" + PosStr;
+        if (posNodeCache.contains(posKey)) {
+            PosNodeItem = posNodeCache[posKey];
+        } else {
+            // 新增位置节点
+            PosNodeItem = new QStandardItem(QIcon("C:/TBD/data/位置图标.png"), PosStr);
+            PosNodeItem->setData(QVariant("位置"), Qt::WhatsThisRole);
+            PosNodeItem->setData(QVariant(QueryPos.value("ProjectStructure_ID").toInt()), Qt::UserRole);
             GaocengNodeItem->appendRow(PosNodeItem);
+            posNodeCache[posKey] = PosNodeItem;
         }
-        if(PosNodeItem==nullptr) continue;
-        for(int i=0;i<listPosExpendID.count();i++)
-        {
-            if(listPosExpendID.at(i)==QueryPos.value("ProjectStructure_ID").toInt()) {ui->treeViewUnits->expand(PosNodeItem->index());break;}
+        
+        if (PosNodeItem == nullptr) continue;
+        
+        // 检查是否需要展开位置节点
+        for (int i = 0; i < listPosExpendID.count(); i++) {
+            if (listPosExpendID.at(i) == QueryPos.value("ProjectStructure_ID").toInt()) {
+                ui->treeViewUnits->expand(PosNodeItem->index());
+                break;
+            }
         }
         //在位置节点下插入元件
         QStandardItem *UnitItem=new QStandardItem(QIcon("C:/TBD/data/元件图标.png"),UnitNodeStr);
@@ -2003,7 +2009,16 @@ void MainWindow::LoadProjectUnits()
         {
             QStandardItem *UnitSpurItem;
             QString UnitSpurStr;
-            UnitSpurStr=GetUnitSpurStrBySymbol_ID(QuerySymbol);
+            // 使用缓存版本避免重复查询数据库
+            if (m_projectCache && m_useCacheOptimization) {
+                UnitSpurStr = GetUnitSpurStrBySymbol_ID_Cached(
+                    m_projectCache, 
+                    QuerySymbol.value("Symbol_ID").toInt(),
+                    QuerySymbol.value("Designation").toString()
+                );
+            } else {
+                UnitSpurStr = GetUnitSpurStrBySymbol_ID(QuerySymbol);
+            }
             //根据Symbol_Handle是否存在确定功能子块图标和文字
             //qDebug()<<"Symbol:"<<QuerySymbol.value("Symbol").toString()<<"  Symbol_Handle:"<<QuerySymbol.value("Symbol_Handle").toString();
             if(QuerySymbol.value("Symbol").toString()==""&&(QuerySymbol.value("FunDefine").toString()!="黑盒")&&(QuerySymbol.value("FunDefine").toString()!="PLC 盒子"))

@@ -106,11 +106,15 @@ bool ProjectDataCache::loadStructures(QSqlDatabase &db)
         tempStructures.append(temp);
     }
     
-    // 第二遍：构建位置信息
+    // 第二遍：构建位置信息和详细信息
     // Structure_Name="高层代号" 是高层，"位置代号" 是位置
     QHash<int, QString> gaocengNames;  // 高层 ID -> 名称
     
     for (const TempStructure &temp : tempStructures) {
+        // 构建 StructureInfo (用于 LoadModelLineDT)
+        StructureInfo detailInfo(temp.id, temp.structureInt, temp.parentId.toInt());
+        m_structureDetails[temp.id] = detailInfo;
+        
         if (temp.structureName == "高层代号") {
             // 这是高层
             gaocengNames[temp.id] = temp.structureInt;
@@ -287,9 +291,20 @@ ProjectDataCache::LocationInfo ProjectDataCache::getStructureLocation(int projec
     return m_structures.value(projectStructureId, LocationInfo());
 }
 
+ProjectDataCache::StructureInfo ProjectDataCache::getStructureInfo(int projectStructureId) const
+{
+    return m_structureDetails.value(projectStructureId, StructureInfo());
+}
+
 ProjectDataCache::SymbolInfo ProjectDataCache::getSymbolInfo(int symbolId) const
 {
     return m_symbols.value(symbolId, SymbolInfo());
+}
+
+QStringList ProjectDataCache::getTermInfos(int symbolId) const
+{
+    SymbolInfo info = m_symbols.value(symbolId, SymbolInfo());
+    return info.connNums;
 }
 
 QVector<int> ProjectDataCache::getSymbolIdsByEquipment(int equipmentId) const

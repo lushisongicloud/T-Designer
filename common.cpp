@@ -3773,6 +3773,33 @@ QString GetUnitSpurStrBySymbol_ID(QSqlQuery QuerySymbol)
     return UnitSpurStr;
 }
 
+// 缓存版本: 使用ProjectDataCache避免重复数据库查询
+QString GetUnitSpurStrBySymbol_ID_Cached(ProjectDataCache* cache, int symbolId, const QString& designation)
+{
+    QString unitSpurStr = "";
+    
+    // 添加designation前缀
+    if (!designation.isEmpty()) {
+        unitSpurStr += designation + ":";
+    }
+    
+    // 从缓存获取ConnNum列表
+    QStringList connNums = cache->getTermInfos(symbolId);
+    
+    // 拼接ConnNum字符串
+    bool firstConnNum = true;
+    for (const QString& connNum : connNums) {
+        if (firstConnNum) {
+            unitSpurStr += connNum;
+        } else {
+            unitSpurStr += " ￤ " + connNum;
+        }
+        firstConnNum = false;
+    }
+    
+    return unitSpurStr;
+}
+
 int GetSourcePriorBySymbolID(QString SymbolID)
 {
     QSqlQuery QuerySymbolSource(T_ProjectDatabase);
