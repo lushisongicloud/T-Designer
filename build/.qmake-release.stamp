@@ -1,4 +1,0 @@
-﻿qmake=D:/Qt/Qt5.12.9/5.12.9/msvc2017_64/bin/qmake.exe
-spec=win32-msvc
-config=CONFIG+=qtquickcompiler
-inputs_max=2025-10-15T15:31:51.5885727Z
