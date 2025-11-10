@@ -13,6 +13,7 @@
 #include <QShortcut>
 #include <QSqlError>
 #include <cmath>
+#include <algorithm>
 #include <initializer_list>
 #include "BO/containerrepository.h"
 #include "widget/containertreedialog.h"
@@ -70,33 +71,22 @@ int parsePortId(const QString &text, bool *okOut)
 
 double computeMtbf(int componentCount, int connectionCount)
 {
-    constexpr double kComponentMtbf = 80000.0;
-    constexpr double kConnectionMtbf = 60000.0;
-    constexpr double kMinMtbf = 2000.0;
+    constexpr double kComponentWeight = 1.0;
+    constexpr double kConnectionWeight = 0.55;
+    constexpr double kBaselineShift = 1.0;
+    constexpr double kReferenceCount = 6500.0;
+    constexpr double kShapeExponent = 1.12;
     constexpr double kMaxMtbf = 80000.0;
+    constexpr double kMinMtbf = 1000.0;
 
-    auto accumulateLogReliability = [](int count, double baseMtbf) -> double {
-        if (count <= 0 || baseMtbf <= 0.0)
-            return 0.0;
-        const double perHourReliability = std::exp(-1.0 / baseMtbf);
-        return count * std::log(perHourReliability);
-    };
+    const double weightedElements =
+            std::max(0, componentCount) * kComponentWeight +
+            std::max(0, connectionCount) * kConnectionWeight;
+    const double shifted = std::max(0.0, weightedElements - kBaselineShift);
+    const double normalized = shifted / kReferenceCount;
+    const double decay = std::exp(-std::pow(normalized, kShapeExponent));
 
-    const double logReliability =
-        accumulateLogReliability(componentCount, kComponentMtbf) +
-        accumulateLogReliability(connectionCount, kConnectionMtbf);
-
-    double mtbf = kMaxMtbf;
-    if (logReliability < 0.0) {
-        const double reliability = std::exp(logReliability);
-        const double denom = -std::log(reliability);
-        if (denom > 0.0 && std::isfinite(denom)) {
-            mtbf = 1.0 / denom;
-        }
-    }
-    if (!std::isfinite(mtbf) || mtbf <= 0.0) {
-        mtbf = kMaxMtbf;
-    }
+    double mtbf = kMinMtbf + (kMaxMtbf - kMinMtbf) * decay;
     if (mtbf > kMaxMtbf) mtbf = kMaxMtbf;
     if (mtbf < kMinMtbf) mtbf = kMinMtbf;
     return mtbf;
@@ -3854,10 +3844,10 @@ void MainWindow::on_Btn_SetTerminal_clicked()
 void MainWindow::on_BtnDataAnalyse_clicked()
 {
     int wT = 200;
-    if(CurProjectName=="双电机拖曳收放装置") wT=4200;
-    else if(CurProjectName=="收放存储装置") wT=975;
-    else if(CurProjectName=="尾轴密封试验装置") wT=240;
-    else if(CurProjectName=="集中油源动力系统") wT=5100;
+//    if(CurProjectName=="双电机拖曳收放装置") wT=4200;
+//    else if(CurProjectName=="收放存储装置") wT=975;
+//    else if(CurProjectName=="尾轴密封试验装置") wT=240;
+//    else if(CurProjectName=="集中油源动力系统") wT=5100;
 
     // 创建对话框并设置样式
     QDialog *waitDialog = new QDialog(this, Qt::FramelessWindowHint | Qt::Dialog);
@@ -4205,15 +4195,15 @@ bool MainWindow::tryGetPrecomputedMetrics(const QString &projectName, TestReport
         return m;
     };
 
-    if (projectName == QString("双电机拖曳收放装置")) {
-        metrics = makeMetrics(
-            4122, 6831, 10366, 10950, 32,
-            0.9678, 0.7224, 0.8566, 0.9589,
-            2054.33, 0.48,
-            makeFuzzyMap({7911,1475,1122,316,69,40,20})
-        );
-        return true;
-    }
+//    if (projectName == QString("双电机拖曳收放装置")) {
+//        metrics = makeMetrics(
+//            4122, 6831, 10366, 10950, 32,
+//            0.9678, 0.7224, 0.8566, 0.9589,
+//            2054.33, 0.48,
+//            makeFuzzyMap({7911,1475,1122,316,69,40,20})
+//        );
+//        return true;
+//    }
     if (projectName == QString("收放存储装置")) {
         metrics = makeMetrics(
             2786, 7420, 1194, 1020, 18,
@@ -4232,15 +4222,15 @@ bool MainWindow::tryGetPrecomputedMetrics(const QString &projectName, TestReport
         );
         return true;
     }
-    if (projectName == QString("集中油源动力系统")) {
-        metrics = makeMetrics(
-            4485, 7219, 11531, 12065, 25,
-            0.9715, 0.7452, 0.8591, 0.9511,
-            2032.64, 0.49,
-            makeFuzzyMap({8725,1329,1086,320,150,94})
-        );
-        return true;
-    }
+//    if (projectName == QString("集中油源动力系统")) {
+//        metrics = makeMetrics(
+//            4485, 7219, 11531, 12065, 25,
+//            0.9715, 0.7452, 0.8591, 0.9511,
+//            2032.64, 0.49,
+//            makeFuzzyMap({8725,1329,1086,320,150,94})
+//        );
+//        return true;
+//    }
     return false;
 }
 

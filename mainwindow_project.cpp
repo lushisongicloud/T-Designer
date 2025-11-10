@@ -21,6 +21,7 @@
 #include "widget/functioneditdialog.h"
 #include "BO/function/functionrepository.h"
 #include "demo_projectbuilder.h"
+#include "performancetimer.h"
 
 using namespace ContainerHierarchy;
 
@@ -1396,6 +1397,8 @@ void MainWindow::InsertLineToItem(QStandardItem *Item,QSqlQuery QueryJXBLine)
 
 void MainWindow::LoadModelLineDT()
 {
+    PerformanceTimer timer("LoadModelLineDT");
+    
     //根据线号================
     ModelLineDT->clear();
     QSqlQuery QueryVar = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
@@ -1407,21 +1410,31 @@ void MainWindow::LoadModelLineDT()
     fatherItem->setData(QVariant("项目"),Qt::WhatsThisRole);
     ModelLineDT->appendRow(fatherItem);
 
+    timer.checkpoint("初始化完成");
+
     QSqlQuery QueryJXB = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
     temp = "SELECT * FROM JXB ORDER BY ConnectionNumber";
     QueryJXB.exec(temp);
+    
+    int jxbCount = 0;
+    int structureQueryCount = 0;
+    timer.checkpoint("JXB表查询开始");
+    
     while(QueryJXB.next())
     {
+        jxbCount++;
         QString ProjectStructure_ID=QueryJXB.value("ProjectStructure_ID").toString();
 
         QString StrGaoceng,StrPos;
         QSqlQuery queryPos=QSqlQuery(T_ProjectDatabase);
         QString SqlStr="SELECT * FROM ProjectStructure WHERE ProjectStructure_ID = "+ProjectStructure_ID;
         queryPos.exec(SqlStr);
+        structureQueryCount++;
         if(queryPos.next()) StrPos=queryPos.value("Structure_INT").toString();
         QSqlQuery queryGaoceng=QSqlQuery(T_ProjectDatabase);
         SqlStr="SELECT * FROM ProjectStructure WHERE ProjectStructure_ID = "+queryPos.value("Parent_ID").toString();
         queryGaoceng.exec(SqlStr);
+        structureQueryCount++;
         if(queryGaoceng.next()) StrGaoceng=queryGaoceng.value("Structure_INT").toString();
 
         //查看ModelLineDT是否有该高层节点
@@ -1464,11 +1477,18 @@ void MainWindow::LoadModelLineDT()
         //在PosNodeItem下插入连线
         InsertLineToItem(PosNodeItem,QueryJXB);
     }
+    
+    timer.checkpoint("JXB处理完成", QString("JXB数: %1, Structure查询次数: %2").arg(jxbCount).arg(structureQueryCount));
+    
     if(ModelLineDT->rowCount()>0) ui->treeViewLineDT->expand(fatherItem->index());
+    
+    timer.checkpoint("树视图展开完成");
 }
 
 void MainWindow::LoadModelLineByUnits()
 {
+    PerformanceTimer timer("LoadModelLineByUnits");
+    
     //根据元件=================
     ModelLineByUnits->clear();
     QSqlQuery QueryVar = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
@@ -1480,11 +1500,19 @@ void MainWindow::LoadModelLineByUnits()
     fatherItem->setData(QVariant("项目"),Qt::WhatsThisRole);
     ModelLineByUnits->appendRow(fatherItem);
 
+    timer.checkpoint("初始化完成");
+
     QSqlQuery QueryJXB = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
     temp = "SELECT * FROM JXB ORDER BY ConnectionNumber";
     QueryJXB.exec(temp);
+    
+    int jxbCount = 0;
+    int getGaocengPosCallCount = 0;
+    timer.checkpoint("JXB表查询开始");
+    
     while(QueryJXB.next())
     {
+        jxbCount++;
         QString StrGaoceng,StrPos;
         for(int index=0;index<2;index++)
         {
@@ -1492,7 +1520,8 @@ void MainWindow::LoadModelLineByUnits()
             {
                 if(QueryJXB.value("Symb1_ID").toString()!="")
                 {
-                    GetUnitTermimalGaocengAndPos(QueryJXB.value("Symb1_Category").toInt(),QueryJXB.value("Symb1_ID").toInt(),StrGaoceng,StrPos);
+                    GetUnitTermimalGaocengAndPos_Cached(m_projectDataCache, QueryJXB.value("Symb1_Category").toInt(),QueryJXB.value("Symb1_ID").toInt(),StrGaoceng,StrPos);
+                    getGaocengPosCallCount++;
                 }
                 else continue;
             }
@@ -1500,7 +1529,8 @@ void MainWindow::LoadModelLineByUnits()
             {
                 if(QueryJXB.value("Symb2_ID").toString()!="")
                 {
-                    GetUnitTermimalGaocengAndPos(QueryJXB.value("Symb2_Category").toInt(),QueryJXB.value("Symb2_ID").toInt(),StrGaoceng,StrPos);
+                    GetUnitTermimalGaocengAndPos_Cached(m_projectDataCache, QueryJXB.value("Symb2_Category").toInt(),QueryJXB.value("Symb2_ID").toInt(),StrGaoceng,StrPos);
+                    getGaocengPosCallCount++;
                 }
                 else continue;
             }
@@ -1546,7 +1576,12 @@ void MainWindow::LoadModelLineByUnits()
             InsertUnitTerminalToItem(PosNodeItem,QueryJXB,index);
         }//for(int index=0;index<2;index++)
     }
+    
+    timer.checkpoint("JXB处理完成", QString("JXB数: %1, GetUnitTermimalGaocengAndPos调用: %2次").arg(jxbCount).arg(getGaocengPosCallCount));
+    
     if(ModelLineByUnits->rowCount()>0) ui->treeViewLineByUnit->expand(fatherItem->index());
+    
+    timer.checkpoint("树视图展开完成");
 
     QString OriginalLineGaoceng=ui->CbLineGaoceng->currentText();
     QString OriginalLinePos=ui->CbLinePos->currentText();
@@ -1589,13 +1624,23 @@ void MainWindow::LoadModelLineByUnits()
         ui->CbLinePage->addItem(GetPageNameByPageID(QueryPage.value("Page_ID").toInt()));
     }
     ui->CbLinePage->setCurrentText(OriginalPageName);
+    
+    timer.checkpoint("ComboBox填充完成");
+    
     FilterLines();
+    
+    timer.checkpoint("FilterLines 完成");
 }
 
 void MainWindow::LoadProjectLines()
 {
+    PerformanceTimer timer("LoadProjectLines");
+    
     LoadModelLineDT();
+    timer.checkpoint("LoadModelLineDT 完成");
+    
     LoadModelLineByUnits();
+    timer.checkpoint("LoadModelLineByUnits 完成");
 }
 
 void MainWindow::handleConnectLinesChanged(int pageId)
@@ -1606,6 +1651,8 @@ void MainWindow::handleConnectLinesChanged(int pageId)
 
 void MainWindow::LoadProjectTerminals()
 {
+    PerformanceTimer timer("LoadProjectTerminals");
+    
     //记录当前展开的index
     QList<int> listGaocengExpendID,listPosExpendID,listTerminalStripExpendID;
     if(ModelTerminals->rowCount()>0)
@@ -1626,8 +1673,12 @@ void MainWindow::LoadProjectTerminals()
             }
         }
     }
+    
+    timer.checkpoint("展开状态保存完成");
 
     ModelTerminals->clear();
+    timer.checkpoint("模型清空完成");
+    
     QSqlQuery QueryVar = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
     QString temp = QString("SELECT Structure_INT FROM ProjectStructure WHERE Structure_ID = '1'");
     QueryVar.exec(temp);
@@ -1637,12 +1688,21 @@ void MainWindow::LoadProjectTerminals()
     fatherItem->setData(QVariant("项目"),Qt::WhatsThisRole);
     ModelTerminals->appendRow(fatherItem);
     ui->treeViewTerminal->expand(fatherItem->index());
+    
+    timer.checkpoint("根节点创建完成");
+    
     //在TerminalStrip表中检索元件
     QSqlQuery QueryTerminalStrip = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
     temp = QString("SELECT * FROM TerminalStrip ORDER BY DT");
     QueryTerminalStrip.exec(temp);
+    
+    int terminalStripCount = 0;
+    int terminalQueryCount = 0;
+    timer.checkpoint("TerminalStrip表查询开始");
+    
     while(QueryTerminalStrip.next())
     {
+        terminalStripCount++;
         QString ProjectStructure_ID=QueryTerminalStrip.value("ProjectStructure_ID").toString();
         int TerminalStrip_ID=QueryTerminalStrip.value("TerminalStrip_ID").toInt();
         QString TerminalTag=QueryTerminalStrip.value("DT").toString();
@@ -1716,6 +1776,7 @@ void MainWindow::LoadProjectTerminals()
         QSqlQuery QueryTerminal = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
         temp = QString("SELECT * FROM Terminal WHERE TerminalStrip_ID = '"+QString::number(TerminalStrip_ID)+"' ORDER BY Terminal_ID");
         QueryTerminal.exec(temp);
+        terminalQueryCount++;
         while(QueryTerminal.next())
         {
             QStandardItem *TerminalSpurItem;
@@ -1756,6 +1817,8 @@ void MainWindow::LoadProjectTerminals()
             }
         }
     }
+    
+    timer.checkpoint("TerminalStrip表处理完成", QString("端子排数: %1, Terminal查询次数: %2").arg(terminalStripCount).arg(terminalQueryCount));
 
     QString OriginalTerminalGaoceng=ui->CbTermGaoceng->currentText();
     QString OriginalTerminalPos=ui->CbTermPos->currentText();
@@ -1803,6 +1866,8 @@ void MainWindow::LoadProjectTerminals()
 
 void MainWindow::LoadProjectUnits()
 {
+    PerformanceTimer timer("LoadProjectUnits");
+    
     //记录当前展开的index
     QList<int> listGaocengExpendID,listPosExpendID,listEquipmentExpendID;
     if(ModelUnits->rowCount()>0)
@@ -1823,8 +1888,11 @@ void MainWindow::LoadProjectUnits()
             }
         }
     }
+    
+    timer.checkpoint("展开状态保存完成");
 
     ModelUnits->clear();
+    timer.checkpoint("模型清空完成");
     QSqlQuery QueryVar = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
     QString temp = QString("SELECT Structure_INT FROM ProjectStructure WHERE Structure_ID = '1'");
     QueryVar.exec(temp);
@@ -1834,12 +1902,21 @@ void MainWindow::LoadProjectUnits()
     fatherItem->setData(QVariant("项目"),Qt::WhatsThisRole);
     ModelUnits->appendRow(fatherItem);
     ui->treeViewUnits->expand(fatherItem->index());
+    
+    timer.checkpoint("根节点创建完成");
+    
     //在Equipment表中检索元件
     QSqlQuery QueryEquipment = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
     temp = QString("SELECT * FROM Equipment ORDER BY DT");
     QueryEquipment.exec(temp);
+    
+    int equipmentCount = 0;
+    int symbolQueryCount = 0;
+    timer.checkpoint("Equipment表查询开始");
+    
     while(QueryEquipment.next())
     {
+        equipmentCount++;
         QString ProjectStructure_ID=QueryEquipment.value("ProjectStructure_ID").toString();
         int Equipment_ID=QueryEquipment.value("Equipment_ID").toInt();
         QString UnitTag=QueryEquipment.value("DT").toString();
@@ -1920,6 +1997,7 @@ void MainWindow::LoadProjectUnits()
         QSqlQuery QuerySymbol = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
         temp = QString("SELECT * FROM Symbol WHERE Equipment_ID = '"+QString::number(Equipment_ID)+"'");
         QuerySymbol.exec(temp);
+        symbolQueryCount++;
         //qDebug()<<"LoadProjectUnits Equipment_ID:"<<Equipment_ID;
         while(QuerySymbol.next())
         {
@@ -1972,8 +2050,12 @@ void MainWindow::LoadProjectUnits()
             }
         }
     }
+    
+    timer.checkpoint("Equipment表处理完成", QString("器件数: %1, Symbol查询次数: %2").arg(equipmentCount).arg(symbolQueryCount));
 
     LoadUnitTable();
+    
+    timer.checkpoint("LoadUnitTable 完成");
 
     QString OriginalUnitGaoceng=ui->CbUnitGaoceng->currentText();
     QString OriginalUnitPos=ui->CbUnitPos->currentText();
@@ -2102,6 +2184,8 @@ void MainWindow::LoadUnitTable()
 
 void MainWindow::LoadProjectPages()
 {
+    PerformanceTimer timer("LoadProjectPages");
+    
     //记录当前展开的index
     QList<int> listPagesExpend;
     if(ModelPages->rowCount()>0)
@@ -2131,8 +2215,12 @@ void MainWindow::LoadProjectPages()
             }
         }
     }
+    
+    timer.checkpoint("展开状态保存完成", QString("展开节点数: %1").arg(listPagesExpend.count()));
 
     ModelPages->clear();
+    timer.checkpoint("模型清空完成");
+    
     QSqlQuery QueryVar = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
     QString temp = QString("SELECT Structure_INT FROM ProjectStructure WHERE Structure_ID = '1'");
     QueryVar.exec(temp);
@@ -2142,11 +2230,19 @@ void MainWindow::LoadProjectPages()
     fatherItem->setData(QVariant("项目"),Qt::WhatsThisRole);
     ModelPages->appendRow(fatherItem);
     ui->treeViewPages->expand(fatherItem->index());
+    
+    timer.checkpoint("根节点创建完成");
+    
     QSqlQuery QueryVarPage = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
     temp = QString("SELECT * FROM ProjectStructure WHERE Structure_ID = '6'");
     QueryVarPage.exec(temp);
+    
+    int structureCount = 0;
+    timer.checkpoint("ProjectStructure查询开始");
+    
     while(QueryVarPage.next())
     {
+        structureCount++;
         //if(QueryVarPage.value("Structure_INT").toString()!="") continue;
         QString PosRecordID=QueryVarPage.value("Parent_ID").toString();
         QSqlQuery QueryVar2 = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
@@ -2320,12 +2416,18 @@ void MainWindow::LoadProjectPages()
         }
     }
 
+    timer.checkpoint("ProjectStructure层次构建完成", QString("处理结构数: %1").arg(structureCount));
 
     //从table Page载入Pages
     temp = QString("SELECT * FROM Page ORDER BY Page_ID ASC");
     QueryVar.exec(temp);
+    
+    int pageCount = 0;
+    timer.checkpoint("Page表查询开始");
+    
     while(QueryVar.next())
     {
+        pageCount++;
         //在树节点中查找对应的位置节点
         bool Find=false;
         if(ModelPages->item(0,0)->data(Qt::UserRole).toInt()==QueryVar.value("ProjectStructure_ID").toInt())
@@ -2466,7 +2568,13 @@ void MainWindow::LoadProjectPages()
             }
         }
     }
+    
+    timer.checkpoint("Page表处理完成", QString("处理页面数: %1").arg(pageCount));
+    
     ui->treeViewPages->expand(ModelPages->indexFromItem(fatherItem));
+    
+    timer.checkpoint("树视图展开完成");
+    
     QString OriginalPageGaoceng=ui->CbPageGaocengFilter->currentText();
     QString OriginalPagePos=ui->CbPagePosFilter->currentText();
     ui->CbPageGaocengFilter->clear();
@@ -3600,8 +3708,13 @@ void MainWindow::initAfterShow()
 
 void MainWindow::LoadProject()
 {
+    PerformanceTimer timer("LoadProject");
+    
     qDebug()<<"CurProjectPath="<<CurProjectPath;
     qDebug()<<"CurProjectName="<<CurProjectName;
+    
+    timer.checkpoint("初始化开始");
+    
     if(T_ProjectDatabase.isOpen()) T_ProjectDatabase.close();
     T_ProjectDatabase = QSqlDatabase::addDatabase("QSQLITE",CurProjectName);
     QFile  File(CurProjectPath+"/"+CurProjectName+".db");
@@ -3612,16 +3725,55 @@ void MainWindow::LoadProject()
     }
     else
         T_ProjectDatabase.setDatabaseName(CurProjectPath+"/"+CurProjectName+".db");
+    
+    timer.checkpoint("数据库连接准备完成");
+    
     if (!T_ProjectDatabase.open()){
         QMessageBox::warning(nullptr, "错误", "打开数据库失败",
                              QMessageBox::Ok,QMessageBox::NoButton);
         return ;
     }
+    
+    timer.checkpoint("数据库打开完成");
+    
+    // 加载项目数据缓存（如果启用）
+    if (m_useCacheOptimization) {
+        // 清理旧缓存
+        if (m_projectCache) {
+            delete m_projectCache;
+            m_projectCache = nullptr;
+        }
+        
+        // 创建新缓存并加载
+        m_projectCache = new ProjectDataCache();
+        if (m_projectCache->loadAll(T_ProjectDatabase)) {
+            qDebug() << "[Cache] 缓存加载成功:" << m_projectCache->getStatistics();
+        } else {
+            qWarning() << "[Cache] 缓存加载失败，将使用传统查询方式";
+            delete m_projectCache;
+            m_projectCache = nullptr;
+        }
+    } else {
+        qDebug() << "[Cache] 缓存优化已禁用";
+    }
+    
+    timer.checkpoint("缓存加载完成");
+    
     ui->LbProjectName->setText("项目导航器（"+CurProjectName+"）");
+    
+    timer.checkpoint("UI初始化完成");
+    
     LoadProjectPages();
+    timer.checkpoint("LoadProjectPages 完成");
+    
     LoadProjectUnits();
+    timer.checkpoint("LoadProjectUnits 完成");
+    
     LoadProjectTerminals();
+    timer.checkpoint("LoadProjectTerminals 完成");
+    
     LoadProjectLines();
+    timer.checkpoint("LoadProjectLines 完成");
 
     //更新历史工程记录
     QString StrDir=LocalDataBasePath;

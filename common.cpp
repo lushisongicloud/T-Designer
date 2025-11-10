@@ -1,4 +1,5 @@
 #include "common.h"
+#include "projectdatacache.h"
 
 #include <QSqlError>
 
@@ -1867,6 +1868,37 @@ void GetUnitTermimalGaocengAndPos(int Type,int ID,QString &Gaoceng,QString &Pos)
                 Gaoceng=QueryProjectStructure.value("Structure_INT").toString();
             }
         }
+    }
+}
+
+// 缓存优化版本：使用 ProjectDataCache 避免 6 次数据库查询
+void GetUnitTermimalGaocengAndPos_Cached(ProjectDataCache *cache, int Type, int ID, QString &Gaoceng, QString &Pos)
+{
+    if (!cache || !cache->isLoaded()) {
+        // 缓存未加载，回退到传统方法
+        GetUnitTermimalGaocengAndPos(Type, ID, Gaoceng, Pos);
+        return;
+    }
+    
+    ProjectDataCache::LocationInfo location;
+    
+    if (Type == 0) {
+        // Equipment: 先通过 Symbol_ID 获取 Equipment_ID
+        // ID 这里是 Symbol_ID
+        location = cache->getEquipmentLocationBySymbolId(ID);
+    } else if (Type == 1) {
+        // TerminalStrip: 需要通过 Terminal -> TerminalStrip
+        // 这里暂时用原方法，因为 Terminal 表不在缓存中
+        GetUnitTermimalGaocengAndPos(Type, ID, Gaoceng, Pos);
+        return;
+    }
+    
+    if (location.isValid()) {
+        Gaoceng = location.gaoceng;
+        Pos = location.pos;
+    } else {
+        Gaoceng = "";
+        Pos = "";
     }
 }
 

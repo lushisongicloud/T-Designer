@@ -57,8 +57,17 @@ QStringList RemovedUnitsInfo;//DT,ProjectStructure_ID,Type,Spec,Eqpt_Category,Na
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow)
+    ui(new Ui::MainWindow),
+    m_projectCache(nullptr),
+    m_useCacheOptimization(true)  // 默认启用缓存优化
 {
+    // 检查环境变量是否禁用缓存优化（用于调试/对比）
+    QByteArray disableCacheEnv = qgetenv("T_DESIGNER_DISABLE_CACHE");
+    if (!disableCacheEnv.isEmpty() && disableCacheEnv == "1") {
+        m_useCacheOptimization = false;
+        qDebug() << "[Cache] 缓存优化已通过环境变量禁用";
+    }
+    
     ui->setupUi(this);
     ui->mdiArea->setViewMode(QMdiArea::TabbedView); //Tab多页显示模式
     ui->mdiArea->setTabsClosable(true); //页面可关闭
@@ -190,6 +199,12 @@ MainWindow::MainWindow(QWidget *parent) :
 
 MainWindow::~MainWindow()
 {
+    // 清理缓存
+    if (m_projectCache) {
+        delete m_projectCache;
+        m_projectCache = nullptr;
+    }
+    
     delete ui;
     delete pApp;
     delete GlobalBackAxWidget;

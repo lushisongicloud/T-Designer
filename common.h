@@ -125,6 +125,8 @@ extern QString GetComponentDTBySymbolID(QString SymbolID,int Type);
 extern int GetUnitStripIDByTermID(int Type,int TermID,QString &DT);
 extern int GetSymbolIDByTermID(int Type,QString TermID);
 extern void GetUnitTermimalGaocengAndPos(int Type,int ID,QString &Gaoceng,QString &Pos);
+// 缓存版本：使用 ProjectDataCache 避免重复查询
+extern void GetUnitTermimalGaocengAndPos_Cached(class ProjectDataCache *cache, int Type, int ID, QString &Gaoceng, QString &Pos);
 extern void UpdateBlockAttr(IMxDrawBlockReference *BlkEnty,QString TagStr,QString TextStr);
 extern IMxDrawPoint* GetBlockAttrPos(IMxDrawBlockReference *BlkEnty,QString Tag);
 extern QString GetBlockAttrTextString(IMxDrawBlockReference *BlkEnty,QString Tag);

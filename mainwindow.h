@@ -37,6 +37,7 @@
 #include "graphadjlist.h"
 #include "widget/selectfunctiondialog.h"
 #include "BO/diagnosisengine.h"
+#include "projectdatacache.h"
 
 namespace Ui {
 class MainWindow;
@@ -644,6 +645,10 @@ private:
     QMap<QString, int>  input_test_point;  //测试输入的测点，记录下来避免测点推荐时重复推荐已经测过的点
 
     QMap<QString, double> module_fault_prob;
+    
+    // 性能优化：项目数据缓存（避免重复查询数据库）
+    ProjectDataCache* m_projectCache;
+    bool m_useCacheOptimization;  // 缓存优化开关（默认true，可通过环境变量关闭）
 
     //下面的部分用来处理自定义测点
     QProcess* custom_process;

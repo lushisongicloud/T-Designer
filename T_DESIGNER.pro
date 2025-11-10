@@ -128,6 +128,7 @@ SOURCES += \
     BO/function/tmodelvalidator.cpp \
     BO/function/functionrepository.cpp \
     BO/function/function_variable_config.cpp \
+    projectdatacache.cpp \
     BO/function/variable_range_config.cpp \
     BO/function/systemstructureservice.cpp \
     BO/function/constraintutils.cpp \
@@ -160,6 +161,8 @@ SOURCES += \
 HEADERS += \
         mainwindow.h \
     common.h \
+    performancetimer.h \
+    projectdatacache.h \
     mxdrawxlib.h \
     qxlabel.h \
     DrawStyle.h \
