@@ -53,6 +53,9 @@ include/
 # 数据库文件（根据是否需要跟踪决定）
 # Model.db
 
+# Ignore LdMainData.db
+./ref/LdMainData.db
+
 # 可执行文件
 *.exe
 *.dll

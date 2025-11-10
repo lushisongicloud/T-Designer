@@ -126,7 +126,7 @@ public:
     void LoadAllTools();
     void SetStackIndex(int index);
     void displayCurrentTest();  // 显示当前推荐的测试
-    void recordCurrentTestResult(DiagnosisTreeNode::TestOutcome outcome);  // 记录测试结果并获取下一个测试
+    void recordCurrentTestResult(TestOutcome outcome);  // 记录测试结果并获取下一个测试
     void init_symptom_list();//初始化征兆信号UI列表
     void AddOrModifyExec(int Mode,QString StrSelectedCmd,QString StrExecState,QString StrExecStateVal);//Mode=1:add Mode=2:modify
     void LoadTestPointInfo(QString TestPointName,QString CurrentInOutName,QStringList ListTermStr);
@@ -624,7 +624,11 @@ private slots:
     void on_BtnClearDB_clicked();    
 
     void on_CbTestType_currentIndexChanged(const QString &arg1);
-
+    
+    // 新诊断系统槽函数
+    void on_btnTestPass_clicked();    // 测试通过按钮
+    void on_btnTestFail_clicked();    // 测试失败按钮
+    void on_btnSkipTest_clicked();    // 跳过测试按钮
 
 private:
     QList<CandidateData> candidate_list;

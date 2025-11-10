@@ -4040,34 +4040,34 @@ void MainWindow::displayCurrentTest()
         return;
     }
     
-    DiagnosisTreeNode currentTest = diagnosisEngine->getCurrentRecommendedTest();
+    DiagnosisTreeNode* currentTest = diagnosisEngine->getCurrentRecommendedTest();
     
-    if (!currentTest.isValid()) {
+    if (!currentTest) {
         qWarning() << "当前没有有效的推荐测试";
         
         // 检查是否已完成诊断
         if (diagnosisEngine->isFaultIsolated()) {
-            DiagnosisTreeNode faultNode = diagnosisEngine->getFaultConclusion();
+            DiagnosisTreeNode* faultNode = diagnosisEngine->getFaultConclusion();
             
             // 显示诊断结果
             ui->label_diagnosis_TestWord->setText("诊断完成");
             
             QString resultText = QString("故障定位结果:\n\n%1\n\n隔离度: %2")
-                .arg(faultNode.getFaultHypothesis())
-                .arg(faultNode.getIsolationLevel());
+                .arg(faultNode ? faultNode->faultHypothesis() : "未知")
+                .arg(faultNode ? faultNode->isolationLevel() : 0);
             
             // 显示诊断路径
-            QList<QPair<DiagnosisTreeNode, DiagnosisTreeNode::TestOutcome>> path = 
-                diagnosisEngine->getDiagnosisPath();
+            QList<DiagnosisStep> path = diagnosisEngine->getDiagnosisPath();
             
             if (!path.isEmpty()) {
                 resultText += "\n\n诊断路径:\n";
                 for (int i = 0; i < path.size(); ++i) {
-                    const auto& [node, outcome] = path[i];
-                    QString outcomeStr = (outcome == DiagnosisTreeNode::TestOutcome::Pass) ? "通过" : "失败";
+                    DiagnosisTreeNode* node = path[i].node;
+                    TestOutcome outcome = path[i].outcome;
+                    QString outcomeStr = (outcome == TestOutcome::Pass) ? "通过" : "失败";
                     resultText += QString("%1. %2 -> %3\n")
                         .arg(i + 1)
-                        .arg(node.getTestDescription())
+                        .arg(node ? node->testDescription() : "未知测试")
                         .arg(outcomeStr);
                 }
             }
@@ -4085,8 +4085,8 @@ void MainWindow::displayCurrentTest()
     }
     
     // 显示当前推荐的测试信息
-    QString testDesc = currentTest.getTestDescription();
-    QString expectedResult = currentTest.getExpectedResult();
+    QString testDesc = currentTest->testDescription();
+    QString expectedResult = currentTest->expectedResult();
     
     ui->label_diagnosis_TestWord->setText("执行测试");
     
@@ -4096,7 +4096,7 @@ void MainWindow::displayCurrentTest()
     
     ui->label_test_description_1->setText(displayText);
     
-    qDebug() << "显示测试: node_id=" << currentTest.getNodeId() 
+    qDebug() << "显示测试: node_id=" << currentTest->nodeId() 
              << ", 描述=" << testDesc;
 }
 
@@ -4125,4 +4125,24 @@ void MainWindow::recordCurrentTestResult(DiagnosisTreeNode::TestOutcome outcome)
     
     // 显示下一个测试或诊断结果
     displayCurrentTest();
+}
+
+// ============ UI槽函数 ============
+
+void MainWindow::on_btnTestPass_clicked()
+{
+    qDebug() << "用户点击: 测试通过";
+    recordCurrentTestResult(DiagnosisTreeNode::TestOutcome::Pass);
+}
+
+void MainWindow::on_btnTestFail_clicked()
+{
+    qDebug() << "用户点击: 测试失败";
+    recordCurrentTestResult(DiagnosisTreeNode::TestOutcome::Fail);
+}
+
+void MainWindow::on_btnSkipTest_clicked()
+{
+    qDebug() << "用户点击: 跳过测试";
+    recordCurrentTestResult(DiagnosisTreeNode::TestOutcome::Skip);
 }

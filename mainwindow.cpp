@@ -77,13 +77,17 @@ MainWindow::MainWindow(QWidget *parent) :
     
     // 初始化诊断引擎
     diagnosisEngine = new DiagnosisEngine(T_ProjectDatabase, this);
-    connect(diagnosisEngine, &DiagnosisEngine::testRecommended, this, [this](const DiagnosisTreeNode& testNode) {
+    connect(diagnosisEngine, &DiagnosisEngine::testRecommended, this, [this](DiagnosisTreeNode* testNode) {
         // 当推荐新测试时，更新UI显示测试信息
-        qDebug() << "推荐测试:" << testNode.getTestDescription();
+        if (testNode) {
+            qDebug() << "推荐测试:" << testNode->testDescription();
+        }
     });
-    connect(diagnosisEngine, &DiagnosisEngine::faultIsolated, this, [this](const DiagnosisTreeNode& faultNode) {
+    connect(diagnosisEngine, &DiagnosisEngine::faultIsolated, this, [this](DiagnosisTreeNode* faultNode) {
         // 当完成故障定位时，显示诊断结果
-        qDebug() << "故障定位:" << faultNode.getFaultHypothesis();
+        if (faultNode) {
+            qDebug() << "故障定位:" << faultNode->faultHypothesis();
+        }
     });
 
     SetStackIndex(0);
