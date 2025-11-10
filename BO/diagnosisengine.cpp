@@ -178,26 +178,69 @@ bool DiagnosisEngine::recordTestResult(TestOutcome outcome, const QString &userC
     }
 
     // 如果到达Branch节点，需要继续查找下一个Test节点
-    if (m_currentNode->isBranchNode()) {
-        qDebug() << "Reached branch node" << m_currentNode->nodeId() << ", looking for next test";
+    // 可能需要递归穿过多层Branch节点
+    int branchDepth = 0;
+    const int maxBranchDepth = 10; // 防止无限循环
+    
+    while (m_currentNode->isBranchNode() && branchDepth < maxBranchDepth) {
+        qDebug() << "Reached branch node" << m_currentNode->nodeId() << ", looking for next test (depth:" << branchDepth << ")";
         
-        // 查找第一个测试子节点
+        bool foundNext = false;
+        
+        // 查找子节点中的Test或Branch节点
         if (m_currentNode->hasChildren()) {
+            // 优先查找Test节点
             for (DiagnosisTreeNode* child : m_currentNode->children()) {
                 if (child->isTestNode()) {
                     m_currentNode = child;
                     qDebug() << "Found test node in branch:" << m_currentNode->nodeId();
+                    foundNext = true;
+                    break;
+                }
+            }
+            
+            // 如果没有Test节点，继续进入下一个Branch节点
+            if (!foundNext) {
+                for (DiagnosisTreeNode* child : m_currentNode->children()) {
+                    if (child->isBranchNode()) {
+                        m_currentNode = child;
+                        qDebug() << "Entering nested branch node:" << m_currentNode->nodeId();
+                        foundNext = true;
+                        branchDepth++;
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // 如果既没有Test也没有Branch，检查是否有Fault节点
+        if (!foundNext && m_currentNode->hasChildren()) {
+            for (DiagnosisTreeNode* child : m_currentNode->children()) {
+                if (child->isFaultNode()) {
+                    m_currentNode = child;
+                    qDebug() << "Branch leads directly to fault node:" << m_currentNode->nodeId();
+                    foundNext = true;
                     break;
                 }
             }
         }
         
-        // 再次检查是否找到测试节点
-        if (!m_currentNode->isTestNode()) {
+        if (!foundNext) {
             updateSessionState(DiagnosisSessionState::Failed);
-            emit diagnosisFailed("Branch节点下没有可用的测试节点");
+            emit diagnosisFailed("Branch节点下没有可用的测试节点、分支节点或故障节点");
             return false;
         }
+        
+        // 如果找到了非Branch节点，退出循环
+        if (!m_currentNode->isBranchNode()) {
+            break;
+        }
+    }
+    
+    if (branchDepth >= maxBranchDepth) {
+        updateSessionState(DiagnosisSessionState::Failed);
+        emit diagnosisFailed("Branch节点嵌套层数过深，可能存在循环");
+        return false;
     }
 
     // 最终检查：必须是测试节点

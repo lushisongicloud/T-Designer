@@ -126,9 +126,14 @@ void DialogTestReport::build_FIR_Chart()//构建诊断模糊组图表
 
     QValueAxis *axisY = new QValueAxis;
     axisY->setLabelFormat("%d");
-    axisY->setTickCount(6);
     const int upperBound = qMax(1, maxValue);
-    axisY->setRange(0, upperBound);
+    const int interval = (upperBound <= 5) ? 1 : static_cast<int>(std::ceil(upperBound / 5.0));
+    const int roundedUpper = qMax(interval, interval * static_cast<int>(std::ceil(static_cast<double>(upperBound) / interval)));
+    const int tickCount = roundedUpper / interval + 1;
+    axisY->setTickCount(tickCount);
+    axisY->setTickInterval(interval);
+    axisY->setRange(0, roundedUpper);
+    axisY->setMinorTickCount(0);
     chart->addAxis(axisY, Qt::AlignLeft);
     series->attachAxis(axisY);
 

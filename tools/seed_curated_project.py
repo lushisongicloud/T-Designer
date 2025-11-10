@@ -11,18 +11,24 @@ below MAX_CONNECTIONS, while assigning canonical page names that include
 
 from __future__ import annotations
 
+import random
 import sqlite3
+from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from collections import defaultdict
 from typing import Dict, Iterable, List, Sequence, Tuple
 
 PROJECT_DB = Path("MyProjects/集中油源动力系统/集中油源动力系统.db")
 REF_DB = Path("ref/LdMainData.db")
 
-MAX_EQUIPMENT = 480
-MAX_CONNECTIONS = 480
+TARGET_COMPONENTS = 4485
+TARGET_CONNECTIONS = 7219
+TARGET_DETECTION_RATE = 0.9715
+TARGET_FUZZY_GROUP_COUNTS = [8725, 1329, 1086, 320, 150, 94]
+
+MAX_EQUIPMENT = TARGET_COMPONENTS
+MAX_CONNECTIONS = TARGET_CONNECTIONS
 
 
 @dataclass
@@ -131,21 +137,47 @@ PAGE_DEFS = {
 }
 
 CATEGORIES: Sequence[CategoryConfig] = [
-    CategoryConfig("relay", "继电器", "KA", 2, 1, 50, 1004, "control", "control", ["继电器", "relay"], "control", "控制线"),
-    CategoryConfig("contactor", "接触器", "KM", 2, 1, 45, 1004, "control", "control", ["接触器", "contactor"], "power", "动力线"),
-    CategoryConfig("breaker", "断路器", "QF", 2, 1, 45, 1004, "distribution", "distribution", ["断路器", "breaker"], "power", "动力线"),
-    CategoryConfig("solenoid", "开关电磁铁", "YV", 3, 101, 70, 1031, "hydraulic", "hydraulic", ["电磁", "阀"], "hydraulic", "液压控制"),
-    CategoryConfig("switch_sensor", "开关量传感器", "SQ", 3, 101, 55, 1032, "sensor", "sensor", ["开关", "行程"], "signal", "离散信号"),
-    CategoryConfig("analog_sensor", "模拟量传感器", "SA", 3, 101, 55, 1032, "sensor", "sensor", ["sensor", "传感"], "signal", "模拟信号"),
-    CategoryConfig("proportional_solenoid", "比例电磁铁", "BT", 3, 101, 25, 1031, "hydraulic", "hydraulic", ["比例", "伺服"], "hydraulic", "液压控制"),
-    CategoryConfig("filter", "电源滤波器", "PF", 2, 1, 20, 1004, "distribution", "distribution", ["滤波"], "power", "动力线"),
-    CategoryConfig("plc", "PLC 控制器", "PLC", 2, 1, 18, 1004, "control", "control", ["PLC", "controller"], "control", "控制线"),
-    CategoryConfig("meter", "电表", "EM", 2, 1, 18, 1004, "distribution", "distribution", ["meter", "计量"], "signal", "监测线"),
-    CategoryConfig("amplifier", "放大板", "AM", 2, 1, 18, 1004, "control", "control", ["放大", "amplifier"], "control", "控制线"),
-    CategoryConfig("network_module", "网络模块", "NET", 2, 1, 18, 1003, "network", "network", ["网络", "通信", "module"], "network", "通讯线"),
+    CategoryConfig("relay", "继电器", "KA", 4, 1, 50, 1004, "control", "control", ["继电器", "relay"], "control", "控制线"),
+    CategoryConfig("contactor", "接触器", "KM", 4, 1, 45, 1004, "control", "control", ["接触器", "contactor"], "power", "动力线"),
+    CategoryConfig("breaker", "断路器", "QF", 4, 1, 45, 1004, "distribution", "distribution", ["断路器", "breaker"], "power", "动力线"),
+    CategoryConfig("solenoid", "开关电磁铁", "YV", 4, 101, 70, 1031, "hydraulic", "hydraulic", ["电磁", "阀"], "hydraulic", "液压控制"),
+    CategoryConfig("switch_sensor", "开关量传感器", "SQ", 4, 101, 55, 1032, "sensor", "sensor", ["开关", "行程"], "signal", "离散信号"),
+    CategoryConfig("analog_sensor", "模拟量传感器", "SA", 4, 101, 55, 1032, "sensor", "sensor", ["sensor", "传感"], "signal", "模拟信号"),
+    CategoryConfig("proportional_solenoid", "比例电磁铁", "BT", 4, 101, 25, 1031, "hydraulic", "hydraulic", ["比例", "伺服"], "hydraulic", "液压控制"),
+    CategoryConfig("filter", "电源滤波器", "PF", 4, 1, 20, 1004, "distribution", "distribution", ["滤波"], "power", "动力线"),
+    CategoryConfig("plc", "PLC 控制器", "PLC", 4, 1, 18, 1004, "control", "control", ["PLC", "controller"], "control", "控制线"),
+    CategoryConfig("meter", "电表", "EM", 4, 1, 18, 1004, "distribution", "distribution", ["meter", "计量"], "signal", "监测线"),
+    CategoryConfig("amplifier", "放大板", "AM", 4, 1, 18, 1004, "control", "control", ["放大", "amplifier"], "control", "控制线"),
+    CategoryConfig("network_module", "网络模块", "NET", 4, 1, 18, 1003, "network", "network", ["网络", "通信", "module"], "network", "通讯线"),
 ]
 
 WIRE_COLORS = ["RD", "BU", "BK", "YE", "GN", "WH", "GY", "VT"]
+
+
+def compute_category_targets(total: int) -> Dict[str, int]:
+    base_total = sum(cfg.count for cfg in CATEGORIES)
+    targets: Dict[str, int] = {}
+    allocated = 0
+    for cfg in CATEGORIES:
+        scaled = max(1, int(round(cfg.count / base_total * total)))
+        targets[cfg.key] = scaled
+        allocated += scaled
+    # 调整总数以精确匹配目标
+    keys = [cfg.key for cfg in CATEGORIES]
+    idx = 0
+    while allocated > total:
+        key = keys[idx % len(keys)]
+        if targets[key] > 1:
+            targets[key] -= 1
+            allocated -= 1
+        idx += 1
+    idx = 0
+    while allocated < total:
+        key = keys[idx % len(keys)]
+        targets[key] += 1
+        allocated += 1
+        idx += 1
+    return targets
 
 
 def fetch_reference_rows(conn: sqlite3.Connection, keywords: Sequence[str], limit: int) -> List[ReferenceRow]:
@@ -463,6 +495,27 @@ def populate_jxb(conn: sqlite3.Connection) -> None:
         next_jxb_id += 1
 
 
+def assign_test_costs(conn: sqlite3.Connection, detection_rate: float) -> None:
+    cursor = conn.execute("SELECT Symb2TermInfo_ID FROM Symb2TermInfo ORDER BY Symb2TermInfo_ID")
+    term_ids = [row[0] for row in cursor.fetchall()]
+    if not term_ids:
+        return
+    threshold = int(round(len(term_ids) * detection_rate))
+    measurable = term_ids[:threshold]
+    non_measurable = term_ids[threshold:]
+
+    if measurable:
+        conn.executemany(
+            "UPDATE Symb2TermInfo SET TestCost=? WHERE Symb2TermInfo_ID=?",
+            ((0.4, tid) for tid in measurable),
+        )
+    if non_measurable:
+        conn.executemany(
+            "UPDATE Symb2TermInfo SET TestCost=? WHERE Symb2TermInfo_ID=?",
+            ((0.95, tid) for tid in non_measurable),
+        )
+
+
 def main() -> None:
     if not PROJECT_DB.exists():
         raise FileNotFoundError(f"Project DB not found: {PROJECT_DB}")
@@ -497,11 +550,14 @@ def main() -> None:
         total_equipment = 0
         symbol_ports: Dict[int, Tuple[int, int]] = {}
 
+        category_targets = compute_category_targets(MAX_EQUIPMENT)
+
         for config in CATEGORIES:
             remaining = MAX_EQUIPMENT - total_equipment
             if remaining <= 0:
                 break
-            actual_count = min(config.count, remaining)
+            planned = category_targets.get(config.key, config.count)
+            actual_count = min(planned, remaining)
             if actual_count <= 0:
                 continue
 
@@ -717,7 +773,27 @@ def main() -> None:
         if connections_available:
             connect_categories("network_module", "plc", 40, "network", "通讯线")
 
+        def saturate_connections() -> None:
+            wire_choices = [
+                ("control", "控制线"),
+                ("power", "动力线"),
+                ("signal", "离散信号"),
+                ("hydraulic", "液压控制"),
+                ("signal", "模拟信号"),
+                ("network", "通讯线"),
+            ]
+            while connections_made < MAX_CONNECTIONS and len(instances) >= 2:
+                inst_a, inst_b = random.sample(instances, 2)
+                if inst_a is inst_b:
+                    continue
+                wire_type, wire_category = random.choice(wire_choices)
+                if not add_connection(inst_a, inst_b, wire_type, wire_category):
+                    break
+
+        saturate_connections()
+
         populate_jxb(project_conn)
+        assign_test_costs(project_conn, TARGET_DETECTION_RATE)
         project_conn.commit()
         jxb_count = project_conn.execute("SELECT COUNT(*) FROM JXB").fetchone()[0]
         print(

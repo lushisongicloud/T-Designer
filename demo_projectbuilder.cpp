@@ -454,11 +454,11 @@ QString formatDeviceMark(const QString &prefix, int value, int digits)
 
 QString defaultTModelForCategory(const QString &categoryKey, const QString &mark)
 {
-    if (categoryKey == QStringLiteral("relay") || categoryKey == QStringLiteral("contactor"))
+    if (categoryKey == QString("relay") || categoryKey == QString("contactor"))
         return DemoProjectModelAccess::coilTModel();
-    if (categoryKey == QStringLiteral("breaker"))
+    if (categoryKey == QString("breaker"))
         return DemoProjectModelAccess::psuTModel();
-    return QStringLiteral("component %1_%2 { state nominal; }").arg(categoryKey, mark);
+    return QString("component %1_%2 { state nominal; }").arg(categoryKey, mark);
 }
 
 QList<ReferenceEquipmentRow> fetchReferenceEquipmentRows(QSqlDatabase &refDb,
@@ -469,7 +469,7 @@ QList<ReferenceEquipmentRow> fetchReferenceEquipmentRows(QSqlDatabase &refDb,
     if (limit <= 0)
         return rows;
 
-    const QString selectPrefix = QStringLiteral(
+    const QString selectPrefix = QString(
         "SELECT Equipment_ID, Type, Name, \"Desc\", PartCode, OrderNum, Factory_ID, TModel, Structure, RepairInfo, Picture, MTBF FROM Equipment");
     QSet<QString> seen;
 
@@ -508,8 +508,8 @@ QList<ReferenceEquipmentRow> fetchReferenceEquipmentRows(QSqlDatabase &refDb,
             continue;
         matchedKeyword = true;
         QString sanitized = trimmed;
-        sanitized.replace('\'', QStringLiteral("''"));
-        const QString sql = QStringLiteral("%1 WHERE (Name LIKE '%%2%%' OR \"Desc\" LIKE '%%2%%') ORDER BY Equipment_ID LIMIT %3")
+        sanitized.replace('\'', QString("''"));
+        const QString sql = QString("%1 WHERE (Name LIKE '%%2%%' OR \"Desc\" LIKE '%%2%%') ORDER BY Equipment_ID LIMIT %3")
                                 .arg(selectPrefix)
                                 .arg(sanitized)
                                 .arg(limit);
@@ -519,7 +519,7 @@ QList<ReferenceEquipmentRow> fetchReferenceEquipmentRows(QSqlDatabase &refDb,
     }
 
     if (!matchedKeyword || rows.isEmpty()) {
-        const QString sql = QStringLiteral("%1 ORDER BY Equipment_ID LIMIT %2").arg(selectPrefix).arg(limit);
+        const QString sql = QString("%1 ORDER BY Equipment_ID LIMIT %2").arg(selectPrefix).arg(limit);
         fetchWithSql(sql);
     }
 
@@ -547,21 +547,21 @@ bool populateHydraulicPowerSystemData(QSqlDatabase &db, QString *errorMessage)
     const int structAmplifier = 2015;
 
     const QList<QList<QVariant>> projectStructures = {
-        {structRoot, QStringLiteral("1"), QStringLiteral("集中油源动力系统"), 0, QStringLiteral("集中油源动力系统根节点")},
-        {structControlCabinet, QStringLiteral("3"), QStringLiteral("油源动力系统控制柜"), structRoot, QStringLiteral("控制柜")},
-        {structDistribution, QStringLiteral("3"), QStringLiteral("配电系统"), structRoot, QStringLiteral("配电与电源滤波")},
-        {structHydraulic, QStringLiteral("3"), QStringLiteral("液压泵站"), structRoot, QStringLiteral("液压泵站总成")},
-        {structSensor, QStringLiteral("5"), QStringLiteral("传感器网络"), structRoot, QStringLiteral("传感器层")},
-        {structPump1, QStringLiteral("6"), QStringLiteral("1#收放系统供油回路"), structHydraulic, QStringLiteral("为1#收放系统供油")},
-        {structPump2, QStringLiteral("6"), QStringLiteral("2#收放系统供油回路"), structHydraulic, QStringLiteral("为2#收放系统供油")},
-        {structPump3, QStringLiteral("6"), QStringLiteral("3#收放系统供油回路"), structHydraulic, QStringLiteral("为3#收放系统供油")},
-        {structPump4, QStringLiteral("6"), QStringLiteral("4#收放系统供油回路"), structHydraulic, QStringLiteral("为4#收放系统供油")},
-        {structPlcRack, QStringLiteral("5"), QStringLiteral("PLC机柜"), structControlCabinet, QStringLiteral("PLC1/PLC2 机柜")},
-        {structActuatorBay, QStringLiteral("5"), QStringLiteral("执行机构区"), structHydraulic, QStringLiteral("比例电磁铁与电磁阀")},
-        {structInterface, QStringLiteral("5"), QStringLiteral("MTA接口模块"), structControlCabinet, QStringLiteral("接口模块区")},
-        {structLocalOps, QStringLiteral("5"), QStringLiteral("本地操作单元"), structControlCabinet, QStringLiteral("本地操作单元")},
-        {structNetwork, QStringLiteral("5"), QStringLiteral("控制网络"), structControlCabinet, QStringLiteral("主/从控制网络")},
-        {structAmplifier, QStringLiteral("5"), QStringLiteral("放大板区"), structDistribution, QStringLiteral("信号放大板区")}
+        {structRoot, QString("1"), QString("集中油源动力系统"), 0, QString("集中油源动力系统根节点")},
+        {structControlCabinet, QString("3"), QString("油源动力系统控制柜"), structRoot, QString("控制柜")},
+        {structDistribution, QString("3"), QString("配电系统"), structRoot, QString("配电与电源滤波")},
+        {structHydraulic, QString("3"), QString("液压泵站"), structRoot, QString("液压泵站总成")},
+        {structSensor, QString("5"), QString("传感器网络"), structRoot, QString("传感器层")},
+        {structPump1, QString("6"), QString("1#收放系统供油回路"), structHydraulic, QString("为1#收放系统供油")},
+        {structPump2, QString("6"), QString("2#收放系统供油回路"), structHydraulic, QString("为2#收放系统供油")},
+        {structPump3, QString("6"), QString("3#收放系统供油回路"), structHydraulic, QString("为3#收放系统供油")},
+        {structPump4, QString("6"), QString("4#收放系统供油回路"), structHydraulic, QString("为4#收放系统供油")},
+        {structPlcRack, QString("5"), QString("PLC机柜"), structControlCabinet, QString("PLC1/PLC2 机柜")},
+        {structActuatorBay, QString("5"), QString("执行机构区"), structHydraulic, QString("比例电磁铁与电磁阀")},
+        {structInterface, QString("5"), QString("MTA接口模块"), structControlCabinet, QString("接口模块区")},
+        {structLocalOps, QString("5"), QString("本地操作单元"), structControlCabinet, QString("本地操作单元")},
+        {structNetwork, QString("5"), QString("控制网络"), structControlCabinet, QString("主/从控制网络")},
+        {structAmplifier, QString("5"), QString("放大板区"), structDistribution, QString("信号放大板区")}
     };
 
     for (const auto &row : projectStructures) {
@@ -573,7 +573,7 @@ bool populateHydraulicPowerSystemData(QSqlDatabase &db, QString *errorMessage)
         }
     }
 
-    const QString alterTime = QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd hh:mm:ss"));
+    const QString alterTime = QDateTime::currentDateTime().toString(QString("yyyy-MM-dd hh:mm:ss"));
     const int pageControl = 3101;
     const int pageDistribution = 3102;
     const int pageHydraulic = 3103;
@@ -581,11 +581,11 @@ bool populateHydraulicPowerSystemData(QSqlDatabase &db, QString *errorMessage)
     const int pageNetwork = 3105;
 
     const QList<QList<QVariant>> pages = {
-        {pageControl, structControlCabinet, QStringLiteral("控制柜主回路"), QStringLiteral("原理图"), 1, QStringLiteral("CC-01"), QStringLiteral("1:20"), QStringLiteral("A2 594x420"), QStringLiteral("油源动力控制柜"), alterTime, QString()},
-        {pageDistribution, structDistribution, QStringLiteral("配电系统"), QStringLiteral("原理图"), 2, QStringLiteral("PD-01"), QStringLiteral("1:25"), QStringLiteral("A2 594x420"), QStringLiteral("配电系统"), alterTime, QString()},
-        {pageHydraulic, structHydraulic, QStringLiteral("液压泵站"), QStringLiteral("原理图"), 3, QStringLiteral("HY-01"), QStringLiteral("1:15"), QStringLiteral("A1 841x594"), QStringLiteral("液压泵站"), alterTime, QString()},
-        {pageSensor, structSensor, QStringLiteral("传感器网络"), QStringLiteral("I/O图"), 4, QStringLiteral("SN-01"), QStringLiteral("1:40"), QStringLiteral("A3 420x297"), QStringLiteral("传感器网络"), alterTime, QString()},
-        {pageNetwork, structNetwork, QStringLiteral("控制网络"), QStringLiteral("联接图"), 5, QStringLiteral("NET-01"), QStringLiteral("1:30"), QStringLiteral("A3 420x297"), QStringLiteral("控制网络"), alterTime, QString()}
+        {pageControl, structControlCabinet, QString("控制柜主回路"), QString("原理图"), 1, QString("CC-01"), QString("1:20"), QString("A2 594x420"), QString("油源动力控制柜"), alterTime, QString()},
+        {pageDistribution, structDistribution, QString("配电系统"), QString("原理图"), 2, QString("PD-01"), QString("1:25"), QString("A2 594x420"), QString("配电系统"), alterTime, QString()},
+        {pageHydraulic, structHydraulic, QString("液压泵站"), QString("原理图"), 3, QString("HY-01"), QString("1:15"), QString("A1 841x594"), QString("液压泵站"), alterTime, QString()},
+        {pageSensor, structSensor, QString("传感器网络"), QString("I/O图"), 4, QString("SN-01"), QString("1:40"), QString("A3 420x297"), QString("传感器网络"), alterTime, QString()},
+        {pageNetwork, structNetwork, QString("控制网络"), QString("联接图"), 5, QString("NET-01"), QString("1:30"), QString("A3 420x297"), QString("控制网络"), alterTime, QString()}
     };
 
     for (const auto &row : pages) {
@@ -598,16 +598,16 @@ bool populateHydraulicPowerSystemData(QSqlDatabase &db, QString *errorMessage)
     }
 
     const QList<ContainerSpec> baseContainers = {
-        {1, structRoot, QStringLiteral("root"), QStringLiteral("集中油源动力系统"), QStringLiteral("system"), QStringLiteral("系统根容器"), 0},
-        {2, structControlCabinet, QStringLiteral("control_cabinet"), QStringLiteral("控制柜"), QStringLiteral("subsystem"), QStringLiteral("控制柜母线"), 1},
-        {3, structDistribution, QStringLiteral("distribution"), QStringLiteral("配电系统"), QStringLiteral("subsystem"), QStringLiteral("配电主体"), 1},
-        {4, structHydraulic, QStringLiteral("hydraulic_pump"), QStringLiteral("液压泵站"), QStringLiteral("subsystem"), QStringLiteral("液压泵站容器"), 1},
-        {5, structSensor, QStringLiteral("sensor_array"), QStringLiteral("传感器网络"), QStringLiteral("subsystem"), QStringLiteral("传感器列阵"), 1},
-        {6, structPlcRack, QStringLiteral("plc_rack"), QStringLiteral("PLC机柜"), QStringLiteral("subsystem"), QStringLiteral("PLC1/PLC2 柜"), 2},
-        {7, structActuatorBay, QStringLiteral("actuator_bay"), QStringLiteral("执行机构区"), QStringLiteral("subsystem"), QStringLiteral("执行机构列阵"), 4},
-        {8, structNetwork, QStringLiteral("network_segment"), QStringLiteral("控制网络"), QStringLiteral("subsystem"), QStringLiteral("主/从网络"), 2},
-        {9, structInterface, QStringLiteral("interface_zone"), QStringLiteral("接口模块区"), QStringLiteral("subsystem"), QStringLiteral("MTA 接口模块区"), 2},
-        {10, structAmplifier, QStringLiteral("amplifier_panel"), QStringLiteral("放大板区"), QStringLiteral("subsystem"), QStringLiteral("信号放大板"), 3}
+        {1, structRoot, QString("root"), QString("集中油源动力系统"), QString("system"), QString("系统根容器"), 0},
+        {2, structControlCabinet, QString("control_cabinet"), QString("控制柜"), QString("subsystem"), QString("控制柜母线"), 1},
+        {3, structDistribution, QString("distribution"), QString("配电系统"), QString("subsystem"), QString("配电主体"), 1},
+        {4, structHydraulic, QString("hydraulic_pump"), QString("液压泵站"), QString("subsystem"), QString("液压泵站容器"), 1},
+        {5, structSensor, QString("sensor_array"), QString("传感器网络"), QString("subsystem"), QString("传感器列阵"), 1},
+        {6, structPlcRack, QString("plc_rack"), QString("PLC机柜"), QString("subsystem"), QString("PLC1/PLC2 柜"), 2},
+        {7, structActuatorBay, QString("actuator_bay"), QString("执行机构区"), QString("subsystem"), QString("执行机构列阵"), 4},
+        {8, structNetwork, QString("network_segment"), QString("控制网络"), QString("subsystem"), QString("主/从网络"), 2},
+        {9, structInterface, QString("interface_zone"), QString("接口模块区"), QString("subsystem"), QString("MTA 接口模块区"), 2},
+        {10, structAmplifier, QString("amplifier_panel"), QString("放大板区"), QString("subsystem"), QString("信号放大板"), 3}
     };
 
     QHash<QString, int> containerIdByKey;
@@ -633,7 +633,7 @@ bool populateHydraulicPowerSystemData(QSqlDatabase &db, QString *errorMessage)
         containerIdByKey.insert(spec.key, spec.containerId);
         maxContainerId = qMax(maxContainerId, spec.containerId);
         if (spec.parentContainerId > 0) {
-            QVariantList hierarchyRow = {spec.parentContainerId, spec.containerId, QStringLiteral("contains")};
+            QVariantList hierarchyRow = {spec.parentContainerId, spec.containerId, QString("contains")};
             if (!prepareAndExec(query,
                                 "INSERT INTO container_hierarchy (parent_id, child_id, relation_type) VALUES (?,?,?)",
                                 hierarchyRow,
@@ -643,12 +643,12 @@ bool populateHydraulicPowerSystemData(QSqlDatabase &db, QString *errorMessage)
         }
     }
 
-    const QString refConnName = QStringLiteral("ldmain_reference_connection");
-    QSqlDatabase refDb = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), refConnName);
-    refDb.setDatabaseName(QDir::cleanPath(QStringLiteral("ref/LdMainData.db")));
+    const QString refConnName = QString("ldmain_reference_connection");
+    QSqlDatabase refDb = QSqlDatabase::addDatabase(QString("QSQLITE"), refConnName);
+    refDb.setDatabaseName(QDir::cleanPath(QString("ref/LdMainData.db")));
     if (!refDb.open()) {
         if (errorMessage)
-            *errorMessage = QStringLiteral("无法打开器件库 ref/LdMainData.db: %1").arg(refDb.lastError().text());
+            *errorMessage = QString("无法打开器件库 ref/LdMainData.db: %1").arg(refDb.lastError().text());
         refDb = QSqlDatabase();
         QSqlDatabase::removeDatabase(refConnName);
         return false;
@@ -661,18 +661,18 @@ bool populateHydraulicPowerSystemData(QSqlDatabase &db, QString *errorMessage)
     };
 
     const QList<CategoryConfig> categories = {
-        {QStringLiteral("relay"), QStringLiteral("继电器"), QStringLiteral("KA"), 2, 1, 520, structControlCabinet, QStringLiteral("control_cabinet"), pageControl, {QStringLiteral("继电器"), QStringLiteral("relay")}, QStringLiteral("控制线"), QStringLiteral("control")},
-        {QStringLiteral("contactor"), QStringLiteral("接触器"), QStringLiteral("KM"), 2, 1, 420, structControlCabinet, QStringLiteral("control_cabinet"), pageControl, {QStringLiteral("接触器"), QStringLiteral("contactor")}, QStringLiteral("动力线"), QStringLiteral("power")},
-        {QStringLiteral("breaker"), QStringLiteral("断路器"), QStringLiteral("QF"), 2, 1, 420, structDistribution, QStringLiteral("distribution"), pageDistribution, {QStringLiteral("断路器"), QStringLiteral("breaker")}, QStringLiteral("动力线"), QStringLiteral("power")},
-        {QStringLiteral("solenoid"), QStringLiteral("电磁阀"), QStringLiteral("YV"), 3, 101, 460, structHydraulic, QStringLiteral("hydraulic_pump"), pageHydraulic, {QStringLiteral("阀"), QStringLiteral("solenoid")}, QStringLiteral("动力线"), QStringLiteral("hydraulic-control")},
-        {QStringLiteral("switch_sensor"), QStringLiteral("开关型传感器"), QStringLiteral("SQ"), 3, 101, 420, structSensor, QStringLiteral("sensor_array"), pageSensor, {QStringLiteral("开关"), QStringLiteral("switch")}, QStringLiteral("信号线"), QStringLiteral("digital-signal")},
-        {QStringLiteral("analog_sensor"), QStringLiteral("模拟量传感器"), QStringLiteral("SA"), 3, 101, 360, structSensor, QStringLiteral("sensor_array"), pageSensor, {QStringLiteral("sensor"), QStringLiteral("传感器")}, QStringLiteral("信号线"), QStringLiteral("analog-signal")},
-        {QStringLiteral("proportional_solenoid"), QStringLiteral("比例电磁铁"), QStringLiteral("BT"), 3, 101, 260, structActuatorBay, QStringLiteral("actuator_bay"), pageHydraulic, {QStringLiteral("比例"), QStringLiteral("伺服")}, QStringLiteral("动力线"), QStringLiteral("hydraulic-control")},
-        {QStringLiteral("filter"), QStringLiteral("电源滤波器"), QStringLiteral("PF"), 2, 1, 200, structDistribution, QStringLiteral("distribution"), pageDistribution, {QStringLiteral("滤波"), QStringLiteral("filter")}, QStringLiteral("动力线"), QStringLiteral("power")},
-        {QStringLiteral("plc"), QStringLiteral("PLC"), QStringLiteral("PLC"), 2, 1, 160, structPlcRack, QStringLiteral("plc_rack"), pageControl, {QStringLiteral("PLC"), QStringLiteral("controller")}, QStringLiteral("控制线"), QStringLiteral("control")},
-        {QStringLiteral("meter"), QStringLiteral("电表"), QStringLiteral("EM"), 2, 1, 160, structDistribution, QStringLiteral("distribution"), pageDistribution, {QStringLiteral("Sensor"), QStringLiteral("meter")}, QStringLiteral("信号线"), QStringLiteral("monitor")},
-        {QStringLiteral("amplifier"), QStringLiteral("放大板"), QStringLiteral("AM"), 2, 1, 150, structAmplifier, QStringLiteral("amplifier_panel"), pageControl, {QStringLiteral("放大"), QStringLiteral("amplifier")}, QStringLiteral("控制线"), QStringLiteral("control")},
-        {QStringLiteral("network_module"), QStringLiteral("网络模块"), QStringLiteral("NET"), 2, 1, 160, structNetwork, QStringLiteral("network_segment"), pageNetwork, {QStringLiteral("模块"), QStringLiteral("module")}, QStringLiteral("信号线"), QStringLiteral("network")}
+        {QString("relay"), QString("继电器"), QString("KA"), 2, 1, 520, structControlCabinet, QString("control_cabinet"), pageControl, {QString("继电器"), QString("relay")}, QString("控制线"), QString("control")},
+        {QString("contactor"), QString("接触器"), QString("KM"), 2, 1, 420, structControlCabinet, QString("control_cabinet"), pageControl, {QString("接触器"), QString("contactor")}, QString("动力线"), QString("power")},
+        {QString("breaker"), QString("断路器"), QString("QF"), 2, 1, 420, structDistribution, QString("distribution"), pageDistribution, {QString("断路器"), QString("breaker")}, QString("动力线"), QString("power")},
+        {QString("solenoid"), QString("电磁阀"), QString("YV"), 3, 101, 460, structHydraulic, QString("hydraulic_pump"), pageHydraulic, {QString("阀"), QString("solenoid")}, QString("动力线"), QString("hydraulic-control")},
+        {QString("switch_sensor"), QString("开关型传感器"), QString("SQ"), 3, 101, 420, structSensor, QString("sensor_array"), pageSensor, {QString("开关"), QString("switch")}, QString("信号线"), QString("digital-signal")},
+        {QString("analog_sensor"), QString("模拟量传感器"), QString("SA"), 3, 101, 360, structSensor, QString("sensor_array"), pageSensor, {QString("sensor"), QString("传感器")}, QString("信号线"), QString("analog-signal")},
+        {QString("proportional_solenoid"), QString("比例电磁铁"), QString("BT"), 3, 101, 260, structActuatorBay, QString("actuator_bay"), pageHydraulic, {QString("比例"), QString("伺服")}, QString("动力线"), QString("hydraulic-control")},
+        {QString("filter"), QString("电源滤波器"), QString("PF"), 2, 1, 200, structDistribution, QString("distribution"), pageDistribution, {QString("滤波"), QString("filter")}, QString("动力线"), QString("power")},
+        {QString("plc"), QString("PLC"), QString("PLC"), 2, 1, 160, structPlcRack, QString("plc_rack"), pageControl, {QString("PLC"), QString("controller")}, QString("控制线"), QString("control")},
+        {QString("meter"), QString("电表"), QString("EM"), 2, 1, 160, structDistribution, QString("distribution"), pageDistribution, {QString("Sensor"), QString("meter")}, QString("信号线"), QString("monitor")},
+        {QString("amplifier"), QString("放大板"), QString("AM"), 2, 1, 150, structAmplifier, QString("amplifier_panel"), pageControl, {QString("放大"), QString("amplifier")}, QString("控制线"), QString("control")},
+        {QString("network_module"), QString("网络模块"), QString("NET"), 2, 1, 160, structNetwork, QString("network_segment"), pageNetwork, {QString("模块"), QString("module")}, QString("信号线"), QString("network")}
     };
 
     QHash<QString, QList<ReferenceEquipmentRow>> referenceByCategory;
@@ -684,8 +684,8 @@ bool populateHydraulicPowerSystemData(QSqlDatabase &db, QString *errorMessage)
         if (refs.isEmpty()) {
             ReferenceEquipmentRow fallback;
             fallback.name = config.displayName;
-            fallback.description = QStringLiteral("%1 预置元件").arg(config.displayName);
-            fallback.factory = QStringLiteral("T-Designer");
+            fallback.description = QString("%1 预置元件").arg(config.displayName);
+            fallback.factory = QString("T-Designer");
             refs.append(fallback);
         }
         referenceByCategory.insert(config.key, refs);
@@ -712,14 +712,14 @@ bool populateHydraulicPowerSystemData(QSqlDatabase &db, QString *errorMessage)
             config.projectStructureId,
             mark,
             refRow.type.isEmpty() ? config.displayName : refRow.type,
-            QStringLiteral("普通元件"),
+            QString("普通元件"),
             refRow.name.isEmpty() ? config.displayName : refRow.name,
             refRow.description,
-            refRow.partCode.isEmpty() ? QStringLiteral("%1-%2").arg(config.prefix).arg(baseValue) : refRow.partCode,
+            refRow.partCode.isEmpty() ? QString("%1-%2").arg(config.prefix).arg(baseValue) : refRow.partCode,
             config.displayName,
             refRow.orderNum.isEmpty() ? QString::number(baseValue) : refRow.orderNum,
-            refRow.factory.isEmpty() ? QStringLiteral("T-Designer") : refRow.factory,
-            QStringLiteral("%1.signal").arg(mark),
+            refRow.factory.isEmpty() ? QString("T-Designer") : refRow.factory,
+            QString("%1.signal").arg(mark),
             refRow.tModel.isEmpty() ? defaultTModelForCategory(config.key, mark) : refRow.tModel,
             refRow.structure,
             refRow.repairInfo,
@@ -734,15 +734,15 @@ bool populateHydraulicPowerSystemData(QSqlDatabase &db, QString *errorMessage)
         }
 
         const int containerId = nextContainerId++;
-        const int parentContainerId = containerIdByKey.value(config.parentContainerKey, containerIdByKey.value(QStringLiteral("root")));
+        const int parentContainerId = containerIdByKey.value(config.parentContainerKey, containerIdByKey.value(QString("root")));
         QVariantList containerRow = {
             containerId,
             config.projectStructureId,
             mark,
-            QStringLiteral("component"),
+            QString("component"),
             equipmentId,
             1,
-            QStringLiteral("%1 %2").arg(config.displayName, mark),
+            QString("%1 %2").arg(config.displayName, mark),
             QVariant(),
             QVariant()
         };
@@ -753,7 +753,7 @@ bool populateHydraulicPowerSystemData(QSqlDatabase &db, QString *errorMessage)
             return false;
         }
 
-        QVariantList componentRow = {containerId, equipmentId, QStringLiteral("primary")};
+        QVariantList componentRow = {containerId, equipmentId, QString("primary")};
         if (!prepareAndExec(query,
                             "INSERT INTO container_component (container_id, equipment_id, role) VALUES (?,?,?)",
                             componentRow,
@@ -769,7 +769,7 @@ bool populateHydraulicPowerSystemData(QSqlDatabase &db, QString *errorMessage)
             return false;
         }
 
-        QVariantList hierarchyRow = {parentContainerId, containerId, QStringLiteral("contains")};
+        QVariantList hierarchyRow = {parentContainerId, containerId, QString("contains")};
         if (!prepareAndExec(query,
                             "INSERT INTO container_hierarchy (parent_id, child_id, relation_type) VALUES (?,?,?)",
                             hierarchyRow,
@@ -782,18 +782,18 @@ bool populateHydraulicPowerSystemData(QSqlDatabase &db, QString *errorMessage)
             symbolId,
             equipmentId,
             config.pageId,
-            QStringLiteral("SYM_%1").arg(mark),
+            QString("SYM_%1").arg(mark),
             config.displayName,
             refRow.description.isEmpty() ? config.displayName : refRow.description,
             mark,
-            QStringLiteral("HANDLE_%1").arg(symbolId),
-            QStringLiteral("%1 接线符号").arg(mark),
+            QString("HANDLE_%1").arg(symbolId),
+            QString("%1 接线符号").arg(mark),
             config.key,
             config.displayName,
             1,
             1,
             1,
-            QStringLiteral("NET-%1").arg(config.key.toUpper()),
+            QString("NET-%1").arg(config.key.toUpper()),
             mark
         };
         if (!prepareAndExec(query,
@@ -803,7 +803,7 @@ bool populateHydraulicPowerSystemData(QSqlDatabase &db, QString *errorMessage)
             return false;
         }
 
-        const QStringList directions = {QStringLiteral("向上"), QStringLiteral("向下")};
+        const QStringList directions = {QString("向上"), QString("向下")};
         for (int portIndex = 0; portIndex < 2; ++portIndex) {
             QVariantList termRow = {
                 nextSymbTermId++,
@@ -812,7 +812,7 @@ bool populateHydraulicPowerSystemData(QSqlDatabase &db, QString *errorMessage)
                 QString::number(portIndex + 1),
                 directions.at(portIndex),
                 0,
-                QStringLiteral("%1 端口%2").arg(mark).arg(portIndex + 1)
+                QString("%1 端口%2").arg(mark).arg(portIndex + 1)
             };
             if (!prepareAndExec(query,
                                 "INSERT INTO Symb2TermInfo (Symb2TermInfo_ID, Symbol_ID, ConnNum_Logic, ConnNum, ConnDirection, Internal, ConnDesc) VALUES (?,?,?,?,?,?,?)",
@@ -845,9 +845,9 @@ bool populateHydraulicPowerSystemData(QSqlDatabase &db, QString *errorMessage)
         }
     }
 
-    const QStringList wireColors = {QStringLiteral("RD"), QStringLiteral("BU"), QStringLiteral("BK"), QStringLiteral("YE"), QStringLiteral("GN"), QStringLiteral("WH")};
+    const QStringList wireColors = {QString("RD"), QString("BU"), QString("BK"), QString("YE"), QString("GN"), QString("WH")};
     auto addConnection = [&](const EquipmentInstance &from, const EquipmentInstance &to, const QString &wireType, const QString &wireCategory) -> bool {
-        const QString connectionNumber = QStringLiteral("CL-%1").arg(nextConnectLineId, 6, 10, QLatin1Char('0'));
+        const QString connectionNumber = QString("CL-%1").arg(nextConnectLineId, 6, 10, QLatin1Char('0'));
         const QString equipotential = QString::number((nextConnectLineId % 20) + 1);
         const QString color = wireColors.at((nextConnectLineId + from.symbolId + to.symbolId) % wireColors.size());
         QVariantList row = {
@@ -856,15 +856,15 @@ bool populateHydraulicPowerSystemData(QSqlDatabase &db, QString *errorMessage)
             QString(),
             equipotential,
             connectionNumber,
-            QStringLiteral("HND-%1").arg(connectionNumber),
-            QStringLiteral("%1:%2").arg(from.symbolId).arg(1),
-            QStringLiteral("%1:%2").arg(to.symbolId).arg(2),
+            QString("HND-%1").arg(connectionNumber),
+            QString("%1:%2").arg(from.symbolId).arg(1),
+            QString("%1:%2").arg(to.symbolId).arg(2),
             wireType,
             color,
-            QStringLiteral("2.5mm2"),
+            QString("2.5mm2"),
             wireCategory,
-            QStringLiteral("component"),
-            QStringLiteral("component")
+            QString("component"),
+            QString("component")
         };
         return prepareAndExec(query,
                               "INSERT INTO ConnectLine (ConnectLine_ID, Page_ID, Cable_ID, Equipotential_Num, ConnectionNumber, ConnectionNumber_Handle, Symb1_ID, Symb2_ID, Wires_Type, Wires_Color, Wires_Diameter, Wires_Category, Symb1_Category, Symb2_Category) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
@@ -903,36 +903,36 @@ bool populateHydraulicPowerSystemData(QSqlDatabase &db, QString *errorMessage)
         return true;
     };
 
-    if (!connectGroups(QStringLiteral("analog_sensor"), QStringLiteral("plc"), 200, QStringLiteral("analog-signal"), QStringLiteral("信号线")))
+    if (!connectGroups(QString("analog_sensor"), QString("plc"), 200, QString("analog-signal"), QString("信号线")))
         return false;
-    if (!connectGroups(QStringLiteral("switch_sensor"), QStringLiteral("plc"), 200, QStringLiteral("digital-signal"), QStringLiteral("控制线")))
+    if (!connectGroups(QString("switch_sensor"), QString("plc"), 200, QString("digital-signal"), QString("控制线")))
         return false;
-    if (!connectGroups(QStringLiteral("relay"), QStringLiteral("contactor"), 200, QStringLiteral("control"), QStringLiteral("控制线")))
+    if (!connectGroups(QString("relay"), QString("contactor"), 200, QString("control"), QString("控制线")))
         return false;
-    if (!connectGroups(QStringLiteral("solenoid"), QStringLiteral("proportional_solenoid"), 200, QStringLiteral("hydraulic-control"), QStringLiteral("动力线")))
+    if (!connectGroups(QString("solenoid"), QString("proportional_solenoid"), 200, QString("hydraulic-control"), QString("动力线")))
         return false;
-    if (!connectGroups(QStringLiteral("filter"), QStringLiteral("breaker"), 120, QStringLiteral("power"), QStringLiteral("动力线")))
+    if (!connectGroups(QString("filter"), QString("breaker"), 120, QString("power"), QString("动力线")))
         return false;
-    if (!connectGroups(QStringLiteral("network_module"), QStringLiteral("plc"), 120, QStringLiteral("network"), QStringLiteral("信号线")))
+    if (!connectGroups(QString("network_module"), QString("plc"), 120, QString("network"), QString("信号线")))
         return false;
 
     QStringList functionColumns;
-    if (!fetchTableColumns(db, QStringLiteral("Function"), &functionColumns, errorMessage))
+    if (!fetchTableColumns(db, QString("Function"), &functionColumns, errorMessage))
         return false;
 
     const QStringList functionColumnPriority = {
-        QStringLiteral("FunctionID"),
-        QStringLiteral("FunctionName"),
-        QStringLiteral("ExecsList"),
-        QStringLiteral("CmdValList"),
-        QStringLiteral("UserTest"),
-        QStringLiteral("Remark"),
-        QStringLiteral("LinkText"),
-        QStringLiteral("ComponentDependency"),
-        QStringLiteral("AllComponents"),
-        QStringLiteral("FunctionDependency"),
-        QStringLiteral("PersistentFlag"),
-        QStringLiteral("FaultProbability")
+        QString("FunctionID"),
+        QString("FunctionName"),
+        QString("ExecsList"),
+        QString("CmdValList"),
+        QString("UserTest"),
+        QString("Remark"),
+        QString("LinkText"),
+        QString("ComponentDependency"),
+        QString("AllComponents"),
+        QString("FunctionDependency"),
+        QString("PersistentFlag"),
+        QString("FaultProbability")
     };
 
     auto insertFunctionRow = [&](const QVariantMap &row) -> bool {
@@ -948,9 +948,9 @@ bool populateHydraulicPowerSystemData(QSqlDatabase &db, QString *errorMessage)
             return true;
         QStringList placeholders;
         for (int i = 0; i < insertColumns.size(); ++i)
-            placeholders.append(QStringLiteral("?"));
-        const QString sql = QStringLiteral("INSERT INTO Function (%1) VALUES (%2)")
-                                .arg(insertColumns.join(QStringLiteral(", ")), placeholders.join(QStringLiteral(", ")));
+            placeholders.append(QString("?"));
+        const QString sql = QString("INSERT INTO Function (%1) VALUES (%2)")
+                                .arg(insertColumns.join(QString(", ")), placeholders.join(QString(", ")));
         return prepareAndExec(query, sql, values, errorMessage);
     };
 
@@ -965,58 +965,58 @@ bool populateHydraulicPowerSystemData(QSqlDatabase &db, QString *errorMessage)
         return marks;
     };
 
-    QStringList solenoidMarks = gatherMarks(QStringLiteral("solenoid"), 6);
-    QStringList btMarks = gatherMarks(QStringLiteral("proportional_solenoid"), 4);
+    QStringList solenoidMarks = gatherMarks(QString("solenoid"), 6);
+    QStringList btMarks = gatherMarks(QString("proportional_solenoid"), 4);
     QStringList func1Components = solenoidMarks;
     func1Components.append(btMarks);
     QVariantMap func1;
-    func1.insert(QStringLiteral("FunctionID"), 1);
-    func1.insert(QStringLiteral("FunctionName"), QStringLiteral("液压泵站供油链路"));
-    func1.insert(QStringLiteral("ExecsList"), func1Components.join(QStringLiteral(",")));
-    func1.insert(QStringLiteral("CmdValList"), QStringLiteral("BT链路=调节;YV链路=导通"));
-    func1.insert(QStringLiteral("Remark"), QStringLiteral("泵站向1#~4#收放系统持续供油"));
-    func1.insert(QStringLiteral("LinkText"), QStringLiteral("液压泵站->执行机构"));
-    func1.insert(QStringLiteral("ComponentDependency"), func1Components.join(QStringLiteral(",")));
-    func1.insert(QStringLiteral("AllComponents"), func1Components.join(QStringLiteral(",")));
-    func1.insert(QStringLiteral("FunctionDependency"), QString());
-    func1.insert(QStringLiteral("PersistentFlag"), 1);
-    func1.insert(QStringLiteral("FaultProbability"), 0.025);
+    func1.insert(QString("FunctionID"), 1);
+    func1.insert(QString("FunctionName"), QString("液压泵站供油链路"));
+    func1.insert(QString("ExecsList"), func1Components.join(QString(",")));
+    func1.insert(QString("CmdValList"), QString("BT链路=调节;YV链路=导通"));
+    func1.insert(QString("Remark"), QString("泵站向1#~4#收放系统持续供油"));
+    func1.insert(QString("LinkText"), QString("液压泵站->执行机构"));
+    func1.insert(QString("ComponentDependency"), func1Components.join(QString(",")));
+    func1.insert(QString("AllComponents"), func1Components.join(QString(",")));
+    func1.insert(QString("FunctionDependency"), QString());
+    func1.insert(QString("PersistentFlag"), 1);
+    func1.insert(QString("FaultProbability"), 0.025);
 
-    QStringList relayMarks = gatherMarks(QStringLiteral("relay"), 6);
-    QStringList contactorMarks = gatherMarks(QStringLiteral("contactor"), 6);
-    QStringList plcMarks = gatherMarks(QStringLiteral("plc"), 4);
+    QStringList relayMarks = gatherMarks(QString("relay"), 6);
+    QStringList contactorMarks = gatherMarks(QString("contactor"), 6);
+    QStringList plcMarks = gatherMarks(QString("plc"), 4);
     QStringList func2Components = relayMarks;
     func2Components.append(contactorMarks);
     func2Components.append(plcMarks);
     QVariantMap func2;
-    func2.insert(QStringLiteral("FunctionID"), 2);
-    func2.insert(QStringLiteral("FunctionName"), QStringLiteral("控制柜冗余联锁"));
-    func2.insert(QStringLiteral("ExecsList"), func2Components.join(QStringLiteral(",")));
-    func2.insert(QStringLiteral("CmdValList"), QStringLiteral("PLC主备=互联;KM=闭合"));
-    func2.insert(QStringLiteral("Remark"), QStringLiteral("控制柜完成软启、加热和电机启动信号分配"));
-    func2.insert(QStringLiteral("LinkText"), QStringLiteral("控制柜->配电->泵站"));
-    func2.insert(QStringLiteral("ComponentDependency"), func2Components.join(QStringLiteral(",")));
-    func2.insert(QStringLiteral("AllComponents"), func2Components.join(QStringLiteral(",")));
-    func2.insert(QStringLiteral("FunctionDependency"), QStringLiteral("液压泵站供油链路"));
-    func2.insert(QStringLiteral("PersistentFlag"), 1);
-    func2.insert(QStringLiteral("FaultProbability"), 0.02);
+    func2.insert(QString("FunctionID"), 2);
+    func2.insert(QString("FunctionName"), QString("控制柜冗余联锁"));
+    func2.insert(QString("ExecsList"), func2Components.join(QString(",")));
+    func2.insert(QString("CmdValList"), QString("PLC主备=互联;KM=闭合"));
+    func2.insert(QString("Remark"), QString("控制柜完成软启、加热和电机启动信号分配"));
+    func2.insert(QString("LinkText"), QString("控制柜->配电->泵站"));
+    func2.insert(QString("ComponentDependency"), func2Components.join(QString(",")));
+    func2.insert(QString("AllComponents"), func2Components.join(QString(",")));
+    func2.insert(QString("FunctionDependency"), QString("液压泵站供油链路"));
+    func2.insert(QString("PersistentFlag"), 1);
+    func2.insert(QString("FaultProbability"), 0.02);
 
-    QStringList sqMarks = gatherMarks(QStringLiteral("switch_sensor"), 8);
-    QStringList saMarks = gatherMarks(QStringLiteral("analog_sensor"), 8);
+    QStringList sqMarks = gatherMarks(QString("switch_sensor"), 8);
+    QStringList saMarks = gatherMarks(QString("analog_sensor"), 8);
     QStringList func3Components = sqMarks;
     func3Components.append(saMarks);
     QVariantMap func3;
-    func3.insert(QStringLiteral("FunctionID"), 3);
-    func3.insert(QStringLiteral("FunctionName"), QStringLiteral("传感器网络监测"));
-    func3.insert(QStringLiteral("ExecsList"), func3Components.join(QStringLiteral(",")));
-    func3.insert(QStringLiteral("CmdValList"), QStringLiteral("液位/压力/温度=实时采集"));
-    func3.insert(QStringLiteral("Remark"), QStringLiteral("对污染度、水分、油品及液位进行监测"));
-    func3.insert(QStringLiteral("LinkText"), QStringLiteral("传感器->PLC->控制网"));
-    func3.insert(QStringLiteral("ComponentDependency"), func3Components.join(QStringLiteral(",")));
-    func3.insert(QStringLiteral("AllComponents"), func3Components.join(QStringLiteral(",")));
-    func3.insert(QStringLiteral("FunctionDependency"), QStringLiteral("控制柜冗余联锁"));
-    func3.insert(QStringLiteral("PersistentFlag"), 0);
-    func3.insert(QStringLiteral("FaultProbability"), 0.03);
+    func3.insert(QString("FunctionID"), 3);
+    func3.insert(QString("FunctionName"), QString("传感器网络监测"));
+    func3.insert(QString("ExecsList"), func3Components.join(QString(",")));
+    func3.insert(QString("CmdValList"), QString("液位/压力/温度=实时采集"));
+    func3.insert(QString("Remark"), QString("对污染度、水分、油品及液位进行监测"));
+    func3.insert(QString("LinkText"), QString("传感器->PLC->控制网"));
+    func3.insert(QString("ComponentDependency"), func3Components.join(QString(",")));
+    func3.insert(QString("AllComponents"), func3Components.join(QString(",")));
+    func3.insert(QString("FunctionDependency"), QString("控制柜冗余联锁"));
+    func3.insert(QString("PersistentFlag"), 0);
+    func3.insert(QString("FaultProbability"), 0.03);
 
     const QList<QVariantMap> functions = {func1, func2, func3};
     for (const QVariantMap &row : functions) {
