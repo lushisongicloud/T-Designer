@@ -1,0 +1,1190 @@
+﻿#include "mainwindow.h"
+#include "ui_mainwindow.h"
+QSqlDatabase  T_ProjectDatabase;
+MainWindow::MainWindow(QWidget *parent) :
+    QMainWindow(parent),
+    ui(new Ui::MainWindow)
+{
+
+    ui->setupUi(this);
+    formaxwidget *formMxdraw=new formaxwidget(this);
+    formMxdraw->CurFilePath="Drawing1.dwg";
+    formMxdraw->setWindowTitle(formMxdraw->CurFilePath);
+    ui->mdiArea->addSubWindow (formMxdraw) ;
+    ui->mdiArea->setViewMode(QMdiArea::TabbedView); //Tab多页显示模式
+    ui->mdiArea->setTabsClosable(true); //页面可关闭
+    InitNavigatorTree();
+    mAxWidget=new QAxWidget(("{74A777F8-7A8F-4E7C-AF47-7074828086E2}"));
+    dlgLoadSymbol=new DialogLoadSymbol(this);
+    dlgUnitManage=new DialogUnitManage(this);
+    //connect(dlgSymbolAttribute,SIGNAL(DialogIsClosed()),this,SLOT(SlotEditSymbolWndClosed()));
+    ui->treeViewPages->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(ui->treeViewPages,SIGNAL(customContextMenuRequested(QPoint)),this,SLOT(ShowPopMenu(QPoint)));
+    ui->treeViewUnits->viewport()->installEventFilter(this);
+    //ui->treeViewUnits->viewport()->setMouseTracking(true);
+}
+
+MainWindow::~MainWindow()
+{
+    delete ui;
+}
+void MainWindow::ShowPopMenu(const QPoint &pos)
+{
+qDebug()<<"ShowPopMenu";
+    if(!ui->treeViewPages->indexAt(pos).isValid()) return;
+    QMenu tree_menu;
+    tree_menu.clear();
+    //根据点击节点确定菜单内容
+qDebug()<<ui->treeViewPages->indexAt(pos).data(Qt::WhatsThisRole).toString();
+    if(ui->treeViewPages->indexAt(pos).data(Qt::WhatsThisRole).toString()=="项目")
+    {
+        QAction actNewDwgPage("新建页", this);
+        tree_menu.addAction(&actNewDwgPage);
+        connect(&actNewDwgPage,SIGNAL(triggered()),this,SLOT(NewDwgPage()));
+        QAction actProjectAttr("项目属性", this);
+        tree_menu.addAction(&actProjectAttr);
+        connect(&actProjectAttr,SIGNAL(triggered()),this,SLOT(ProjectAttr()));
+        tree_menu.exec(QCursor::pos());
+    }
+    else if((ui->treeViewPages->indexAt(pos).data(Qt::WhatsThisRole).toString()=="高层")||(ui->treeViewPages->indexAt(pos).data(Qt::WhatsThisRole).toString()=="位置"))
+    {
+        QAction actNewDwgPage("新建页", this);
+        tree_menu.addAction(&actNewDwgPage);
+        connect(&actNewDwgPage,SIGNAL(triggered()),this,SLOT(NewDwgPage()));
+        QAction actRename("重命名", this);
+        tree_menu.addAction(&actRename);
+        connect(&actRename,SIGNAL(triggered()),this,SLOT(Rename()));
+        QAction actDelDwgPage("删除", this);
+        tree_menu.addAction(&actDelDwgPage);
+        connect(&actDelDwgPage,SIGNAL(triggered()),this,SLOT(actSlotDelete()));
+        tree_menu.exec(QCursor::pos());
+    }
+    else if(ui->treeViewPages->indexAt(pos).data(Qt::WhatsThisRole).toString()=="图纸")
+    {
+        QAction actNewDwgPage("新建页", this);
+        tree_menu.addAction(&actNewDwgPage);
+        connect(&actNewDwgPage,SIGNAL(triggered()),this,SLOT(NewDwgPage()));
+        QAction actDwgPageAttr("页属性", this);
+        tree_menu.addAction(&actDwgPageAttr);
+        connect(&actDwgPageAttr,SIGNAL(triggered()),this,SLOT(DwgPageAttr()));
+        QAction actDelDwgPage("删除", this);
+        tree_menu.addAction(&actDelDwgPage);
+        connect(&actDelDwgPage,SIGNAL(triggered()),this,SLOT(actSlotDelete()));
+        tree_menu.exec(QCursor::pos());
+    }
+    else if(ui->treeViewPages->indexAt(pos).data(Qt::WhatsThisRole).toString()=="列表")
+    {
+        QAction actNewDwgPage("新建页", this);
+        tree_menu.addAction(&actNewDwgPage);
+        connect(&actNewDwgPage,SIGNAL(triggered()),this,SLOT(NewDwgPage()));
+        QAction actLBRename("重命名", this);
+        tree_menu.addAction(&actLBRename);
+        connect(&actLBRename,SIGNAL(triggered()),this,SLOT(Rename()));
+        QAction actDelLB("删除", this);
+        tree_menu.addAction(&actDelLB);
+        connect(&actDelLB,SIGNAL(triggered()),this,SLOT(actSlotDelete()));
+        tree_menu.exec(QCursor::pos());
+    }
+}
+void MainWindow::Rename()
+{
+    if(!ui->treeViewPages->currentIndex().isValid()) return;
+    QDialog *dialogNameEdit =new QDialog();
+    dialogNameEdit->setWindowTitle("重命名");
+    dialogNameEdit->setMinimumSize(QSize(300,60));
+    QFormLayout *formlayoutNameEdit = new QFormLayout(dialogNameEdit);
+    QLineEdit *m_LineEdit = new QLineEdit(dialogNameEdit);
+    m_LineEdit->setText(ui->treeViewPages->currentIndex().data(Qt::DisplayRole).toString());
+    QHBoxLayout *layoutBtn = new QHBoxLayout(nullptr);
+    QPushButton *pushbuttonOK = new QPushButton(dialogNameEdit);
+    pushbuttonOK->setText("确认");
+    QPushButton *pushbuttonCancel = new QPushButton(dialogNameEdit);
+    pushbuttonCancel->setText("取消");
+    layoutBtn->addWidget(pushbuttonOK);
+    layoutBtn->addWidget(pushbuttonCancel);
+    formlayoutNameEdit->addRow(m_LineEdit);
+    formlayoutNameEdit->addRow(layoutBtn);
+    QObject::connect(pushbuttonOK,SIGNAL(clicked()),dialogNameEdit,SLOT(accept()));
+
+    if(ui->treeViewPages->currentIndex().data(Qt::WhatsThisRole).toString()=="高层")
+    {
+        if (dialogNameEdit->exec()==QDialog::Accepted)
+        {
+            QSqlQuery query(T_ProjectDatabase);
+            QString tempSQL=QString("UPDATE ProjectStructure SET Structure_INT=:Structure_INT WHERE Structure_ID= '3' AND Structure_INT= '"+ui->treeViewPages->currentIndex().data(Qt::DisplayRole).toString()+"'");
+            query.prepare(tempSQL);
+            query.bindValue(":Structure_INT",m_LineEdit->text());
+            query.exec();
+        }
+    }
+    else if(ui->treeViewPages->currentIndex().data(Qt::WhatsThisRole).toString()=="位置")
+    {
+        if (dialogNameEdit->exec()==QDialog::Accepted)
+        {
+            if(ui->treeViewPages->currentIndex().parent().data(Qt::WhatsThisRole).toString()=="高层")
+            {
+                QSqlQuery query(T_ProjectDatabase);
+                QString sqlstr=QString("SELECT * FROM ProjectStructure WHERE Structure_ID = '5' AND Structure_INT = '"+ui->treeViewPages->currentIndex().data(Qt::DisplayRole).toString()+"'");
+                query.exec(sqlstr);
+                while(query.next())
+                {
+                    QSqlQuery query2(T_ProjectDatabase);
+                    sqlstr=QString("SELECT * FROM ProjectStructure WHERE ProjectStructure_ID = "+query.value("Parent_ID").toString());
+                    query2.exec(sqlstr);
+                    if(!query2.next()) continue;
+                    if(query2.value("Structure_INT").toString()==ui->treeViewPages->currentIndex().parent().data(Qt::DisplayRole).toString())
+                    {
+                        QString tempSQL=QString("UPDATE ProjectStructure SET Structure_INT=:Structure_INT WHERE ProjectStructure_ID = "+query.value("ProjectStructure_ID").toString());
+                        query.prepare(tempSQL);
+                        query.bindValue(":Structure_INT",m_LineEdit->text());
+                        query.exec();
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                QSqlQuery query(T_ProjectDatabase);
+                QString tempSQL=QString("UPDATE ProjectStructure SET Structure_INT=:Structure_INT WHERE Structure_ID = '5' AND Structure_INT = '"+ui->treeViewPages->currentIndex().data(Qt::DisplayRole).toString()+"'");
+                query.prepare(tempSQL);
+                query.bindValue(":Structure_INT",m_LineEdit->text());
+                query.exec();
+            }
+        }
+    }
+    else if(ui->treeViewPages->currentIndex().data(Qt::WhatsThisRole).toString()=="列表")
+    {
+        if (dialogNameEdit->exec()==QDialog::Accepted)
+        {
+            QSqlQuery query(T_ProjectDatabase);
+            QString tempSQL=QString("UPDATE ProjectStructure SET Structure_INT=:Structure_INT WHERE ProjectStructure_ID = "+QString::number(ui->treeViewPages->currentIndex().data(Qt::UserRole).toInt()));
+            query.prepare(tempSQL);
+            query.bindValue(":Structure_INT",m_LineEdit->text());
+            query.exec();
+        }
+    }
+    LoadProjectPages();
+}
+void MainWindow::actSlotDelete()
+{
+    if(!ui->treeViewPages->currentIndex().isValid()) return;
+
+    QMessageBox::StandardButton result=QMessageBox::warning(nullptr,QString::fromLocal8Bit("Warning"),"是否确认删除?",
+                                QMessageBox::Yes|QMessageBox::No,QMessageBox::NoButton);
+
+    if(result!=QMessageBox::Yes)
+    {
+        return;
+    }
+
+    if(ui->treeViewPages->currentIndex().data(Qt::WhatsThisRole).toString()=="图纸")
+    {
+        int Page_ID=ui->treeViewPages->currentIndex().data(Qt::UserRole).toInt();
+        QSqlQuery query=QSqlQuery(T_ProjectDatabase);
+        QString temp =  QString("DELETE FROM Page WHERE Page_ID="+QString::number(Page_ID));
+        query.exec(temp);
+    }
+    else if(ui->treeViewPages->currentIndex().data(Qt::WhatsThisRole).toString()=="列表")
+    {
+        QSqlQuery query=QSqlQuery(T_ProjectDatabase);
+        QString temp =  QString("DELETE FROM Page WHERE ProjectStructure_ID='"+QString::number(ui->treeViewPages->currentIndex().data(Qt::UserRole).toInt())+"'");
+        query.exec(temp);
+        temp =  QString("DELETE FROM ProjectStructure WHERE ProjectStructure_ID="+QString::number(ui->treeViewPages->currentIndex().data(Qt::UserRole).toInt()));
+        query.exec(temp);
+    }
+    else if(ui->treeViewPages->currentIndex().data(Qt::WhatsThisRole).toString()=="位置")
+    {
+        QSqlQuery query(T_ProjectDatabase);
+        if(ui->treeViewPages->currentIndex().parent().data(Qt::WhatsThisRole).toString()=="高层")
+        {
+            QString sqlstr=QString("SELECT * FROM ProjectStructure WHERE Structure_ID = '5' AND Structure_INT = '"+ui->treeViewPages->currentIndex().data(Qt::DisplayRole).toString()+"'");
+            query.exec(sqlstr);
+            while(query.next())
+            {
+                QSqlQuery queryGaoceng(T_ProjectDatabase);
+                sqlstr=QString("SELECT * FROM ProjectStructure WHERE Structure_ID = '3' AND ProjectStructure_ID = "+query.value("Parent_ID").toString());
+                queryGaoceng.exec(sqlstr);
+                if(!queryGaoceng.next()) continue;
+                if(queryGaoceng.value("Structure_INT").toString()==ui->treeViewPages->currentIndex().parent().data(Qt::DisplayRole).toString())
+                {
+                    int ProjectStructure_ID=ui->treeViewPages->currentIndex().data(Qt::UserRole).toInt();
+                    QSqlQuery querydel(T_ProjectDatabase);
+                    QString temp =  QString("DELETE FROM Page WHERE ProjectStructure_ID='"+QString::number(ProjectStructure_ID)+"'");
+                    querydel.exec(temp);
+                    temp =  QString("DELETE FROM ProjectStructure WHERE ProjectStructure_ID="+QString::number(ProjectStructure_ID));//page
+                    querydel.exec(temp);
+                    temp =  QString("DELETE FROM ProjectStructure WHERE ProjectStructure_ID="+QString::number(query.value("ProjectStructure_ID").toInt()));//位置
+                    querydel.exec(temp);
+                    temp =  QString("DELETE FROM ProjectStructure WHERE ProjectStructure_ID="+QString::number(queryGaoceng.value("ProjectStructure_ID").toInt()));//高层
+                    querydel.exec(temp);
+                }
+            }
+        }
+
+    }
+    else if(ui->treeViewPages->currentIndex().data(Qt::WhatsThisRole).toString()=="高层")
+    {
+        QSqlQuery queryGaoceng(T_ProjectDatabase);
+        QString sqlstr=QString("SELECT * FROM ProjectStructure WHERE Structure_ID = '3' AND Structure_INT = '"+ui->treeViewPages->currentIndex().data(Qt::DisplayRole).toString()+"'");
+        queryGaoceng.exec(sqlstr);
+        while(queryGaoceng.next())
+        {
+            QSqlQuery queryPos(T_ProjectDatabase);
+            sqlstr=QString("SELECT * FROM ProjectStructure WHERE Structure_ID = '5' AND Parent_ID = '"+queryGaoceng.value("ProjectStructure_ID").toString()+"'");
+            queryPos.exec(sqlstr);
+            while(queryPos.next())
+            {
+                QSqlQuery queryPage(T_ProjectDatabase);
+                sqlstr=QString("SELECT * FROM ProjectStructure WHERE Structure_ID = '6' AND Parent_ID = '"+queryPos.value("ProjectStructure_ID").toString()+"'");
+                queryPage.exec(sqlstr);
+                while(queryPage.next())
+                {
+                    QSqlQuery querydel(T_ProjectDatabase);
+                    QString temp =  QString("DELETE FROM Page WHERE ProjectStructure_ID='"+QString::number(queryPage.value("ProjectStructure_ID").toInt())+"'");
+                    querydel.exec(temp);
+                    temp =  QString("DELETE FROM ProjectStructure WHERE ProjectStructure_ID="+QString::number(queryPage.value("ProjectStructure_ID").toInt()));//page
+                    querydel.exec(temp);
+                    temp =  QString("DELETE FROM ProjectStructure WHERE ProjectStructure_ID="+QString::number(queryPos.value("ProjectStructure_ID").toInt()));//位置
+                    querydel.exec(temp);
+                    temp =  QString("DELETE FROM ProjectStructure WHERE ProjectStructure_ID="+QString::number(queryGaoceng.value("ProjectStructure_ID").toInt()));//高层
+                    querydel.exec(temp);
+                }
+            }
+        }
+    }
+    LoadProjectPages();
+}
+void MainWindow::DwgPageAttr()
+{
+    if(ui->treeViewPages->currentIndex().data(Qt::WhatsThisRole).toString()!="图纸") return;
+    DialogPageAttr *dlg=new DialogPageAttr(this);
+    dlg->Mode=2;//modify page
+
+    //根据节点确定dwg文件初始名称
+    dlg->Page_ID=ui->treeViewPages->currentIndex().data(Qt::UserRole).toInt();
+    dlg->LoadPageInfo();
+    dlg->setModal(true);
+    dlg->show();
+    dlg->exec();
+    if(!dlg->Canceled)
+    {
+        //更新treeview
+        LoadProjectPages();
+    }
+}
+QString MainWindow::CreateUnusedFileName(QString CurSelectPageName,QString ProjectStructure_ID)
+{
+    //在当前选中文件名的基础上加1，如果该文件存在，则新文件名为数字.a,.b,以此类推
+    QString NumStr="";
+    CurSelectPageName=CurSelectPageName.split(" ").at(0);
+    for(int i=0;i<CurSelectPageName.count();i++)
+    {
+        if((CurSelectPageName.at(i)>='0')&&(CurSelectPageName.at(i)<='9')) NumStr+=CurSelectPageName.at(i);
+    }
+    int NewStr;
+    if(NumStr!="")  NewStr=NumStr.toInt()+1;
+    else
+    {
+        NewStr=1;
+    }
+    QSqlQuery QueryVar = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
+    QString temp = QString("SELECT * FROM Page WHERE ProjectStructure_ID = '"+ProjectStructure_ID+"'");
+    QueryVar.exec(temp);
+    bool Existed=false;
+    while(QueryVar.next())
+    {qDebug()<<"get value PageName";
+        if(QueryVar.value("PageName").toString()==QString::number(NewStr))
+        {
+            Existed=true;
+            break;
+        }
+    }
+    if(Existed)
+    {
+        QueryVar.first();
+        QueryVar.previous();
+        Existed=false;
+        while(QueryVar.next())
+        {
+            if(QueryVar.value("PageName").toString()==(QString::number(NewStr)+".a"))
+            {
+                Existed=true;break;
+            }
+        }
+        if(!Existed) return  QString::number(NewStr)+".a";
+        else
+        {
+            QueryVar.first();
+            QueryVar.previous();
+            Existed=false;
+            while(QueryVar.next())
+            {
+                if(QueryVar.value("PageName").toString()==(QString::number(NewStr)+".b"))
+                {
+                    Existed=true;break;
+                }
+            }
+            if(!Existed) return  QString::number(NewStr)+".b";
+            else
+            {
+                QueryVar.first();
+                QueryVar.previous();
+                Existed=false;
+                while(QueryVar.next())
+                {
+                    if(QueryVar.value("PageName").toString()==(QString::number(NewStr)+".c"))
+                    {
+                        Existed=true;break;
+                    }
+                }
+                if(!Existed) return  QString::number(NewStr)+".c";
+            }
+        }
+    }
+    else
+    {
+       return  QString::number(NewStr);
+    }
+    return CurSelectPageName+".abc";
+}
+void MainWindow::NewDwgPage()
+{
+    //根据选择节点的位置确定新建图纸的名称
+    QString PageName="";
+    if(ui->treeViewPages->currentIndex().data(Qt::WhatsThisRole).toString()=="图纸")
+    {
+       //如果选择的节点是图纸，则查看节点data中的Page_ID，检索数据库得到对应的page名称和ProjectStructure_ID，根据ProjectStructure_ID在ProjectStructure中检索对应的高层和位置信息
+       int Page_ID=ui->treeViewPages->currentIndex().data(Qt::UserRole).toInt();
+       QSqlQuery QueryVar = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
+       QString temp = QString("SELECT * FROM Page WHERE Page_ID = "+QString::number(Page_ID));
+       QueryVar.exec(temp);
+       if(!QueryVar.next()) return;
+       QString ProjectStructure_ID=QueryVar.value("ProjectStructure_ID").toString();
+       QSqlQuery QueryPage = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
+       temp = QString("SELECT * FROM ProjectStructure WHERE ProjectStructure_ID = "+ProjectStructure_ID);
+       QueryPage.exec(temp);
+       if(!QueryPage.next()) return;
+
+       QSqlQuery QueryPos = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
+       temp = QString("SELECT * FROM ProjectStructure WHERE ProjectStructure_ID = "+QueryPage.value("Parent_ID").toString());
+       QueryPos.exec(temp);
+       if(!QueryPos.next()) return;
+       QSqlQuery QueryGaoceng = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
+       temp = QString("SELECT * FROM ProjectStructure WHERE ProjectStructure_ID = "+QueryPos.value("Parent_ID").toString());
+       QueryGaoceng.exec(temp);
+       if(!QueryGaoceng.next()) return;
+       if(QueryGaoceng.value("Structure_INT").toString()!="") PageName+="="+QueryGaoceng.value("Structure_INT").toString();
+       if(QueryPos.value("Structure_INT").toString()!="") PageName+="+"+QueryPos.value("Structure_INT").toString();
+       if(QueryPage.value("Structure_INT").toString()!="") PageName+="&"+QueryPage.value("Structure_INT").toString();
+       PageName+="·"+CreateUnusedFileName(ui->treeViewPages->currentIndex().data(Qt::DisplayRole).toString(),ProjectStructure_ID);
+    }
+    else if(ui->treeViewPages->currentIndex().data(Qt::WhatsThisRole).toString()=="列表")
+    {
+        //如果选择的节点是列表，则查看节点data中的ProjectStructure_ID，据此得到对应的高层和位置信息
+        QSqlQuery QueryLB = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
+        int ProjectStructure_ID=ui->treeViewPages->currentIndex().data(Qt::UserRole).toInt();
+        QString temp = QString("SELECT * FROM ProjectStructure WHERE ProjectStructure_ID = "+QString::number(ProjectStructure_ID));
+        QueryLB.exec(temp);
+        if(!QueryLB.next()) return;
+        QSqlQuery QueryPos = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
+        temp = QString("SELECT * FROM ProjectStructure WHERE ProjectStructure_ID = "+QueryLB.value("Parent_ID").toString());
+        QueryPos.exec(temp);
+        if(!QueryPos.next()) return;
+        QSqlQuery QueryGaoceng = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
+        temp = QString("SELECT * FROM ProjectStructure WHERE ProjectStructure_ID = "+QueryPos.value("Parent_ID").toString());
+        QueryGaoceng.exec(temp);
+        if(!QueryGaoceng.next()) return;
+        if(QueryGaoceng.value("Structure_INT").toString()!="") PageName+="="+QueryGaoceng.value("Structure_INT").toString();
+        if(QueryPos.value("Structure_INT").toString()!="") PageName+="+"+QueryPos.value("Structure_INT").toString();
+        if(QueryLB.value("Structure_INT").toString()!="") PageName+="&"+QueryLB.value("Structure_INT").toString();
+        PageName+="·"+CreateUnusedFileName("",QString::number(ProjectStructure_ID));
+    }
+    else if(ui->treeViewPages->currentIndex().data(Qt::WhatsThisRole).toString()=="位置")
+    {
+       //如果选择的节点是位置，在该位置下创建图纸
+       if(ui->treeViewPages->currentIndex().parent().data(Qt::WhatsThisRole).toString()=="高层")
+       {
+           PageName+="="+ui->treeViewPages->currentIndex().parent().data(Qt::DisplayRole).toString();
+       }
+       PageName+="+"+ui->treeViewPages->currentIndex().data(Qt::DisplayRole).toString();
+       PageName+="·"+CreateUnusedFileName("",QString::number(ui->treeViewPages->currentIndex().data(Qt::UserRole).toInt()));
+    }
+    else if(ui->treeViewPages->currentIndex().data(Qt::WhatsThisRole).toString()=="高层")
+    {
+       //如果选择的节点是高层，选择高层下第一个位置创建图纸
+       PageName+="="+ui->treeViewPages->currentIndex().data(Qt::DisplayRole).toString();
+       if(ModelPages->itemFromIndex(ui->treeViewPages->currentIndex())->rowCount()>0)
+       {
+           if(ui->treeViewPages->currentIndex().child(0,0).data(Qt::WhatsThisRole).toString()=="位置")
+           {
+               PageName+="+"+ui->treeViewPages->currentIndex().child(0,0).data(Qt::DisplayRole).toString();
+               PageName+="·"+CreateUnusedFileName("",QString::number(ui->treeViewPages->currentIndex().child(0,0).data(Qt::UserRole).toInt()));
+           }
+           else if(ui->treeViewPages->currentIndex().child(0,0).data(Qt::WhatsThisRole).toString()=="列表")
+           {
+               PageName+="&"+ui->treeViewPages->currentIndex().child(0,0).data(Qt::DisplayRole).toString();
+               PageName+="·"+CreateUnusedFileName("",QString::number(ui->treeViewPages->currentIndex().child(0,0).data(Qt::UserRole).toInt()));
+           }
+           else if(ui->treeViewPages->currentIndex().child(0,0).data(Qt::WhatsThisRole).toString()=="图纸")
+           {
+               PageName+="·"+CreateUnusedFileName("",QString::number(ui->treeViewPages->currentIndex().data(Qt::UserRole).toInt()));
+           }
+       }
+    }
+    else if(ui->treeViewPages->currentIndex().data(Qt::WhatsThisRole).toString()=="项目")
+    {
+       if(ModelPages->itemFromIndex(ui->treeViewPages->currentIndex())->rowCount()>0)
+       {
+ qDebug()<<"WhatsThisRole"<<ui->treeViewPages->currentIndex().child(0,0).data(Qt::WhatsThisRole).toString();
+           if(ui->treeViewPages->currentIndex().child(0,0).data(Qt::WhatsThisRole).toString()=="图纸")
+               PageName+="·"+CreateUnusedFileName("",QString::number(ui->treeViewPages->currentIndex().data(Qt::UserRole).toInt()));
+           else if(ui->treeViewPages->currentIndex().child(0,0).data(Qt::WhatsThisRole).toString()=="位置")
+           {
+               PageName+="+"+ui->treeViewPages->currentIndex().child(0,0).data(Qt::DisplayRole).toString();
+               PageName+="·"+CreateUnusedFileName("",QString::number(ui->treeViewPages->currentIndex().child(0,0).data(Qt::UserRole).toInt()));
+           }
+           else if(ui->treeViewPages->currentIndex().child(0,0).data(Qt::WhatsThisRole).toString()=="高层")
+           {
+               PageName+="="+ui->treeViewPages->currentIndex().child(0,0).data(Qt::DisplayRole).toString();
+               if(ModelPages->itemFromIndex(ui->treeViewPages->currentIndex().child(0,0))->rowCount()>0)
+               {
+                   if(ui->treeViewPages->currentIndex().child(0,0).child(0,0).data(Qt::WhatsThisRole).toString()=="位置")
+                   {
+                       PageName+="+"+ui->treeViewPages->currentIndex().child(0,0).child(0,0).data(Qt::DisplayRole).toString();
+                       PageName+="·"+CreateUnusedFileName("",QString::number(ui->treeViewPages->currentIndex().child(0,0).child(0,0).data(Qt::UserRole).toInt()));
+                   }
+                   else if(ui->treeViewPages->currentIndex().child(0,0).child(0,0).data(Qt::WhatsThisRole).toString()=="列表")
+                   {
+                       PageName+="&"+ui->treeViewPages->currentIndex().child(0,0).child(0,0).data(Qt::DisplayRole).toString();
+                       PageName+="·"+CreateUnusedFileName("",QString::number(ui->treeViewPages->currentIndex().child(0,0).child(0,0).data(Qt::UserRole).toInt()));
+                   }
+                   else if(ui->treeViewPages->currentIndex().child(0,0).child(0,0).data(Qt::WhatsThisRole).toString()=="图纸")
+                   {
+                       PageName+="·"+CreateUnusedFileName("",QString::number(ui->treeViewPages->currentIndex().child(0,0).data(Qt::UserRole).toInt()));
+                   }
+               }
+           }
+       }
+       else
+       {
+           PageName+="·"+CreateUnusedFileName("",QString::number(ui->treeViewPages->currentIndex().data(Qt::UserRole).toInt()));
+       }
+    }
+
+    DialogPageAttr *dlg=new DialogPageAttr(this);
+    dlg->Mode=1;//add page
+
+    //根据节点确定dwg文件初始名称
+    dlg->PageInitName=PageName;
+    dlg->SetPageName();
+    dlg->LoadPageInfo();
+    dlg->setModal(true);
+    dlg->show();
+    dlg->exec();
+    if(!dlg->Canceled)
+    {
+        //创建新的mdi
+        formaxwidget *formMxdraw=new formaxwidget(this,CurProjectPath+"/"+dlg->PageInitName+".dwg");
+        formMxdraw->setWindowTitle(dlg->PageInitName);
+        QMdiSubWindow *mdisubwindow= ui->mdiArea->addSubWindow (formMxdraw) ;
+        formMxdraw->mdisubwindow=mdisubwindow;
+        connect(formMxdraw,SIGNAL(SignalCloseMdiWnd()),this,SLOT(CloseMdiWnd()));
+        //更新treeview
+        LoadProjectPages();
+
+    }
+}
+
+void MainWindow::InitNavigatorTree()
+{
+    ModelPages = new QStandardItemModel(ui->treeViewPages);
+    ui->treeViewPages->header()->setVisible(false);
+    ui->treeViewPages->setColumnWidth(0,50);
+    ui->treeViewPages->setModel(ModelPages);
+
+    ModelUnits = new QStandardItemModel(ui->treeViewUnits);
+    ui->treeViewUnits->header()->setVisible(false);
+    ui->treeViewUnits->setColumnWidth(0,50);
+    ui->treeViewUnits->setModel(ModelUnits);
+}
+void MainWindow::LoadProjectUnits()
+{
+    ModelUnits->clear();
+    QSqlQuery QueryVar = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
+    QString temp = QString("SELECT Structure_INT FROM ProjectStructure WHERE Structure_ID = '1'");
+    QueryVar.exec(temp);
+    if(!QueryVar.next()) return;
+    QStandardItem *fatherItem;
+    fatherItem= new QStandardItem(QIcon("C:/TBD/data/项目图标.png"),QueryVar.value(0).toString());
+    fatherItem->setData(QVariant("项目"),Qt::WhatsThisRole);
+    ModelUnits->appendRow(fatherItem);
+    //在Equipment表中检索元件
+    QSqlQuery QueryEquipment = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
+    temp = QString("SELECT * FROM Equipment ORDER BY DT");
+    QueryEquipment.exec(temp);
+    while(QueryEquipment.next())
+    {
+        QString ProjectStructure_ID=QueryEquipment.value("ProjectStructure_ID").toString();
+        int Equipment_ID=QueryEquipment.value("Equipment_ID").toInt();
+        QString UnitTag=QueryEquipment.value("DT").toString();
+        QString UnitType=QueryEquipment.value("Type").toString();
+        QString UnitName=QueryEquipment.value("Name").toString();
+qDebug()<<"ProjectStructure_ID="<<ProjectStructure_ID<<" Equipment_ID="<<Equipment_ID<<" UnitTag="<<UnitTag<<" UnitType="<<UnitType<<" UnitName="<<UnitName;
+        //根据ProjectStructure_ID在ProjectStructure表中查找元件所处位置
+        QSqlQuery QueryPos = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
+        temp = QString("SELECT * FROM ProjectStructure WHERE ProjectStructure_ID="+ProjectStructure_ID);
+        QueryPos.exec(temp);
+        if(!QueryPos.next()) continue;
+        QString PosStr=QueryPos.value("Structure_INT").toString();
+qDebug()<<"PosStr="<<PosStr;
+        //查找对应的高层
+        QSqlQuery QueryGaoceng = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
+        temp = QString("SELECT * FROM ProjectStructure WHERE ProjectStructure_ID="+QueryPos.value("Parent_ID").toString());
+        QueryGaoceng.exec(temp);
+        if(!QueryGaoceng.next()) continue;
+        QString UnitNodeStr;
+        UnitNodeStr+="="+QueryGaoceng.value("Structure_INT").toString();
+        UnitNodeStr+="-"+UnitTag;
+        if(UnitType!="") UnitNodeStr+="("+UnitType;
+        if(UnitName!="") UnitNodeStr+=","+UnitName;
+        UnitNodeStr+=")";
+qDebug()<<"UnitNodeStr="<<UnitNodeStr;
+        //在treeViewUnits中查看位置是否存在，不存在则新增位置节点
+        bool PosNodeExist=false;
+        QStandardItem *PosNodeItem;
+        for(int i=0;i<ModelUnits->item(0,0)->rowCount();i++)
+        {
+            if(ModelUnits->item(0,0)->child(i,0)->data(Qt::DisplayRole).toString()==PosStr)
+            {
+               PosNodeExist=true;
+               PosNodeItem=ModelUnits->item(0,0)->child(i,0);
+               break;
+            }
+        }
+        if(!PosNodeExist) //新增位置节点
+        {
+            PosNodeItem=new QStandardItem(QIcon("C:/TBD/data/位置图标.png"),PosStr);
+            PosNodeItem->setData(QVariant("位置"),Qt::WhatsThisRole);
+            PosNodeItem->setData(QVariant(ProjectStructure_ID.toInt()),Qt::UserRole);
+            fatherItem->appendRow(PosNodeItem);
+        }
+        if(PosNodeItem==nullptr) continue;      
+        //在位置节点下插入元件
+        QStandardItem *UnitItem=new QStandardItem(QIcon("C:/TBD/data/元件图标.png"),UnitNodeStr);
+        UnitItem->setData(QVariant("元件"),Qt::WhatsThisRole);
+        UnitItem->setData(QVariant(Equipment_ID),Qt::UserRole);
+        PosNodeItem->appendRow(UnitItem);
+        //在元件节点下插入所有的逻辑支路,在Symbol表中检索与元件关联的所有支路
+        QSqlQuery QuerySymbol = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
+        temp = QString("SELECT * FROM Symbol WHERE Equipment_ID = '"+QString::number(Equipment_ID)+"'");
+        QuerySymbol.exec(temp);
+        while(QuerySymbol.next())
+        {
+            QStandardItem *UnitSpurItem;
+            QString UnitSpurStr;
+            int Symbol_ID=QuerySymbol.value("Symbol_ID").toInt();
+            //在Symb2TermInfo表中查找Symbol_ID对应的支路端点
+            QSqlQuery QueryTermInfo = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
+            temp = QString("SELECT * FROM Symb2TermInfo WHERE Symbol_ID = '"+QString::number(Symbol_ID)+"'");
+            QueryTermInfo.exec(temp);
+            if(QuerySymbol.value("Designation").toString()!="") UnitSpurStr+=QuerySymbol.value("Designation").toString()+":";
+            bool FirstConnNum=true;
+            while(QueryTermInfo.next())
+            {
+                if(FirstConnNum) UnitSpurStr+= QueryTermInfo.value("ConnNum").toString();
+                else UnitSpurStr+= " ￤ "+QueryTermInfo.value("ConnNum").toString();
+                FirstConnNum=false;
+            }
+            //根据Symbol_Handle是否存在确定逻辑支路图标和文字
+            if(QuerySymbol.value("Symbol_Handle").toString()!="")//
+            {
+                //根据实际支路插入的位置
+                //得到支路实际放置的图纸位置名称
+                UnitSpurStr+="("+GetPageNameByPageID(QuerySymbol.value("Page_ID").toString().toInt())+")";
+                UnitSpurStr+=QuerySymbol.value("FunDefine").toString();
+                UnitSpurItem=new QStandardItem(QIcon("C:/TBD/data/逻辑支路图标_已插入.png"),UnitSpurStr);
+            }
+            else
+            {
+                UnitSpurStr+="-"+QuerySymbol.value("FunDefine").toString();
+                UnitSpurItem=new QStandardItem(QIcon("C:/TBD/data/逻辑支路图标_未插入.png"),UnitSpurStr);
+            }
+            UnitSpurItem->setData(QVariant("逻辑支路"),Qt::WhatsThisRole);
+            UnitSpurItem->setData(QVariant(QuerySymbol.value("Symbol_ID").toString()),Qt::UserRole);
+            UnitSpurItem->setFlags(UnitSpurItem->flags()|Qt::ItemIsDragEnabled);
+            UnitItem->appendRow(UnitSpurItem);
+        }
+    }
+}
+void MainWindow::LoadProjectPages()
+{
+    ModelPages->clear();
+    QSqlQuery QueryVar = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
+    QString temp = QString("SELECT Structure_INT FROM ProjectStructure WHERE Structure_ID = '1'");
+    QueryVar.exec(temp);
+    if(!QueryVar.next()) return;
+    QStandardItem *fatherItem;
+    fatherItem= new QStandardItem(QIcon("C:/TBD/data/项目图标.png"),QueryVar.value(0).toString());
+    fatherItem->setData(QVariant("项目"),Qt::WhatsThisRole);
+    ModelPages->appendRow(fatherItem);
+
+    QSqlQuery QueryVarPage = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
+    temp = QString("SELECT * FROM ProjectStructure WHERE Structure_ID = '6'");
+    QueryVarPage.exec(temp);
+    while(QueryVarPage.next())
+    {
+        //if(QueryVarPage.value("Structure_INT").toString()!="") continue;
+        QString PosRecordID=QueryVarPage.value("Parent_ID").toString();
+        QSqlQuery QueryVar2 = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
+        temp = QString("SELECT * FROM ProjectStructure WHERE ProjectStructure_ID = "+PosRecordID);
+        QueryVar2.exec(temp);
+        if(!QueryVar2.next()) return;
+        QString GaoCengRecordID=QueryVar2.value("Parent_ID").toString();
+        QSqlQuery QueryVar3 = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
+        temp = QString("SELECT * FROM ProjectStructure WHERE ProjectStructure_ID = "+GaoCengRecordID);
+        QueryVar3.exec(temp);
+        if(!QueryVar3.next()) return;
+        //查看高层节点是否存在，若不存在则新建,若存在则添加位置信息
+        bool GaocengExist=false;
+        //如果高层代号非空，则先检索高层代号节点是否存在；如果高层代号为空，则检索位置代号节点是否存在
+        if(QueryVar3.value("Structure_INT").toString()!="")//高层代号非空，则先检索高层代号节点是否存在
+        {
+            for(int i=0;i<ModelPages->item(0,0)->rowCount();i++)
+            {
+                if(ModelPages->item(0,0)->child(i,0)->data(Qt::DisplayRole).toString()==QueryVar3.value("Structure_INT").toString())//高层存在，添加位置信息
+                {
+                    bool PosExist=false;
+                    //在高层代号非空的前提下，如果位置代号非空，则检索位置代号是否存在；
+                    if(QueryVar2.value("Structure_INT").toString()!="")//位置信息非空
+                    {
+                        for(int j=0;j<ModelPages->item(0,0)->child(i,0)->rowCount();j++)
+                        {
+                            if(ModelPages->item(0,0)->child(i,0)->child(j,0)->data(Qt::DisplayRole).toString()==QueryVar2.value("Structure_INT").toString())//位置信息存在
+                            {
+                                if(QueryVarPage.value("Structure_INT").toString()!="")
+                                {
+                                    AddIndexToIndex(ModelPages->item(0,0)->child(i,0)->child(j,0),QueryVarPage,true,"列表");
+                                }
+                                PosExist=true;
+                                break;
+                            }
+                        }
+                        if(!PosExist)//位置信息不存在
+                        {
+                            QStandardItem *SubSubFatherItem;
+                            SubSubFatherItem=new QStandardItem(QIcon("C:/TBD/data/位置图标.png"),QueryVar2.value("Structure_INT").toString());
+                            SubSubFatherItem->setData(QVariant("位置"),Qt::WhatsThisRole);
+                            if(QueryVarPage.value("Structure_INT").toString()=="")
+                                SubSubFatherItem->setData(QVariant(QueryVarPage.value("ProjectStructure_ID").toInt()),Qt::UserRole);
+                            else
+                            {
+                                AddIndexToIndex(SubSubFatherItem,QueryVarPage,true,"列表");
+                            }
+                            ModelPages->item(0,0)->child(i,0)->appendRow(SubSubFatherItem);
+                        }
+                    }
+                    else//位置信息为空，直接添加列表图标
+                    {
+                        if(QueryVarPage.value("Structure_INT").toString()!="")
+                        {
+                            AddIndexToIndex(ModelPages->item(0,0)->child(i,0),QueryVarPage,true,"列表");
+                        }
+                        else
+                        {
+                            ModelPages->item(0,0)->child(i,0)->setData(QVariant(QueryVarPage.value("ProjectStructure_ID").toInt()),Qt::UserRole);
+                        }
+                    }
+                    GaocengExist=true;
+                    break;
+                }
+            }
+            if(!GaocengExist)//高层不存在,添加高层信息和位置信息
+            {
+                QStandardItem *SubFatherItem=new QStandardItem(QIcon("C:/TBD/data/高层图标.png"),QueryVar3.value("Structure_INT").toString());
+                SubFatherItem->setData(QVariant("高层"),Qt::WhatsThisRole);
+                ModelPages->item(0,0)->appendRow(SubFatherItem);
+                if(QueryVar2.value("Structure_INT").toString()!="")//位置信息非空
+                {
+                    QStandardItem *SubSubFatherItem=new QStandardItem(QIcon("C:/TBD/data/位置图标.png"),QueryVar2.value("Structure_INT").toString());
+                    SubSubFatherItem->setData(QVariant("位置"),Qt::WhatsThisRole);
+                    if(QueryVarPage.value("Structure_INT").toString()=="")//非表报
+                        SubSubFatherItem->setData(QVariant(QueryVarPage.value("ProjectStructure_ID").toInt()),Qt::UserRole);
+                    else
+                    {
+                        AddIndexToIndex(SubSubFatherItem,QueryVarPage,true,"列表");
+                    }
+                    SubFatherItem->appendRow(SubSubFatherItem);
+                }
+                else//位置信息为空，直接添加列表节点
+                {
+                    if(QueryVarPage.value("Structure_INT").toString()=="")//非表报
+                        SubFatherItem->setData(QVariant(QueryVarPage.value("ProjectStructure_ID").toInt()),Qt::UserRole);
+                    else
+                    {
+                        AddIndexToIndex(SubFatherItem,QueryVarPage,true,"列表");
+                    }
+
+                }
+            }
+        }
+        else//高层代号为空，直接添加位置节点
+        {
+            bool PosExist=false;
+            //在高层代号非空的前提下，如果位置代号非空，则检索位置代号是否存在；
+            if(QueryVar2.value("Structure_INT").toString()!="")//位置信息非空
+            {
+                for(int j=0;j<ModelPages->item(0,0)->rowCount();j++)
+                {
+                    if(ModelPages->item(0,0)->child(j,0)->data(Qt::DisplayRole).toString()==QueryVar2.value("Structure_INT").toString())//位置信息存在
+                    {
+                        if(QueryVarPage.value("Structure_INT").toString()!="")
+                        {
+                            AddIndexToIndex(ModelPages->item(0,0)->child(j,0),QueryVarPage,true,"列表");
+                        }
+                        PosExist=true;
+                        break;
+                    }
+                }
+                if(!PosExist)//位置信息不存在
+                {
+                    QStandardItem *SubFatherItem;
+                    SubFatherItem=new QStandardItem(QIcon("C:/TBD/data/位置图标.png"),QueryVar2.value("Structure_INT").toString());
+                    SubFatherItem->setData(QVariant("位置"),Qt::WhatsThisRole);
+                    if(QueryVarPage.value("Structure_INT").toString()=="")
+                        SubFatherItem->setData(QVariant(QueryVarPage.value("ProjectStructure_ID").toInt()),Qt::UserRole);
+                    else
+                    {
+                        AddIndexToIndex(SubFatherItem,QueryVarPage,true,"列表");
+                    }
+                    ModelPages->item(0,0)->appendRow(SubFatherItem);
+                }
+            }
+            else//位置信息为空，直接添加列表图标
+            {
+                if(QueryVarPage.value("Structure_INT").toString()!="")
+                {
+                    AddIndexToIndex(ModelPages->item(0,0),QueryVarPage,true,"列表");
+                }
+                else
+                {
+                    fatherItem->setData(QVariant(QueryVarPage.value("ProjectStructure_ID").toInt()),Qt::UserRole);
+                }
+            }
+        }
+    }
+
+
+    //从table Page载入Pages
+    temp = QString("SELECT * FROM Page ORDER BY Page_ID ASC");
+    QueryVar.exec(temp);
+    while(QueryVar.next())
+    {
+       //在树节点中查找对应的位置节点
+       bool Find=false;
+       if(ModelPages->item(0,0)->data(Qt::UserRole).toInt()==QueryVar.value("ProjectStructure_ID").toInt())
+       {
+           AddDwgFileToIndex(ModelPages->item(0,0),QueryVar);
+           continue;
+       }
+       for(int i=0;i<ModelPages->item(0,0)->rowCount();i++)
+       {
+           //确认当前节点是是高层还是位置还是列表
+           if(ModelPages->item(0,0)->child(i,0)->data(Qt::WhatsThisRole).toString()=="高层")
+           {
+               if(ModelPages->item(0,0)->child(i,0)->data(Qt::UserRole).toInt()==QueryVar.value("ProjectStructure_ID").toInt())
+               {
+                   AddDwgFileToIndex(ModelPages->item(0,0)->child(i,0),QueryVar);
+                   break;
+               }
+               for(int j=0;j<ModelPages->item(0,0)->child(i,0)->rowCount();j++)
+               {
+                  //确认当前节点是位置还是列表
+                  if(ModelPages->item(0,0)->child(i,0)->child(j,0)->data(Qt::WhatsThisRole).toString()=="位置")
+                  {
+                      if(ModelPages->item(0,0)->child(i,0)->child(j,0)->data(Qt::UserRole).toInt()==QueryVar.value("ProjectStructure_ID").toInt())
+                      {
+                          AddDwgFileToIndex(ModelPages->item(0,0)->child(i,0)->child(j,0),QueryVar);
+                          Find=true;
+                          break;
+                      }
+                      if(ModelPages->item(0,0)->child(i,0)->child(j,0)->rowCount()<=0) continue;
+                      for(int k=0;k<ModelPages->item(0,0)->child(i,0)->child(j,0)->rowCount();k++)
+                      {
+                          if(ModelPages->item(0,0)->child(i,0)->child(j,0)->child(k,0)->data(Qt::WhatsThisRole).toString()!="列表") continue;
+                          if(ModelPages->item(0,0)->child(i,0)->child(j,0)->child(k,0)->data(Qt::UserRole).toInt()==QueryVar.value("ProjectStructure_ID").toInt())
+                          {
+                              AddDwgFileToIndex(ModelPages->item(0,0)->child(i,0)->child(j,0)->child(k,0),QueryVar);
+                              Find=true;
+                              break;
+                          }
+                      }
+                  }
+                  else if(ModelPages->item(0,0)->child(i,0)->child(j,0)->data(Qt::WhatsThisRole).toString()=="列表")//当前节点是列表
+                  {
+                      if(ModelPages->item(0,0)->child(i,0)->child(j,0)->data(Qt::UserRole).toInt()==QueryVar.value("ProjectStructure_ID").toInt())
+                      {
+                          AddDwgFileToIndex(ModelPages->item(0,0)->child(i,0)->child(j,0),QueryVar);
+                          Find=true;
+                          break;
+                      }
+                  }
+               }
+           }
+           else if(ModelPages->item(0,0)->child(i,0)->data(Qt::WhatsThisRole).toString()=="位置")
+           {
+               if(ModelPages->item(0,0)->child(i,0)->data(Qt::UserRole).toInt()==QueryVar.value("ProjectStructure_ID").toInt())
+               {
+                   AddDwgFileToIndex(ModelPages->item(0,0)->child(i,0),QueryVar);
+                   Find=true;
+                   break;
+               }
+               if(ModelPages->item(0,0)->child(i,0)->rowCount()<=0) continue;
+               for(int k=0;k<ModelPages->item(0,0)->child(i,0)->rowCount();k++)
+               {
+                   if(ModelPages->item(0,0)->child(i,0)->child(k,0)->data(Qt::WhatsThisRole).toString()!="列表") continue;
+                   if(ModelPages->item(0,0)->child(i,0)->child(k,0)->data(Qt::UserRole).toInt()==QueryVar.value("ProjectStructure_ID").toInt())
+                   {
+                       AddDwgFileToIndex(ModelPages->item(0,0)->child(i,0)->child(k,0),QueryVar);
+                       Find=true;
+                       break;
+                   }
+               }
+           }
+           else if(ModelPages->item(0,0)->child(i,0)->data(Qt::WhatsThisRole).toString()=="列表")
+           {
+               if(ModelPages->item(0,0)->child(i,0)->data(Qt::UserRole).toInt()==QueryVar.value("ProjectStructure_ID").toInt())
+               {
+                   AddDwgFileToIndex(ModelPages->item(0,0)->child(i,0),QueryVar);
+                   Find=true;
+                   break;
+               }
+           }
+           if(Find) break;
+       }     
+    }
+    //删除没有图纸的报表节点
+    for(int i=0;i<ModelPages->item(0,0)->rowCount();i++)//高层
+    {
+        for(int j=0;j<ModelPages->item(0,0)->child(i,0)->rowCount();j++)//位置
+        {
+           for(int k=0;k<ModelPages->item(0,0)->child(i,0)->child(j,0)->rowCount();k++)//列表
+           {
+               if(ModelPages->item(0,0)->child(i,0)->child(j,0)->child(k,0)->data(Qt::WhatsThisRole).toString()=="列表")
+               {
+                   if(ModelPages->item(0,0)->child(i,0)->child(j,0)->child(k,0)->rowCount()<=0)
+                   {
+                       ModelPages->item(0,0)->child(i,0)->child(j,0)->removeRow(k);
+                       k=k-1;
+                       continue;
+                   }
+               }
+           }
+        }
+    }
+    for(int i=0;i<ModelPages->item(0,0)->rowCount();i++)
+    {
+        for(int j=0;j<ModelPages->item(0,0)->child(i,0)->rowCount();j++)
+        {
+            if(ModelPages->item(0,0)->child(i,0)->child(j,0)->rowCount()<=0)
+            {
+                if(ModelPages->item(0,0)->child(i,0)->child(j,0)->data(Qt::WhatsThisRole).toString()!="图纸")
+                {
+                    ModelPages->item(0,0)->child(i,0)->removeRow(j);
+                    j=j-1;
+                    continue;
+                }
+            }
+        }
+    }
+    for(int i=0;i<ModelPages->item(0,0)->rowCount();i++)
+    {
+        if(ModelPages->item(0,0)->child(i,0)->rowCount()<=0)
+        {
+            if(ModelPages->item(0,0)->child(i,0)->data(Qt::WhatsThisRole).toString()!="图纸")
+            {
+               ModelPages->item(0,0)->removeRow(i);i=i-1;continue;
+            }
+        }
+    }
+    ui->treeViewPages->expand(ModelPages->indexFromItem(fatherItem));
+}
+void MainWindow::AddIndexToIndex(QStandardItem *FatherItem,QSqlQuery query,bool AddProjectStructure_ID,QString Type)
+{
+    QStandardItem *SubItem;
+    if(Type=="列表") SubItem=new QStandardItem(QIcon("C:/TBD/data/列表图标.png"),query.value("Structure_INT").toString());
+    else if(Type=="位置") SubItem=new QStandardItem(QIcon("C:/TBD/data/位置图标.png"),query.value("Structure_INT").toString());
+    else if(Type=="高层") SubItem=new QStandardItem(QIcon("C:/TBD/data/高层图标.png"),query.value("Structure_INT").toString());
+    else if(Type=="项目") SubItem=new QStandardItem(QIcon("C:/TBD/data/项目图标.png"),query.value("Structure_INT").toString());
+
+    if(AddProjectStructure_ID)  SubItem->setData(QVariant(query.value("ProjectStructure_ID").toInt()),Qt::UserRole);
+    SubItem->setData(QVariant(Type),Qt::WhatsThisRole);
+    FatherItem->appendRow(SubItem);
+}
+void MainWindow::AddDwgFileToIndex(QStandardItem *item,QSqlQuery query)
+{
+    QStandardItem *SubFatherItem=new QStandardItem(QIcon("C:/TBD/data/dwg图标.png"),query.value("PageName").toString()+" "+query.value("Page_Desc").toString());
+    //图纸名称：PageName.dwg
+    SubFatherItem->setData(QVariant("图纸"),Qt::WhatsThisRole);
+    SubFatherItem->setData(QVariant(query.value("Page_ID").toInt()),Qt::UserRole);
+    //添加到报表前面去
+    int InsertRowIndex=-1;
+    for(int k=0;k<item->rowCount();k++)
+    {
+        if(item->child(k,0)->data(Qt::WhatsThisRole).toString()=="列表")
+        {
+            InsertRowIndex=k;
+            break;
+        }
+    }
+    if(InsertRowIndex>=0) item->insertRow(InsertRowIndex,SubFatherItem);
+    else item->appendRow(SubFatherItem);
+}
+void MainWindow::on_BtnNavigatorShow_clicked()
+{
+    ui->widgetNavigator->setVisible(true);
+}
+
+void MainWindow::on_BtnCloseNavigator_clicked()
+{
+    ui->widgetNavigator->setVisible(false);
+}
+
+void MainWindow::on_BtnNewProject_clicked()
+{
+    //建立后缀名为.tbPro的文本文件
+    DialogNewProject *dlgNewProject=new DialogNewProject(this);
+    dlgNewProject->move(QApplication::desktop()->screenGeometry().width()/2-dlgNewProject->width()/2,QApplication::desktop()->screenGeometry().height()/2-dlgNewProject->height()/2);
+    dlgNewProject->setModal(true);
+    dlgNewProject->show();
+    dlgNewProject->exec();
+    if(dlgNewProject->Canceled) return;
+    //dlgNewProject->ProjectPath,ProjectName
+    CurProjectName=dlgNewProject->ProjectName;
+    CurProjectPath=dlgNewProject->ProjectPath;
+    LoadProject();
+    delete dlgNewProject;
+}
+
+void MainWindow::LoadProject()
+{
+    qDebug()<<"CurProjectName"<<CurProjectName;
+    T_ProjectDatabase = QSqlDatabase::addDatabase("QSQLITE",CurProjectName);
+    QFile  File(CurProjectPath+"/"+CurProjectName+".db");
+    if(!File.exists()){
+            QMessageBox::warning(nullptr, "错误", "数据库文件不存在",
+                                 QMessageBox::Ok,QMessageBox::NoButton);
+            return ;
+    }
+    else
+        T_ProjectDatabase.setDatabaseName(CurProjectPath+"/"+CurProjectName+".db");
+    if (!T_ProjectDatabase.open()){
+        QMessageBox::warning(nullptr, "错误", "打开数据库失败",
+                             QMessageBox::Ok,QMessageBox::NoButton);
+        return ;
+    }
+    LoadProjectPages();
+    LoadProjectUnits();
+}
+
+void MainWindow::on_BtnOpenProject_clicked()
+{
+    QFileDialog fileDialog(this);
+    fileDialog.setWindowTitle(tr("打开文件"));
+    fileDialog.setDirectory(LocalProjectDefaultPath);
+    fileDialog.setNameFilter(tr("tbPro(*.tbPro)"));
+    // fileDialog->setFileMode(QFileDialog::ExistingFiles);
+    fileDialog.setViewMode(QFileDialog::Detail);
+    if (!fileDialog.exec()) return;
+    QStringList fileNames=fileDialog.selectedFiles();
+    QFile SelectedFilePath(fileNames.at(0));
+    if(!SelectedFilePath.open(QIODevice::ReadOnly|QIODevice::Text))  return;
+    QTextStream txtInput(&SelectedFilePath);
+    CurProjectName=txtInput.readLine().toUtf8();
+    SelectedFilePath.close();
+
+    int Index=fileNames.at(0).lastIndexOf("/");
+    CurProjectPath=fileNames.at(0).mid(0,Index);
+
+    LoadProject();
+}
+void MainWindow::CloseMdiWnd()
+{
+    formaxwidget *dlg=(formaxwidget *)sender();
+    dlg->mdisubwindow->close();
+}
+//单击鼠标左键预览图纸，双击鼠标左键打开图纸
+void MainWindow::on_treeViewPages_doubleClicked(const QModelIndex &index)
+{
+    if(!index.isValid()) return;
+    if(index.data(Qt::WhatsThisRole).toString()!="图纸") return;
+    int Page_ID=index.data(Qt::UserRole).toInt();
+    QString dwgfilename=GetPageNameByPageID(Page_ID);
+    QString dwgfilepath=CurProjectPath+"/"+dwgfilename+".dwg";
+    QFile dwgfile(dwgfilepath);
+    if(!dwgfile.exists()) return;
+    //查看是否已经打开改图纸
+    for(int i=0;i<ui->mdiArea->subWindowList().count();i++)
+    {
+       if(ui->mdiArea->subWindowList().at(i)->windowTitle()==dwgfilename) return;
+    }
+    //创建新的mdi
+    formaxwidget *formMxdraw=new formaxwidget(this,dwgfilepath);
+    formMxdraw->setWindowTitle(dwgfilename);
+    QMdiSubWindow *mdisubwindow= ui->mdiArea->addSubWindow (formMxdraw) ;
+    formMxdraw->mdisubwindow=mdisubwindow;
+    connect(formMxdraw,SIGNAL(SignalCloseMdiWnd()),this,SLOT(CloseMdiWnd()));
+}
+
+void MainWindow::on_treeViewPages_clicked(const QModelIndex &index)
+{
+    if(!index.isValid()) return;
+    if(index.data(Qt::WhatsThisRole).toString()!="图纸") return;
+    int Page_ID=index.data(Qt::UserRole).toInt();
+    QString dwgfilename=GetPageNameByPageID(Page_ID);
+
+    QString path=CurProjectPath+"/"+dwgfilename+".dwg";
+    QFileInfo file(path);
+    if(!file.exists()) return;
+
+/*
+    MxDrawService MyService;
+    MyService.Open(path);
+    MyService.WriteJpg("C:/Users/hzny/AppData/Local/Temp/TempJpg.jpg",2500,0);
+    MyService.Close();
+    QPixmap p;
+    p=QPixmap("C:/Users/hzny/AppData/Local/Temp/TempJpg.jpg");
+    ui->LbPreView->setStyleSheet("background-color: rgb(0, 0, 0)");
+    ui->LbPreView->setScaledContents(false);
+    ui->LbPreView->setFrameShape(QFrame::Panel);
+    ui->LbPreView->setFrameShadow(QFrame::Sunken);
+    ui->LbPreView->setLineWidth(3);
+    ui->LbPreView->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Fixed);
+    ui->LbPreView->setPixmap(p.scaled(ui->LbPreView->width()-8,ui->LbPreView->width()-8));
+
+    return;
+    //qlonglong lId = mAxWidget->dynamicCall("GetMxDrawXId()").toLongLong();
+    //IMxDrawResbuf *resp=(IMxDrawResbuf *)ui->axWidgetPreview->querySubObject("NewResbuf()");
+    //resp->AddObjectId(lId);
+    //ui->axWidgetPreview->dynamicCall("CallEx(const QString&,QVariant)","Mx_CreateDsView", resp->asVariant());
+
+
+    return;
+    */
+    MxDrawApplication *App=new MxDrawApplication();
+    IMxDrawApplication *pApp=(IMxDrawApplication*)App;
+    IMxDrawResbuf *ret =pApp->Call("Mx_GetPreviewBmpFile",path);
+    QString sPrveiewFile=ret->AtString(1);
+    //QString sPrveiewFile=(QString)pApp->querySubObject("Call(const QString&,QVariant)","Mx_GetPreviewBmpFile",path);
+    //QString sPrveiewFile=pApp->dynamicCall("Mx_GetPreviewBmpFile(QString)",path).toString();
+    qDebug()<<sPrveiewFile;
+
+    QPixmap p;
+    p=QPixmap(sPrveiewFile);
+    ui->LbPreView->setStyleSheet("background-color: rgb(0, 0, 0)");
+    ui->LbPreView->setScaledContents(false);
+    ui->LbPreView->setFrameShape(QFrame::Panel);
+    ui->LbPreView->setFrameShadow(QFrame::Sunken);
+    ui->LbPreView->setLineWidth(3);
+    ui->LbPreView->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Fixed);
+    ui->LbPreView->setPixmap(p.scaled(ui->LbPreView->width()-8,ui->LbPreView->height()-8));
+    ui->LbPreView->setText(dwgfilename);
+}
+
+void MainWindow::on_Btn_SymbolLoad_clicked()
+{
+    dlgLoadSymbol->Canceled=true;
+    dlgLoadSymbol->move(this->width()-dlgLoadSymbol->width()-20,50);
+    dlgLoadSymbol->show();
+    //QApplication::processEvents();
+    dlgLoadSymbol->exec();
+    if(dlgLoadSymbol->Canceled) return;
+    if(dlgLoadSymbol->RetCode!=3)  return;//载入当前符号
+
+    formaxwidget *formMdi;
+    if (ui->mdiArea->subWindowList().count()>0) //如果有打开的主窗口，获取活动窗口
+    {
+        formMdi=(formaxwidget*)ui->mdiArea->activeSubWindow()->widget();
+        if(formMdi==nullptr) return;
+        formMdi->SymbolLoad(dlgLoadSymbol->BlockFileName);
+    }
+}
+
+void MainWindow::on_BtnSymbolBaseManage_clicked()
+{
+    DialogSymbols *dlg=new DialogSymbols(this);
+    dlg->setModal(true);
+    dlg->exec();
+    if(dlg->Canceled) {delete dlg;return;}
+    //qDebug()<<"dlg->RetCode="<<dlg->RetCode;
+    if(dlg->RetCode==1) //修改符号
+    {
+        //创建新的mdi
+        formaxwidget *formMxdraw=new formaxwidget(this);
+        formMxdraw->setWindowTitle(dlg->BlockFileName);
+        connect(formMxdraw,SIGNAL(SignalCloseMdiWnd()),this,SLOT(CloseMdiWnd()));
+        QMdiSubWindow *mdisubwindow= ui->mdiArea->addSubWindow (formMxdraw) ;
+        formMxdraw->mdisubwindow=mdisubwindow;
+        formMxdraw->SymbolName=dlg->BlockFileName;
+        formMxdraw->DataBaseSymbolID=dlg->SymbolID;
+        formMxdraw->SymbolType=dlg->SymbolType;
+        formMxdraw->EditSymbol();
+    }
+    delete dlg;
+}
+
+void MainWindow::on_BtnOtherSaveDwgFile_clicked()
+{
+    formaxwidget *formMdi;
+    if (ui->mdiArea->subWindowList().count()>0) //如果有打开的主窗口，获取活动窗口
+    {
+        formMdi=(formaxwidget*)ui->mdiArea->activeSubWindow()->widget();
+        if(formMdi==nullptr) return;
+        formMdi->EditSaveDwgFile();
+    }
+}
+
+void MainWindow::on_BtnLocalDB_clicked()
+{
+
+    dlgUnitManage->show();
+    //dlgUnitManage->showMaximized();
+    QApplication::processEvents();
+}
+
+void MainWindow::mouseMoveEvent(QMouseEvent *event)
+{
+   qDebug()<<"mouseMoveEvent";
+}
+
+bool MainWindow::eventFilter(QObject *obj, QEvent *e)
+{
+    //return QWidget::eventFilter(obj,e);
+    if (obj == ui->treeViewUnits->viewport())
+    {
+        if (e->type() == QEvent::MouseMove){
+            if(ui->treeViewUnits->currentIndex().isValid())
+            {
+                if(ui->treeViewUnits->currentIndex().data(Qt::WhatsThisRole).toString()=="逻辑支路")
+                {
+                    if (ui->mdiArea->subWindowList().count()>0) //如果有打开的主窗口，获取活动窗口
+                    {
+                        formaxwidget *formMdi;
+                        formMdi=(formaxwidget*)ui->mdiArea->activeSubWindow()->widget();
+                        if(formMdi!=nullptr)
+                        {
+                            //确定当前活动窗口的图纸是否为本项目图纸
+                            QString PageName=CurProjectPath+"/"+formMdi->windowTitle()+".dwg";
+                            QFileInfo file(PageName);
+                            if(!file.exists()) QMessageBox::warning(nullptr, "提示", "该图纸不属于当前项目，请打开项目图纸！");
+                            else
+                            {
+                               formMdi->LoadSymbolSpur(ui->treeViewUnits->currentIndex().data(Qt::us).toString());
+                            }
+                        }
+                    }
+                }
+            }        
+        }
+    }
+    return QWidget::eventFilter(obj,e);
+}

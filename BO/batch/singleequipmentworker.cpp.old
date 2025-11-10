@@ -1,0 +1,486 @@
+#include "singleequipmentworker.h"
+#include "../ai/tmodelautogenerator.h"
+#include <QDateTime>
+#include <QRegularExpression>
+#include <QDebug>
+
+SingleEquipmentWorker::SingleEquipmentWorker(const QSqlDatabase &db, const EquipmentInputData &inputData, QObject *parent)
+    : QObject(parent)
+    , m_db(db)
+    , m_inputData(inputData)
+    , m_generator(nullptr)
+{
+    // 初始化结果
+    m_result.equipmentId = m_inputData.equipmentId;
+    m_result.code = m_inputData.code;
+    m_result.name = m_inputData.name;
+    m_result.categoryName = m_inputData.categoryName;
+    m_result.status = EquipmentProcessResult::Failed;
+    m_result.elapsedSeconds = 0;
+}
+
+SingleEquipmentWorker::~SingleEquipmentWorker()
+{
+    if (m_generator) {
+        m_generator->deleteLater();
+    }
+}
+
+void SingleEquipmentWorker::process()
+{
+    m_timer.start();
+    log(QString("========== 开始处理: %1 (%2) ==========")
+        .arg(m_inputData.code, m_inputData.name));
+    
+    // 检查是否有有效端号
+    if (m_inputData.ports.isEmpty()) {
+        log("器件无有效端号，跳过处理");
+        m_result.status = EquipmentProcessResult::NoPorts;
+        m_result.errorMessage = "无有效端号";
+        m_result.elapsedSeconds = m_timer.elapsed() / 1000;
+        emit finished(m_result);
+        return;
+    }
+    
+    log(QString("输入数据: 端口数=%1, 已配置端口数=%2")
+        .arg(m_inputData.ports.size())
+        .arg(m_inputData.portConfigs.size()));
+    
+    // 创建 TModelAutoGenerator
+    m_generator = new TModelAutoGenerator(m_db, m_inputData.equipmentId, this);
+    
+    // 设置为批量模式（不操作UI）
+    m_generator->setBatchMode(true);
+    
+    // 设置日志输出（禁用文件日志，只通过信号输出）
+    m_generator->setLogFileOverride("", false);  // 空路径表示不写文件
+    
+    // 预加载端口和配置
+    m_generator->setPreloadedPorts(m_inputData.ports);
+    
+    // 连接信号
+    connect(m_generator, &TModelAutoGenerator::logLine,
+            this, &SingleEquipmentWorker::onGeneratorLogLine);
+    connect(m_generator, &TModelAutoGenerator::componentFinished,
+            this, &SingleEquipmentWorker::onGeneratorFinished);
+    connect(m_generator, &TModelAutoGenerator::constantsExtracted,
+            this, &SingleEquipmentWorker::onConstantsExtracted);
+    connect(m_generator, &TModelAutoGenerator::modelGenerated,
+            this, &SingleEquipmentWorker::onModelGenerated);
+    
+    // 开始生成
+    log("启动 TModelAutoGenerator...");
+    m_generator->startAutoGeneration();
+}
+
+
+
+void SingleEquipmentWorker::startPortTypeIdentification()
+{
+    m_currentStage = Stage_PortType;
+    m_pendingPorts.clear();
+    
+    // 检查哪些端口还没有类型配置
+    for (const auto &p : m_inputData.ports) {
+        QString key = p.first + "." + p.second;
+        if (!m_inputData.portConfigs.contains(key) || 
+            m_inputData.portConfigs.value(key).portType.trimmed().isEmpty()) {
+            m_pendingPorts.append(p);
+        }
+    }
+    
+    if (m_pendingPorts.isEmpty()) {
+        log("所有端口已配置类型，跳过端口类型识别");
+        startModelGeneration();
+        return;
+    }
+    
+    log(QString("开始端口类型识别... 待识别端口: %1 个").arg(m_pendingPorts.size()));
+    
+    QString systemPrompt = "你是一个器件端口类型识别助手。\n"
+        "端口类型枚举: electric(电气), hydraulic(液压), mechanical(机械)。\n"
+        "根据器件描述与端口名称，补全为空的端口类型。\n"
+        "输出: 仅 JSON {\"ports\": [ {functionBlock, portName, portType}, ... ] }，只包含本轮新识别条目。\n"
+        "不要输出解释、空数组或重复已有类型。";
+    
+    QString userPrompt = buildPortTypePrompt();
+    
+    log("=== DeepSeek 请求（端口类型识别） ===");
+    
+    // 调用 DeepSeek API
+    m_deepseekClient->chatCompletion(systemPrompt, userPrompt, true);
+}
+
+void SingleEquipmentWorker::startModelGeneration()
+{
+    m_currentStage = Stage_ModelGen;
+    log("开始T模型生成...");
+    
+    QString systemPrompt = "你是一个元器件T模型（SMT-LIB2格式）生成专家。\n"
+        "根据器件分类、代号、名称、端口定义（含类型与变量），生成完整的SMT-LIB2约束。\n"
+        "输出: 仅返回 JSON {\"tmodel\": \"...(declare-const ...)...\"}\n"
+        "T模型需包含: 1) 端口变量声明 2) 正常模式约束 3) 故障模式约束（至少一个）\n"
+        "变量命名: 设备代号.功能块.端号.变量名 (如 KA1.Coil.A1.i)\n"
+        "不要输出解释或注释。";
+    
+    QString userPrompt = buildModelPrompt();
+    
+    log("=== DeepSeek 请求（T模型生成） ===");
+    
+    // 调用 DeepSeek API
+    m_deepseekClient->chatCompletion(systemPrompt, userPrompt, true);
+}
+
+void SingleEquipmentWorker::log(const QString &message)
+{
+    QString timestamped = QString("[%1] %2")
+        .arg(QDateTime::currentDateTime().toString("HH:mm:ss"))
+        .arg(message);
+    emit logMessage(timestamped);
+}
+
+QString SingleEquipmentWorker::getDefaultVariables(const QString &portType) const
+{
+    if (portType == "electric") return "i,u";
+    else if (portType == "hydraulic") return "p,q";
+    else if (portType == "mechanical") return "F,x";
+    return "";
+}
+
+QString SingleEquipmentWorker::getDefaultMacro(const QString &portType) const
+{
+    if (portType == "electric") return "electric-connect";
+    else if (portType == "hydraulic") return "hydraulic-connect";
+    else if (portType == "mechanical") return "mechanical-connect";
+    return "";
+}
+
+void SingleEquipmentWorker::onAIResponseComplete(const QString &reasoning, 
+                                                  const QString &content)
+{
+    log("=== DeepSeek 响应 ===");
+    log("推理过程: " + reasoning);
+    log("内容: " + content);
+    
+    if (m_currentStage == Stage_PortType) {
+        parsePortTypeResponse(content);
+    } else if (m_currentStage == Stage_ModelGen) {
+        parseModelResponse(content);
+    }
+}
+
+void SingleEquipmentWorker::onAIError(const QString &error)
+{
+    log("AI错误: " + error);
+    
+    if (m_retryCount < MAX_RETRIES) {
+        m_retryCount++;
+        log(QString("重试 %1/%2").arg(m_retryCount).arg(MAX_RETRIES));
+        // 重试当前阶段
+        if (m_currentStage == Stage_PortType) {
+            startPortTypeIdentification();
+        } else if (m_currentStage == Stage_ModelGen) {
+            startModelGeneration();
+        }
+        return;
+    }
+    
+    // 重试次数用尽，返回失败
+    EquipmentProcessResult result;
+    result.equipmentId = m_inputData.equipmentId;
+    result.code = m_inputData.code;
+    result.name = m_inputData.name;
+    result.categoryName = m_inputData.categoryName;
+    result.status = EquipmentProcessResult::Failed;
+    result.errorMessage = error;
+    result.elapsedSeconds = m_timer.elapsed() / 1000;
+    
+    emit finished(result);
+}
+
+void SingleEquipmentWorker::parsePortTypeResponse(const QString &jsonContent)
+{
+    QJsonParseError error;
+    QJsonDocument doc = QJsonDocument::fromJson(jsonContent.toUtf8(), &error);
+    
+    if (error.error != QJsonParseError::NoError) {
+        log("解析端口类型响应失败: " + error.errorString());
+        onAIError("JSON解析失败: " + error.errorString());
+        return;
+    }
+    
+    QJsonObject root = doc.object();
+    if (!root.contains("ports") || !root["ports"].isArray()) {
+        log("响应缺少 ports 数组");
+        onAIError("响应格式错误：缺少ports数组");
+        return;
+    }
+    
+    QJsonArray ports = root["ports"].toArray();
+    int updatedCount = 0;
+    
+    for (const auto &item : ports) {
+        QJsonObject portObj = item.toObject();
+        QString funcBlock = portObj["functionBlock"].toString().trimmed();
+        QString portName = portObj["portName"].toString().trimmed();
+        QString portType = portObj["portType"].toString().trimmed();
+        
+        if (funcBlock.isEmpty() || portName.isEmpty() || portType.isEmpty()) {
+            continue;
+        }
+        
+        QString key = funcBlock + "." + portName;
+        
+        // 验证是否是待识别的端口
+        bool found = false;
+        for (const auto &p : m_pendingPorts) {
+            if (p.first == funcBlock && p.second == portName) {
+                found = true;
+                break;
+            }
+        }
+        
+        if (!found) {
+            log(QString("警告: 端口 %1 不在待识别列表中，跳过").arg(key));
+            continue;
+        }
+        
+        // 更新端口配置
+        PortTypeConfig config;
+        config.functionBlock = funcBlock;
+        config.portName = portName;
+        config.portType = portType;
+        config.variables = getDefaultVariables(portType);
+        config.connectMacro = getDefaultMacro(portType);
+        
+        m_result.updatedPortConfigs[key] = config;
+        updatedCount++;
+        
+        log(QString("识别端口类型: %1 -> %2").arg(key).arg(portType));
+    }
+    
+    log(QString("端口类型识别完成，更新 %1 个端口").arg(updatedCount));
+    
+    // 继续模型生成
+    startModelGeneration();
+}
+
+void SingleEquipmentWorker::parseModelResponse(const QString &jsonContent)
+{
+    QJsonParseError error;
+    QJsonDocument doc = QJsonDocument::fromJson(jsonContent.toUtf8(), &error);
+    
+    if (error.error != QJsonParseError::NoError) {
+        log("解析模型响应失败: " + error.errorString());
+        onAIError("JSON解析失败: " + error.errorString());
+        return;
+    }
+    
+    QJsonObject root = doc.object();
+    if (!root.contains("tmodel") || !root["tmodel"].isString()) {
+        log("响应缺少 tmodel 字段");
+        onAIError("响应格式错误：缺少tmodel字段");
+        return;
+    }
+    
+    QString tmodel = root["tmodel"].toString().trimmed();
+    
+    if (tmodel.isEmpty()) {
+        log("T模型为空");
+        onAIError("生成的T模型为空");
+        return;
+    }
+    
+    log("收到T模型，长度: " + QString::number(tmodel.length()));
+    
+    // 校验T模型
+    QString validationError;
+    if (!validateTModel(tmodel, validationError)) {
+        log("T模型校验失败: " + validationError);
+        
+        if (m_retryCount < MAX_RETRIES) {
+            m_retryCount++;
+            log(QString("重新生成模型 %1/%2").arg(m_retryCount).arg(MAX_RETRIES));
+            startModelGeneration();
+            return;
+        }
+        
+        onAIError("T模型校验失败: " + validationError);
+        return;
+    }
+    
+    log("T模型校验通过");
+    
+    // 设置结果（包含端口配置）
+    m_result.equipmentId = m_inputData.equipmentId;
+    m_result.code = m_inputData.code;
+    m_result.name = m_inputData.name;
+    m_result.categoryName = m_inputData.categoryName;
+    m_result.status = EquipmentProcessResult::Success;
+    m_result.tmodel = tmodel;
+    m_result.elapsedSeconds = m_timer.elapsed() / 1000;
+    
+    // m_result.updatedPortConfigs 在 parsePortTypeResponse 中已经填充，这里无需额外处理
+    
+    log(QString("处理完成，耗时 %1 秒").arg(m_result.elapsedSeconds));
+    log(QString("更新的端口配置数量: %1").arg(m_result.updatedPortConfigs.size()));
+    
+    emit finished(m_result);
+}
+
+QString SingleEquipmentWorker::buildPortTypePrompt()
+{
+    QJsonObject root;
+    root["category"] = m_inputData.categoryName;
+    root["equipmentCode"] = m_inputData.code;
+    root["equipmentName"] = m_inputData.name;
+    
+    QJsonArray existingArray;
+    for (const auto &p : m_inputData.ports) {
+        QString key = p.first + "." + p.second;
+        QString portType = m_inputData.portConfigs.value(key).portType;
+        
+        QJsonObject portObj;
+        portObj["functionBlock"] = p.first;
+        portObj["portName"] = p.second;
+        if (!portType.trimmed().isEmpty()) {
+            portObj["portType"] = portType;
+        }
+        existingArray.append(portObj);
+    }
+    root["existingPorts"] = existingArray;
+    
+    QJsonDocument doc(root);
+    return QString::fromUtf8(doc.toJson(QJsonDocument::Indented));
+}
+
+QString SingleEquipmentWorker::buildModelPrompt()
+{
+    QJsonObject root;
+    root["category"] = m_inputData.categoryName;
+    root["equipmentCode"] = m_inputData.code;
+    root["equipmentName"] = m_inputData.name;
+    
+    // 构建端口配置（包含类型）
+    QJsonArray portsArray;
+    for (const auto &p : m_inputData.ports) {
+        QString key = p.first + "." + p.second;
+        
+        // 优先使用新识别的类型
+        PortTypeConfig config;
+        if (m_result.updatedPortConfigs.contains(key)) {
+            config = m_result.updatedPortConfigs[key];
+        } else if (m_inputData.portConfigs.contains(key)) {
+            config = m_inputData.portConfigs[key];
+        }
+        
+        QJsonObject portObj;
+        portObj["functionBlock"] = p.first;
+        portObj["portName"] = p.second;
+        portObj["portType"] = config.portType;
+        portObj["variables"] = config.variables;
+        
+        portsArray.append(portObj);
+    }
+    root["ports"] = portsArray;
+    
+    QJsonDocument doc(root);
+    return QString::fromUtf8(doc.toJson(QJsonDocument::Indented));
+}
+
+bool SingleEquipmentWorker::validateTModel(const QString &tmodel, QString &errorMsg)
+{
+    // 复用 DialogUnitManage::performTModelValidation() 的校验逻辑
+    // 但不操作UI，只返回校验结果
+    
+    auto makePortKey = [](const QString &functionBlock, const QString &portName) -> QString {
+        const QString block = functionBlock.trimmed();
+        const QString port = portName.trimmed();
+        if (port.isEmpty())
+            return QString();
+        if (block.isEmpty())
+            return port;
+        return QString("%1.%2").arg(block, port);
+    };
+    
+    // 1. 准备校验上下文
+    TModelValidationContext context;
+    context.componentName = m_inputData.code.isEmpty() ? "COMPONENT" : m_inputData.code;
+    // 注意：批量模式不处理常量和故障模式概率，这些由单器件模式在UI上处理
+    
+    // 2. 构建端口信息列表
+    QList<PortInfo> ports;
+    for (const auto &p : m_inputData.ports) {
+        QString key = p.first + "." + p.second;
+        
+        // 优先使用新识别的类型
+        PortTypeConfig config;
+        if (m_result.updatedPortConfigs.contains(key)) {
+            config = m_result.updatedPortConfigs[key];
+        } else if (m_inputData.portConfigs.contains(key)) {
+            config = m_inputData.portConfigs[key];
+        }
+        
+        PortInfo info;
+        info.functionBlock = p.first;
+        info.connNum = p.second;
+        info.portType = config.portType.isEmpty() ? "electric" : config.portType;
+        
+        // 解析变量名列表
+        if (!config.variables.isEmpty()) {
+            QStringList varList = config.variables.split(",", QString::SkipEmptyParts);
+            for (QString &var : varList) {
+                info.variableNames.append(var.trimmed());
+            }
+        }
+        
+        ports.append(info);
+    }
+    
+    // 3. 执行 TModelValidator 校验
+    TModelValidator validator;
+    TModelValidationResult result = validator.validate(tmodel, ports, context);
+    
+    // 4. 检查 SMT 语法（通过 Z3）
+    SmtSyntaxChecker syntaxChecker;
+    SmtSyntaxChecker::CheckResult syntaxResult = syntaxChecker.check(tmodel);
+    if (!syntaxResult.success) {
+        errorMsg = QString("SMT语法错误: %1").arg(syntaxResult.errorMessage);
+        if (syntaxResult.errorLine >= 0) {
+            errorMsg += QString(" (行%1)").arg(syntaxResult.errorLine);
+        }
+        log("校验失败: " + errorMsg);
+        return false;
+    }
+    
+    // 5. 输出校验结果
+    if (!result.formatErrors.isEmpty()) {
+        errorMsg = "格式错误:\n" + result.formatErrors.join("\n");
+        log("校验失败: " + errorMsg);
+        return false;
+    }
+    
+    if (!result.missingDeclarations.isEmpty()) {
+        errorMsg = "缺少声明:\n" + result.missingDeclarations.join("\n");
+        log("校验失败: " + errorMsg);
+        return false;
+    }
+    
+    if (!result.undefinedVariables.isEmpty()) {
+        errorMsg = "未定义的变量:\n" + result.undefinedVariables.join("\n");
+        log("校验失败: " + errorMsg);
+        return false;
+    }
+    
+    // 警告和提示不作为致命错误
+    if (!result.warnings.isEmpty()) {
+        log("校验警告: " + result.warnings.join("; "));
+    }
+    
+    if (!result.hints.isEmpty()) {
+        log("校验提示: " + result.hints.join("; "));
+    }
+    
+    log("T模型校验通过");
+    return true;
+}

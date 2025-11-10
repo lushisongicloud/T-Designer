@@ -1,0 +1,976 @@
+<?xml version="1.0"?>
+<xmpl xmlns:ci="http://www.w3.org/1999/XSL/Format">
+<componentinstance type="Test" name="test">
+  <ci:attributetype name="SP.ModeType" members="on off blown unknownFault"/>
+  <ci:attributetype name="MannualCommand" members="on off reset noCommand"/>
+  <ci:attributetype name="onOffState" members="on off"/>
+  <ci:attributetype name="LINE.ModeType" members="nominal loose broken unknownFault"/>
+  <ci:attributetype name="FU.ModeType" members="nominal blown unknownFault"/>
+  <ci:attributetype name="QF_sub.ModeType" members="on off tripped blown unknownFault"/>
+  <ci:attributetype name="HL.ModeType" members="nominal blown unknownFault"/>
+  <ci:attributetype name="Resistance" members="nominal shorted open"/>
+  <ci:attributetype name="KA_xq.ModeType" members="nominal malFunction unknownFault"/>
+  <ci:attributetype name="KA_cd.ModeType" members="nominal stuckOpen stuckClosed unknownFault"/>
+  <ci:attributetype name="openClosedValues" members="open closed"/>
+  <ci:attributetype name="SB.ModeType" members="open close tripped blown unknownFault"/>
+  <ci:component type="LINE" name="test.L10">
+    <ci:statevector vars="mode"/>
+    <ci:attribute type="onOffState" name="currentIn_1_2"/>
+    <ci:attribute type="onOffState" name="currentOut_1_2"/>
+    <ci:attribute type="LINE.ModeType" name="mode"/>
+    <ci:transition to="loose" probability="2.0e-4" from="*" name="loose"/>
+    <ci:transition to="broken" probability="1.0e-6" from="*" name="broken"/>
+    <ci:transition to="unknownFault" probability="1.0e-8" from="*" name="unknownFault"/>
+    <ci:clause>
+      <ci:term>!mode=nominal</ci:term>
+      <ci:term>currentOut_1_2=currentIn_1_2</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=loose</ci:term>
+      <ci:term>currentOut_1_2=off</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=broken</ci:term>
+      <ci:term>currentOut_1_2=off</ci:term>
+    </ci:clause>
+    <ci:transition to="nominal" from="nominal">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="loose" from="loose">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="broken" from="broken">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="unknownFault" from="unknownFault">
+      <ci:clause/>
+    </ci:transition>
+  </ci:component>
+  <ci:component type="LINE" name="test.L09">
+    <ci:statevector vars="mode"/>
+    <ci:attribute type="onOffState" name="currentIn_1_2"/>
+    <ci:attribute type="onOffState" name="currentOut_1_2"/>
+    <ci:attribute type="LINE.ModeType" name="mode"/>
+    <ci:transition to="loose" probability="2.0e-4" from="*" name="loose"/>
+    <ci:transition to="broken" probability="1.0e-6" from="*" name="broken"/>
+    <ci:transition to="unknownFault" probability="1.0e-8" from="*" name="unknownFault"/>
+    <ci:clause>
+      <ci:term>!mode=nominal</ci:term>
+      <ci:term>currentOut_1_2=currentIn_1_2</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=loose</ci:term>
+      <ci:term>currentOut_1_2=off</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=broken</ci:term>
+      <ci:term>currentOut_1_2=off</ci:term>
+    </ci:clause>
+    <ci:transition to="nominal" from="nominal">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="loose" from="loose">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="broken" from="broken">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="unknownFault" from="unknownFault">
+      <ci:clause/>
+    </ci:transition>
+  </ci:component>
+  <ci:component type="SB" name="test.SB01">
+    <ci:statevector vars="mode"/>
+    <ci:attribute type="onOffState" name="currentIn_1_2"/>
+    <ci:attribute type="onOffState" name="currentOut_1_2"/>
+    <ci:attribute type="MannualCommand" name="cmdIn"/>
+    <ci:attribute type="SB.ModeType" name="mode"/>
+    <ci:transition to="close" from="open" name="turnOn">
+      <ci:clause>
+        <ci:term>!cmdIn=on</ci:term>
+      </ci:clause>
+    </ci:transition>
+    <ci:transition to="open" from="close" name="turnOff">
+      <ci:clause>
+        <ci:term>!cmdIn=off</ci:term>
+      </ci:clause>
+    </ci:transition>
+    <ci:transition to="open" from="tripped" name="performReset">
+      <ci:clause>
+        <ci:term>!cmdIn=reset</ci:term>
+      </ci:clause>
+    </ci:transition>
+    <ci:transition to="tripped" probability="1.0e-4" from="*" name="tripped"/>
+    <ci:transition to="blown" probability="2.0e-5" from="*" name="blown"/>
+    <ci:transition to="unknownFault" probability="1.0e-8" from="*" name="unknownFault"/>
+    <ci:clause>
+      <ci:term>!mode=close</ci:term>
+      <ci:term>currentOut_1_2=currentIn_1_2</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=open</ci:term>
+      <ci:term>currentOut_1_2=off</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=tripped</ci:term>
+      <ci:term>currentOut_1_2=off</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=blown</ci:term>
+      <ci:term>currentOut_1_2=off</ci:term>
+    </ci:clause>
+    <ci:transition to="open" from="open">
+      <ci:clause>
+        <ci:term>cmdIn=on</ci:term>
+      </ci:clause>
+    </ci:transition>
+    <ci:transition to="close" from="close">
+      <ci:clause>
+        <ci:term>cmdIn=off</ci:term>
+      </ci:clause>
+    </ci:transition>
+    <ci:transition to="tripped" from="tripped">
+      <ci:clause>
+        <ci:term>cmdIn=reset</ci:term>
+      </ci:clause>
+    </ci:transition>
+    <ci:transition to="blown" from="blown">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="unknownFault" from="unknownFault">
+      <ci:clause/>
+    </ci:transition>
+  </ci:component>
+  <ci:component type="HL" name="test.HL02">
+    <ci:statevector vars="mode"/>
+    <ci:attribute type="Resistance" name="Res"/>
+    <ci:attribute type="onOffState" name="currentIn_1_2"/>
+    <ci:attribute type="onOffState" name="ledState"/>
+    <ci:attribute type="HL.ModeType" name="mode"/>
+    <ci:transition to="blown" probability="2.0e-5" from="*" name="blown"/>
+    <ci:transition to="unknownFault" probability="1.0e-8" from="*" name="unknownFault"/>
+    <ci:clause>
+      <ci:term>!mode=nominal</ci:term>
+      <ci:term>ledState=currentIn_1_2</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=nominal</ci:term>
+      <ci:term>Res=nominal</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=blown</ci:term>
+      <ci:term>ledState=off</ci:term>
+    </ci:clause>
+    <ci:transition to="nominal" from="nominal">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="blown" from="blown">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="unknownFault" from="unknownFault">
+      <ci:clause/>
+    </ci:transition>
+  </ci:component>
+  <ci:component type="LINE" name="test.L11">
+    <ci:statevector vars="mode"/>
+    <ci:attribute type="onOffState" name="currentIn_1_2"/>
+    <ci:attribute type="onOffState" name="currentOut_1_2"/>
+    <ci:attribute type="LINE.ModeType" name="mode"/>
+    <ci:transition to="loose" probability="2.0e-4" from="*" name="loose"/>
+    <ci:transition to="broken" probability="1.0e-6" from="*" name="broken"/>
+    <ci:transition to="unknownFault" probability="1.0e-8" from="*" name="unknownFault"/>
+    <ci:clause>
+      <ci:term>!mode=nominal</ci:term>
+      <ci:term>currentOut_1_2=currentIn_1_2</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=loose</ci:term>
+      <ci:term>currentOut_1_2=off</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=broken</ci:term>
+      <ci:term>currentOut_1_2=off</ci:term>
+    </ci:clause>
+    <ci:transition to="nominal" from="nominal">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="loose" from="loose">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="broken" from="broken">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="unknownFault" from="unknownFault">
+      <ci:clause/>
+    </ci:transition>
+  </ci:component>
+  <ci:component type="KA_cd" name="test.KA01.KA_cd1">
+    <ci:statevector vars="mode"/>
+    <ci:attribute type="openClosedValues" name="cdPosition"/>
+    <ci:attribute type="onOffState" name="currentIn"/>
+    <ci:attribute type="onOffState" name="currentOut"/>
+    <ci:attribute type="onOffState" name="cmdIn"/>
+    <ci:attribute type="KA_cd.ModeType" name="mode"/>
+    <ci:transition to="stuckOpen" probability="1.0e-4" from="*" name="toStuckOpen"/>
+    <ci:transition to="stuckClosed" probability="5.0e-5" from="*" name="toStuckClosed"/>
+    <ci:transition to="unknownFault" probability="1.0e-7" from="*" name="toUnknownFault"/>
+    <ci:clause>
+      <ci:term>!mode=nominal</ci:term>
+      <ci:term>!cmdIn=on</ci:term>
+      <ci:term>currentOut=currentIn</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=nominal</ci:term>
+      <ci:term>!cmdIn=on</ci:term>
+      <ci:term>cdPosition=closed</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=nominal</ci:term>
+      <ci:term>!cmdIn=off</ci:term>
+      <ci:term>currentOut=off</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=nominal</ci:term>
+      <ci:term>!cmdIn=off</ci:term>
+      <ci:term>cdPosition=open</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=stuckOpen</ci:term>
+      <ci:term>currentOut=off</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=stuckOpen</ci:term>
+      <ci:term>cdPosition=open</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=stuckClosed</ci:term>
+      <ci:term>currentOut=currentIn</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=stuckClosed</ci:term>
+      <ci:term>cdPosition=closed</ci:term>
+    </ci:clause>
+    <ci:transition to="nominal" from="nominal">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="stuckOpen" from="stuckOpen">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="stuckClosed" from="stuckClosed">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="unknownFault" from="unknownFault">
+      <ci:clause/>
+    </ci:transition>
+  </ci:component>
+  <ci:component type="KA_xq" name="test.KA01.KA_xq1">
+    <ci:statevector vars="mode"/>
+    <ci:attribute type="Resistance" name="Res"/>
+    <ci:attribute type="onOffState" name="cmdOut"/>
+    <ci:attribute type="onOffState" name="xqActivatedLed"/>
+    <ci:attribute type="onOffState" name="cmdIn"/>
+    <ci:attribute type="KA_xq.ModeType" name="mode"/>
+    <ci:transition to="malFunction" probability="2.0e-5" from="*" name="toMalFunction"/>
+    <ci:transition to="unknownFault" probability="1.0e-7" from="*" name="toUnknownFault"/>
+    <ci:clause>
+      <ci:term>!cmdIn=on</ci:term>
+      <ci:term>xqActivatedLed=on</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!cmdIn=off</ci:term>
+      <ci:term>xqActivatedLed=off</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=nominal</ci:term>
+      <ci:term>!cmdIn=on</ci:term>
+      <ci:term>cmdOut=on</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=nominal</ci:term>
+      <ci:term>!cmdIn=on</ci:term>
+      <ci:term>Res=nominal</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=nominal</ci:term>
+      <ci:term>!cmdIn=off</ci:term>
+      <ci:term>cmdOut=off</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=nominal</ci:term>
+      <ci:term>!cmdIn=off</ci:term>
+      <ci:term>Res=nominal</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=malFunction</ci:term>
+      <ci:term>cmdOut=off</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=malFunction</ci:term>
+      <ci:term>!Res=nominal</ci:term>
+    </ci:clause>
+    <ci:transition to="nominal" from="nominal">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="malFunction" from="malFunction">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="unknownFault" from="unknownFault">
+      <ci:clause/>
+    </ci:transition>
+  </ci:component>
+  <ci:component type="KA" name="test.KA01">
+    <ci:attribute type="onOffState" name="currentOut_11_14"/>
+    <ci:attribute type="onOffState" name="currentIn_11_14"/>
+    <ci:attribute type="onOffState" name="currentIn_A1_A2"/>
+    <ci:clause>
+      <ci:term>currentIn_A1_A2=KA_xq1.cmdIn</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>currentIn_11_14=KA_cd1.currentIn</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>KA_cd1.currentOut=currentOut_11_14</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>KA_xq1.cmdOut=KA_cd1.cmdIn</ci:term>
+    </ci:clause>
+  </ci:component>
+  <ci:component type="LINE" name="test.L08">
+    <ci:statevector vars="mode"/>
+    <ci:attribute type="onOffState" name="currentIn_1_2"/>
+    <ci:attribute type="onOffState" name="currentOut_1_2"/>
+    <ci:attribute type="LINE.ModeType" name="mode"/>
+    <ci:transition to="loose" probability="2.0e-4" from="*" name="loose"/>
+    <ci:transition to="broken" probability="1.0e-6" from="*" name="broken"/>
+    <ci:transition to="unknownFault" probability="1.0e-8" from="*" name="unknownFault"/>
+    <ci:clause>
+      <ci:term>!mode=nominal</ci:term>
+      <ci:term>currentOut_1_2=currentIn_1_2</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=loose</ci:term>
+      <ci:term>currentOut_1_2=off</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=broken</ci:term>
+      <ci:term>currentOut_1_2=off</ci:term>
+    </ci:clause>
+    <ci:transition to="nominal" from="nominal">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="loose" from="loose">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="broken" from="broken">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="unknownFault" from="unknownFault">
+      <ci:clause/>
+    </ci:transition>
+  </ci:component>
+  <ci:component type="LINE" name="test.L12">
+    <ci:statevector vars="mode"/>
+    <ci:attribute type="onOffState" name="currentIn_1_2"/>
+    <ci:attribute type="onOffState" name="currentOut_1_2"/>
+    <ci:attribute type="LINE.ModeType" name="mode"/>
+    <ci:transition to="loose" probability="2.0e-4" from="*" name="loose"/>
+    <ci:transition to="broken" probability="1.0e-6" from="*" name="broken"/>
+    <ci:transition to="unknownFault" probability="1.0e-8" from="*" name="unknownFault"/>
+    <ci:clause>
+      <ci:term>!mode=nominal</ci:term>
+      <ci:term>currentOut_1_2=currentIn_1_2</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=loose</ci:term>
+      <ci:term>currentOut_1_2=off</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=broken</ci:term>
+      <ci:term>currentOut_1_2=off</ci:term>
+    </ci:clause>
+    <ci:transition to="nominal" from="nominal">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="loose" from="loose">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="broken" from="broken">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="unknownFault" from="unknownFault">
+      <ci:clause/>
+    </ci:transition>
+  </ci:component>
+  <ci:component type="LINE" name="test.L07">
+    <ci:statevector vars="mode"/>
+    <ci:attribute type="onOffState" name="currentIn_1_2"/>
+    <ci:attribute type="onOffState" name="currentOut_1_2"/>
+    <ci:attribute type="LINE.ModeType" name="mode"/>
+    <ci:transition to="loose" probability="2.0e-4" from="*" name="loose"/>
+    <ci:transition to="broken" probability="1.0e-6" from="*" name="broken"/>
+    <ci:transition to="unknownFault" probability="1.0e-8" from="*" name="unknownFault"/>
+    <ci:clause>
+      <ci:term>!mode=nominal</ci:term>
+      <ci:term>currentOut_1_2=currentIn_1_2</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=loose</ci:term>
+      <ci:term>currentOut_1_2=off</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=broken</ci:term>
+      <ci:term>currentOut_1_2=off</ci:term>
+    </ci:clause>
+    <ci:transition to="nominal" from="nominal">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="loose" from="loose">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="broken" from="broken">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="unknownFault" from="unknownFault">
+      <ci:clause/>
+    </ci:transition>
+  </ci:component>
+  <ci:component type="HL" name="test.HL01">
+    <ci:statevector vars="mode"/>
+    <ci:attribute type="Resistance" name="Res"/>
+    <ci:attribute type="onOffState" name="currentIn_1_2"/>
+    <ci:attribute type="onOffState" name="ledState"/>
+    <ci:attribute type="HL.ModeType" name="mode"/>
+    <ci:transition to="blown" probability="2.0e-5" from="*" name="blown"/>
+    <ci:transition to="unknownFault" probability="1.0e-8" from="*" name="unknownFault"/>
+    <ci:clause>
+      <ci:term>!mode=nominal</ci:term>
+      <ci:term>ledState=currentIn_1_2</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=nominal</ci:term>
+      <ci:term>Res=nominal</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=blown</ci:term>
+      <ci:term>ledState=off</ci:term>
+    </ci:clause>
+    <ci:transition to="nominal" from="nominal">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="blown" from="blown">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="unknownFault" from="unknownFault">
+      <ci:clause/>
+    </ci:transition>
+  </ci:component>
+  <ci:component type="LINE" name="test.L06">
+    <ci:statevector vars="mode"/>
+    <ci:attribute type="onOffState" name="currentIn_1_2"/>
+    <ci:attribute type="onOffState" name="currentOut_1_2"/>
+    <ci:attribute type="LINE.ModeType" name="mode"/>
+    <ci:transition to="loose" probability="2.0e-4" from="*" name="loose"/>
+    <ci:transition to="broken" probability="1.0e-6" from="*" name="broken"/>
+    <ci:transition to="unknownFault" probability="1.0e-8" from="*" name="unknownFault"/>
+    <ci:clause>
+      <ci:term>!mode=nominal</ci:term>
+      <ci:term>currentOut_1_2=currentIn_1_2</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=loose</ci:term>
+      <ci:term>currentOut_1_2=off</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=broken</ci:term>
+      <ci:term>currentOut_1_2=off</ci:term>
+    </ci:clause>
+    <ci:transition to="nominal" from="nominal">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="loose" from="loose">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="broken" from="broken">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="unknownFault" from="unknownFault">
+      <ci:clause/>
+    </ci:transition>
+  </ci:component>
+  <ci:component type="LINE" name="test.L05">
+    <ci:statevector vars="mode"/>
+    <ci:attribute type="onOffState" name="currentIn_1_2"/>
+    <ci:attribute type="onOffState" name="currentOut_1_2"/>
+    <ci:attribute type="LINE.ModeType" name="mode"/>
+    <ci:transition to="loose" probability="2.0e-4" from="*" name="loose"/>
+    <ci:transition to="broken" probability="1.0e-6" from="*" name="broken"/>
+    <ci:transition to="unknownFault" probability="1.0e-8" from="*" name="unknownFault"/>
+    <ci:clause>
+      <ci:term>!mode=nominal</ci:term>
+      <ci:term>currentOut_1_2=currentIn_1_2</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=loose</ci:term>
+      <ci:term>currentOut_1_2=off</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=broken</ci:term>
+      <ci:term>currentOut_1_2=off</ci:term>
+    </ci:clause>
+    <ci:transition to="nominal" from="nominal">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="loose" from="loose">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="broken" from="broken">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="unknownFault" from="unknownFault">
+      <ci:clause/>
+    </ci:transition>
+  </ci:component>
+  <ci:component type="LINE" name="test.L04">
+    <ci:statevector vars="mode"/>
+    <ci:attribute type="onOffState" name="currentIn_1_2"/>
+    <ci:attribute type="onOffState" name="currentOut_1_2"/>
+    <ci:attribute type="LINE.ModeType" name="mode"/>
+    <ci:transition to="loose" probability="2.0e-4" from="*" name="loose"/>
+    <ci:transition to="broken" probability="1.0e-6" from="*" name="broken"/>
+    <ci:transition to="unknownFault" probability="1.0e-8" from="*" name="unknownFault"/>
+    <ci:clause>
+      <ci:term>!mode=nominal</ci:term>
+      <ci:term>currentOut_1_2=currentIn_1_2</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=loose</ci:term>
+      <ci:term>currentOut_1_2=off</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=broken</ci:term>
+      <ci:term>currentOut_1_2=off</ci:term>
+    </ci:clause>
+    <ci:transition to="nominal" from="nominal">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="loose" from="loose">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="broken" from="broken">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="unknownFault" from="unknownFault">
+      <ci:clause/>
+    </ci:transition>
+  </ci:component>
+  <ci:component type="FU" name="test.FU02">
+    <ci:statevector vars="mode"/>
+    <ci:attribute type="onOffState" name="currentIn_1_2"/>
+    <ci:attribute type="onOffState" name="currentOut_1_2"/>
+    <ci:attribute type="FU.ModeType" name="mode"/>
+    <ci:transition to="blown" probability="1.0e-4" from="*" name="blown"/>
+    <ci:transition to="unknownFault" probability="1.0e-8" from="*" name="unknownFault"/>
+    <ci:clause>
+      <ci:term>!mode=nominal</ci:term>
+      <ci:term>currentOut_1_2=currentIn_1_2</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=blown</ci:term>
+      <ci:term>currentOut_1_2=off</ci:term>
+    </ci:clause>
+    <ci:transition to="nominal" from="nominal">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="blown" from="blown">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="unknownFault" from="unknownFault">
+      <ci:clause/>
+    </ci:transition>
+  </ci:component>
+  <ci:component type="LINE" name="test.L02">
+    <ci:statevector vars="mode"/>
+    <ci:attribute type="onOffState" name="currentIn_1_2"/>
+    <ci:attribute type="onOffState" name="currentOut_1_2"/>
+    <ci:attribute type="LINE.ModeType" name="mode"/>
+    <ci:transition to="loose" probability="2.0e-4" from="*" name="loose"/>
+    <ci:transition to="broken" probability="1.0e-6" from="*" name="broken"/>
+    <ci:transition to="unknownFault" probability="1.0e-8" from="*" name="unknownFault"/>
+    <ci:clause>
+      <ci:term>!mode=nominal</ci:term>
+      <ci:term>currentOut_1_2=currentIn_1_2</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=loose</ci:term>
+      <ci:term>currentOut_1_2=off</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=broken</ci:term>
+      <ci:term>currentOut_1_2=off</ci:term>
+    </ci:clause>
+    <ci:transition to="nominal" from="nominal">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="loose" from="loose">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="broken" from="broken">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="unknownFault" from="unknownFault">
+      <ci:clause/>
+    </ci:transition>
+  </ci:component>
+  <ci:component type="QF_sub" name="test.QF01.QF_2">
+    <ci:statevector vars="mode"/>
+    <ci:attribute type="onOffState" name="currentIn"/>
+    <ci:attribute type="onOffState" name="currentOut"/>
+    <ci:attribute type="MannualCommand" name="cmdIn"/>
+    <ci:attribute type="QF_sub.ModeType" name="mode"/>
+    <ci:transition to="on" from="off" name="turnOn">
+      <ci:clause>
+        <ci:term>!cmdIn=on</ci:term>
+      </ci:clause>
+    </ci:transition>
+    <ci:transition to="off" from="on" name="turnOff">
+      <ci:clause>
+        <ci:term>!cmdIn=off</ci:term>
+      </ci:clause>
+    </ci:transition>
+    <ci:transition to="off" from="tripped" name="performReset">
+      <ci:clause>
+        <ci:term>!cmdIn=reset</ci:term>
+      </ci:clause>
+    </ci:transition>
+    <ci:transition to="tripped" probability="5.0e-5" from="*" name="tripped"/>
+    <ci:transition to="blown" probability="2.0e-5" from="*" name="blown"/>
+    <ci:transition to="unknownFault" probability="1.0e-8" from="*" name="unknownFault"/>
+    <ci:clause>
+      <ci:term>!mode=on</ci:term>
+      <ci:term>currentOut=currentIn</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=off</ci:term>
+      <ci:term>currentOut=off</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=tripped</ci:term>
+      <ci:term>currentOut=off</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=blown</ci:term>
+      <ci:term>currentOut=off</ci:term>
+    </ci:clause>
+    <ci:transition to="on" from="on">
+      <ci:clause>
+        <ci:term>cmdIn=off</ci:term>
+      </ci:clause>
+    </ci:transition>
+    <ci:transition to="off" from="off">
+      <ci:clause>
+        <ci:term>cmdIn=on</ci:term>
+      </ci:clause>
+    </ci:transition>
+    <ci:transition to="tripped" from="tripped">
+      <ci:clause>
+        <ci:term>cmdIn=reset</ci:term>
+      </ci:clause>
+    </ci:transition>
+    <ci:transition to="blown" from="blown">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="unknownFault" from="unknownFault">
+      <ci:clause/>
+    </ci:transition>
+  </ci:component>
+  <ci:component type="QF_sub" name="test.QF01.QF_1">
+    <ci:statevector vars="mode"/>
+    <ci:attribute type="onOffState" name="currentIn"/>
+    <ci:attribute type="onOffState" name="currentOut"/>
+    <ci:attribute type="MannualCommand" name="cmdIn"/>
+    <ci:attribute type="QF_sub.ModeType" name="mode"/>
+    <ci:transition to="on" from="off" name="turnOn">
+      <ci:clause>
+        <ci:term>!cmdIn=on</ci:term>
+      </ci:clause>
+    </ci:transition>
+    <ci:transition to="off" from="on" name="turnOff">
+      <ci:clause>
+        <ci:term>!cmdIn=off</ci:term>
+      </ci:clause>
+    </ci:transition>
+    <ci:transition to="off" from="tripped" name="performReset">
+      <ci:clause>
+        <ci:term>!cmdIn=reset</ci:term>
+      </ci:clause>
+    </ci:transition>
+    <ci:transition to="tripped" probability="5.0e-5" from="*" name="tripped"/>
+    <ci:transition to="blown" probability="2.0e-5" from="*" name="blown"/>
+    <ci:transition to="unknownFault" probability="1.0e-8" from="*" name="unknownFault"/>
+    <ci:clause>
+      <ci:term>!mode=on</ci:term>
+      <ci:term>currentOut=currentIn</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=off</ci:term>
+      <ci:term>currentOut=off</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=tripped</ci:term>
+      <ci:term>currentOut=off</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=blown</ci:term>
+      <ci:term>currentOut=off</ci:term>
+    </ci:clause>
+    <ci:transition to="on" from="on">
+      <ci:clause>
+        <ci:term>cmdIn=off</ci:term>
+      </ci:clause>
+    </ci:transition>
+    <ci:transition to="off" from="off">
+      <ci:clause>
+        <ci:term>cmdIn=on</ci:term>
+      </ci:clause>
+    </ci:transition>
+    <ci:transition to="tripped" from="tripped">
+      <ci:clause>
+        <ci:term>cmdIn=reset</ci:term>
+      </ci:clause>
+    </ci:transition>
+    <ci:transition to="blown" from="blown">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="unknownFault" from="unknownFault">
+      <ci:clause/>
+    </ci:transition>
+  </ci:component>
+  <ci:component type="QF" name="test.QF01">
+    <ci:attribute type="onOffState" name="currentOut_3_4"/>
+    <ci:attribute type="onOffState" name="currentOut_1_2"/>
+    <ci:attribute type="onOffState" name="currentIn_3_4"/>
+    <ci:attribute type="onOffState" name="currentIn_1_2"/>
+    <ci:attribute type="MannualCommand" name="cmdIn"/>
+    <ci:clause>
+      <ci:term>cmdIn=QF_1.cmdIn</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>cmdIn=QF_2.cmdIn</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>currentIn_1_2=QF_1.currentIn</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>currentIn_3_4=QF_2.currentIn</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>QF_1.currentOut=currentOut_1_2</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>QF_2.currentOut=currentOut_3_4</ci:term>
+    </ci:clause>
+  </ci:component>
+  <ci:component type="LINE" name="test.L03">
+    <ci:statevector vars="mode"/>
+    <ci:attribute type="onOffState" name="currentIn_1_2"/>
+    <ci:attribute type="onOffState" name="currentOut_1_2"/>
+    <ci:attribute type="LINE.ModeType" name="mode"/>
+    <ci:transition to="loose" probability="2.0e-4" from="*" name="loose"/>
+    <ci:transition to="broken" probability="1.0e-6" from="*" name="broken"/>
+    <ci:transition to="unknownFault" probability="1.0e-8" from="*" name="unknownFault"/>
+    <ci:clause>
+      <ci:term>!mode=nominal</ci:term>
+      <ci:term>currentOut_1_2=currentIn_1_2</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=loose</ci:term>
+      <ci:term>currentOut_1_2=off</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=broken</ci:term>
+      <ci:term>currentOut_1_2=off</ci:term>
+    </ci:clause>
+    <ci:transition to="nominal" from="nominal">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="loose" from="loose">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="broken" from="broken">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="unknownFault" from="unknownFault">
+      <ci:clause/>
+    </ci:transition>
+  </ci:component>
+  <ci:component type="FU" name="test.FU01">
+    <ci:statevector vars="mode"/>
+    <ci:attribute type="onOffState" name="currentIn_1_2"/>
+    <ci:attribute type="onOffState" name="currentOut_1_2"/>
+    <ci:attribute type="FU.ModeType" name="mode"/>
+    <ci:transition to="blown" probability="1.0e-4" from="*" name="blown"/>
+    <ci:transition to="unknownFault" probability="1.0e-8" from="*" name="unknownFault"/>
+    <ci:clause>
+      <ci:term>!mode=nominal</ci:term>
+      <ci:term>currentOut_1_2=currentIn_1_2</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=blown</ci:term>
+      <ci:term>currentOut_1_2=off</ci:term>
+    </ci:clause>
+    <ci:transition to="nominal" from="nominal">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="blown" from="blown">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="unknownFault" from="unknownFault">
+      <ci:clause/>
+    </ci:transition>
+  </ci:component>
+  <ci:component type="LINE" name="test.L01">
+    <ci:statevector vars="mode"/>
+    <ci:attribute type="onOffState" name="currentIn_1_2"/>
+    <ci:attribute type="onOffState" name="currentOut_1_2"/>
+    <ci:attribute type="LINE.ModeType" name="mode"/>
+    <ci:transition to="loose" probability="2.0e-4" from="*" name="loose"/>
+    <ci:transition to="broken" probability="1.0e-6" from="*" name="broken"/>
+    <ci:transition to="unknownFault" probability="1.0e-8" from="*" name="unknownFault"/>
+    <ci:clause>
+      <ci:term>!mode=nominal</ci:term>
+      <ci:term>currentOut_1_2=currentIn_1_2</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=loose</ci:term>
+      <ci:term>currentOut_1_2=off</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=broken</ci:term>
+      <ci:term>currentOut_1_2=off</ci:term>
+    </ci:clause>
+    <ci:transition to="nominal" from="nominal">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="loose" from="loose">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="broken" from="broken">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="unknownFault" from="unknownFault">
+      <ci:clause/>
+    </ci:transition>
+  </ci:component>
+  <ci:component type="SP" name="test.SP01">
+    <ci:statevector vars="mode"/>
+    <ci:attribute type="onOffState" name="currentOut_p_n"/>
+    <ci:attribute type="MannualCommand" name="currentIn"/>
+    <ci:attribute type="SP.ModeType" name="mode"/>
+    <ci:transition to="on" from="off" name="turnOn">
+      <ci:clause>
+        <ci:term>!currentIn=on</ci:term>
+      </ci:clause>
+    </ci:transition>
+    <ci:transition to="off" from="on" name="turnOff">
+      <ci:clause>
+        <ci:term>!currentIn=off</ci:term>
+      </ci:clause>
+    </ci:transition>
+    <ci:transition to="blown" probability="2.0e-5" from="*" name="blown"/>
+    <ci:transition to="unknownFault" probability="1.0e-8" from="*" name="unknownFault"/>
+    <ci:clause>
+      <ci:term>!mode=on</ci:term>
+      <ci:term>currentOut_p_n=on</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=off</ci:term>
+      <ci:term>currentOut_p_n=off</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>!mode=blown</ci:term>
+      <ci:term>currentOut_p_n=off</ci:term>
+    </ci:clause>
+    <ci:transition to="on" from="on">
+      <ci:clause>
+        <ci:term>currentIn=off</ci:term>
+      </ci:clause>
+    </ci:transition>
+    <ci:transition to="off" from="off">
+      <ci:clause>
+        <ci:term>currentIn=on</ci:term>
+      </ci:clause>
+    </ci:transition>
+    <ci:transition to="blown" from="blown">
+      <ci:clause/>
+    </ci:transition>
+    <ci:transition to="unknownFault" from="unknownFault">
+      <ci:clause/>
+    </ci:transition>
+  </ci:component>
+  <ci:component type="Test" name="test">
+    <ci:clause>
+      <ci:term>SP01.currentOut_p_n=L01.currentIn_1_2</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>L01.currentOut_1_2=FU01.currentIn_1_2</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>FU01.currentOut_1_2=L03.currentIn_1_2</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>L03.currentOut_1_2=QF01.currentIn_1_2</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>QF01.currentOut_1_2=L02.currentIn_1_2</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>L02.currentOut_1_2=FU02.currentIn_1_2</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>FU02.currentOut_1_2=L04.currentIn_1_2</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>L04.currentOut_1_2=QF01.currentIn_3_4</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>QF01.currentOut_3_4=L05.currentIn_1_2</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>L05.currentOut_1_2=L06.currentIn_1_2</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>L06.currentOut_1_2=HL01.currentIn_1_2</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>QF01.currentOut_3_4=L07.currentIn_1_2</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>L07.currentOut_1_2=L12.currentIn_1_2</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>L12.currentOut_1_2=L08.currentIn_1_2</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>L08.currentOut_1_2=KA01.currentIn_11_14</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>KA01.currentOut_11_14=L11.currentIn_1_2</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>L11.currentOut_1_2=HL02.currentIn_1_2</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>L12.currentOut_1_2=SB01.currentIn_1_2</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>SB01.currentOut_1_2=L09.currentIn_1_2</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>L09.currentOut_1_2=L10.currentIn_1_2</ci:term>
+    </ci:clause>
+    <ci:clause>
+      <ci:term>L10.currentOut_1_2=KA01.currentIn_A1_A2</ci:term>
+    </ci:clause>
+  </ci:component>
+</componentinstance>
+</xmpl>

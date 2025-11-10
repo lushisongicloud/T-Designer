@@ -1,0 +1,602 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>SelectFunctionDialog</class>
+ <widget class="QDialog" name="SelectFunctionDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1200</width>
+    <height>700</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>0</width>
+    <height>10</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>选择待诊断的功能</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QDialog
+{	border-radius:12px;
+	border:2px solid rgb(17,255,255,200);		
+    background-color: rgb(13, 26, 43);
+}
+
+QTextEdit
+{
+	font: 75 16pt &quot;黑体&quot;;
+	color:rgb(190,190,190);
+}
+
+QLabel{
+	
+font: 75 16pt &quot;黑体&quot;;
+color: rgb(17, 255, 255);
+}
+
+QCheckBox{
+	
+font: 75 16pt &quot;黑体&quot;;
+color: rgb(17, 255, 255);
+}
+
+QGroupBox{
+	
+font: 75 16pt &quot;黑体&quot;;
+color: rgb(17, 255, 255);
+}
+
+QPushButton{
+font: 75 16pt &quot;黑体&quot;;
+color: rgb(190, 190, 190);
+background-color:qconicalgradient(cx:0.5,cy:0.5,angle:0,stop:0.368182 
+rgba(17,255,255,75));
+border:0px ;
+border-radius:8px;
+}
+
+QPushButton::hover{
+font: 75 16pt &quot;黑体&quot;;
+color: rgb(240, 240, 240);
+background-color:qconicalgradient(cx:0.5,cy:0.5,angle:0,stop:0.368182 
+rgba(17,255,255,128));
+border:0px ;
+border-radius:8px;
+}
+
+QPushButton::hover{
+font: 75 16pt &quot;黑体&quot;;
+color: rgb(240, 240, 240);
+background-color:qconicalgradient(cx:0.5,cy:0.5,angle:0,stop:0.368182 
+rgba(17,255,255,200));
+border:0px ;
+border-radius:8px;
+}
+
+QPushButton::pressed{
+font: 75 16pt &quot;黑体&quot;;
+color: rgb(240, 240, 240);
+background-color:qconicalgradient(cx:0.5,cy:0.5,angle:0,stop:0.368182 
+rgba(17,255,255,128));
+border:0px ;
+border-radius:8px;
+}</string>
+  </property>
+  <property name="sizeGripEnabled">
+   <bool>false</bool>
+  </property>
+  <layout class="QGridLayout" name="gridLayout" rowstretch="0,0,0,0,0,0,0,0,0,0,0" columnstretch="8,0,0,0,0,0">
+   <item row="3" column="2" rowspan="4" colspan="3">
+    <widget class="QTableWidget" name="table_result">
+     <property name="styleSheet">
+      <string notr="true">/*设置表格中网格的颜色*/
+QTableView{
+	gridline-color: rgb(38, 50, 70);
+}
+QHeaderView::section{
+	background-color:rgba(9, 28, 36, 245);
+	border:0.5px solid rgb(38,50,70);
+    padding-left: 0px;
+	color:rgba(255,255,255,200);
+	
+}
+border:0px;
+font: 75 11pt &quot;微软雅黑&quot;;
+background: transparent; 
+color: rgb(255, 255, 255);
+selection-background-color: rgb(102, 249, 247)
+</string>
+     </property>
+     <attribute name="horizontalHeaderDefaultSectionSize">
+      <number>120</number>
+     </attribute>
+     <column>
+      <property name="text">
+       <string>故障器件(组)</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>故障模式</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>概率</string>
+      </property>
+     </column>
+    </widget>
+   </item>
+   <item row="0" column="2">
+    <widget class="QLabel" name="label_7">
+     <property name="text">
+      <string>完整求解结果</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0">
+    <widget class="QPlainTextEdit" name="textEditFunctionDescription">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>16777215</width>
+       <height>16777215</height>
+      </size>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color: rgb(19, 67, 79);
+border:0px solid rgb(255,255,255);
+color: rgb(255, 255, 255);</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="5">
+    <widget class="QGroupBox" name="groupBox">
+     <property name="styleSheet">
+      <string notr="true">QComboBox{
+    background-color: rgb(16, 31, 45);
+    color: rgb(255, 255, 255);
+}</string>
+     </property>
+     <property name="title">
+      <string>求解</string>
+     </property>
+     <widget class="QPushButton" name="btn_OfflineSolve">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>50</y>
+        <width>121</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>16777215</height>
+       </size>
+      </property>
+      <property name="text">
+       <string>离线求解</string>
+      </property>
+     </widget>
+     <widget class="QComboBox" name="comboBoxSolveMode">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>20</y>
+        <width>121</width>
+        <height>22</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(19, 67, 79);
+border:1px solid rgb(255,255,255);
+color: rgb(255, 255, 255);</string>
+      </property>
+      <property name="currentIndex">
+       <number>2</number>
+      </property>
+      <item>
+       <property name="text">
+        <string>0-单故障</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>1-多故障|截断</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>2-多故障|不截断</string>
+       </property>
+      </item>
+     </widget>
+    </widget>
+   </item>
+   <item row="10" column="1">
+    <widget class="QPushButton" name="btn_SaveFunc">
+     <property name="text">
+      <string>保存功能修改</string>
+     </property>
+    </widget>
+   </item>
+   <item row="10" column="5">
+    <widget class="QPushButton" name="btn_Cancel">
+     <property name="text">
+      <string>取消</string>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="5">
+    <widget class="QPlainTextEdit" name="textEditFaultProbability">
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>0</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>2000</width>
+       <height>16</height>
+      </size>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color: rgb(19, 67, 79);
+border:1px solid rgb(255,255,255);
+color: rgb(255, 255, 255);</string>
+     </property>
+     <property name="inputMethodHints">
+      <set>Qt::ImhNone</set>
+     </property>
+     <property name="verticalScrollBarPolicy">
+      <enum>Qt::ScrollBarAlwaysOff</enum>
+     </property>
+     <property name="horizontalScrollBarPolicy">
+      <enum>Qt::ScrollBarAlwaysOff</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="3" colspan="2">
+    <widget class="QProgressBar" name="progressBar">
+     <property name="value">
+      <number>0</number>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="4">
+    <widget class="QLabel" name="label_9">
+     <property name="text">
+      <string>功能失效概率</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item row="9" column="5">
+    <widget class="QPushButton" name="btn_DelObs">
+     <property name="text">
+      <string>删除约束</string>
+     </property>
+    </widget>
+   </item>
+   <item row="10" column="0">
+    <widget class="QPushButton" name="btn_UpdateSubFunc">
+     <property name="text">
+      <string>刷新功能树</string>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="2">
+    <widget class="QLabel" name="label_8">
+     <property name="text">
+      <string>功能相关变量约束</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="5">
+    <widget class="QCheckBox" name="checkBoxPersistent">
+     <property name="text">
+      <string>故障状态是否可保持</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="5">
+    <widget class="QPlainTextEdit" name="textEditAllComponent">
+     <property name="maximumSize">
+      <size>
+       <width>16777215</width>
+       <height>16777215</height>
+      </size>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color: rgb(19, 67, 79);
+border:0px solid rgb(255,255,255);
+color: rgb(255, 255, 255);</string>
+     </property>
+    </widget>
+   </item>
+   <item row="9" column="2">
+    <widget class="QPushButton" name="btn_CalBoundaryConditions">
+     <property name="text">
+      <string>查找边界条件</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="0">
+    <widget class="QLabel" name="label_4">
+     <property name="text">
+      <string>链路信息</string>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="0">
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>功能列表</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="label_2">
+     <property name="text">
+      <string>功能简述</string>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="2" colspan="4">
+    <widget class="QTableWidget" name="table_test">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>0</height>
+      </size>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">/*设置表格中网格的颜色*/
+QTableView{
+	gridline-color: rgb(38, 50, 70);
+}
+QHeaderView::section{
+	background-color:rgba(9, 28, 36, 245);
+	border:0.5px solid rgb(38,50,70);
+    padding-left: 0px;
+	color:rgba(255,255,255,200);
+	
+}
+border:0px;
+font: 75 11pt &quot;微软雅黑&quot;;
+background: transparent; 
+color: rgb(255, 255, 255);
+selection-background-color: rgb(102, 249, 247)
+</string>
+     </property>
+     <property name="selectionBehavior">
+      <enum>QAbstractItemView::SelectRows</enum>
+     </property>
+     <property name="columnCount">
+      <number>4</number>
+     </property>
+     <attribute name="horizontalHeaderDefaultSectionSize">
+      <number>70</number>
+     </attribute>
+     <column>
+      <property name="text">
+       <string>变量</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>约束值</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>置信度</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>类型</string>
+      </property>
+     </column>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="QLabel" name="label_6">
+     <property name="text">
+      <string>功能依赖关系</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="5">
+    <widget class="QLabel" name="label_3">
+     <property name="text">
+      <string>全部相关器件</string>
+     </property>
+    </widget>
+   </item>
+   <item row="10" column="4">
+    <widget class="QPushButton" name="btn_Ok">
+     <property name="text">
+      <string>确定</string>
+     </property>
+    </widget>
+   </item>
+   <item row="9" column="0">
+    <widget class="QPushButton" name="btn_AddFunc">
+     <property name="text">
+      <string>增加功能</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="1">
+    <widget class="QTableWidget" name="table_FunctionDependency">
+     <property name="styleSheet">
+      <string notr="true">/*设置表格中网格的颜色*/
+QTableView{
+	gridline-color: rgb(38, 50, 70);
+}
+QHeaderView::section{
+	background-color:rgba(9, 28, 36, 245);
+	border:0.5px solid rgb(38,50,70);
+    padding-left: 0px;
+	color:rgba(255,255,255,200);
+	
+}
+border:0px;
+font: 75 11pt &quot;微软雅黑&quot;;
+background: transparent; 
+color: rgb(255, 255, 255);
+selection-background-color: rgb(102, 249, 247)
+</string>
+     </property>
+     <property name="selectionBehavior">
+      <enum>QAbstractItemView::SelectRows</enum>
+     </property>
+     <column>
+      <property name="text">
+       <string>执行器</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>所依赖功能</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>相关端口</string>
+      </property>
+     </column>
+    </widget>
+   </item>
+   <item row="6" column="1">
+    <widget class="QTextEdit" name="textEditComponentDependency">
+     <property name="styleSheet">
+      <string notr="true">background-color: rgb(19, 67, 79);
+border:0px solid rgb(255,255,255);
+color: rgb(255, 255, 255);</string>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="0">
+    <widget class="QPlainTextEdit" name="textEditLink">
+     <property name="maximumSize">
+      <size>
+       <width>16777215</width>
+       <height>16777215</height>
+      </size>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color: rgb(19, 67, 79);
+border:0px solid rgb(255,255,255);
+color: rgb(255, 255, 255);</string>
+     </property>
+    </widget>
+   </item>
+   <item row="9" column="4">
+    <widget class="QPushButton" name="btn_AddObs">
+     <property name="text">
+      <string>增加约束</string>
+     </property>
+    </widget>
+   </item>
+   <item row="9" column="1">
+    <widget class="QPushButton" name="btn_DelFunc">
+     <property name="text">
+      <string>删除功能</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="1">
+    <widget class="QLabel" name="label_5">
+     <property name="text">
+      <string>器件依赖关系</string>
+     </property>
+    </widget>
+   </item>
+   <item row="9" column="3">
+    <widget class="QPushButton" name="btn_CheckConstraints">
+     <property name="text">
+      <string>检查约束完整性</string>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="0" colspan="2">
+    <widget class="QWidget" name="widget" native="true">
+     <widget class="QTreeWidget" name="functionTree">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>639</width>
+        <height>182</height>
+       </rect>
+      </property>
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>0</height>
+       </size>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(19, 67, 79);
+border:0px solid rgb(255,255,255);
+color: rgb(255, 255, 255);</string>
+      </property>
+      <attribute name="headerVisible">
+       <bool>false</bool>
+      </attribute>
+      <column>
+       <property name="text">
+        <string notr="true">1</string>
+       </property>
+      </column>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

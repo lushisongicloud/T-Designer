@@ -1,0 +1,355 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>DialogSymbolAttribute</class>
+ <widget class="QDialog" name="DialogSymbolAttribute">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>285</width>
+    <height>490</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Dialog</string>
+  </property>
+  <widget class="QLabel" name="label">
+   <property name="geometry">
+    <rect>
+     <x>4</x>
+     <y>11</y>
+     <width>54</width>
+     <height>12</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>名称：</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_4">
+   <property name="geometry">
+    <rect>
+     <x>4</x>
+     <y>34</y>
+     <width>54</width>
+     <height>12</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>标号：</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="EditSymbolName">
+   <property name="geometry">
+    <rect>
+     <x>47</x>
+     <y>6</y>
+     <width>180</width>
+     <height>20</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="EditSymbolTag">
+   <property name="geometry">
+    <rect>
+     <x>47</x>
+     <y>30</y>
+     <width>180</width>
+     <height>20</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="BtnOK">
+   <property name="geometry">
+    <rect>
+     <x>70</x>
+     <y>463</y>
+     <width>61</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>确 定</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="BtnCancel">
+   <property name="geometry">
+    <rect>
+     <x>150</x>
+     <y>463</y>
+     <width>61</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>取 消</string>
+   </property>
+  </widget>
+  <widget class="QGroupBox" name="groupBox">
+   <property name="geometry">
+    <rect>
+     <x>2</x>
+     <y>78</y>
+     <width>281</width>
+     <height>181</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>连接点</string>
+   </property>
+   <widget class="QTableWidget" name="tableWidget">
+    <property name="geometry">
+     <rect>
+      <x>1</x>
+      <y>13</y>
+      <width>231</width>
+      <height>161</height>
+     </rect>
+    </property>
+    <property name="editTriggers">
+     <set>QAbstractItemView::NoEditTriggers</set>
+    </property>
+    <property name="selectionBehavior">
+     <enum>QAbstractItemView::SelectRows</enum>
+    </property>
+    <attribute name="verticalHeaderVisible">
+     <bool>false</bool>
+    </attribute>
+    <column>
+     <property name="text">
+      <string>代号</string>
+     </property>
+    </column>
+    <column>
+     <property name="text">
+      <string>方向</string>
+     </property>
+    </column>
+    <column>
+     <property name="text">
+      <string>内部端</string>
+     </property>
+    </column>
+    <column>
+     <property name="text">
+      <string>坐标</string>
+     </property>
+    </column>
+   </widget>
+   <widget class="QPushButton" name="BtnInsertTerminal">
+    <property name="geometry">
+     <rect>
+      <x>237</x>
+      <y>66</y>
+      <width>40</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>插入</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="BtnModify">
+    <property name="geometry">
+     <rect>
+      <x>237</x>
+      <y>126</y>
+      <width>40</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>修改</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="BtnDelTerminal">
+    <property name="geometry">
+     <rect>
+      <x>237</x>
+      <y>96</y>
+      <width>40</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>删除</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="BtnAddTerminal">
+    <property name="geometry">
+     <rect>
+      <x>238</x>
+      <y>36</y>
+      <width>40</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>添加</string>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QGroupBox" name="groupBox_2">
+   <property name="geometry">
+    <rect>
+     <x>3</x>
+     <y>259</y>
+     <width>231</width>
+     <height>201</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>符号属性字库</string>
+   </property>
+   <widget class="QComboBox" name="CbSymbolType">
+    <property name="geometry">
+     <rect>
+      <x>110</x>
+      <y>10</y>
+      <width>120</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <item>
+     <property name="text">
+      <string>全部</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>普通元件</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>PLC</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>端子/插针</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>元件连接点</string>
+     </property>
+    </item>
+   </widget>
+   <widget class="QLabel" name="label_2">
+    <property name="geometry">
+     <rect>
+      <x>80</x>
+      <y>14</y>
+      <width>31</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>类别：</string>
+    </property>
+   </widget>
+   <widget class="QTableWidget" name="tableWidget_AttrDef">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>38</y>
+      <width>231</width>
+      <height>161</height>
+     </rect>
+    </property>
+    <property name="editTriggers">
+     <set>QAbstractItemView::NoEditTriggers</set>
+    </property>
+    <property name="selectionBehavior">
+     <enum>QAbstractItemView::SelectRows</enum>
+    </property>
+    <attribute name="verticalHeaderVisible">
+     <bool>false</bool>
+    </attribute>
+    <column>
+     <property name="text">
+      <string>符号属性</string>
+     </property>
+    </column>
+   </widget>
+  </widget>
+  <widget class="QPushButton" name="BtnPutAttrDef">
+   <property name="geometry">
+    <rect>
+     <x>240</x>
+     <y>323</y>
+     <width>31</width>
+     <height>91</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>文
+字
+放
+置</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_5">
+   <property name="geometry">
+    <rect>
+     <x>4</x>
+     <y>57</y>
+     <width>54</width>
+     <height>12</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>基点： X</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="EdBasePointX">
+   <property name="geometry">
+    <rect>
+     <x>59</x>
+     <y>54</y>
+     <width>70</width>
+     <height>20</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="EdBasePointY">
+   <property name="geometry">
+    <rect>
+     <x>156</x>
+     <y>54</y>
+     <width>70</width>
+     <height>20</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_6">
+   <property name="geometry">
+    <rect>
+     <x>142</x>
+     <y>57</y>
+     <width>16</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Y</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="BtnGetBasePoint">
+   <property name="geometry">
+    <rect>
+     <x>239</x>
+     <y>52</y>
+     <width>40</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>拾取</string>
+   </property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

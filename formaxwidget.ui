@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>formaxwidget</class>
+ <widget class="QWidget" name="formaxwidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>682</width>
+    <height>518</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QHBoxLayout" name="horizontalLayout_2">
+   <property name="spacing">
+    <number>0</number>
+   </property>
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QFrame" name="frame">
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <property name="spacing">
+       <number>0</number>
+      </property>
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="QAxWidget" name="axWidget">
+        <property name="control" stdset="0">
+         <string>{74a777f8-7a8f-4e7c-af47-7074828086e2}</string>
+        </property>
+        <property name="EditGripPoint" stdset="0">
+         <bool>true</bool>
+        </property>
+        <property name="EnableClipboard" stdset="0">
+         <bool>true</bool>
+        </property>
+        <property name="EnableDeleteKey" stdset="0">
+         <bool>true</bool>
+        </property>
+        <property name="EnableIntelliSelect" stdset="0">
+         <bool>true</bool>
+        </property>
+        <property name="EnableMouseMoveView" stdset="0">
+         <bool>true</bool>
+        </property>
+        <property name="EnableUndo" stdset="0">
+         <bool>true</bool>
+        </property>
+        <property name="Iniset" stdset="0">
+         <string>EnableClipboard=Y,ObjectModifyEvent=Y,EnableUndo=Y</string>
+        </property>
+        <property name="IsDrawCoord" stdset="0">
+         <bool>true</bool>
+        </property>
+        <property name="ShowCommandWindow" stdset="0">
+         <bool>false</bool>
+        </property>
+        <property name="ShowMenuBar" stdset="0">
+         <bool>false</bool>
+        </property>
+        <property name="ShowModelBar" stdset="0">
+         <bool>false</bool>
+        </property>
+        <property name="ShowPropertyWindow" stdset="0">
+         <bool>false</bool>
+        </property>
+        <property name="ShowRulerWindow" stdset="0">
+         <bool>false</bool>
+        </property>
+        <property name="ShowStatusBar" stdset="0">
+         <bool>false</bool>
+        </property>
+        <property name="ShowToolBars" stdset="0">
+         <bool>false</bool>
+        </property>
+        <property name="SingleSelection" stdset="0">
+         <bool>true</bool>
+        </property>
+        <property name="UserData" stdset="0">
+         <string notr="true">&quot;010ADE5E0DA2A305784A00001F22E8014E9A9FCF5957272AA51F7EA69E974AA5D173220AB9865714670FA0B2ED850000060A177AE70EC20BB6BE0000242ABDE1218C1C87E1F84B3CFA9D1A5FB7E0B8C0A8702F347CEEE340D84B85CBAB639EADA5C7717953A30000262A75D1DCB40BDD2D638097969BF91CB4EFC96862F3DB91F7D7292C97D270AD6EBC8EC0EFB13063444100001A22E98792BAD32A4231E8E85A70D588C1B7B782224023E9D27CD844ED721BC9F99D00000D120712AC0F10BFC62E976BEF515415B18F0000080AB8CA9D8405892A7C0000&quot;</string>
+        </property>
+        <property name="UserName" stdset="0">
+         <string notr="true">&quot;中国船舶重工集团公司第704研究所&quot;</string>
+        </property>
+        <property name="UserPhone" stdset="0">
+         <string notr="true">&quot;0510-83078024&quot;</string>
+        </property>
+        <property name="UserSoftwareName" stdset="0">
+         <string notr="true">&quot;电液系统半实物实验验证平台&quot;</string>
+        </property>
+        <property name="DynToolTip" stdset="0">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QAxWidget</class>
+   <extends>QWidget</extends>
+   <header>qaxwidget.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

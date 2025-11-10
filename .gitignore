@@ -1,0 +1,81 @@
+# Ignore build directory
+build/
+buildInWSL/
+release/
+debug/
+include/
+image/
+lib/
+
+# Qt项目文件
+*.pro.user
+*.user
+*.pro.user.*
+.qmake.stash
+*.pro.user.*
+
+# 构建文件
+Makefile*
+*.qmake.cache
+
+# 编译生成的文件
+*.o
+*.obj
+*.moc
+moc_*.cpp
+moc_*.h
+qrc_*.cpp
+ui_*.h
+*.moc.cpp
+*.moc.hpp
+*.moc.def
+
+# 自动保存和备份文件
+*.autosave
+*~
+*.tmp
+*.temp
+*.bak
+
+# 资源文件（这些应该被跟踪，所以从忽略列表中移除）
+image/
+lib/
+include/
+*.ico
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.dwg
+*.dwg*
+
+
+# 数据库文件（根据是否需要跟踪决定）
+# Model.db
+
+# Ignore LdMainData.db
+./ref/LdMainData.db
+
+# 可执行文件
+*.exe
+*.dll
+*.so
+*.dylib
+
+# 库文件
+*.lib
+*.a
+
+# IDE文件
+.vscode/
+.idea/
+*.swp
+*.swo
+
+.aider*
+Makefile*
+
+# Ignore large files
+*.zip
+*.pdb
+*.dll

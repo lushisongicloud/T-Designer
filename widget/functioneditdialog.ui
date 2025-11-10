@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>FunctionEditDialog</class>
+ <widget class="QDialog" name="FunctionEditDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>560</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>编辑功能</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <layout class="QFormLayout" name="formLayout">
+     <item row="0" column="0">
+      <widget class="QLabel" name="labelName">
+       <property name="text">
+        <string>名称</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QLineEdit" name="editName"/>
+     </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="labelSymbol">
+       <property name="text">
+        <string>功能子块</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <layout class="QHBoxLayout" name="horizontalLayoutSymbol">
+       <item>
+        <widget class="QLineEdit" name="editSymbol">
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnSelectSymbol">
+         <property name="text">
+          <string>选择...</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupExecs">
+     <property name="title">
+      <string>执行器</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayoutExecs">
+      <item>
+       <widget class="QListWidget" name="listExecs"/>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupInputs">
+     <property name="title">
+      <string>输入约束</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayoutInputs">
+      <item>
+       <widget class="QTableWidget" name="tableInputs"/>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayoutInputs">
+        <item>
+         <widget class="QPushButton" name="btnAddInput">
+          <property name="text">
+           <string>新增约束</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="btnRemoveInput">
+          <property name="text">
+           <string>删除约束</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="spacerInputs">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupModeling">
+     <property name="title">
+      <string>功能建模</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayoutModeling">
+      <item row="0" column="0">
+       <widget class="QLabel" name="labelLink">
+        <property name="text">
+         <string>链路</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLineEdit" name="editLink"/>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="labelComponentDependency">
+        <property name="text">
+         <string>器件依赖</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QLineEdit" name="editComponentDependency"/>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="labelAllComponents">
+        <property name="text">
+         <string>关联器件</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QLineEdit" name="editAllComponents"/>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="labelFunctionDependency">
+        <property name="text">
+         <string>功能依赖</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QLineEdit" name="editFunctionDependency"/>
+      </item>
+      <item row="4" column="0">
+       <widget class="QLabel" name="labelPersistent">
+        <property name="text">
+         <string>是否可保持</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1">
+       <widget class="QCheckBox" name="checkPersistent">
+        <property name="text">
+         <string>可保持</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="0">
+       <widget class="QLabel" name="labelFaultProbability">
+        <property name="text">
+         <string>失效概率</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="1">
+       <widget class="QDoubleSpinBox" name="spinFaultProbability">
+        <property name="decimals">
+         <number>6</number>
+        </property>
+        <property name="maximum">
+         <double>1.000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.000100</double>
+        </property>
+        <property name="value">
+         <double>0.000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="0">
+       <widget class="QLabel" name="labelVariableConfig">
+        <property name="text">
+         <string>变量取值范围</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="1">
+       <widget class="QPushButton" name="btnVariableValues">
+        <property name="text">
+         <string>配置...</string>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="1">
+       <widget class="QPushButton" name="btnAutoAnalyze">
+        <property name="text">
+         <string>重新分析</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="labelRemark">
+     <property name="text">
+      <string>备注</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPlainTextEdit" name="plainRemark"/>
+   </item>
+   <item>
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

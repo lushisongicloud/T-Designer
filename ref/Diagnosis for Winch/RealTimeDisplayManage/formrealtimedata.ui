@@ -1,0 +1,1722 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>FormRealTimeData</class>
+ <widget class="QWidget" name="FormRealTimeData">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1920</width>
+    <height>752</height>
+   </rect>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>1920</width>
+    <height>16777215</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QGroupBox{
+    background-color: rgba(16, 57, 70, 1);
+    border: 0px solid rgb(111, 255, 255);
+    margin-top:3.3ex;
+    color: rgba(102, 249, 247, 1);
+    font: 12pt &quot;微软雅黑&quot;;
+}
+
+QGroupBox::title{
+    subcontrol-origin: margin;
+    subcontrol-position: top center;
+    background-color: rgba(19, 67, 79, 1);
+    padding: 7 10000px;
+}
+
+QLineEdit{
+    background-color: rgba(255, 255, 255,0.2);
+    border-width:0;
+    border-style:outset;
+    color: rgba(102, 249, 247, 1);
+    font: 12pt &quot;微软雅黑&quot;;
+}
+
+QLabel{
+    color: rgba(102, 249, 247, 1);
+    font: 11pt &quot;微软雅黑&quot;;
+}
+
+QRadioButton{
+    color: rgba(102, 249, 247, 1);
+    font: 12pt &quot;微软雅黑&quot;;
+}
+
+QRadioButton::indicator{
+    border-color: rgba(255, 255, 255,0);
+    background:transparent;
+}
+
+
+QRadioButton::indicator:checked{
+    border-image:url(:/widget/images/green.png)
+}
+
+QRadioButton::indicator:unchecked{
+    border-image:url(:/widget/images/unchecked.png)
+}
+
+QPushButton{
+    border: 2px solid rgba(61, 255, 255,0.4);
+    background-color: rgba(12, 34, 45, 0.6);
+    font: 12pt &quot;微软雅黑&quot;;
+    color: rgba(102, 249, 247, 1);
+    text-align：center;
+}
+
+QPushButton::disabled{
+    border: 0px;
+    color: rgba(102, 249, 247, 0.3);
+    text-align：center;
+}
+
+QPushButton::pressed{
+    border: 2px solid rgba(61, 255, 255,0.8);
+    background-color: rgba(12, 34, 45, 1);
+    font: 12pt &quot;微软雅黑&quot;;
+}
+
+QPushButton::hover{
+    border: 2.5px solid rgba(61, 255, 255,0.8);
+    background-color: rgba(12, 34, 45, 0.6);
+    font: 75 12pt &quot;微软雅黑&quot;;
+}
+
+QDoubleSpinBox{
+    border: 0px solid rgba(61, 255, 255,0.4);
+    background-color: rgba(255, 255, 255, 0.2);
+    font: 12pt &quot;Times New Roman&quot;;
+    color: rgba(102, 249, 247, 1);
+    text-align：center;
+    padding-left:10px;
+}
+</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
+   <property name="spacing">
+    <number>0</number>
+   </property>
+   <item row="0" column="0">
+    <widget class="QGroupBox" name="groupRealTimeData">
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>0</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>1920</width>
+       <height>16777215</height>
+      </size>
+     </property>
+     <property name="font">
+      <font>
+       <family>微软雅黑</family>
+       <pointsize>12</pointsize>
+       <weight>50</weight>
+       <italic>false</italic>
+       <bold>false</bold>
+      </font>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QGroupBox{
+    background-color: rgba(16, 57, 70, 1);
+    border: 0px solid rgb(111, 255, 255);
+    margin-top:3.3ex;
+    color: rgba(102, 249, 247, 1);
+    font: 12pt &quot;微软雅黑&quot;;
+}
+
+QGroupBox::title{
+    subcontrol-origin: margin;
+    subcontrol-position: top center;
+    background-color: rgba(19, 67, 79, 1);
+    padding: 7 1000px;
+}
+
+</string>
+     </property>
+     <property name="title">
+      <string>实时数据</string>
+     </property>
+     <widget class="QStackedWidget" name="stackedWidgetRealTimeData">
+      <property name="geometry">
+       <rect>
+        <x>6</x>
+        <y>26</y>
+        <width>1911</width>
+        <height>681</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">#RealTimeDataPage1{background-color: rgba(16, 57, 70, 0)}
+#RealTimeDataPage2{background-color: rgba(16, 57, 70, 0)}
+#RealTimeDataPage3{background-color: rgba(16, 57, 70, 0)}
+#RealTimeDataPage4{background-color: rgba(16, 57, 70, 0)}
+#RealTimeDataPage5{background-color: rgba(16, 57, 70, 0)}</string>
+      </property>
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <widget class="QWidget" name="RealTimeDataPage1">
+       <layout class="QGridLayout" name="gridLayout_11">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_PLC-Overall">
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>30</height>
+           </size>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">color: rgb(255, 0, 255);font: 18pt &quot;Arial&quot;;</string>
+          </property>
+          <property name="text">
+           <string>控制柜PLC系统总体信息</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <layout class="QGridLayout" name="gridLayout_12">
+          <item row="0" column="2">
+           <widget class="QLabel" name="label_blank_001">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_WCC_PLC_HeartBeat">
+            <property name="text">
+             <string>控制系统PLC心跳</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLineEdit" name="WCC_PLC_HeartBeat"/>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_WCC_VFD1_HeartBeat">
+            <property name="text">
+             <string>1#电机变频器VFD1心跳</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLineEdit" name="WCC_VFD1_HeartBeat"/>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="label_WCC_VFD2_HeartBeat">
+            <property name="text">
+             <string>2#电机变频器VFD2心跳</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QLineEdit" name="WCC_VFD2_HeartBeat"/>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="label_WCC_VFD3_HeartBeat">
+            <property name="text">
+             <string>排缆电机变频器VFD3心跳</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QLineEdit" name="WCC_VFD3_HeartBeat"/>
+          </item>
+          <item row="4" column="0">
+           <widget class="QLabel" name="label_WCC_IAU_HeartBeat">
+            <property name="text">
+             <string>隔离采样单元心跳</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="1">
+           <widget class="QLineEdit" name="WCC_IAU_HeartBeat"/>
+          </item>
+          <item row="5" column="0">
+           <widget class="QLabel" name="label_WCC_PLC_Para_CableLength">
+            <property name="text">
+             <string>放缆长度 (m)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="1">
+           <widget class="QLineEdit" name="WCC_PLC_Para_CableLength"/>
+          </item>
+          <item row="6" column="0">
+           <widget class="QLabel" name="label_WCC_PLC_Para_ArrayLength">
+            <property name="text">
+             <string>放阵长度 (m)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="1">
+           <widget class="QLineEdit" name="WCC_PLC_Para_ArrayLength"/>
+          </item>
+          <item row="7" column="0">
+           <widget class="QLabel" name="label_WCC_PLC_Para_ArrayDepth">
+            <property name="text">
+             <string>拖曳深度 (m)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="7" column="1">
+           <widget class="QLineEdit" name="WCC_PLC_Para_ArrayDepth"/>
+          </item>
+          <item row="8" column="0">
+           <widget class="QLabel" name="label_WCC_PLC_Para_SeaDepth">
+            <property name="text">
+             <string>海深 (m)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="1">
+           <widget class="QLineEdit" name="WCC_PLC_Para_SeaDepth"/>
+          </item>
+          <item row="9" column="0">
+           <widget class="QLabel" name="label_WCC_PLC_Para_Tension">
+            <property name="text">
+             <string>拖曳张力 (kgf)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="1">
+           <widget class="QLineEdit" name="WCC_PLC_Para_Tension"/>
+          </item>
+          <item row="10" column="0">
+           <widget class="QLabel" name="label_WCC_PLC_WorkMode">
+            <property name="text">
+             <string>收放控制系统当前工况</string>
+            </property>
+           </widget>
+          </item>
+          <item row="10" column="1">
+           <widget class="QLineEdit" name="WCC_PLC_WorkMode"/>
+          </item>
+          <item row="11" column="0">
+           <widget class="QLabel" name="label_WCC_PLC_IW96">
+            <property name="text">
+             <string>张力传感器 (mA)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="11" column="1">
+           <widget class="QLineEdit" name="WCC_PLC_IW96"/>
+          </item>
+          <item row="12" column="0">
+           <widget class="QLabel" name="label_WCC_PLC_CNT0">
+            <property name="text">
+             <string>编码器C相计数值</string>
+            </property>
+           </widget>
+          </item>
+          <item row="12" column="1">
+           <widget class="QLineEdit" name="WCC_PLC_CNT0"/>
+          </item>
+          <item row="0" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_CNT1">
+            <property name="text">
+             <string>排缆计数接近开关计数值</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_CNT1"/>
+          </item>
+          <item row="1" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_Alarm1">
+            <property name="text">
+             <string>1#卷筒变频器故障</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_Alarm1"/>
+          </item>
+          <item row="2" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_Alarm2">
+            <property name="text">
+             <string>2#卷筒变频器故障</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_Alarm2"/>
+          </item>
+          <item row="3" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_Alarm3">
+            <property name="text">
+             <string>排缆变频器故障</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_Alarm3"/>
+          </item>
+          <item row="4" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_Alarm4">
+            <property name="text">
+             <string>放缆长度报警</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_Alarm4"/>
+          </item>
+          <item row="5" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_Alarm5">
+            <property name="text">
+             <string>缆阵转换未到位报警</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_Alarm5"/>
+          </item>
+          <item row="6" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_Alarm6">
+            <property name="text">
+             <string>安全销未拔出报警</string>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_Alarm6"/>
+          </item>
+          <item row="7" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_Alarm7">
+            <property name="text">
+             <string>卷筒应急手柄未拔出报警</string>
+            </property>
+           </widget>
+          </item>
+          <item row="7" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_Alarm7"/>
+          </item>
+          <item row="8" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_Alarm8">
+            <property name="text">
+             <string>丝杆应急手柄未拔出报警</string>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_Alarm8"/>
+          </item>
+          <item row="9" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_Alarm9">
+            <property name="text">
+             <string>手动抱闸未松开报警</string>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_Alarm9"/>
+          </item>
+          <item row="10" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_Alarm10">
+            <property name="text">
+             <string>张力超限报警</string>
+            </property>
+           </widget>
+          </item>
+          <item row="10" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_Alarm10"/>
+          </item>
+          <item row="11" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_Alarm11">
+            <property name="text">
+             <string>拖曳深度报警</string>
+            </property>
+           </widget>
+          </item>
+          <item row="11" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_Alarm11"/>
+          </item>
+          <item row="12" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_Alarm12">
+            <property name="text">
+             <string>海深报警</string>
+            </property>
+           </widget>
+          </item>
+          <item row="12" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_Alarm12"/>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="RealTimeDataPage2">
+       <layout class="QGridLayout" name="gridLayout_21">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_PLC-DI">
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>30</height>
+           </size>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">color: rgb(255, 0, 255);font: 18pt &quot;Arial&quot;;</string>
+          </property>
+          <property name="text">
+           <string>控制柜PLC-开关量输入</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <layout class="QGridLayout" name="gridLayout_22">
+          <item row="0" column="2">
+           <widget class="QLabel" name="label_blank_002">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_WCC_PLC_I0_0">
+            <property name="text">
+             <string>卷筒编码器A</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLineEdit" name="WCC_PLC_I0_0"/>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_WCC_PLC_I0_1">
+            <property name="text">
+             <string>卷筒编码器B</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLineEdit" name="WCC_PLC_I0_1"/>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="label_WCC_PLC_I0_2">
+            <property name="text">
+             <string>排缆变频器故障</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QLineEdit" name="WCC_PLC_I0_2"/>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="label_WCC_PLC_I0_3">
+            <property name="text">
+             <string>卷筒编码器C</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QLineEdit" name="WCC_PLC_I0_3"/>
+          </item>
+          <item row="4" column="0">
+           <widget class="QLabel" name="label_WCC_PLC_I0_4">
+            <property name="text">
+             <string>排缆计数接近开关</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="1">
+           <widget class="QLineEdit" name="WCC_PLC_I0_4"/>
+          </item>
+          <item row="5" column="0">
+           <widget class="QLabel" name="label_WCC_PLC_I0_5">
+            <property name="text">
+             <string>1#松刹状态</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="1">
+           <widget class="QLineEdit" name="WCC_PLC_I0_5"/>
+          </item>
+          <item row="6" column="0">
+           <widget class="QLabel" name="label_WCC_PLC_I0_6">
+            <property name="text">
+             <string>2#松刹状态</string>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="1">
+           <widget class="QLineEdit" name="WCC_PLC_I0_6"/>
+          </item>
+          <item row="7" column="0">
+           <widget class="QLabel" name="label_WCC_PLC_I0_7">
+            <property name="text">
+             <string>机柜面板急停按钮常开触点</string>
+            </property>
+           </widget>
+          </item>
+          <item row="7" column="1">
+           <widget class="QLineEdit" name="WCC_PLC_I0_7"/>
+          </item>
+          <item row="8" column="0">
+           <widget class="QLabel" name="label_WCC_PLC_I1_0">
+            <property name="text">
+             <string>机柜面板1#应急回收按钮</string>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="1">
+           <widget class="QLineEdit" name="WCC_PLC_I1_0"/>
+          </item>
+          <item row="9" column="0">
+           <widget class="QLabel" name="label_WCC_PLC_I1_1">
+            <property name="text">
+             <string>机柜面板2#应急回收按钮</string>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="1">
+           <widget class="QLineEdit" name="WCC_PLC_I1_1"/>
+          </item>
+          <item row="10" column="0">
+           <widget class="QLabel" name="label_WCC_PLC_I1_2">
+            <property name="text">
+             <string>机柜面板手动排缆左移按钮</string>
+            </property>
+           </widget>
+          </item>
+          <item row="10" column="1">
+           <widget class="QLineEdit" name="WCC_PLC_I1_2"/>
+          </item>
+          <item row="11" column="0">
+           <widget class="QLabel" name="label_WCC_PLC_I1_3">
+            <property name="text">
+             <string>机柜面板手动排缆右移按钮</string>
+            </property>
+           </widget>
+          </item>
+          <item row="11" column="1">
+           <widget class="QLineEdit" name="WCC_PLC_I1_3"/>
+          </item>
+          <item row="12" column="0">
+           <widget class="QLabel" name="label_WCC_PLC_I1_4">
+            <property name="text">
+             <string>便携式操作盒急停按钮常开触点</string>
+            </property>
+           </widget>
+          </item>
+          <item row="12" column="1">
+           <widget class="QLineEdit" name="WCC_PLC_I1_4"/>
+          </item>
+          <item row="13" column="0">
+           <widget class="QLabel" name="label_WCC_PLC_I1_5">
+            <property name="text">
+             <string>便携式操作盒消音按钮</string>
+            </property>
+           </widget>
+          </item>
+          <item row="13" column="1">
+           <widget class="QLineEdit" name="WCC_PLC_I1_5"/>
+          </item>
+          <item row="14" column="0">
+           <widget class="QLabel" name="label_WCC_PLC_I1_6">
+            <property name="text">
+             <string>便携式操作盒收放旋钮-回收</string>
+            </property>
+           </widget>
+          </item>
+          <item row="14" column="1">
+           <widget class="QLineEdit" name="WCC_PLC_I1_6"/>
+          </item>
+          <item row="0" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_I1_7">
+            <property name="text">
+             <string>便携式操作盒收放旋钮-释放</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_I1_7"/>
+          </item>
+          <item row="1" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_I2_0">
+            <property name="text">
+             <string>便携式操作盒手自动旋钮-自动</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_I2_0"/>
+          </item>
+          <item row="2" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_I2_1">
+            <property name="text">
+             <string>便携式操作盒高低速旋钮-高速</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_I2_1"/>
+          </item>
+          <item row="3" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_I2_2">
+            <property name="text">
+             <string>1#变频器就绪</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_I2_2"/>
+          </item>
+          <item row="4" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_I2_3">
+            <property name="text">
+             <string>1#变频器故障</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_I2_3"/>
+          </item>
+          <item row="5" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_I2_4">
+            <property name="text">
+             <string>2#变频器就绪</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_I2_4"/>
+          </item>
+          <item row="6" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_I2_5">
+            <property name="text">
+             <string>2#变频器故障</string>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_I2_5"/>
+          </item>
+          <item row="7" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_I2_6">
+            <property name="text">
+             <string>带式刹车接近开关</string>
+            </property>
+           </widget>
+          </item>
+          <item row="7" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_I2_6"/>
+          </item>
+          <item row="8" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_I2_7">
+            <property name="text">
+             <string>卷筒手柄接近开关</string>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_I2_7"/>
+          </item>
+          <item row="9" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_I80_0">
+            <property name="text">
+             <string>手动插销行程开关</string>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_I80_0"/>
+          </item>
+          <item row="10" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_I80_1">
+            <property name="text">
+             <string>排缆左位1行程开关</string>
+            </property>
+           </widget>
+          </item>
+          <item row="10" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_I80_1"/>
+          </item>
+          <item row="11" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_I80_2">
+            <property name="text">
+             <string>排缆左位2行程开关</string>
+            </property>
+           </widget>
+          </item>
+          <item row="11" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_I80_2"/>
+          </item>
+          <item row="12" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_I80_3">
+            <property name="text">
+             <string>排缆右位行程开关</string>
+            </property>
+           </widget>
+          </item>
+          <item row="12" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_I80_3"/>
+          </item>
+          <item row="13" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_I80_4">
+            <property name="text">
+             <string>排缆开口调整行程开关</string>
+            </property>
+           </widget>
+          </item>
+          <item row="13" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_I80_4"/>
+          </item>
+          <item row="14" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_I80_5">
+            <property name="text">
+             <string>排缆手柄接近开关</string>
+            </property>
+           </widget>
+          </item>
+          <item row="14" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_I80_5"/>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="RealTimeDataPage3">
+       <layout class="QGridLayout" name="gridLayout_31">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_PLC-DO">
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>30</height>
+           </size>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">color: rgb(255, 0, 255);font: 18pt &quot;Arial&quot;;</string>
+          </property>
+          <property name="text">
+           <string>控制柜PLC-开关量输出</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <layout class="QGridLayout" name="gridLayout_32">
+          <item row="0" column="2">
+           <widget class="QLabel" name="label_blank_003">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_WCC_PLC_Q0_0">
+            <property name="text">
+             <string>1#电机松刹车继电器KA3线圈</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLineEdit" name="WCC_PLC_Q0_0"/>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_WCC_PLC_Q0_1">
+            <property name="text">
+             <string>2#电机松刹车继电器KA4线圈</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLineEdit" name="WCC_PLC_Q0_1"/>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="label_WCC_PLC_Q0_2">
+            <property name="text">
+             <string>机柜面板1#变频器故障指示灯</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QLineEdit" name="WCC_PLC_Q0_2"/>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="label_WCC_PLC_Q0_3">
+            <property name="text">
+             <string>机柜面板2#变频器故障指示灯</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QLineEdit" name="WCC_PLC_Q0_3"/>
+          </item>
+          <item row="4" column="0">
+           <widget class="QLabel" name="label_WCC_PLC_Q0_4">
+            <property name="text">
+             <string>1#变频器DO控制信号-启停</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="1">
+           <widget class="QLineEdit" name="WCC_PLC_Q0_4"/>
+          </item>
+          <item row="5" column="0">
+           <widget class="QLabel" name="label_WCC_PLC_Q0_5">
+            <property name="text">
+             <string>1#变频器DO控制信号-正反转</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="1">
+           <widget class="QLineEdit" name="WCC_PLC_Q0_5"/>
+          </item>
+          <item row="6" column="0">
+           <widget class="QLabel" name="label_WCC_PLC_Q0_6">
+            <property name="text">
+             <string>1#变频器DO控制信号-预留DI3</string>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="1">
+           <widget class="QLineEdit" name="WCC_PLC_Q0_6"/>
+          </item>
+          <item row="7" column="0">
+           <widget class="QLabel" name="label_WCC_PLC_Q0_7">
+            <property name="text">
+             <string>1#变频器DO控制信号-急停</string>
+            </property>
+           </widget>
+          </item>
+          <item row="7" column="1">
+           <widget class="QLineEdit" name="WCC_PLC_Q0_7"/>
+          </item>
+          <item row="8" column="0">
+           <widget class="QLabel" name="label_WCC_PLC_Q1_0">
+            <property name="text">
+             <string>1#变频器DO控制信号-预留DI5</string>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="1">
+           <widget class="QLineEdit" name="WCC_PLC_Q1_0"/>
+          </item>
+          <item row="9" column="0">
+           <widget class="QLabel" name="label_WCC_PLC_Q1_1">
+            <property name="text">
+             <string>2#变频器DO控制信号-启停</string>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="1">
+           <widget class="QLineEdit" name="WCC_PLC_Q1_1"/>
+          </item>
+          <item row="10" column="0">
+           <widget class="QLabel" name="label_WCC_PLC_Q1_2">
+            <property name="text">
+             <string>2#变频器DO控制信号-正反转</string>
+            </property>
+           </widget>
+          </item>
+          <item row="10" column="1">
+           <widget class="QLineEdit" name="WCC_PLC_Q1_2"/>
+          </item>
+          <item row="11" column="0">
+           <widget class="QLabel" name="label_WCC_PLC_Q1_3">
+            <property name="text">
+             <string>2#变频器DO控制信号-预留DI3</string>
+            </property>
+           </widget>
+          </item>
+          <item row="11" column="1">
+           <widget class="QLineEdit" name="WCC_PLC_Q1_3"/>
+          </item>
+          <item row="0" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_Q1_4">
+            <property name="text">
+             <string>2#变频器DO控制信号-急停</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_Q1_4"/>
+          </item>
+          <item row="1" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_Q1_5">
+            <property name="text">
+             <string>2#变频器DO控制信号-预留DI5</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_Q1_5"/>
+          </item>
+          <item row="2" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_Q1_6">
+            <property name="text">
+             <string>排缆变频器DO控制信号-正转</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_Q1_6"/>
+          </item>
+          <item row="3" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_Q1_7">
+            <property name="text">
+             <string>排缆变频器DO控制信号-反转</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_Q1_7"/>
+          </item>
+          <item row="4" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_Q64_4">
+            <property name="text">
+             <string>排缆变频器DO控制信号-预留DI3</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_Q64_4"/>
+          </item>
+          <item row="5" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_Q64_5">
+            <property name="text">
+             <string>排缆变频器DO控制信号-预留DI4</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_Q64_5"/>
+          </item>
+          <item row="6" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_Q64_6">
+            <property name="text">
+             <string>排缆变频器DO控制信号-急停</string>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_Q64_6"/>
+          </item>
+          <item row="7" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_Q64_7">
+            <property name="text">
+             <string>便携式操作盒-声光报警</string>
+            </property>
+           </widget>
+          </item>
+          <item row="7" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_Q64_7"/>
+          </item>
+          <item row="8" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_QW112">
+            <property name="text">
+             <string>1#变频器AO控制信号-速度 (mA)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_QW112"/>
+          </item>
+          <item row="9" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_QW114">
+            <property name="text">
+             <string>2#变频器AO控制信号-速度 (mA)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_QW114"/>
+          </item>
+          <item row="10" column="3">
+           <widget class="QLabel" name="label_WCC_PLC_QW48">
+            <property name="text">
+             <string>排缆变频器AO控制信号-速度 (mA)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="10" column="4">
+           <widget class="QLineEdit" name="WCC_PLC_QW48"/>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="RealTimeDataPage4">
+       <layout class="QGridLayout" name="gridLayout_41">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_PLC-VFD">
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>30</height>
+           </size>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">color: rgb(255, 0, 255);font: 18pt &quot;Arial&quot;;</string>
+          </property>
+          <property name="text">
+           <string>控制柜变频器数据</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <layout class="QGridLayout" name="gridLayout_42">
+          <item row="0" column="2">
+           <widget class="QLabel" name="label_blank_004">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_WCC_VFD1_AI1">
+            <property name="text">
+             <string>1#变频器AO控制信号-速度 (mA)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLineEdit" name="WCC_VFD1_AI1"/>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_WCC_VFD2_AI1">
+            <property name="text">
+             <string>2#变频器AO控制信号-速度 (mA)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLineEdit" name="WCC_VFD2_AI1"/>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="label_WCC_VFD3_AI2">
+            <property name="text">
+             <string>排缆变频器AO控制信号-速度 (mA)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QLineEdit" name="WCC_VFD3_AI2"/>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="label_WCC_VFD1_DI1">
+            <property name="text">
+             <string>1#变频器DO控制信号-启停</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QLineEdit" name="WCC_VFD1_DI1"/>
+          </item>
+          <item row="4" column="0">
+           <widget class="QLabel" name="label_WCC_VFD1_DI2">
+            <property name="text">
+             <string>1#变频器DO控制信号-正反转</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="1">
+           <widget class="QLineEdit" name="WCC_VFD1_DI2"/>
+          </item>
+          <item row="5" column="0">
+           <widget class="QLabel" name="label_WCC_VFD1_DI4">
+            <property name="text">
+             <string>1#变频器DO控制信号-急停</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="1">
+           <widget class="QLineEdit" name="WCC_VFD1_DI4"/>
+          </item>
+          <item row="6" column="0">
+           <widget class="QLabel" name="label_WCC_VFD1_DI6">
+            <property name="text">
+             <string>1#松刹状态</string>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="1">
+           <widget class="QLineEdit" name="WCC_VFD1_DI6"/>
+          </item>
+          <item row="7" column="0">
+           <widget class="QLabel" name="label_WCC_VFD1_DO1">
+            <property name="text">
+             <string>1#变频器就绪</string>
+            </property>
+           </widget>
+          </item>
+          <item row="7" column="1">
+           <widget class="QLineEdit" name="WCC_VFD1_DO1"/>
+          </item>
+          <item row="8" column="0">
+           <widget class="QLabel" name="label_WCC_VFD1_DO2">
+            <property name="text">
+             <string>1#电机松刹车继电器KA1线圈</string>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="1">
+           <widget class="QLineEdit" name="WCC_VFD1_DO2"/>
+          </item>
+          <item row="9" column="0">
+           <widget class="QLabel" name="label_WCC_VFD1_DO3">
+            <property name="text">
+             <string>1#变频器故障</string>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="1">
+           <widget class="QLineEdit" name="WCC_VFD1_DO3"/>
+          </item>
+          <item row="10" column="0">
+           <widget class="QLabel" name="label_WCC_VFD2_DI1">
+            <property name="text">
+             <string>2#变频器DO控制信号-启停</string>
+            </property>
+           </widget>
+          </item>
+          <item row="10" column="1">
+           <widget class="QLineEdit" name="WCC_VFD2_DI1"/>
+          </item>
+          <item row="0" column="3">
+           <widget class="QLabel" name="label_WCC_VFD2_DI2">
+            <property name="text">
+             <string>2#变频器DO控制信号-正反转</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="4">
+           <widget class="QLineEdit" name="WCC_VFD2_DI2"/>
+          </item>
+          <item row="1" column="3">
+           <widget class="QLabel" name="label_WCC_VFD2_DI4">
+            <property name="text">
+             <string>2#变频器DO控制信号-急停</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="4">
+           <widget class="QLineEdit" name="WCC_VFD2_DI4"/>
+          </item>
+          <item row="2" column="3">
+           <widget class="QLabel" name="label_WCC_VFD2_DI6">
+            <property name="text">
+             <string>2#松刹状态</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="4">
+           <widget class="QLineEdit" name="WCC_VFD2_DI6"/>
+          </item>
+          <item row="3" column="3">
+           <widget class="QLabel" name="label_WCC_VFD2_DO1">
+            <property name="text">
+             <string>2#变频器就绪</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="4">
+           <widget class="QLineEdit" name="WCC_VFD2_DO1"/>
+          </item>
+          <item row="4" column="3">
+           <widget class="QLabel" name="label_WCC_VFD2_DO2">
+            <property name="text">
+             <string>2#电机松刹车继电器KA2线圈</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="4">
+           <widget class="QLineEdit" name="WCC_VFD2_DO2"/>
+          </item>
+          <item row="5" column="3">
+           <widget class="QLabel" name="label_WCC_VFD2_DO3">
+            <property name="text">
+             <string>2#变频器故障</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="4">
+           <widget class="QLineEdit" name="WCC_VFD2_DO3"/>
+          </item>
+          <item row="6" column="3">
+           <widget class="QLabel" name="label_WCC_VFD3_DI1">
+            <property name="text">
+             <string>排缆变频器DO控制信号-正转</string>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="4">
+           <widget class="QLineEdit" name="WCC_VFD3_DI1"/>
+          </item>
+          <item row="7" column="3">
+           <widget class="QLabel" name="label_WCC_VFD3_DI2">
+            <property name="text">
+             <string>排缆变频器DO控制信号-反转</string>
+            </property>
+           </widget>
+          </item>
+          <item row="7" column="4">
+           <widget class="QLineEdit" name="WCC_VFD3_DI2"/>
+          </item>
+          <item row="8" column="3">
+           <widget class="QLabel" name="label_WCC_VFD3_DI5">
+            <property name="text">
+             <string>排缆变频器DO控制信号-急停</string>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="4">
+           <widget class="QLineEdit" name="WCC_VFD3_DI5"/>
+          </item>
+          <item row="9" column="3">
+           <widget class="QLabel" name="label_WCC_VFD3_DO5">
+            <property name="text">
+             <string>排缆变频器故障</string>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="4">
+           <widget class="QLineEdit" name="WCC_VFD3_DO5"/>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="RealTimeDataPage5">
+       <layout class="QGridLayout" name="gridLayout_51">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_IAU-Overall">
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>30</height>
+           </size>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">color: rgb(255, 0, 255);font: 18pt &quot;Arial&quot;;</string>
+          </property>
+          <property name="text">
+           <string>在线诊断分析单元</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <layout class="QGridLayout" name="gridLayout_52">
+          <item row="0" column="2">
+           <widget class="QLabel" name="label_blank_005">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_JB_IAU_IW64">
+            <property name="text">
+             <string>张力传感器 (mA)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLineEdit" name="JB_IAU_IW64"/>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_JB_IAU_IW1000">
+            <property name="text">
+             <string>卷筒编码器计数（AB相4倍频）</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLineEdit" name="JB_IAU_IW1000"/>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="label_JB_IAU_IW1004">
+            <property name="text">
+             <string>卷筒编码器计数（C相+收放旋钮-释放）</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QLineEdit" name="JB_IAU_IW1004"/>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="label_JB_IAU_IW1008">
+            <property name="text">
+             <string>排缆接近开关计数（增计数）</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QLineEdit" name="JB_IAU_IW1008"/>
+          </item>
+          <item row="4" column="0">
+           <widget class="QLabel" name="label_JB_IAU_I0_0">
+            <property name="text">
+             <string>卷筒编码器A</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="1">
+           <widget class="QLineEdit" name="JB_IAU_I0_0"/>
+          </item>
+          <item row="5" column="0">
+           <widget class="QLabel" name="label_JB_IAU_I0_1">
+            <property name="text">
+             <string>卷筒编码器B</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="1">
+           <widget class="QLineEdit" name="JB_IAU_I0_1"/>
+          </item>
+          <item row="6" column="0">
+           <widget class="QLabel" name="label_JB_IAU_I0_2">
+            <property name="text">
+             <string>卷筒编码器C</string>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="1">
+           <widget class="QLineEdit" name="JB_IAU_I0_2"/>
+          </item>
+          <item row="7" column="0">
+           <widget class="QLabel" name="label_JB_IAU_I0_3">
+            <property name="text">
+             <string>便携式操作盒急停按钮常开触点</string>
+            </property>
+           </widget>
+          </item>
+          <item row="7" column="1">
+           <widget class="QLineEdit" name="JB_IAU_I0_3"/>
+          </item>
+          <item row="8" column="0">
+           <widget class="QLabel" name="label_JB_IAU_I0_4">
+            <property name="text">
+             <string>便携式操作盒消音按钮</string>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="1">
+           <widget class="QLineEdit" name="JB_IAU_I0_4"/>
+          </item>
+          <item row="9" column="0">
+           <widget class="QLabel" name="label_JB_IAU_I0_5">
+            <property name="text">
+             <string>便携式操作盒收放旋钮-回收</string>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="1">
+           <widget class="QLineEdit" name="JB_IAU_I0_5"/>
+          </item>
+          <item row="10" column="0">
+           <widget class="QLabel" name="label_JB_IAU_I0_6">
+            <property name="text">
+             <string>便携式操作盒收放旋钮-释放</string>
+            </property>
+           </widget>
+          </item>
+          <item row="10" column="1">
+           <widget class="QLineEdit" name="JB_IAU_I0_6"/>
+          </item>
+          <item row="11" column="0">
+           <widget class="QLabel" name="label_JB_IAU_I0_7">
+            <property name="text">
+             <string>便携式操作盒手自动旋钮-自动</string>
+            </property>
+           </widget>
+          </item>
+          <item row="11" column="1">
+           <widget class="QLineEdit" name="JB_IAU_I0_7"/>
+          </item>
+          <item row="0" column="3">
+           <widget class="QLabel" name="label_JB_IAU_I1_0">
+            <property name="text">
+             <string>便携式操作盒高低速旋钮-高速</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="4">
+           <widget class="QLineEdit" name="JB_IAU_I1_0"/>
+          </item>
+          <item row="1" column="3">
+           <widget class="QLabel" name="label_JB_IAU_I1_1">
+            <property name="text">
+             <string>带式刹车接近开关</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="4">
+           <widget class="QLineEdit" name="JB_IAU_I1_1"/>
+          </item>
+          <item row="2" column="3">
+           <widget class="QLabel" name="label_JB_IAU_I1_2">
+            <property name="text">
+             <string>排缆计数接近开关</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="4">
+           <widget class="QLineEdit" name="JB_IAU_I1_2"/>
+          </item>
+          <item row="3" column="3">
+           <widget class="QLabel" name="label_JB_IAU_I1_3">
+            <property name="text">
+             <string>卷筒手柄接近开关</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="4">
+           <widget class="QLineEdit" name="JB_IAU_I1_3"/>
+          </item>
+          <item row="4" column="3">
+           <widget class="QLabel" name="label_JB_IAU_I1_4">
+            <property name="text">
+             <string>排缆手柄接近开关</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="4">
+           <widget class="QLineEdit" name="JB_IAU_I1_4"/>
+          </item>
+          <item row="5" column="3">
+           <widget class="QLabel" name="label_JB_IAU_I1_5">
+            <property name="text">
+             <string>手动插销行程开关</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="4">
+           <widget class="QLineEdit" name="JB_IAU_I1_5"/>
+          </item>
+          <item row="6" column="3">
+           <widget class="QLabel" name="label_JB_IAU_I2_0">
+            <property name="text">
+             <string>排缆左位1行程开关</string>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="4">
+           <widget class="QLineEdit" name="JB_IAU_I2_0"/>
+          </item>
+          <item row="7" column="3">
+           <widget class="QLabel" name="label_JB_IAU_I2_1">
+            <property name="text">
+             <string>排缆左位2行程开关</string>
+            </property>
+           </widget>
+          </item>
+          <item row="7" column="4">
+           <widget class="QLineEdit" name="JB_IAU_I2_1"/>
+          </item>
+          <item row="8" column="3">
+           <widget class="QLabel" name="label_JB_IAU_I2_2">
+            <property name="text">
+             <string>排缆右位行程开关</string>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="4">
+           <widget class="QLineEdit" name="JB_IAU_I2_2"/>
+          </item>
+          <item row="9" column="3">
+           <widget class="QLabel" name="label_JB_IAU_I2_3">
+            <property name="text">
+             <string>排缆开口调整行程开关</string>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="4">
+           <widget class="QLineEdit" name="JB_IAU_I2_3"/>
+          </item>
+          <item row="10" column="3">
+           <widget class="QLabel" name="label_JB_IAU_I2_4">
+            <property name="text">
+             <string>便携式操作盒-声光报警</string>
+            </property>
+           </widget>
+          </item>
+          <item row="10" column="4">
+           <widget class="QLineEdit" name="JB_IAU_I2_4"/>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+     <widget class="QWidget" name="layoutWidget">
+      <property name="geometry">
+       <rect>
+        <x>21</x>
+        <y>710</y>
+        <width>1901</width>
+        <height>42</height>
+       </rect>
+      </property>
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <spacer name="horizontalSpacer">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QPushButton" name="Btn_RealTimeDataPreviousPage">
+         <property name="minimumSize">
+          <size>
+           <width>100</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>上一页</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_44">
+         <property name="text">
+          <string>第 </string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_RealTimeDataCurrentPageNum">
+         <property name="minimumSize">
+          <size>
+           <width>25</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="sizeIncrement">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>1</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_46">
+         <property name="text">
+          <string>页        </string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_65">
+         <property name="text">
+          <string>共 </string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_RealTimeDataSumageNum">
+         <property name="minimumSize">
+          <size>
+           <width>25</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="sizeIncrement">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>1</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_131">
+         <property name="text">
+          <string>页            </string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="Btn_RealTimeDataNextPage">
+         <property name="minimumSize">
+          <size>
+           <width>100</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>下一页</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
