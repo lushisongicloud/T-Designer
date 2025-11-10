@@ -1,0 +1,19 @@
+
+enum KACommand{on, off};
+enum MannualCommand{on, off, reset, noCommand};
+enum onOffState{on, off, onoff};
+enum openClosedValues{open, closed};
+enum EMcmd{on, off, noCommand};
+enum Resistance{nominal, shorted, open};
+enum openClosedState{open, closed};
+enum voltage{none, low, middle, high, infinite};
+enum current{none, low, middle, high, infinite};
+enum resistance{none, low, middle, high, infinite};
+enum mannualCmd{on, off, reset, noCommand};
+
+
+class Test {
+
+    {
+    }
+}

@@ -2281,11 +2281,31 @@ void MainWindow::UpdateFuncTable()
 
 void MainWindow::on_BtnDiagnose_clicked()
 {
-    ui->widgetNavigator->setVisible(false);
-    ui->stackedWidget->setCurrentIndex(1);
-    initDiagnoseUI();
-    LoadAllFunction();
-    LoadAllTools();
+    // 创建并显示诊断对话框
+    dialogDiagnoseUI *diagnoseDialog = new dialogDiagnoseUI(this);
+    
+    // 连接信号与槽
+    connect(diagnoseDialog, &dialogDiagnoseUI::signalUpdateExec, 
+            this, &MainWindow::onDiagnoseUpdateExec);
+    connect(diagnoseDialog, &dialogDiagnoseUI::signalStartDiagnose, 
+            this, &MainWindow::StartDiagnose);
+    connect(diagnoseDialog, &dialogDiagnoseUI::signalSendCmdStr, 
+            this, &MainWindow::onDiagnoseSendCmd);
+    
+    // 显示对话框（非模态）
+    diagnoseDialog->show();
+}
+
+void MainWindow::onDiagnoseUpdateExec(QString FunctionID)
+{
+    // 调用原有的 UpdateXmplInfo 函数
+    UpdateXmplInfo(FunctionID);
+}
+
+void MainWindow::onDiagnoseSendCmd(QString SendCmdStr)
+{
+    // 调用原有的 SendCmd 函数
+    SendCmd(SendCmdStr, true);
 }
 
 void MainWindow::initDiagnoseUI()

@@ -515,6 +515,10 @@ private slots:
     void UpdateXmplInfo(QString FunctionID);
 
     void StartDiagnose(QString SendCmdStr);
+    
+    // 诊断对话框信号处理槽
+    void onDiagnoseUpdateExec(QString FunctionID);
+    void onDiagnoseSendCmd(QString SendCmdStr);
 
     void SendCmd(QString SendCmdStr,bool print);
 

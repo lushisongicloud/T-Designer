@@ -350,7 +350,7 @@
   <widget class="QChartView" name="chartView">
    <property name="geometry">
     <rect>
-     <x>210</x>
+     <x>220</x>
      <y>170</y>
      <width>361</width>
      <height>301</height>
