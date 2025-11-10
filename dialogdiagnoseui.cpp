@@ -70,7 +70,7 @@ void dialogDiagnoseUI::on_toolButton_start_diagnosis_clicked()
     FunctionID=ui->tableWidget_function_select->item(ui->tableWidget_function_select->currentRow(),0)->data(Qt::UserRole).toString();
     emit(signalUpdateExec(FunctionID));
     init_symptom_list();
-    SetStackIndex(1);
+    SetStackIndex(2);
 }
 
 void dialogDiagnoseUI::init_symptom_list()//初始化征兆信号UI列表
