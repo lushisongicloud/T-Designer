@@ -420,7 +420,7 @@ rgba(17,255,255,128));
 </string>
             </property>
             <property name="currentIndex">
-             <number>3</number>
+             <number>0</number>
             </property>
             <widget class="QWidget" name="tab_8">
              <property name="styleSheet">
@@ -9884,7 +9884,7 @@ min-width: 100px;
 }</string>
       </property>
       <property name="currentIndex">
-       <number>4</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="ProjectManager">
        <property name="styleSheet">

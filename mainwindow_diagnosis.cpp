@@ -4088,6 +4088,12 @@ void MainWindow::displayCurrentTest()
     // 显示当前推荐的测试信息
     QString testDesc = currentTest->testDescription();
     QString expectedResult = currentTest->expectedResult();
+    QString passButtonText = currentTest->passButtonText();
+    QString failButtonText = currentTest->failButtonText();
+    
+    // 如果按钮文本为空，使用默认值
+    if (passButtonText.isEmpty()) passButtonText = "是";
+    if (failButtonText.isEmpty()) failButtonText = "否";
     
     ui->label_diagnosis_TestWord->setText("执行测试");
     
@@ -4095,10 +4101,35 @@ void MainWindow::displayCurrentTest()
         .arg(testDesc.isEmpty() ? "无描述" : testDesc)
         .arg(expectedResult.isEmpty() ? "无预期结果" : expectedResult);
     
+    // 添加按钮文本提示
+    displayText += QString("\n\n[%1] 或 [%2]").arg(passButtonText).arg(failButtonText);
+    
     ui->label_test_description_1->setText(displayText);
     
+    // 尝试动态设置按钮文本（如果按钮存在）
+    QPushButton* btnPass = ui->page_main_diagnosis->findChild<QPushButton*>("btnTestPass");
+    QPushButton* btnFail = ui->page_main_diagnosis->findChild<QPushButton*>("btnTestFail");
+    QPushButton* btnSkip = ui->page_main_diagnosis->findChild<QPushButton*>("btnSkipTest");
+    
+    if (btnPass) {
+        btnPass->setText(passButtonText);
+        btnPass->setVisible(true);
+        btnPass->setEnabled(true);
+    }
+    if (btnFail) {
+        btnFail->setText(failButtonText);
+        btnFail->setVisible(true);
+        btnFail->setEnabled(true);
+    }
+    if (btnSkip) {
+        btnSkip->setText("跳过");
+        btnSkip->setVisible(true);
+        btnSkip->setEnabled(true);
+    }
+    
     qDebug() << "显示测试: node_id=" << currentTest->nodeId() 
-             << ", 描述=" << testDesc;
+             << ", 描述=" << testDesc
+             << ", 按钮文本=[" << passButtonText << "/" << failButtonText << "]";
 }
 
 void MainWindow::recordCurrentTestResult(TestOutcome outcome)

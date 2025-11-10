@@ -78,6 +78,12 @@ public:
     double testPriority() const { return m_testPriority; }
     void setTestPriority(double priority) { m_testPriority = priority; }
 
+    QString passButtonText() const { return m_passButtonText; }
+    void setPassButtonText(const QString &text) { m_passButtonText = text; }
+
+    QString failButtonText() const { return m_failButtonText; }
+    void setFailButtonText(const QString &text) { m_failButtonText = text; }
+
     // ===== 树形结构管理 =====
     DiagnosisTreeNode* parent() const { return m_parent; }
     void setParent(DiagnosisTreeNode* parent) { m_parent = parent; }
@@ -183,6 +189,8 @@ private:
     QString m_faultHypothesis;
     int m_isolationLevel;
     double m_testPriority;
+    QString m_passButtonText;
+    QString m_failButtonText;
 
     // 树形结构
     DiagnosisTreeNode* m_parent;

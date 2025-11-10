@@ -29,6 +29,67 @@ class OilPowerSystemDiagnosisBuilder:
         self.db_path = db_path
         self.conn = None
         self.cursor = None
+    
+    @staticmethod
+    def generate_button_texts(test_description):
+        """
+        根据测试描述生成按钮文本
+        返回: (pass_button_text, fail_button_text)
+        """
+        desc_lower = test_description.lower()
+        
+        # 电压测量类
+        if '电压' in test_description and '正常' in test_description:
+            return ('电压正常', '电压异常')
+        elif 'v' in desc_lower or '电压' in test_description:
+            return ('电压符合', '电压不符合')
+        
+        # 指示灯观察类
+        if '指示灯' in test_description or 'led' in desc_lower:
+            return ('指示正常', '指示异常')
+        
+        # PLC状态检查类
+        if 'plc' in desc_lower and ('状态' in test_description or '运行' in test_description):
+            return ('PLC正常', 'PLC异常')
+        
+        # 信号检查类
+        if '信号' in test_description:
+            return ('信号正常', '信号异常')
+        
+        # 电机运行类
+        if '电机' in test_description and '运行' in test_description:
+            return ('运行正常', '运行异常')
+        
+        # 压力检查类
+        if '压力' in test_description:
+            return ('压力正常', '压力异常')
+        
+        # 传感器类
+        if '传感器' in test_description:
+            return ('读数正常', '读数异常')
+        
+        # 导通测试类
+        if '导通' in test_description:
+            return ('导通', '不导通')
+        
+        # 状态检查类（如阀门、开关等）
+        if '状态' in test_description:
+            return ('状态正常', '状态异常')
+        
+        # 读数类
+        if '读数' in test_description or '数值' in test_description:
+            return ('读数正常', '读数异常')
+        
+        # 含水量/污染度类
+        if '含水' in test_description or '污染' in test_description:
+            return ('合格', '超标')
+        
+        # 综合指标类
+        if '综合' in test_description or '指标' in test_description:
+            return ('合格', '不合格')
+        
+        # 默认
+        return ('是', '否')
         
     def connect(self):
         """连接数据库"""
@@ -138,9 +199,9 @@ class OilPowerSystemDiagnosisBuilder:
         
         # 创建诊断树
         self.cursor.execute("""
-            INSERT INTO diagnosis_tree (function_id, name, description, created_time, auto_generated)
-            VALUES (?, ?, ?, ?, ?)
-        """, (1, '液压泵站启动功能诊断树', '检查泵站从供电到启动的完整链路', 
+            INSERT INTO diagnosis_tree (container_id, function_id, name, description, created_time, auto_generated)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (1, 1, '液压泵站启动功能诊断树', '检查泵站从供电到启动的完整链路', 
               datetime.now().isoformat(), 0))
         tree_id = self.cursor.lastrowid
         
@@ -327,16 +388,23 @@ class OilPowerSystemDiagnosisBuilder:
         ]
         
         for node in nodes:
+            # 为测试节点自动生成按钮文本
+            pass_btn = '是'
+            fail_btn = '否'
+            if node['node_type'] == 'Test' and node.get('test_description'):
+                pass_btn, fail_btn = self.generate_button_texts(node['test_description'])
+            
             self.cursor.execute("""
                 INSERT INTO diagnosis_tree_node 
                 (tree_id, parent_node_id, node_type, outcome, test_description, 
-                 expected_result, fault_hypothesis, isolation_level, test_priority, comment)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 expected_result, fault_hypothesis, isolation_level, test_priority, comment,
+                 pass_button_text, fail_button_text)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (node['tree_id'], node.get('parent_node_id'), node['node_type'], 
                   node['outcome'], node.get('test_description', ''), 
                   node.get('expected_result', ''), node.get('fault_hypothesis', ''),
                   node.get('isolation_level', 0), node.get('test_priority', 0),
-                  node.get('comment', '')))
+                  node.get('comment', ''), pass_btn, fail_btn))
         
         # 更新root_node_id
         self.cursor.execute("UPDATE diagnosis_tree SET root_node_id = 1 WHERE tree_id = ?", (tree_id,))
@@ -348,9 +416,9 @@ class OilPowerSystemDiagnosisBuilder:
         print("\n[4/5] 构建诊断树2：液压系统压力控制功能...")
         
         self.cursor.execute("""
-            INSERT INTO diagnosis_tree (function_id, name, description, created_time, auto_generated)
-            VALUES (?, ?, ?, ?, ?)
-        """, (2, '压力控制功能诊断树', '检查压力传感器、比例阀及PLC控制回路', 
+            INSERT INTO diagnosis_tree (container_id, function_id, name, description, created_time, auto_generated)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (2, 2, '压力控制功能诊断树', '检查压力传感器、比例阀及PLC控制回路', 
               datetime.now().isoformat(), 0))
         tree_id = self.cursor.lastrowid
         
@@ -412,16 +480,23 @@ class OilPowerSystemDiagnosisBuilder:
         ]
         
         for node in nodes:
+            # 为测试节点自动生成按钮文本
+            pass_btn = '是'
+            fail_btn = '否'
+            if node['node_type'] == 'Test' and node.get('test_description'):
+                pass_btn, fail_btn = self.generate_button_texts(node['test_description'])
+            
             self.cursor.execute("""
                 INSERT INTO diagnosis_tree_node 
                 (tree_id, parent_node_id, node_type, outcome, test_description, 
-                 expected_result, fault_hypothesis, isolation_level, test_priority, comment)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 expected_result, fault_hypothesis, isolation_level, test_priority, comment,
+                 pass_button_text, fail_button_text)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (node['tree_id'], node.get('parent_node_id'), node['node_type'], 
                   node['outcome'], node.get('test_description', ''), 
                   node.get('expected_result', ''), node.get('fault_hypothesis', ''),
                   node.get('isolation_level', 0), node.get('test_priority', 0),
-                  node.get('comment', '')))
+                  node.get('comment', ''), pass_btn, fail_btn))
         
         self.cursor.execute("UPDATE diagnosis_tree SET root_node_id = ? WHERE tree_id = ?", 
                           (len(nodes) - len(nodes) + 1, tree_id))
@@ -433,9 +508,9 @@ class OilPowerSystemDiagnosisBuilder:
         print("\n[5/5] 构建诊断树3：液压油质量监测功能...")
         
         self.cursor.execute("""
-            INSERT INTO diagnosis_tree (function_id, name, description, created_time, auto_generated)
-            VALUES (?, ?, ?, ?, ?)
-        """, (3, '液压油质量监测诊断树', '检查油品传感器及报警功能', 
+            INSERT INTO diagnosis_tree (container_id, function_id, name, description, created_time, auto_generated)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (3, 3, '液压油质量监测诊断树', '检查油品传感器及报警功能', 
               datetime.now().isoformat(), 0))
         tree_id = self.cursor.lastrowid
         
@@ -485,16 +560,23 @@ class OilPowerSystemDiagnosisBuilder:
         ]
         
         for node in nodes:
+            # 为测试节点自动生成按钮文本
+            pass_btn = '是'
+            fail_btn = '否'
+            if node['node_type'] == 'Test' and node.get('test_description'):
+                pass_btn, fail_btn = self.generate_button_texts(node['test_description'])
+            
             self.cursor.execute("""
                 INSERT INTO diagnosis_tree_node 
                 (tree_id, parent_node_id, node_type, outcome, test_description, 
-                 expected_result, fault_hypothesis, isolation_level, test_priority, comment)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 expected_result, fault_hypothesis, isolation_level, test_priority, comment,
+                 pass_button_text, fail_button_text)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (node['tree_id'], node.get('parent_node_id'), node['node_type'], 
                   node['outcome'], node.get('test_description', ''), 
                   node.get('expected_result', ''), node.get('fault_hypothesis', ''),
                   node.get('isolation_level', 0), node.get('test_priority', 0),
-                  node.get('comment', '')))
+                  node.get('comment', ''), pass_btn, fail_btn))
         
         self.cursor.execute("UPDATE diagnosis_tree SET root_node_id = ? WHERE tree_id = ?", 
                           (len(nodes) - len(nodes) + 1, tree_id))
@@ -616,10 +698,10 @@ def main():
         print("="*60)
         print("\n下一步操作：")
         print("1. 在T-Designer中打开项目：集中油源动力系统")
-        print("2. 进入"故障诊断"页面")
+        print("2. 进入【故障诊断】页面")
         print("3. 选择要诊断的功能（如：液压泵站启动功能）")
-        print("4. 点击"开始诊断"按钮")
-        print("5. 根据测试描述执行测试，点击"测试通过/失败"按钮")
+        print("4. 点击【开始诊断】按钮")
+        print("5. 根据测试描述执行测试，点击【测试通过/失败】按钮")
         print("6. 系统将自动导航决策树，最终给出故障定位结果")
         print("\n推荐演示流程：")
         print("  - 功能1（液压泵站启动）：完整6步测试，展示系统启动全流程")

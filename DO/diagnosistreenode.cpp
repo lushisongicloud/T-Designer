@@ -10,6 +10,8 @@ DiagnosisTreeNode::DiagnosisTreeNode()
     , m_outcome(TestOutcome::Unknown)
     , m_isolationLevel(0)
     , m_testPriority(0.5)
+    , m_passButtonText("是")
+    , m_failButtonText("否")
     , m_parent(nullptr)
 {
 }
@@ -89,6 +91,12 @@ bool DiagnosisTreeNode::loadFromDatabase(QSqlDatabase &db, int nodeId)
     m_faultHypothesis = query.value("fault_hypothesis").toString();
     m_isolationLevel = query.value("isolation_level").toInt();
     m_testPriority = query.value("test_priority").toDouble();
+    m_passButtonText = query.value("pass_button_text").toString();
+    m_failButtonText = query.value("fail_button_text").toString();
+
+    // 如果按钮文本为空，使用默认值
+    if (m_passButtonText.isEmpty()) m_passButtonText = "是";
+    if (m_failButtonText.isEmpty()) m_failButtonText = "否";
 
     return true;
 }
@@ -99,8 +107,9 @@ bool DiagnosisTreeNode::saveToDatabase(QSqlDatabase &db)
     query.prepare(
         "INSERT INTO diagnosis_tree_node "
         "(tree_id, parent_node_id, test_id, state_id, node_type, outcome, comment, "
-        " test_description, expected_result, fault_hypothesis, isolation_level, test_priority) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        " test_description, expected_result, fault_hypothesis, isolation_level, test_priority, "
+        " pass_button_text, fail_button_text) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     );
 
     query.addBindValue(m_treeId);
@@ -115,6 +124,8 @@ bool DiagnosisTreeNode::saveToDatabase(QSqlDatabase &db)
     query.addBindValue(m_faultHypothesis);
     query.addBindValue(m_isolationLevel);
     query.addBindValue(m_testPriority);
+    query.addBindValue(m_passButtonText);
+    query.addBindValue(m_failButtonText);
 
     if (!query.exec()) {
         qDebug() << "Failed to save diagnosis tree node:" << query.lastError().text();
@@ -138,7 +149,8 @@ bool DiagnosisTreeNode::updateToDatabase(QSqlDatabase &db)
         "tree_id = ?, parent_node_id = ?, test_id = ?, state_id = ?, "
         "node_type = ?, outcome = ?, comment = ?, "
         "test_description = ?, expected_result = ?, fault_hypothesis = ?, "
-        "isolation_level = ?, test_priority = ? "
+        "isolation_level = ?, test_priority = ?, "
+        "pass_button_text = ?, fail_button_text = ? "
         "WHERE node_id = ?"
     );
 
@@ -154,6 +166,8 @@ bool DiagnosisTreeNode::updateToDatabase(QSqlDatabase &db)
     query.addBindValue(m_faultHypothesis);
     query.addBindValue(m_isolationLevel);
     query.addBindValue(m_testPriority);
+    query.addBindValue(m_passButtonText);
+    query.addBindValue(m_failButtonText);
     query.addBindValue(m_nodeId);
 
     if (!query.exec()) {
