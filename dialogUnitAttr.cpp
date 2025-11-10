@@ -896,6 +896,41 @@ void DialogUnitAttr::on_BtnOk_clicked()//dataFunc 将界面上的器件信息保
         QueryVar.exec();
     }
 
+    // 同步端子表中的测试代价/描述修改
+    if (T_ProjectDatabase.isValid()) {
+        const QString updateSql = QStringLiteral(
+            "UPDATE Symb2TermInfo SET ConnDesc=:ConnDesc, TestCost=:TestCost "
+            "WHERE Symb2TermInfo_ID=:Symb2TermInfo_ID");
+        for (int row = 0; row < ui->tableTerm->rowCount(); ++row) {
+            QTableWidgetItem *idItem = ui->tableTerm->item(row, 1);
+            if (!idItem)
+                continue;
+            const QVariant idData = idItem->data(Qt::UserRole);
+            if (!idData.isValid())
+                continue;
+            const QString symb2TermId = idData.toString().trimmed();
+            if (symb2TermId.isEmpty())
+                continue;
+
+            const QString connDesc = ui->tableTerm->item(row, 2)
+                    ? ui->tableTerm->item(row, 2)->text()
+                    : QString();
+            const QString testCost = ui->tableTerm->item(row, 4)
+                    ? ui->tableTerm->item(row, 4)->text().trimmed()
+                    : QString();
+
+            QSqlQuery updateQuery(T_ProjectDatabase);
+            updateQuery.prepare(updateSql);
+            updateQuery.bindValue(":ConnDesc", connDesc);
+            updateQuery.bindValue(":TestCost", testCost);
+            updateQuery.bindValue(":Symb2TermInfo_ID", symb2TermId);
+            if (!updateQuery.exec()) {
+                qDebug() << "[DialogUnitAttr] 更新端口测试代价失败, Symb2TermInfo_ID="
+                         << symb2TermId << updateQuery.lastError();
+            }
+        }
+    }
+
     //更新端子配置表中的子块代号
     QSqlQuery QuerySymbol= QSqlQuery(T_ProjectDatabase);
     for(int i=0;i<ui->tableTerm->rowCount();i++)

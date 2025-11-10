@@ -84,6 +84,27 @@ public:
     QString failButtonText() const { return m_failButtonText; }
     void setFailButtonText(const QString &text) { m_failButtonText = text; }
 
+    int skipCount() const { return m_skipCount; }
+    void setSkipCount(int count) { m_skipCount = count; }
+
+    QString skipReason() const { return m_skipReason; }
+    void setSkipReason(const QString &reason) { m_skipReason = reason; }
+
+    QString alternativeTests() const { return m_alternativeTests; }
+    void setAlternativeTests(const QString &tests) { m_alternativeTests = tests; }
+
+    double costEstimate() const { return m_costEstimate; }
+    void setCostEstimate(double cost) { m_costEstimate = cost; }
+
+    double durationEstimate() const { return m_durationEstimate; }
+    void setDurationEstimate(double duration) { m_durationEstimate = duration; }
+
+    QString detectableFaults() const { return m_detectableFaults; }
+    void setDetectableFaults(const QString &faults) { m_detectableFaults = faults; }
+
+    QString isolatableFaults() const { return m_isolatableFaults; }
+    void setIsolatableFaults(const QString &faults) { m_isolatableFaults = faults; }
+
     // ===== 树形结构管理 =====
     DiagnosisTreeNode* parent() const { return m_parent; }
     void setParent(DiagnosisTreeNode* parent) { m_parent = parent; }
@@ -191,6 +212,13 @@ private:
     double m_testPriority;
     QString m_passButtonText;
     QString m_failButtonText;
+    int m_skipCount;
+    QString m_skipReason;
+    QString m_alternativeTests;
+    double m_costEstimate;
+    double m_durationEstimate;
+    QString m_detectableFaults;
+    QString m_isolatableFaults;
 
     // 树形结构
     DiagnosisTreeNode* m_parent;

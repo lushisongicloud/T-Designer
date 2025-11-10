@@ -13,6 +13,10 @@
 #include <QFormLayout>
 #include <QLabel>
 #include <QComboBox>
+#include <QElapsedTimer>
+#include "BO/diagnosisengine.h"
+#include "DO/diagnosistreenode.h"
+
 namespace Ui {
 class dialogDiagnoseUI;
 }
@@ -30,8 +34,26 @@ public:
     void init_symptom_list();//初始化征兆信号UI列表
     void AddOrModifyExec(int Mode,QString StrSelectedCmd,QString StrExecState,QString StrExecStateVal);//Mode=1:add Mode=2:modify
     void LoadTestPointInfo(QString TestPointName,QString CurrentInOutName,QStringList ListTermStr);
+    
+    // 新的诊断决策树相关方法
+    void displayCurrentTest();
+    void recordTestResult(TestOutcome outcome);
+    void showDiagnosisResult();
+
+protected:
+    void resizeEvent(QResizeEvent *event) override;
+    
     QMdiSubWindow *mdisubwindow;
     QString FunctionID,CurTestPointName;
+    DiagnosisEngine *diagnosisEngine;
+    int currentTreeId;
+    
+    // 推理时间统计
+    QElapsedTimer reasoningTimer;
+    qint64 lastReasoningTime;
+    
+    // 当前诊断的功能名称
+    QString currentFunctionName;
 
 private slots:
     void on_toolButton_start_diagnosis_clicked();
@@ -44,7 +66,15 @@ private slots:
 
     void on_toolButton_known_symptom_select_next_clicked();
 
-    void on_btm_CalTestResult_clicked();
+    void on_BtnLastStep_clicked();
+
+    void on_toolButton_skip_this_test_clicked();
+
+    void on_toolButton_slelct_other_test_clicked();
+
+    void on_btn_TestPass_clicked();
+
+    void on_btn_TestFail_clicked();
 
 private:
     Ui::dialogDiagnoseUI *ui;

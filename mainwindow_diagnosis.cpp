@@ -11,6 +11,8 @@
 #include <QSet>
 #include <QInputDialog>
 #include <QShortcut>
+#include <QSqlError>
+#include <cmath>
 #include "BO/containerrepository.h"
 #include "widget/containertreedialog.h"
 #include "DO/containerentity.h"
@@ -21,6 +23,99 @@
 #include "demo_projectbuilder.h"
 
 using namespace ContainerHierarchy;
+
+namespace {
+
+constexpr double kTestCostThreshold = 0.8;
+
+bool shouldSkipConnectionId(const QString &id)
+{
+    if (id.isEmpty())
+        return true;
+    return id.contains(":C") || id.contains(":G") || id.contains(":1") ||
+           id.contains(":2") || id.contains(":3");
+}
+
+double parseTestCost(const QVariant &value)
+{
+    if (!value.isValid())
+        return 1.0;
+    bool ok = false;
+    double cost = value.toDouble(&ok);
+    if (!ok) {
+        QString text = value.toString().trimmed();
+        if (text.contains(',')) {
+            text = text.section(',', 0, 0).trimmed();
+        }
+        cost = text.toDouble(&ok);
+    }
+    if (!ok)
+        return 1.0;
+    return cost;
+}
+
+int parsePortId(const QString &text, bool *okOut)
+{
+    QString normalized = text;
+    const int dotIndex = normalized.indexOf('.');
+    if (dotIndex > 0)
+        normalized = normalized.left(dotIndex);
+    bool ok = false;
+    const int portId = normalized.toInt(&ok);
+    if (okOut)
+        *okOut = ok;
+    return portId;
+}
+
+double computeMtbf(int componentCount, int connectionCount)
+{
+    constexpr double kComponentMtbf = 80000.0;
+    constexpr double kConnectionMtbf = 60000.0;
+    constexpr double kMinMtbf = 2000.0;
+    constexpr double kMaxMtbf = 80000.0;
+
+    auto accumulateLogReliability = [](int count, double baseMtbf) -> double {
+        if (count <= 0 || baseMtbf <= 0.0)
+            return 0.0;
+        const double perHourReliability = std::exp(-1.0 / baseMtbf);
+        return count * std::log(perHourReliability);
+    };
+
+    const double logReliability =
+        accumulateLogReliability(componentCount, kComponentMtbf) +
+        accumulateLogReliability(connectionCount, kConnectionMtbf);
+
+    double mtbf = kMaxMtbf;
+    if (logReliability < 0.0) {
+        const double reliability = std::exp(logReliability);
+        const double denom = -std::log(reliability);
+        if (denom > 0.0 && std::isfinite(denom)) {
+            mtbf = 1.0 / denom;
+        }
+    }
+    if (!std::isfinite(mtbf) || mtbf <= 0.0) {
+        mtbf = kMaxMtbf;
+    }
+    if (mtbf > kMaxMtbf) mtbf = kMaxMtbf;
+    if (mtbf < kMinMtbf) mtbf = kMinMtbf;
+    return mtbf;
+}
+
+double computeMttr(int componentCount, int connectionCount)
+{
+    constexpr double kRepairHours = 5.0 / 60.0; // 5 minutes
+    constexpr double kTestStepHours = 4.0 / 60.0; // 4 minutes
+    constexpr double kMinimumHours = 1.0 / 12.0; // 5 minutes
+
+    const int totalElements = std::max(1, componentCount + connectionCount);
+    const double testSteps = std::log2(static_cast<double>(totalElements));
+    double mttr = kRepairHours + kTestStepHours * testSteps;
+    if (mttr < kMinimumHours)
+        mttr = kMinimumHours;
+    return mttr;
+}
+
+}
 
 void MainWindow::on_BtnRefreshExecConn_clicked()
 {
@@ -3789,8 +3884,8 @@ void MainWindow::on_BtnDataAnalyse_clicked()
         waitDialog->accept();
         waitDialog->deleteLater();
 
-        CurComponentCount = ui->tableWidgetUnit->rowCount(); // 获取行数
-        DialogTestReport *dlg = new DialogTestReport(startTimestamp); // 传递开始时间戳进行计时
+        const TestReportMetrics metrics = buildTestReportMetrics();
+        DialogTestReport *dlg = new DialogTestReport(metrics, startTimestamp); // 传递开始时间戳进行计时
         dlg->setWindowTitle("系统统计信息");
         dlg->setModal(true);
         dlg->exec();
@@ -3844,6 +3939,223 @@ void MainWindow::on_BtnMultiLibManage_clicked()
     }
 
     delete dlg;
+}
+
+TestReportMetrics MainWindow::buildTestReportMetrics() const
+{
+    TestReportMetrics metrics;
+    if (ui == nullptr || ui->tableWidgetUnit == nullptr) {
+        return metrics;
+    }
+
+    const int rowCount = ui->tableWidgetUnit->rowCount();
+    metrics.componentCount = rowCount;
+
+    struct ComponentAggregate {
+        int totalPorts = 0;
+        int measurablePorts = 0;
+        int groupSize = 1;
+    };
+
+    QHash<int, ComponentAggregate> aggregates;
+    QVector<int> componentOrder;
+    componentOrder.reserve(rowCount);
+    int syntheticSeed = -1;
+
+    for (int row = 0; row < rowCount; ++row) {
+        int equipmentId = 0;
+        if (auto *item = ui->tableWidgetUnit->item(row, 0)) {
+            equipmentId = item->data(Qt::UserRole).toInt();
+        }
+        if (equipmentId == 0) {
+            equipmentId = syntheticSeed--;
+        }
+        componentOrder.append(equipmentId);
+        if (!aggregates.contains(equipmentId)) {
+            aggregates.insert(equipmentId, ComponentAggregate());
+        }
+    }
+
+    QHash<int, int> portToComponent;
+    QHash<int, bool> portMeasurable;
+
+    if (T_ProjectDatabase.isValid() && T_ProjectDatabase.isOpen()) {
+        QSqlQuery portQuery(T_ProjectDatabase);
+        if (portQuery.exec(QStringLiteral("SELECT s.Equipment_ID, t.Symb2TermInfo_ID, t.TestCost "
+                                          "FROM Symb2TermInfo t "
+                                          "JOIN Symbol s ON t.Symbol_ID = s.Symbol_ID"))) {
+            while (portQuery.next()) {
+                const int equipmentId = portQuery.value(0).toInt();
+                auto it = aggregates.find(equipmentId);
+                if (it == aggregates.end())
+                    continue;
+
+                const int portId = portQuery.value(1).toInt();
+                const double cost = parseTestCost(portQuery.value(2));
+                const bool measurable = cost <= kTestCostThreshold;
+
+                it->totalPorts += 1;
+                if (measurable) {
+                    it->measurablePorts += 1;
+                }
+                portToComponent.insert(portId, equipmentId);
+                portMeasurable.insert(portId, measurable);
+            }
+        } else {
+            qWarning() << "[TestReport] query Symb2TermInfo failed:" << portQuery.lastError();
+        }
+    } else {
+        qWarning() << "[TestReport] project database is not available when collecting statistics";
+    }
+
+    metrics.testPointCount = 0;
+    int measurablePorts = 0;
+    for (auto it = aggregates.constBegin(); it != aggregates.constEnd(); ++it) {
+        metrics.testPointCount += it.value().totalPorts;
+        measurablePorts += it.value().measurablePorts;
+    }
+    metrics.faultDetectionRate = (metrics.testPointCount > 0)
+            ? static_cast<double>(measurablePorts) / metrics.testPointCount
+            : 0.0;
+    if (metrics.faultDetectionRate < 0.0) {
+        metrics.faultDetectionRate = 0.0;
+    } else if (metrics.faultDetectionRate > 1.0) {
+        metrics.faultDetectionRate = 1.0;
+    }
+
+    QHash<int, QSet<int>> adjacency;
+    if (T_ProjectDatabase.isValid() && T_ProjectDatabase.isOpen()) {
+        QSqlQuery connQuery(T_ProjectDatabase);
+        if (connQuery.exec(QStringLiteral("SELECT Symb1_ID, Symb2_ID, Symb1_Category, Symb2_Category FROM JXB"))) {
+            while (connQuery.next()) {
+                const QString symb1 = connQuery.value(0).toString();
+                const QString symb2 = connQuery.value(1).toString();
+                if (symb1.isEmpty() || symb2.isEmpty())
+                    continue;
+                if (shouldSkipConnectionId(symb1) || shouldSkipConnectionId(symb2))
+                    continue;
+
+                metrics.connectionCount += 1;
+
+                const int category1 = connQuery.value(2).toInt();
+                const int category2 = connQuery.value(3).toInt();
+                if (category1 != 0 || category2 != 0)
+                    continue;
+
+                bool ok1 = false;
+                bool ok2 = false;
+                const int portId1 = parsePortId(symb1, &ok1);
+                const int portId2 = parsePortId(symb2, &ok2);
+                if (!ok1 || !ok2)
+                    continue;
+
+                if (!portToComponent.contains(portId1) || !portToComponent.contains(portId2))
+                    continue;
+
+                if (portMeasurable.value(portId1, true) && portMeasurable.value(portId2, true))
+                    continue;
+
+                const int component1 = portToComponent.value(portId1);
+                const int component2 = portToComponent.value(portId2);
+                if (component1 == component2)
+                    continue;
+
+                adjacency[component1].insert(component2);
+                adjacency[component2].insert(component1);
+            }
+        } else {
+            qWarning() << "[TestReport] query JXB failed:" << connQuery.lastError();
+        }
+    }
+
+    QSet<int> visited;
+    for (auto it = aggregates.begin(); it != aggregates.end(); ++it) {
+        const int componentId = it.key();
+        if (visited.contains(componentId))
+            continue;
+
+        QVector<int> stack;
+        stack.append(componentId);
+        QSet<int> groupMembers;
+
+        while (!stack.isEmpty()) {
+            const int current = stack.takeLast();
+            if (visited.contains(current))
+                continue;
+            visited.insert(current);
+            groupMembers.insert(current);
+            const auto neighbors = adjacency.value(current);
+            for (int neighbor : neighbors) {
+                if (!visited.contains(neighbor)) {
+                    stack.append(neighbor);
+                }
+            }
+        }
+
+        const int groupSize = groupMembers.isEmpty() ? 1 : groupMembers.size();
+        for (int member : groupMembers) {
+            aggregates[member].groupSize = groupSize;
+        }
+        if (groupMembers.isEmpty()) {
+            aggregates[componentId].groupSize = 1;
+        }
+    }
+
+    QMap<int, int> fuzzyCounts;
+    for (int componentId : componentOrder) {
+        const auto aggIt = aggregates.constFind(componentId);
+        const int size = (aggIt != aggregates.constEnd()) ? aggIt.value().groupSize : 1;
+        fuzzyCounts[size] += 1;
+    }
+
+    int iso1Count = 0;
+    int iso2Count = 0;
+    int iso3Count = 0;
+    for (auto it = fuzzyCounts.constBegin(); it != fuzzyCounts.constEnd(); ++it) {
+        const int size = it.key();
+        const int count = it.value();
+        if (size <= 1) {
+            iso1Count += count;
+        }
+        if (size <= 2) {
+            iso2Count += count;
+        }
+        if (size <= 3) {
+            iso3Count += count;
+        }
+    }
+
+    const double denominator = metrics.componentCount > 0
+            ? static_cast<double>(metrics.componentCount)
+            : 1.0;
+    metrics.faultIsolationRate1 = iso1Count / denominator;
+    metrics.faultIsolationRate2 = iso2Count / denominator;
+    metrics.faultIsolationRate3 = iso3Count / denominator;
+
+    auto clampRate = [](double value) {
+        if (value < 0.0) return 0.0;
+        if (value > 1.0) return 1.0;
+        return value;
+    };
+    metrics.faultIsolationRate1 = clampRate(metrics.faultIsolationRate1);
+    metrics.faultIsolationRate2 = clampRate(metrics.faultIsolationRate2);
+    metrics.faultIsolationRate3 = clampRate(metrics.faultIsolationRate3);
+
+    metrics.faultSetSize = metrics.componentCount + metrics.connectionCount;
+    metrics.mtbfHours = computeMtbf(metrics.componentCount, metrics.connectionCount);
+    metrics.mttrHours = computeMttr(metrics.componentCount, metrics.connectionCount);
+    metrics.fuzzyGroupComponentCounts = fuzzyCounts;
+
+    if (T_ProjectDatabase.isValid() && T_ProjectDatabase.isOpen()) {
+        FunctionRepository repo(T_ProjectDatabase);
+        if (repo.ensureTables()) {
+            metrics.functionCount = repo.fetchAll().size();
+        } else {
+            qWarning() << "[TestReport] ensure Function tables failed";
+        }
+    }
+
+    return metrics;
 }
 
 void MainWindow::on_BtnSetCentrePoint_clicked()

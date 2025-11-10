@@ -3,18 +3,40 @@
 
 dialogDiagnoseUI::dialogDiagnoseUI(QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::dialogDiagnoseUI)
+    ui(new Ui::dialogDiagnoseUI),
+    diagnosisEngine(nullptr),
+    currentTreeId(0),
+    lastReasoningTime(0),
+    currentFunctionName("")
 {
     ui->setupUi(this);
     this->setAttribute(Qt::WA_DeleteOnClose); //关闭时自动删除
-    ui->tableWidget_function_select->setColumnWidth(0,140);//功能名称
-    ui->tableWidget_function_select->setColumnWidth(1,400);//控制变量
-    ui->tableWidget_function_select->setColumnWidth(2,400);//执行器名称
-    ui->tableWidget_function_select->setColumnWidth(3,150);//备注
+    ui->tableWidget_function_select->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);//功能名称列自动拉伸
     ui->tableWidget_function_select->setFocusPolicy(Qt::NoFocus);
 
     ui->tableWidget_tool_select->setColumnWidth(0,400);//工具名称
     ui->tableWidget_tool_select->setFocusPolicy(Qt::NoFocus);
+    
+    // 创建推理时间显示Label（在窗口右下角）
+    QLabel* reasoningTimeLabel = new QLabel(this);
+    reasoningTimeLabel->setObjectName("label_reasoning_time");
+    reasoningTimeLabel->setText("推理时间: 0ms");
+    reasoningTimeLabel->setStyleSheet("QLabel { color: rgb(100, 100, 100); font: 9pt '微软雅黑'; }");
+    reasoningTimeLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    reasoningTimeLabel->setGeometry(this->width() - 150, this->height() - 30, 140, 20);
+    
+    // 初始化诊断引擎
+    diagnosisEngine = new DiagnosisEngine(T_ProjectDatabase, this);
+    
+    // 连接信号
+    connect(diagnosisEngine, &DiagnosisEngine::testRecommended, this, [this](DiagnosisTreeNode* testNode) {
+        qDebug() << "测试推荐信号:" << (testNode ? testNode->testDescription() : "null");
+        displayCurrentTest();
+    });
+    
+    // 注意：不连接faultIsolated信号，避免重复调用showDiagnosisResult
+    // showDiagnosisResult会在displayCurrentTest中检测到故障隔离时调用
+    
     LoadAllFunction();
     LoadAllTools();
     
@@ -25,30 +47,76 @@ dialogDiagnoseUI::dialogDiagnoseUI(QWidget *parent) :
     // 隐藏测试页面中的图片显示控件
     ui->widget_test_module_image->setVisible(false);
     
+    // 隐藏旧的测试文件表格
+    if (ui->tableWidget_test_file) {
+        ui->tableWidget_test_file->setVisible(false);
+    }
+    
     // 设置初始页面为功能选择页面
     ui->stackedWidget_main->setCurrentIndex(0);
 }
 
 dialogDiagnoseUI::~dialogDiagnoseUI()
 {
+    if (diagnosisEngine) {
+        delete diagnosisEngine;
+        diagnosisEngine = nullptr;
+    }
     delete ui;
+}
+
+void dialogDiagnoseUI::resizeEvent(QResizeEvent *event)
+{
+    QDialog::resizeEvent(event);
+    
+    // 更新推理时间Label的位置（保持在右下角）
+    QLabel* timeLabel = this->findChild<QLabel*>("label_reasoning_time");
+    if (timeLabel) {
+        timeLabel->setGeometry(this->width() - 150, this->height() - 30, 140, 20);
+    }
 }
 
 void dialogDiagnoseUI::LoadAllFunction()
 {
-    QSqlQuery QueryFunction = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
-    QString SqlStr = "SELECT * FROM Function";
-    QueryFunction.exec(SqlStr);
     ui->tableWidget_function_select->setRowCount(0);
-    while(QueryFunction.next())
-    {
-       ui->tableWidget_function_select->setRowCount(ui->tableWidget_function_select->rowCount()+1);
-       ui->tableWidget_function_select->setItem(ui->tableWidget_function_select->rowCount()-1,0,new QTableWidgetItem(QueryFunction.value("FunctionName").toString()));
-       ui->tableWidget_function_select->item(ui->tableWidget_function_select->rowCount()-1,0)->setData(Qt::UserRole,QueryFunction.value("FunctionID").toString());
-       ui->tableWidget_function_select->setItem(ui->tableWidget_function_select->rowCount()-1,1,new QTableWidgetItem(QueryFunction.value("CmdValList").toString()));
-       ui->tableWidget_function_select->setItem(ui->tableWidget_function_select->rowCount()-1,2,new QTableWidgetItem(QueryFunction.value("ExecsList").toString()));
-       ui->tableWidget_function_select->setItem(ui->tableWidget_function_select->rowCount()-1,3,new QTableWidgetItem(QueryFunction.value("Remark").toString()));
+    
+    // 从 diagnosis_tree 表加载功能列表（已关联到功能的诊断树）
+    QSqlQuery query(T_ProjectDatabase);
+    QString sqlStr = 
+        "SELECT dt.tree_id, dt.name, dt.description, dt.function_id, "
+        "       COALESCE(fd.name, f.FunctionName) as func_name, "
+        "       COALESCE(f.ExecsList, '') as execs_list, "
+        "       COALESCE(f.CmdValList, '') as cmd_val_list, "
+        "       COALESCE(f.Remark, dt.description) as remark "
+        "FROM diagnosis_tree dt "
+        "LEFT JOIN function_definition fd ON dt.function_id = fd.function_id "
+        "LEFT JOIN Function f ON dt.function_id = f.FunctionID "
+        "WHERE dt.root_node_id IS NOT NULL "
+        "ORDER BY dt.tree_id";
+    
+    if (!query.exec(sqlStr)) {
+        qWarning() << "加载功能列表失败:" << query.lastError().text();
+        return;
     }
+    
+    while (query.next()) {
+        int row = ui->tableWidget_function_select->rowCount();
+        ui->tableWidget_function_select->setRowCount(row + 1);
+        
+        int treeId = query.value("tree_id").toInt();
+        QString funcName = query.value("func_name").toString();
+        if (funcName.isEmpty()) {
+            funcName = query.value("name").toString(); // 使用诊断树名称作为后备
+        }
+        
+        // 列0：功能名称（存储 tree_id 在 UserRole，存储功能名称在 UserRole+1）
+        QTableWidgetItem* nameItem = new QTableWidgetItem(funcName);
+        nameItem->setData(Qt::UserRole, treeId); // 存储 tree_id
+        nameItem->setData(Qt::UserRole + 1, funcName); // 存储功能名称，供后续显示使用
+        ui->tableWidget_function_select->setItem(row, 0, nameItem);
+    }
+    
+    qDebug() << "加载了" << ui->tableWidget_function_select->rowCount() << "个诊断功能";
 }
 
 void dialogDiagnoseUI::LoadAllTools()
@@ -65,12 +133,35 @@ void dialogDiagnoseUI::SetStackIndex(int index)
 
 void dialogDiagnoseUI::on_toolButton_start_diagnosis_clicked()
 {
-    if(ui->tableWidget_function_select->currentRow()<0) return;
-    //根据用户选择的功能生成xmpl
-    FunctionID=ui->tableWidget_function_select->item(ui->tableWidget_function_select->currentRow(),0)->data(Qt::UserRole).toString();
-    emit(signalUpdateExec(FunctionID));
-    init_symptom_list();
+    if (ui->tableWidget_function_select->currentRow() < 0) {
+        QMessageBox::warning(this, "提示", "请先选择要诊断的功能");
+        return;
+    }
+    
+    // 获取选中的诊断树ID和功能名称
+    QTableWidgetItem* selectedItem = ui->tableWidget_function_select->item(
+        ui->tableWidget_function_select->currentRow(), 0);
+    currentTreeId = selectedItem->data(Qt::UserRole).toInt();
+    currentFunctionName = selectedItem->data(Qt::UserRole + 1).toString();
+    
+    qDebug() << "开始诊断，tree_id =" << currentTreeId << ", 功能名称=" << currentFunctionName;
+    
+    if (!diagnosisEngine) {
+        QMessageBox::critical(this, "错误", "诊断引擎未初始化");
+        return;
+    }
+    
+    // 启动诊断会话
+    if (!diagnosisEngine->startDiagnosisSession(currentTreeId)) {
+        QMessageBox::critical(this, "错误", "无法启动诊断会话，请检查诊断树数据");
+        return;
+    }
+    
+    // 跳过症状选择，直接进入测试页面
     SetStackIndex(2);
+    
+    // 显示第一个测试
+    displayCurrentTest();
 }
 
 void dialogDiagnoseUI::init_symptom_list()//初始化征兆信号UI列表
@@ -272,16 +363,288 @@ void dialogDiagnoseUI::LoadTestPointInfo(QString TestPointName,QString CurrentIn
     SetStackIndex(2);
 }
 
-void dialogDiagnoseUI::on_btm_CalTestResult_clicked()
+void dialogDiagnoseUI::displayCurrentTest()
 {
-    if(!StrIsDouble(ui->EdInputVal1->text()))
-    {
-        QMessageBox::warning(nullptr, "提示", " 请输入正确的电压数值！");
+    if (!diagnosisEngine) {
+        qWarning() << "DiagnosisEngine is null";
         return;
     }
-    QString SendCmdStr="assign test.";
-    if(ui->EdInputVal1->text().toDouble()<16) SendCmdStr+=CurTestPointName+"=off";
-    else SendCmdStr+=CurTestPointName+"=on";
-    SendCmdStr+="\r\nfc";
-    emit(signalSendCmdStr(SendCmdStr));
+    
+    // 启动推理计时
+    reasoningTimer.start();
+    
+    DiagnosisTreeNode* currentTest = diagnosisEngine->getCurrentRecommendedTest();
+    
+    if (!currentTest) {
+        // 检查是否已完成诊断
+        if (diagnosisEngine->isFaultIsolated()) {
+            showDiagnosisResult();
+        } else {
+            QMessageBox::warning(this, "错误", "诊断流程异常：无推荐测试且未完成故障定位");
+            SetStackIndex(0); // 返回功能选择页面
+        }
+        return;
+    }
+    
+    // 获取测试信息
+    QString testDesc = currentTest->testDescription();
+    QString expectedResult = currentTest->expectedResult();
+    QString passButtonText = currentTest->passButtonText();
+    QString failButtonText = currentTest->failButtonText();
+    
+    // 默认值
+    if (passButtonText.isEmpty()) passButtonText = "是";
+    if (failButtonText.isEmpty()) failButtonText = "否";
+    
+    // 更新UI控件
+    
+    // 在label_diagnosis_test_word控件显示当前诊断的功能名称
+    if (ui->label_diagnosis_test_word) {
+        ui->label_diagnosis_test_word->setText(currentFunctionName);
+    }
+    
+    if (ui->label_test_procedure) {
+        ui->label_test_procedure->setText(testDesc.isEmpty() ? "执行测试" : testDesc);
+    }
+    
+    if (ui->label_test_description_1) {
+        QString briefInfo = QString("测试: %1").arg(testDesc.isEmpty() ? "无描述" : testDesc);
+        ui->label_test_description_1->setText(briefInfo);
+    }
+    
+    if (ui->textEdit_TestDesc) {
+        QString detailedInfo = QString("【测试描述】\n%1\n\n【预期结果】\n%2")
+            .arg(testDesc.isEmpty() ? "无描述" : testDesc)
+            .arg(expectedResult.isEmpty() ? "无预期结果" : expectedResult);
+        ui->textEdit_TestDesc->setPlainText(detailedInfo);
+    }
+    
+    // 更新诊断路径
+    if (ui->label_test_road) {
+        QList<DiagnosisStep> path = diagnosisEngine->getDiagnosisPath();
+        QString pathText = "诊断路径: ";
+        for (int i = 0; i < path.size(); ++i) {
+            if (i > 0) pathText += " → ";
+            QString outcomeStr = (path[i].outcome == TestOutcome::Pass) ? "✓" : "✗";
+            pathText += QString("%1%2").arg(outcomeStr).arg(i + 1);
+        }
+        if (path.isEmpty()) {
+            pathText += "起始";
+        }
+        ui->label_test_road->setText(pathText);
+    }
+    
+    // 动态更新按钮文本
+    if (ui->btn_TestPass) {
+        ui->btn_TestPass->setText(passButtonText);
+        ui->btn_TestPass->setVisible(true);
+        ui->btn_TestPass->setEnabled(true);
+    }
+    
+    if (ui->btn_TestFail) {
+        ui->btn_TestFail->setText(failButtonText);
+        ui->btn_TestFail->setVisible(true);
+        ui->btn_TestFail->setEnabled(true);
+    }
+    
+    // 计算并显示推理时间
+    qint64 actualTime = reasoningTimer.elapsed();
+    
+    // 获取当前可用测试数量和总测试数量
+    int availableTests = 0;
+    int totalTests = 0;
+    
+    if (diagnosisEngine->currentTree()) {
+        // 统计树中的测试节点总数
+        QList<DiagnosisTreeNode*> allTestNodes = diagnosisEngine->currentTree()->getAllTestNodes();
+        totalTests = allTestNodes.size();
+        
+        // 当前可用测试数 = 尚未执行的测试数
+        QList<DiagnosisStep> path = diagnosisEngine->getDiagnosisPath();
+        availableTests = totalTests - path.size();
+        if (availableTests < 0) availableTests = 0;
+    }
+    
+    // 计算推理时间：当前可用测试/总测试数量*100ms + 实际用时
+    qint64 estimatedTime = (totalTests > 0) ? (availableTests * 100 / totalTests) : 0;
+    lastReasoningTime = estimatedTime + actualTime;
+    
+    // 更新推理时间显示
+    QLabel* timeLabel = this->findChild<QLabel*>("label_reasoning_time");
+    if (timeLabel) {
+        timeLabel->setText(QString("推理时间: %1ms").arg(lastReasoningTime));
+    }
+    
+    qDebug() << "显示测试: node_id=" << currentTest->nodeId() 
+             << ", 按钮=[" << passButtonText << "/" << failButtonText << "]"
+             << ", 推理时间=" << lastReasoningTime << "ms (实际" << actualTime << "ms + 估计" << estimatedTime << "ms)";
+}
+
+void dialogDiagnoseUI::recordTestResult(TestOutcome outcome)
+{
+    if (!diagnosisEngine) {
+        qWarning() << "DiagnosisEngine is null";
+        QMessageBox::warning(this, "错误", "诊断引擎为空");
+        return;
+    }
+    
+    qDebug() << "准备记录测试结果:" << (outcome == TestOutcome::Pass ? "通过" : "失败");
+    qDebug() << "当前会话状态:" << (diagnosisEngine->hasActiveSession() ? "活跃" : "非活跃");
+    
+    // 记录测试结果
+    if (!diagnosisEngine->recordTestResult(outcome)) {
+        QString errorMsg = "无法记录测试结果";
+        qWarning() << errorMsg;
+        
+        // 提供更详细的错误信息
+        if (!diagnosisEngine->hasActiveSession()) {
+            errorMsg += "\n原因：没有活跃的诊断会话";
+        }
+        
+        QMessageBox::warning(this, "错误", errorMsg);
+        return;
+    }
+    
+    qDebug() << "测试结果记录成功，显示下一个测试";
+    
+    // 递归显示下一个测试（或显示结果）
+    displayCurrentTest();
+}
+
+void dialogDiagnoseUI::showDiagnosisResult()
+{
+    if (!diagnosisEngine) return;
+    
+    DiagnosisTreeNode* faultNode = diagnosisEngine->getFaultConclusion();
+    
+    QString resultText;
+    resultText += "========== 诊断完成 ==========\n\n";
+    
+    if (faultNode) {
+        resultText += QString("【故障定位】\n%1\n\n").arg(faultNode->faultHypothesis());
+        
+        // 不显示故障隔离度
+        // resultText += QString("【故障隔离度】\n%1%\n\n").arg(faultNode->isolationLevel());
+        
+        if (!faultNode->comment().isEmpty()) {
+            resultText += QString("【处理建议】\n%1\n\n").arg(faultNode->comment());
+        }
+    } else {
+        resultText += "无法确定故障源\n\n";
+    }
+    
+    // 显示诊断路径
+    QList<DiagnosisStep> path = diagnosisEngine->getDiagnosisPath();
+    if (!path.isEmpty()) {
+        resultText += "【诊断路径】\n";
+        for (int i = 0; i < path.size(); ++i) {
+            DiagnosisTreeNode* node = path[i].testNode;
+            TestOutcome outcome = path[i].outcome;
+            QString outcomeStr = (outcome == TestOutcome::Pass) ? "通过" : 
+                                (outcome == TestOutcome::Fail) ? "失败" : "跳过";
+            resultText += QString("%1. %2 → %3\n")
+                .arg(i + 1)
+                .arg(node ? node->testDescription() : "未知测试")
+                .arg(outcomeStr);
+        }
+    }
+    
+    // 显示结果
+    if (ui->textEdit_TestDesc) {
+        ui->textEdit_TestDesc->setPlainText(resultText);
+    }
+    
+    if (ui->label_test_procedure) {
+        ui->label_test_procedure->setText("诊断完成");
+    }
+    
+    // 隐藏测试按钮
+    if (ui->btn_TestPass) ui->btn_TestPass->setVisible(false);
+    if (ui->btn_TestFail) ui->btn_TestFail->setVisible(false);
+    
+    // 显示消息框
+    QMessageBox::information(this, "诊断完成", resultText);
+}
+
+void dialogDiagnoseUI::on_BtnLastStep_clicked()
+{
+    if (!diagnosisEngine || !diagnosisEngine->canStepBack()) {
+        QMessageBox::information(this, "提示", "无法回退");
+        return;
+    }
+    if (diagnosisEngine->stepBack()) {
+        displayCurrentTest();
+    }
+}
+
+void dialogDiagnoseUI::on_toolButton_skip_this_test_clicked()
+{
+    if (!diagnosisEngine || !diagnosisEngine->hasActiveSession()) {
+        QMessageBox::warning(this, "错误", "没有活动的诊断会话");
+        return;
+    }
+    if (diagnosisEngine->skipTestAndRecommendNext()) {
+        displayCurrentTest();
+    } else {
+        QMessageBox::warning(this, "错误", "无法跳过测试");
+    }
+}
+
+void dialogDiagnoseUI::on_toolButton_slelct_other_test_clicked()
+{
+    if (!diagnosisEngine || !diagnosisEngine->hasActiveSession()) {
+        QMessageBox::warning(this, "错误", "没有活动的诊断会话");
+        return;
+    }
+
+    QList<DiagnosisTreeNode*> alternatives = diagnosisEngine->getAlternativeTests();
+    if (alternatives.isEmpty()) {
+        QMessageBox::information(this, "提示", "没有可选的替代测试");
+        return;
+    }
+
+    // 创建简单的选择对话框
+    QDialog* dialog = new QDialog(this);
+    dialog->setWindowTitle("选择测试");
+    QVBoxLayout* layout = new QVBoxLayout(dialog);
+    QListWidget* listWidget = new QListWidget(dialog);
+
+    for (DiagnosisTreeNode* node : alternatives) {
+        QString itemText = QString("%1 (成本: %2, 时间: %3分钟)")
+            .arg(node->testDescription())
+            .arg(node->costEstimate(), 0, 'f', 1)
+            .arg(node->durationEstimate(), 0, 'f', 1);
+        QListWidgetItem* item = new QListWidgetItem(itemText, listWidget);
+        item->setData(Qt::UserRole, node->nodeId());
+    }
+
+    layout->addWidget(listWidget);
+
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(
+        QDialogButtonBox::Ok | QDialogButtonBox::Cancel, dialog);
+    layout->addWidget(buttonBox);
+
+    connect(buttonBox, &QDialogButtonBox::accepted, dialog, &QDialog::accept);
+    connect(buttonBox, &QDialogButtonBox::rejected, dialog, &QDialog::reject);
+
+    if (dialog->exec() == QDialog::Accepted && listWidget->currentItem()) {
+        int selectedNodeId = listWidget->currentItem()->data(Qt::UserRole).toInt();
+        if (diagnosisEngine->selectManualTest(selectedNodeId)) {
+            displayCurrentTest();
+        }
+    }
+
+    delete dialog;
+}
+
+void dialogDiagnoseUI::on_btn_TestPass_clicked()
+{
+    // 测试通过
+    recordTestResult(TestOutcome::Pass);
+}
+
+void dialogDiagnoseUI::on_btn_TestFail_clicked()
+{
+    // 测试失败
+    recordTestResult(TestOutcome::Fail);
 }

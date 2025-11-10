@@ -33,14 +33,14 @@
       <layout class="QVBoxLayout" name="verticalLayoutTests">
        <item>
         <widget class="QTableWidget" name="tableTests">
-         <property name="selectionBehavior">
-          <enum>QAbstractItemView::SelectRows</enum>
+         <property name="editTriggers">
+          <set>QAbstractItemView::NoEditTriggers</set>
          </property>
          <property name="selectionMode">
           <enum>QAbstractItemView::SingleSelection</enum>
          </property>
-         <property name="editTriggers">
-          <set>QAbstractItemView::NoEditTriggers</set>
+         <property name="selectionBehavior">
+          <enum>QAbstractItemView::SelectRows</enum>
          </property>
         </widget>
        </item>
@@ -60,11 +60,11 @@
       <layout class="QVBoxLayout" name="verticalLayoutMatrix">
        <item>
         <widget class="QTableWidget" name="tableMatrix">
-         <property name="selectionBehavior">
-          <enum>QAbstractItemView::SelectRows</enum>
-         </property>
          <property name="editTriggers">
           <set>QAbstractItemView::NoEditTriggers</set>
+         </property>
+         <property name="selectionBehavior">
+          <enum>QAbstractItemView::SelectRows</enum>
          </property>
         </widget>
        </item>
@@ -94,13 +94,13 @@
          <item row="0" column="1">
           <widget class="QDoubleSpinBox" name="spinTargetDetection">
            <property name="maximum">
-            <double>1.000000</double>
+            <double>1.000000000000000</double>
            </property>
            <property name="singleStep">
-            <double>0.050000</double>
+            <double>0.050000000000000</double>
            </property>
            <property name="value">
-            <double>0.600000</double>
+            <double>0.600000000000000</double>
            </property>
           </widget>
          </item>
@@ -114,13 +114,13 @@
          <item row="1" column="1">
           <widget class="QDoubleSpinBox" name="spinTargetIsolation">
            <property name="maximum">
-            <double>1.000000</double>
+            <double>1.000000000000000</double>
            </property>
            <property name="singleStep">
-            <double>0.050000</double>
+            <double>0.050000000000000</double>
            </property>
            <property name="value">
-            <double>0.500000</double>
+            <double>0.500000000000000</double>
            </property>
           </widget>
          </item>
@@ -135,11 +135,11 @@
        </item>
        <item>
         <widget class="QTableWidget" name="tableTargetAllocation">
-         <property name="selectionBehavior">
-          <enum>QAbstractItemView::SelectRows</enum>
-         </property>
          <property name="editTriggers">
           <set>QAbstractItemView::NoEditTriggers</set>
+         </property>
+         <property name="selectionBehavior">
+          <enum>QAbstractItemView::SelectRows</enum>
          </property>
         </widget>
        </item>
@@ -162,13 +162,13 @@
          <item row="0" column="1">
           <widget class="QDoubleSpinBox" name="spinMaxCost">
            <property name="maximum">
-            <double>9999.000000</double>
+            <double>9999.000000000000000</double>
            </property>
            <property name="singleStep">
-            <double>1.000000</double>
+            <double>1.000000000000000</double>
            </property>
            <property name="value">
-            <double>10.000000</double>
+            <double>10.000000000000000</double>
            </property>
           </widget>
          </item>
@@ -182,13 +182,13 @@
          <item row="1" column="1">
           <widget class="QDoubleSpinBox" name="spinMaxDuration">
            <property name="maximum">
-            <double>9999.000000</double>
+            <double>9999.000000000000000</double>
            </property>
            <property name="singleStep">
-            <double>1.000000</double>
+            <double>1.000000000000000</double>
            </property>
            <property name="value">
-            <double>10.000000</double>
+            <double>10.000000000000000</double>
            </property>
           </widget>
          </item>
@@ -240,11 +240,11 @@
        </item>
        <item>
         <widget class="QTableWidget" name="tablePredictionBreakdown">
-         <property name="selectionBehavior">
-          <enum>QAbstractItemView::SelectRows</enum>
-         </property>
          <property name="editTriggers">
           <set>QAbstractItemView::NoEditTriggers</set>
+         </property>
+         <property name="selectionBehavior">
+          <enum>QAbstractItemView::SelectRows</enum>
          </property>
         </widget>
        </item>

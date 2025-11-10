@@ -400,3 +400,23 @@ void DiagnosisTree::debugPrintTree() const
         qDebug() << "  (no root node loaded)";
     }
 }
+
+QList<DiagnosisTreeNode*> DiagnosisTree::getAllNodes() const
+{
+    QList<DiagnosisTreeNode*> allNodes;
+    if (m_rootNode) {
+        collectAllNodesRecursive(m_rootNode, allNodes);
+    }
+    return allNodes;
+}
+
+void DiagnosisTree::collectAllNodesRecursive(DiagnosisTreeNode* node, QList<DiagnosisTreeNode*> &allNodes) const
+{
+    if (!node) return;
+
+    allNodes.append(node);
+
+    for (DiagnosisTreeNode* child : node->children()) {
+        collectAllNodesRecursive(child, allNodes);
+    }
+}

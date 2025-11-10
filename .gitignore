@@ -79,3 +79,6 @@ Makefile*
 *.zip
 *.pdb
 *.dll
+*.7z
+*.mp4
+*.iso

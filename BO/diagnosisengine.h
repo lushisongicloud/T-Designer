@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QString>
 #include <QList>
+#include <QStack>
 #include <QSqlDatabase>
 #include <QDateTime>
 #include "../DO/diagnosistree.h"
@@ -47,10 +48,10 @@ public:
     // ===== 会话管理 =====
     /**
      * @brief 开始新的诊断会话
-     * @param functionId 要诊断的功能ID
+     * @param treeId 要使用的诊断树ID
      * @return 成功返回true
      */
-    bool startDiagnosisSession(int functionId);
+    bool startDiagnosisSession(int treeId);
 
     /**
      * @brief 重置诊断会话
@@ -104,6 +105,37 @@ public:
      * @return 成功返回true
      */
     bool skipCurrentTest();
+
+    // ===== 高级导航功能 =====
+    /**
+     * @brief 回退到上一步
+     * @return 成功返回true，无法回退返回false
+     */
+    bool stepBack();
+    
+    /**
+     * @brief 跳过当前测试并自动推荐下一个
+     * @return 成功返回true
+     */
+    bool skipTestAndRecommendNext();
+    
+    /**
+     * @brief 获取可选的替代测试列表
+     * @return 替代测试节点列表
+     */
+    QList<DiagnosisTreeNode*> getAlternativeTests();
+    
+    /**
+     * @brief 手动选择特定测试
+     * @param nodeId 目标测试节点ID
+     * @return 成功返回true
+     */
+    bool selectManualTest(int nodeId);
+    
+    /**
+     * @brief 检查是否可以回退
+     */
+    bool canStepBack() const { return m_diagnosisPath.size() > 0; }
 
     // ===== 诊断结果 =====
     /**
@@ -214,7 +246,12 @@ signals:
 
 private:
     /**
-     * @brief 加载诊断树
+     * @brief 根据树ID加载诊断树
+     */
+    bool loadDiagnosisTreeById(int treeId);
+    
+    /**
+     * @brief 根据功能ID加载诊断树
      */
     bool loadDiagnosisTree(int functionId);
 
@@ -236,6 +273,26 @@ private:
      */
     void cleanupSession();
 
+    /**
+     * @brief 查找替代测试节点（内部方法）
+     */
+    QList<DiagnosisTreeNode*> findAlternativeTestsInternal();
+    
+    /**
+     * @brief 验证步骤转换是否有效
+     */
+    bool validateStepTransition(DiagnosisTreeNode* from, DiagnosisTreeNode* to);
+    
+    /**
+     * @brief 计算推荐分数（用于测试推荐）
+     */
+    double calculateRecommendationScore(DiagnosisTreeNode* node);
+    
+    /**
+     * @brief 更新节点跳过计数
+     */
+    void updateSkipCount(int nodeId);
+
     // 数据成员
     QSqlDatabase &m_database;
     DiagnosisTree* m_currentTree;
@@ -245,6 +302,8 @@ private:
     QList<DiagnosisStep> m_diagnosisPath;
     QDateTime m_sessionStartTime;
     QDateTime m_sessionEndTime;
+    QStack<DiagnosisStep> m_stepStack;  // 用于回退的步骤栈
+    int m_currentSessionId;  // 当前会话ID（用于持久化）
 };
 
 #endif // DIAGNOSISENGINE_H

@@ -12,6 +12,9 @@ DiagnosisTreeNode::DiagnosisTreeNode()
     , m_testPriority(0.5)
     , m_passButtonText("是")
     , m_failButtonText("否")
+    , m_skipCount(0)
+    , m_costEstimate(0.0)
+    , m_durationEstimate(0.0)
     , m_parent(nullptr)
 {
 }

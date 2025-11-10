@@ -193,6 +193,7 @@ public:
 
 private:
     void initializeMxModules();
+    TestReportMetrics buildTestReportMetrics() const;
 
 private slots:
     void initAfterShow();

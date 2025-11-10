@@ -144,6 +144,12 @@ public:
     QList<DiagnosisTreeNode*> getAllTestNodes() const;
 
     /**
+     * @brief 获取所有节点（递归遍历）
+     * @return 所有节点列表
+     */
+    QList<DiagnosisTreeNode*> getAllNodes() const;
+
+    /**
      * @brief 统计树中的节点总数
      * @return 节点数量
      */
@@ -177,6 +183,7 @@ private:
     DiagnosisTreeNode* findNodeByIdRecursive(DiagnosisTreeNode* node, int nodeId) const;
     void collectLeafNodesRecursive(DiagnosisTreeNode* node, QList<DiagnosisTreeNode*> &leaves) const;
     void collectTestNodesRecursive(DiagnosisTreeNode* node, QList<DiagnosisTreeNode*> &tests) const;
+    void collectAllNodesRecursive(DiagnosisTreeNode* node, QList<DiagnosisTreeNode*> &allNodes) const;
     int countNodesRecursive(DiagnosisTreeNode* node) const;
     int maxDepthRecursive(DiagnosisTreeNode* node, int currentDepth) const;
 
