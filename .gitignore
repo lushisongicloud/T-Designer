@@ -55,6 +55,8 @@ include/
 
 # Ignore LdMainData.db
 ./ref/LdMainData.db
+*.db-shm
+*.db-wal
 
 # 可执行文件
 *.exe
