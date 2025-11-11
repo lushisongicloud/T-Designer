@@ -14,7 +14,7 @@
    <string>测试性建模与交互式故障诊断一体化集成开发环境软件 V1.0</string>
   </property>
   <property name="windowIcon">
-   <iconset>
+   <iconset resource="image.qrc">
     <normaloff>:/new/prefix1/image/T1.ico</normaloff>:/new/prefix1/image/T1.ico</iconset>
   </property>
   <property name="styleSheet">
@@ -272,7 +272,7 @@ QTabBar::tab:!selected {
              <string/>
             </property>
             <property name="icon">
-             <iconset>
+             <iconset resource="image.qrc">
               <normaloff>:/new/prefix1/image/关闭.png</normaloff>:/new/prefix1/image/关闭.png</iconset>
             </property>
            </widget>
@@ -573,7 +573,7 @@ rgba(17,255,255,128));
                     <string/>
                    </property>
                    <property name="icon">
-                    <iconset>
+                    <iconset resource="image.qrc">
                      <normaloff>:/new/prefix1/image/重置.png</normaloff>:/new/prefix1/image/重置.png</iconset>
                    </property>
                   </widget>
@@ -691,7 +691,7 @@ QTreeView::branch:open:has-children{
                     <string/>
                    </property>
                    <property name="icon">
-                    <iconset>
+                    <iconset resource="image.qrc">
                      <normaloff>:/new/prefix1/image/重置.png</normaloff>:/new/prefix1/image/重置.png</iconset>
                    </property>
                   </widget>
@@ -1005,7 +1005,7 @@ QTreeView::branch:open:has-children{
                     <string/>
                    </property>
                    <property name="icon">
-                    <iconset>
+                    <iconset resource="image.qrc">
                      <normaloff>:/new/prefix1/image/重置.png</normaloff>:/new/prefix1/image/重置.png</iconset>
                    </property>
                   </widget>
@@ -1231,7 +1231,7 @@ QTreeView::branch:open:has-children{
                       <string/>
                      </property>
                      <property name="icon">
-                      <iconset>
+                      <iconset resource="image.qrc">
                        <normaloff>:/new/prefix1/image/重置.png</normaloff>:/new/prefix1/image/重置.png</iconset>
                      </property>
                     </widget>
@@ -1466,7 +1466,7 @@ QTreeView::branch:open:has-children{
                     <string/>
                    </property>
                    <property name="icon">
-                    <iconset>
+                    <iconset resource="image.qrc">
                      <normaloff>:/new/prefix1/image/重置.png</normaloff>:/new/prefix1/image/重置.png</iconset>
                    </property>
                   </widget>
@@ -2020,7 +2020,7 @@ QTreeView::branch:open:has-children{
               <string/>
              </property>
              <property name="icon">
-              <iconset>
+              <iconset resource="image.qrc">
                <normaloff>:/new/prefix1/image/右下角.png</normaloff>:/new/prefix1/image/右下角.png</iconset>
              </property>
              <property name="iconSize">
@@ -2049,7 +2049,7 @@ QTreeView::branch:open:has-children{
               <string/>
              </property>
              <property name="icon">
-              <iconset>
+              <iconset resource="image.qrc">
                <normaloff>:/new/prefix1/image/左下角.png</normaloff>:/new/prefix1/image/左下角.png</iconset>
              </property>
              <property name="iconSize">
@@ -2078,7 +2078,7 @@ QTreeView::branch:open:has-children{
               <string/>
              </property>
              <property name="icon">
-              <iconset>
+              <iconset resource="image.qrc">
                <normaloff>:/new/prefix1/image/另存为.png</normaloff>:/new/prefix1/image/另存为.png</iconset>
              </property>
              <property name="iconSize">
@@ -2107,7 +2107,7 @@ QTreeView::branch:open:has-children{
               <string/>
              </property>
              <property name="icon">
-              <iconset>
+              <iconset resource="image.qrc">
                <normaloff>:/new/prefix1/image/左上角.png</normaloff>:/new/prefix1/image/左上角.png</iconset>
              </property>
              <property name="iconSize">
@@ -2143,7 +2143,7 @@ QTreeView::branch:open:has-children{
               <string/>
              </property>
              <property name="icon">
-              <iconset>
+              <iconset resource="image.qrc">
                <normaloff>:/new/prefix1/image/T节点向下.png</normaloff>:/new/prefix1/image/T节点向下.png</iconset>
              </property>
              <property name="iconSize">
@@ -2172,7 +2172,7 @@ QTreeView::branch:open:has-children{
               <string/>
              </property>
              <property name="icon">
-              <iconset>
+              <iconset resource="image.qrc">
                <normaloff>:/new/prefix1/image/T节点向上.png</normaloff>:/new/prefix1/image/T节点向上.png</iconset>
              </property>
              <property name="iconSize">
@@ -2201,7 +2201,7 @@ QTreeView::branch:open:has-children{
               <string/>
              </property>
              <property name="icon">
-              <iconset>
+              <iconset resource="image.qrc">
                <normaloff>:/new/prefix1/image/T节点向右.png</normaloff>:/new/prefix1/image/T节点向右.png</iconset>
              </property>
              <property name="iconSize">
@@ -2230,7 +2230,7 @@ QTreeView::branch:open:has-children{
               <string/>
              </property>
              <property name="icon">
-              <iconset>
+              <iconset resource="image.qrc">
                <normaloff>:/new/prefix1/image/T节点向左.png</normaloff>:/new/prefix1/image/T节点向左.png</iconset>
              </property>
              <property name="iconSize">
@@ -2266,7 +2266,7 @@ QTreeView::branch:open:has-children{
               <string/>
              </property>
              <property name="icon">
-              <iconset>
+              <iconset resource="image.qrc">
                <normaloff>:/new/prefix1/image/跳线.png</normaloff>:/new/prefix1/image/跳线.png</iconset>
              </property>
              <property name="iconSize">
@@ -2295,7 +2295,7 @@ QTreeView::branch:open:has-children{
               <string/>
              </property>
              <property name="icon">
-              <iconset>
+              <iconset resource="image.qrc">
                <normaloff>:/new/prefix1/image/十字接头.png</normaloff>:/new/prefix1/image/十字接头.png</iconset>
              </property>
              <property name="iconSize">
@@ -2331,7 +2331,7 @@ QTreeView::branch:open:has-children{
               <string/>
              </property>
              <property name="icon">
-              <iconset>
+              <iconset resource="image.qrc">
                <normaloff>:/new/prefix1/image/链接点向右.png</normaloff>:/new/prefix1/image/链接点向右.png</iconset>
              </property>
              <property name="iconSize">
@@ -2360,7 +2360,7 @@ QTreeView::branch:open:has-children{
               <string/>
              </property>
              <property name="icon">
-              <iconset>
+              <iconset resource="image.qrc">
                <normaloff>:/new/prefix1/image/链接点向上.png</normaloff>:/new/prefix1/image/链接点向上.png</iconset>
              </property>
              <property name="iconSize">
@@ -2389,7 +2389,7 @@ QTreeView::branch:open:has-children{
               <string/>
              </property>
              <property name="icon">
-              <iconset>
+              <iconset resource="image.qrc">
                <normaloff>:/new/prefix1/image/链接点向左.png</normaloff>:/new/prefix1/image/链接点向左.png</iconset>
              </property>
              <property name="iconSize">
@@ -2418,7 +2418,7 @@ QTreeView::branch:open:has-children{
               <string/>
              </property>
              <property name="icon">
-              <iconset>
+              <iconset resource="image.qrc">
                <normaloff>:/new/prefix1/image/链接点向下.png</normaloff>:/new/prefix1/image/链接点向下.png</iconset>
              </property>
              <property name="iconSize">
@@ -9884,7 +9884,7 @@ min-width: 100px;
 }</string>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>4</number>
       </property>
       <widget class="QWidget" name="ProjectManager">
        <property name="styleSheet">
@@ -11316,6 +11316,8 @@ QDoubleSpinBox{
    <header location="global">qchartview.h</header>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="image.qrc"/>
+ </resources>
  <connections/>
 </ui>

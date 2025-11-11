@@ -38,6 +38,7 @@
 #include "widget/selectfunctiondialog.h"
 #include "BO/diagnosisengine.h"
 #include "projectdatacache.h"
+#include "projectdatamodel.h"
 
 namespace Ui {
 class MainWindow;
@@ -146,6 +147,18 @@ public:
     bool GetTerminalTagVisible(int TerminalInstanceID,bool Update,bool Visible);
     void RemakeLinkRoad(QStringList ListExecSpurID);
     void UpdateConnectLine_CO_Connection(QString Connector_ID1,QString Connector_ID2);
+    
+    // ============ ProjectDataModel 便捷访问接口 ============
+    const ProjectDataModel* getProjectDataModel() const { return m_projectDataModel; }
+    QStringList getUniqueGaocengList() const;
+    QStringList getUniquePosListByGaoceng(const QString &gaoceng) const;
+    QVector<int> getEquipmentIdsByStructure(int structureId) const;
+    const EquipmentData* getEquipmentFromModel(int equipmentId) const;
+    const SymbolData* getSymbolFromModel(int symbolId) const;
+    
+    // Page相关便捷方法
+    QStringList getUniquePageGaocengList() const;
+    QStringList getUniquePagePosList() const;
 
     QStandardItemModel *ModelPages,*ModelUnits,*ModelTerminals,*ModelLineDT,*ModelLineByUnits;
     DialogLoadSymbol *dlgLoadSymbol;
@@ -647,7 +660,8 @@ private:
     QMap<QString, double> module_fault_prob;
     
     // 性能优化：项目数据缓存（避免重复查询数据库）
-    ProjectDataCache* m_projectCache;
+    ProjectDataCache* m_projectCache;  // 旧的缓存系统（保留兼容）
+    ProjectDataModel* m_projectDataModel;  // 新的全内存数据模型
     bool m_useCacheOptimization;  // 缓存优化开关（默认true，可通过环境变量关闭）
 
     //下面的部分用来处理自定义测点

@@ -22,6 +22,7 @@
 #include "BO/function/functionrepository.h"
 #include "demo_projectbuilder.h"
 #include "performancetimer.h"
+#include "projectdatamodel.h"
 
 using namespace ContainerHierarchy;
 
@@ -1586,30 +1587,32 @@ void MainWindow::LoadModelLineByUnits()
 
     QString OriginalLineGaoceng=ui->CbLineGaoceng->currentText();
     QString OriginalLinePos=ui->CbLinePos->currentText();
+    // ✅ 从ProjectDataModel获取数据,避免依赖UI树
     ui->CbLineGaoceng->clear();
     ui->CbLineGaoceng->addItem("高层");
     ui->CbLinePos->clear();
     ui->CbLinePos->addItem("位置");
-    for(int i=0;i<ModelLineByUnits->item(0,0)->rowCount();i++)
-    {
-        ui->CbLineGaoceng->addItem(ModelLineByUnits->item(0,0)->child(i,0)->data(Qt::DisplayRole).toString());
-        for(int j=0;j<ModelLineByUnits->item(0,0)->child(i,0)->rowCount();j++)
-        {
-            bool Existed=false;
-            for(int k=0;k<ui->CbLinePos->count();k++)
-            {
-                if(ui->CbLinePos->itemText(k)==ModelLineByUnits->item(0,0)->child(i,0)->child(j,0)->data(Qt::DisplayRole).toString())
-                {
-                    Existed=true;
-                    break;
-                }
-            }
-            if(!Existed)
-            {
-                ui->CbLinePos->addItem(ModelLineByUnits->item(0,0)->child(i,0)->child(j,0)->data(Qt::DisplayRole).toString());
-            }
+    
+    // 从内存模型获取唯一的高层列表
+    QStringList gaocengList = getUniqueGaocengList();
+    for (const QString &gaoceng : gaocengList) {
+        ui->CbLineGaoceng->addItem(gaoceng);
+    }
+    
+    // 获取所有位置(跨所有高层去重)
+    QSet<QString> allPosSet;
+    for (const QString &gaoceng : gaocengList) {
+        QStringList posList = getUniquePosListByGaoceng(gaoceng);
+        for (const QString &pos : posList) {
+            allPosSet.insert(pos);
         }
     }
+    QStringList allPosList = allPosSet.values();
+    std::sort(allPosList.begin(), allPosList.end());
+    for (const QString &pos : allPosList) {
+        ui->CbLinePos->addItem(pos);
+    }
+    
     ui->CbLineGaoceng->setCurrentText(OriginalLineGaoceng);
     ui->CbLinePos->setCurrentText(OriginalLinePos);
 
@@ -1824,29 +1827,31 @@ void MainWindow::LoadProjectTerminals()
     QString OriginalTerminalGaoceng=ui->CbTermGaoceng->currentText();
     QString OriginalTerminalPos=ui->CbTermPos->currentText();
     ui->CbTermGaoceng->clear();
+    // ✅ 从ProjectDataModel获取数据,避免依赖UI树
     ui->CbTermGaoceng->addItem("高层");
     ui->CbTermPos->clear();
     ui->CbTermPos->addItem("位置");
-    for(int i=0;i<ModelTerminals->item(0,0)->rowCount();i++)
-    {
-        ui->CbTermGaoceng->addItem(ModelTerminals->item(0,0)->child(i,0)->data(Qt::DisplayRole).toString());
-        for(int j=0;j<ModelTerminals->item(0,0)->child(i,0)->rowCount();j++)
-        {
-            bool Existed=false;
-            for(int k=0;k<ui->CbTermPos->count();k++)
-            {
-                if(ui->CbTermPos->itemText(k)==ModelTerminals->item(0,0)->child(i,0)->child(j,0)->data(Qt::DisplayRole).toString())
-                {
-                    Existed=true;
-                    break;
-                }
-            }
-            if(!Existed)
-            {
-                ui->CbTermPos->addItem(ModelTerminals->item(0,0)->child(i,0)->child(j,0)->data(Qt::DisplayRole).toString());
-            }
+    
+    // 从内存模型获取唯一的高层列表
+    QStringList gaocengList = getUniqueGaocengList();
+    for (const QString &gaoceng : gaocengList) {
+        ui->CbTermGaoceng->addItem(gaoceng);
+    }
+    
+    // 获取所有位置(跨所有高层去重)
+    QSet<QString> allPosSet;
+    for (const QString &gaoceng : gaocengList) {
+        QStringList posList = getUniquePosListByGaoceng(gaoceng);
+        for (const QString &pos : posList) {
+            allPosSet.insert(pos);
         }
     }
+    QStringList allPosList = allPosSet.values();
+    std::sort(allPosList.begin(), allPosList.end());
+    for (const QString &pos : allPosList) {
+        ui->CbTermPos->addItem(pos);
+    }
+    
     ui->CbTermGaoceng->setCurrentText(OriginalTerminalGaoceng);
     ui->CbTermPos->setCurrentText(OriginalTerminalPos);
 
@@ -2072,32 +2077,35 @@ void MainWindow::LoadProjectUnits()
     
     timer.checkpoint("LoadUnitTable 完成");
 
+    // ✅ 从ProjectDataModel获取唯一的高层/位置列表,而非遍历UI树
+    // 这样在引入LazyTreeModel后仍然能获取完整数据
     QString OriginalUnitGaoceng=ui->CbUnitGaoceng->currentText();
     QString OriginalUnitPos=ui->CbUnitPos->currentText();
     ui->CbUnitGaoceng->clear();
     ui->CbUnitGaoceng->addItem("高层");
     ui->CbUnitPos->clear();
     ui->CbUnitPos->addItem("位置");
-    for(int i=0;i<ModelUnits->item(0,0)->rowCount();i++)
-    {
-        ui->CbUnitGaoceng->addItem(ModelUnits->item(0,0)->child(i,0)->data(Qt::DisplayRole).toString());
-        for(int j=0;j<ModelUnits->item(0,0)->child(i,0)->rowCount();j++)
-        {
-            bool Existed=false;
-            for(int k=0;k<ui->CbUnitPos->count();k++)
-            {
-                if(ui->CbUnitPos->itemText(k)==ModelUnits->item(0,0)->child(i,0)->child(j,0)->data(Qt::DisplayRole).toString())
-                {
-                    Existed=true;
-                    break;
-                }
-            }
-            if(!Existed)
-            {
-                ui->CbUnitPos->addItem(ModelUnits->item(0,0)->child(i,0)->child(j,0)->data(Qt::DisplayRole).toString());
-            }
+    
+    // 从内存模型获取唯一的高层列表
+    QStringList gaocengList = getUniqueGaocengList();
+    for (const QString &gaoceng : gaocengList) {
+        ui->CbUnitGaoceng->addItem(gaoceng);
+    }
+    
+    // 获取所有位置(跨所有高层去重)
+    QSet<QString> allPosSet;
+    for (const QString &gaoceng : gaocengList) {
+        QStringList posList = getUniquePosListByGaoceng(gaoceng);
+        for (const QString &pos : posList) {
+            allPosSet.insert(pos);
         }
     }
+    QStringList allPosList = allPosSet.values();
+    std::sort(allPosList.begin(), allPosList.end());
+    for (const QString &pos : allPosList) {
+        ui->CbUnitPos->addItem(pos);
+    }
+    
     ui->CbUnitGaoceng->setCurrentText(OriginalUnitGaoceng);
     ui->CbUnitPos->setCurrentText(OriginalUnitPos);
 
@@ -2590,113 +2598,25 @@ void MainWindow::LoadProjectPages()
     
     timer.checkpoint("树视图展开完成");
     
+    // ✅ 从ProjectDataModel获取数据,避免依赖UI树
     QString OriginalPageGaoceng=ui->CbPageGaocengFilter->currentText();
     QString OriginalPagePos=ui->CbPagePosFilter->currentText();
     ui->CbPageGaocengFilter->clear();
     ui->CbPageGaocengFilter->addItem("高层");
     ui->CbPagePosFilter->clear();
     ui->CbPagePosFilter->addItem("位置");
-    for(int i=0;i<ModelPages->item(0,0)->rowCount();i++)
-    {
-        if(ModelPages->item(0,0)->child(i,0)->data(Qt::WhatsThisRole).toString()=="高层")
-            ui->CbPageGaocengFilter->addItem(ModelPages->item(0,0)->child(i,0)->data(Qt::DisplayRole).toString());
-        else if(ModelPages->item(0,0)->child(i,0)->data(Qt::WhatsThisRole).toString()=="位置")
-        {
-            //存在高层为空的图纸
-            bool Existed=false;
-            for(int k=0;k<ui->CbPageGaocengFilter->count();k++)
-            {
-                if(ui->CbPageGaocengFilter->itemText(k)=="")
-                {
-                    Existed=true;
-                    break;
-                }
-            }
-            if(!Existed) ui->CbPageGaocengFilter->addItem("");
-            Existed=false;
-            for(int k=0;k<ui->CbPagePosFilter->count();k++)
-            {
-                if(ui->CbPagePosFilter->itemText(k)==ModelPages->item(0,0)->child(i,0)->data(Qt::DisplayRole).toString())
-                {
-                    Existed=true;
-                    break;
-                }
-            }
-            if(!Existed)
-            {
-                ui->CbPagePosFilter->addItem(ModelPages->item(0,0)->child(i,0)->data(Qt::DisplayRole).toString());
-            }
-        }
-        else if((ModelPages->item(0,0)->child(i,0)->data(Qt::WhatsThisRole).toString()=="图纸")||(ModelPages->item(0,0)->child(i,0)->data(Qt::WhatsThisRole).toString()=="分组"))
-        {
-            //存在高层和位置为空的图纸
-            bool Existed=false;
-            for(int k=0;k<ui->CbPageGaocengFilter->count();k++)
-            {
-                if(ui->CbPageGaocengFilter->itemText(k)=="")
-                {
-                    Existed=true;
-                    break;
-                }
-            }
-            if(!Existed) ui->CbPageGaocengFilter->addItem("");
-
-            Existed=false;
-            for(int k=0;k<ui->CbPagePosFilter->count();k++)
-            {
-                if(ui->CbPagePosFilter->itemText(k)=="")
-                {
-                    Existed=true;
-                    break;
-                }
-            }
-            if(!Existed) ui->CbPagePosFilter->addItem("");
-        }
-        for(int j=0;j<ModelPages->item(0,0)->child(i,0)->rowCount();j++)
-        {
-            if(ModelPages->item(0,0)->child(i,0)->child(j,0)->data(Qt::WhatsThisRole).toString()=="位置")
-            {
-                bool Existed=false;
-                for(int k=0;k<ui->CbPagePosFilter->count();k++)
-                {
-                    if(ui->CbPagePosFilter->itemText(k)==ModelPages->item(0,0)->child(i,0)->child(j,0)->data(Qt::DisplayRole).toString())
-                    {
-                        Existed=true;
-                        break;
-                    }
-                }
-                if(!Existed)
-                {
-                    ui->CbPagePosFilter->addItem(ModelPages->item(0,0)->child(i,0)->child(j,0)->data(Qt::DisplayRole).toString());
-                }
-            }
-            else if((ModelPages->item(0,0)->child(i,0)->child(j,0)->data(Qt::WhatsThisRole).toString()=="图纸")||(ModelPages->item(0,0)->child(i,0)->child(j,0)->data(Qt::WhatsThisRole).toString()=="分组"))
-            {
-                //存在高层和位置为空的图纸
-                bool Existed=false;
-                for(int k=0;k<ui->CbPageGaocengFilter->count();k++)
-                {
-                    if(ui->CbPageGaocengFilter->itemText(k)=="")
-                    {
-                        Existed=true;
-                        break;
-                    }
-                }
-                if(!Existed) ui->CbPageGaocengFilter->addItem("");
-
-                Existed=false;
-                for(int k=0;k<ui->CbPagePosFilter->count();k++)
-                {
-                    if(ui->CbPagePosFilter->itemText(k)=="")
-                    {
-                        Existed=true;
-                        break;
-                    }
-                }
-                if(!Existed) ui->CbPagePosFilter->addItem("");
-            }
-        }
+    
+    // 从内存模型获取唯一的高层/位置列表
+    QStringList pageGaocengList = getUniquePageGaocengList();
+    for (const QString &gaoceng : pageGaocengList) {
+        ui->CbPageGaocengFilter->addItem(gaoceng);
     }
+    
+    QStringList pagePosList = getUniquePagePosList();
+    for (const QString &pos : pagePosList) {
+        ui->CbPagePosFilter->addItem(pos);
+    }
+    
     ui->CbPageGaocengFilter->setCurrentText(OriginalPageGaoceng);
     ui->CbPagePosFilter->setCurrentText(OriginalPagePos);
     FilterPage();
@@ -3751,15 +3671,39 @@ void MainWindow::LoadProject()
     
     timer.checkpoint("数据库打开完成");
     
-    // 加载项目数据缓存（如果启用）
-    if (m_useCacheOptimization) {
-        // 清理旧缓存
-        if (m_projectCache) {
-            delete m_projectCache;
-            m_projectCache = nullptr;
+    // 加载新的ProjectDataModel到内存
+    if (m_projectDataModel) {
+        delete m_projectDataModel;
+        m_projectDataModel = nullptr;
+    }
+    
+    m_projectDataModel = new ProjectDataModel();
+    if (m_projectDataModel->loadAll(T_ProjectDatabase)) {
+        qDebug() << "[ProjectDataModel] 内存模型加载成功:" << m_projectDataModel->getStatistics();
+    } else {
+        qWarning() << "[ProjectDataModel] 内存模型加载失败,将使用传统方式";
+        delete m_projectDataModel;
+        m_projectDataModel = nullptr;
+    }
+    
+    timer.checkpoint("ProjectDataModel加载完成");
+
+    // 根据 ProjectDataModel 结果决定是否启用缓存
+    bool shouldLoadCache = m_useCacheOptimization;
+    if (m_projectDataModel) {
+        if (!shouldLoadCache) {
+            qDebug() << "[Cache] ProjectDataModel 就绪，启用缓存优化";
         }
-        
-        // 创建新缓存并加载
+        shouldLoadCache = true;
+        m_useCacheOptimization = true;
+    }
+    
+    // 加载项目数据缓存（如果启用）
+    if (m_projectCache) {
+        delete m_projectCache;
+        m_projectCache = nullptr;
+    }
+    if (shouldLoadCache) {
         m_projectCache = new ProjectDataCache();
         if (m_projectCache->loadAll(T_ProjectDatabase)) {
             qDebug() << "[Cache] 缓存加载成功:" << m_projectCache->getStatistics();
@@ -3767,6 +3711,7 @@ void MainWindow::LoadProject()
             qWarning() << "[Cache] 缓存加载失败，将使用传统查询方式";
             delete m_projectCache;
             m_projectCache = nullptr;
+            shouldLoadCache = false;
         }
     } else {
         qDebug() << "[Cache] 缓存优化已禁用";

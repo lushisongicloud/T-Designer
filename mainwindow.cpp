@@ -59,6 +59,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
     m_projectCache(nullptr),
+    m_projectDataModel(nullptr),
     m_useCacheOptimization(true)  // 默认启用缓存优化
 {
     // 检查环境变量是否禁用缓存优化（用于调试/对比）
@@ -203,6 +204,11 @@ MainWindow::~MainWindow()
     if (m_projectCache) {
         delete m_projectCache;
         m_projectCache = nullptr;
+    }
+    
+    if (m_projectDataModel) {
+        delete m_projectDataModel;
+        m_projectDataModel = nullptr;
     }
     
     delete ui;
@@ -595,3 +601,176 @@ void MainWindow::closeEvent(QCloseEvent *event)
       event->accept();
 }
 
+
+// ============ ProjectDataModel 便捷访问方法实现 ============
+
+QStringList MainWindow::getUniqueGaocengList() const
+{
+    if (m_projectDataModel && m_projectDataModel->isLoaded()) {
+        QSet<QString> gaocengSet;
+        const auto *structureMgr = m_projectDataModel->structureManager();
+        QVector<int> rootNodes = structureMgr->getRootNodes();
+        for (int rootId : rootNodes) {
+            QVector<int> children = structureMgr->getChildren(rootId);
+            for (int childId : children) {
+                const StructureData *structure = structureMgr->getStructure(childId);
+                if (structure && structure->isGaoceng()) {
+                    gaocengSet.insert(structure->structureInt);
+                }
+            }
+        }
+        QStringList result = gaocengSet.values();
+        result.sort();
+        return result;
+    }
+    QStringList result;
+    if (ModelUnits && ModelUnits->item(0, 0)) {
+        for (int i = 0; i < ModelUnits->item(0, 0)->rowCount(); ++i) {
+            QString gaoceng = ModelUnits->item(0, 0)->child(i, 0)->data(Qt::DisplayRole).toString();
+            if (!result.contains(gaoceng)) {
+                result.append(gaoceng);
+            }
+        }
+    }
+    return result;
+}
+
+QStringList MainWindow::getUniquePosListByGaoceng(const QString &gaoceng) const
+{
+    if (m_projectDataModel && m_projectDataModel->isLoaded()) {
+        QSet<QString> posSet;
+        const auto *structureMgr = m_projectDataModel->structureManager();
+        QVector<int> rootNodes = structureMgr->getRootNodes();
+        for (int rootId : rootNodes) {
+            QVector<int> gaocengChildren = structureMgr->getChildren(rootId);
+            for (int gaocengId : gaocengChildren) {
+                const StructureData *gaocengData = structureMgr->getStructure(gaocengId);
+                if (gaocengData && gaocengData->structureInt == gaoceng) {
+                    QVector<int> posChildren = structureMgr->getChildren(gaocengId);
+                    for (int posId : posChildren) {
+                        const StructureData *posData = structureMgr->getStructure(posId);
+                        if (posData && posData->isPos()) {
+                            posSet.insert(posData->structureInt);
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+        QStringList result = posSet.values();
+        result.sort();
+        return result;
+    }
+    QStringList result;
+    if (ModelUnits && ModelUnits->item(0, 0)) {
+        for (int i = 0; i < ModelUnits->item(0, 0)->rowCount(); ++i) {
+            if (ModelUnits->item(0, 0)->child(i, 0)->data(Qt::DisplayRole).toString() == gaoceng) {
+                for (int j = 0; j < ModelUnits->item(0, 0)->child(i, 0)->rowCount(); ++j) {
+                    QString pos = ModelUnits->item(0, 0)->child(i, 0)->child(j, 0)->data(Qt::DisplayRole).toString();
+                    if (!result.contains(pos)) {
+                        result.append(pos);
+                    }
+                }
+                break;
+            }
+        }
+    }
+    return result;
+}
+
+QStringList MainWindow::getUniquePageGaocengList() const
+{
+    if (m_projectDataModel && m_projectDataModel->isLoaded()) {
+        const auto *pageMgr = m_projectDataModel->pageManager();
+        return pageMgr->getUniqueGaocengList();
+    }
+    // Fallback: 从UI树获取(仅为兼容,LazyTreeModel后将失效)
+    QSet<QString> gaocengSet;
+    if (ModelPages && ModelPages->item(0, 0)) {
+        for (int i = 0; i < ModelPages->item(0, 0)->rowCount(); ++i) {
+            QStandardItem *item = ModelPages->item(0, 0)->child(i, 0);
+            QString role = item->data(Qt::WhatsThisRole).toString();
+            if (role == "高层") {
+                gaocengSet.insert(item->data(Qt::DisplayRole).toString());
+            } else if (role == "位置" || role == "图纸" || role == "分组") {
+                // 存在高层为空的图纸
+                gaocengSet.insert("");
+            }
+        }
+    }
+    QStringList result = gaocengSet.values();
+    result.sort();
+    return result;
+}
+
+QStringList MainWindow::getUniquePagePosList() const
+{
+    if (m_projectDataModel && m_projectDataModel->isLoaded()) {
+        const auto *pageMgr = m_projectDataModel->pageManager();
+        return pageMgr->getUniquePosList();
+    }
+    // Fallback: 从UI树获取(仅为兼容,LazyTreeModel后将失效)
+    QSet<QString> posSet;
+    if (ModelPages && ModelPages->item(0, 0)) {
+        for (int i = 0; i < ModelPages->item(0, 0)->rowCount(); ++i) {
+            QStandardItem *levelItem = ModelPages->item(0, 0)->child(i, 0);
+            QString levelRole = levelItem->data(Qt::WhatsThisRole).toString();
+            
+            if (levelRole == "位置") {
+                posSet.insert(levelItem->data(Qt::DisplayRole).toString());
+            } else if (levelRole == "图纸" || levelRole == "分组") {
+                // 存在位置为空的图纸
+                posSet.insert("");
+            }
+            
+            // 检查子节点
+            for (int j = 0; j < levelItem->rowCount(); ++j) {
+                QStandardItem *childItem = levelItem->child(j, 0);
+                QString childRole = childItem->data(Qt::WhatsThisRole).toString();
+                if (childRole == "位置") {
+                    posSet.insert(childItem->data(Qt::DisplayRole).toString());
+                } else if (childRole == "图纸" || childRole == "分组") {
+                    posSet.insert("");
+                }
+            }
+        }
+    }
+    QStringList result = posSet.values();
+    result.sort();
+    return result;
+}
+
+QVector<int> MainWindow::getEquipmentIdsByStructure(int structureId) const
+{
+    if (m_projectDataModel && m_projectDataModel->isLoaded()) {
+        return m_projectDataModel->getEquipmentsByStructure(structureId);
+    }
+    QVector<int> result;
+    if (T_ProjectDatabase.isValid() && T_ProjectDatabase.isOpen()) {
+        QSqlQuery query(T_ProjectDatabase);
+        query.prepare("SELECT Equipment_ID FROM Equipment WHERE ProjectStructure_ID = ?");
+        query.addBindValue(structureId);
+        if (query.exec()) {
+            while (query.next()) {
+                result.append(query.value(0).toInt());
+            }
+        }
+    }
+    return result;
+}
+
+const EquipmentData* MainWindow::getEquipmentFromModel(int equipmentId) const
+{
+    if (m_projectDataModel && m_projectDataModel->isLoaded()) {
+        return m_projectDataModel->getEquipment(equipmentId);
+    }
+    return nullptr;
+}
+
+const SymbolData* MainWindow::getSymbolFromModel(int symbolId) const
+{
+    if (m_projectDataModel && m_projectDataModel->isLoaded()) {
+        return m_projectDataModel->getSymbol(symbolId);
+    }
+    return nullptr;
+}

@@ -129,6 +129,7 @@ SOURCES += \
     BO/function/functionrepository.cpp \
     BO/function/function_variable_config.cpp \
     projectdatacache.cpp \
+    projectdatamodel.cpp \
     BO/function/variable_range_config.cpp \
     BO/function/systemstructureservice.cpp \
     BO/function/constraintutils.cpp \
@@ -163,6 +164,7 @@ HEADERS += \
     common.h \
     performancetimer.h \
     projectdatacache.h \
+    projectdatamodel.h \
     mxdrawxlib.h \
     qxlabel.h \
     DrawStyle.h \
