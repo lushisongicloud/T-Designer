@@ -21,6 +21,7 @@
 #include "widget/containerhierarchyutils.h"
 #include "widget/functionmanagerdialog.h"
 #include "widget/functioneditdialog.h"
+#include "widget/testmanagementdialog.h"
 #include "BO/function/functionrepository.h"
 #include "demo_projectbuilder.h"
 
@@ -3841,11 +3842,33 @@ void MainWindow::on_Btn_SetTerminal_clicked()
 
 void MainWindow::on_BtnDataAnalyse_clicked()
 {
-    int wT = 200;
-//    if(CurProjectName=="双电机拖曳收放装置") wT=4200;
-//    else if(CurProjectName=="收放存储装置") wT=975;
-//    else if(CurProjectName=="尾轴密封试验装置") wT=240;
-//    else if(CurProjectName=="集中油源动力系统") wT=5100;
+    // 统计器件和连接的总数量
+    int totalEquipmentCount = 0;
+    int totalConnectionCount = 0;
+    
+    QSqlQuery queryEquipment(T_ProjectDatabase);
+    if (queryEquipment.exec("SELECT COUNT(*) FROM Equipment")) {
+        if (queryEquipment.next()) {
+            totalEquipmentCount = queryEquipment.value(0).toInt();
+        }
+    }
+    
+    QSqlQuery queryConnection(T_ProjectDatabase);
+    if (queryConnection.exec("SELECT COUNT(*) FROM JXB")) {
+        if (queryConnection.next()) {
+            totalConnectionCount = queryConnection.value(0).toInt();
+        }
+    }
+    
+    //统计总数量
+    int totalCount = totalEquipmentCount + totalConnectionCount;
+    
+    int wT = 0;
+    if (totalCount > 10) {
+        wT = static_cast<int>((totalCount - 10) * 2000.0 / (10000 - 10));
+        if (wT < 0) wT = 0;
+    }
+    
 
     // 创建对话框并设置样式
     QDialog *waitDialog = new QDialog(this, Qt::FramelessWindowHint | Qt::Dialog);
@@ -4202,24 +4225,24 @@ bool MainWindow::tryGetPrecomputedMetrics(const QString &projectName, TestReport
 //        );
 //        return true;
 //    }
-    if (projectName == QString("收放存储装置")) {
-        metrics = makeMetrics(
-            2786, 7420, 1194, 1020, 18,
-            0.9325, 0.7147, 0.8431, 0.9451,
-            2622.25, 0.43,
-            makeFuzzyMap({729,131,104,42,9,3,2})
-        );
-        return true;
-    }
-    if (projectName == QString("尾轴密封试验装置")) {
-        metrics = makeMetrics(
-            70, 185, 325, 180, 14,
-            0.8850, 0.6120, 0.7530, 0.8525,
-            5824.18, 0.51,
-            makeFuzzyMap({109,26,18,15,8,3,1})
-        );
-        return true;
-    }
+//    if (projectName == QString("收放存储装置")) {
+//        metrics = makeMetrics(
+//            2786, 7420, 1194, 1020, 18,
+//            0.9325, 0.7147, 0.8431, 0.9451,
+//            2622.25, 0.43,
+//            makeFuzzyMap({729,131,104,42,9,3,2})
+//        );
+//        return true;
+//    }
+//    if (projectName == QString("尾轴密封试验装置")) {
+//        metrics = makeMetrics(
+//            70, 185, 325, 180, 14,
+//            0.8850, 0.6120, 0.7530, 0.8525,
+//            5824.18, 0.51,
+//            makeFuzzyMap({109,26,18,15,8,3,1})
+//        );
+//        return true;
+//    }
 //    if (projectName == QString("集中油源动力系统")) {
 //        metrics = makeMetrics(
 //            4485, 7219, 11531, 12065, 25,
@@ -4591,4 +4614,10 @@ void MainWindow::on_btnSkipTest_clicked()
 {
     qDebug() << "用户点击: 跳过测试";
     recordCurrentTestResult(TestOutcome::Skip);
+}
+
+void MainWindow::on_BtnDiagnosisScheme_clicked()
+{
+    TestManagementDialog dialog(1,T_ProjectDatabase,this);
+    dialog.exec();
 }

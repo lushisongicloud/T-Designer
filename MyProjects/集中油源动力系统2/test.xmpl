@@ -1,6 +1,0 @@
-<?xml version="1.0"?>
-<xmpl xmlns:ci="http://www.w3.org/1999/XSL/Format">
-<componentinstance type="Test" name="test">
-  <ci:component type="Test" name="test"/>
-</componentinstance>
-</xmpl>

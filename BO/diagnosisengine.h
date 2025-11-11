@@ -159,6 +159,12 @@ public:
      */
     int getIsolationLevel() const;
 
+    /**
+     * @brief 获取当前状态下的候选故障列表
+     * @return 可能的故障假设列表
+     */
+    QStringList getCandidateFaults() const;
+
     // ===== 诊断路径 =====
     /**
      * @brief 获取完整诊断路径
@@ -292,6 +298,11 @@ private:
      * @brief 更新节点跳过计数
      */
     void updateSkipCount(int nodeId);
+    
+    /**
+     * @brief 从子树收集所有故障假设（递归辅助函数）
+     */
+    void collectFaultsFromSubtree(DiagnosisTreeNode* node, QStringList &faults) const;
 
     // 数据成员
     QSqlDatabase &m_database;

@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>测试管理</string>
+   <string>诊断方案</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -24,7 +24,7 @@
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>0</number>
+      <number>5</number>
      </property>
      <widget class="QWidget" name="tabTests">
       <attribute name="title">
@@ -263,25 +263,48 @@
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayoutDecision">
        <item>
-        <widget class="QTreeWidget" name="treeDecision">
-         <column>
-          <property name="text">
-           <string>节点</string>
-          </property>
-         </column>
-        </widget>
+        <layout class="QHBoxLayout" name="horizontalLayoutDecisionSelector">
+         <item>
+          <widget class="QLabel" name="labelDecisionTreeSelector">
+           <property name="maximumSize">
+            <size>
+             <width>130</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>选择相应的决策树：</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="comboDecisionTree"/>
+         </item>
+        </layout>
        </item>
        <item>
-        <widget class="QPlainTextEdit" name="plainDecisionNotes">
-         <property name="readOnly">
-          <bool>true</bool>
+        <widget class="QSplitter" name="splitterDecision">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
          </property>
+         <widget class="QTreeWidget" name="treeDecision">
+          <column>
+           <property name="text">
+            <string>决策树</string>
+           </property>
+          </column>
+         </widget>
+         <widget class="QPlainTextEdit" name="plainDecisionNotes">
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
         </widget>
        </item>
        <item>
         <widget class="QPushButton" name="btnBuildDecisionTree">
          <property name="text">
-          <string>生成决策树</string>
+          <string>诊断方案生成</string>
          </property>
         </widget>
        </item>

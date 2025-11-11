@@ -382,6 +382,8 @@ private slots:
 
     void on_Btn_GenerateTerminalList_clicked();
 
+    void on_BtnDiagnosisScheme_clicked();
+
     void on_BtnLineConnect_clicked();
 
     void on_Btn_MultiLine_clicked();

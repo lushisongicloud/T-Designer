@@ -14,6 +14,7 @@
 #include <QLabel>
 #include <QComboBox>
 #include <QElapsedTimer>
+#include <QTime>
 #include "BO/diagnosisengine.h"
 #include "DO/diagnosistreenode.h"
 

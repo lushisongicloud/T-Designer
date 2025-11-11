@@ -39,6 +39,8 @@ private slots:
     void on_btnApplyConstraints_clicked();
     void on_btnEvaluatePrediction_clicked();
     void on_btnBuildDecisionTree_clicked();
+    void on_comboDecisionTree_currentIndexChanged(int index);
+    void on_treeDecision_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous);
 
 private:
     void initializeGenerator();
@@ -57,6 +59,9 @@ private:
     void refreshDecisionTreeView();
     void loadAnalysisFromEntity();
     void applyAnalysisToUi();
+    void loadDecisionTreeList();
+    void loadDecisionTreeFromDatabase(int treeId);
+    void displayNodeDetails(QTreeWidgetItem *item);
     void persistAnalysis();
     QString testDisplayText(const GeneratedTest &test) const;
     QStringList candidateTestsByHeuristics(double maxCost, double maxDuration, int maxCount) const;

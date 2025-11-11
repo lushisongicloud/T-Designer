@@ -2,6 +2,7 @@
 #include "ui_testmanagementdialog.h"
 
 #include <algorithm>
+#include <functional>
 #include <QCloseEvent>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -11,6 +12,10 @@
 #include <QHeaderView>
 #include <QTreeWidgetItem>
 #include <QUuid>
+#include <QSqlQuery>
+#include <QSqlError>
+#include <QDebug>
+#include <QTimer>
 
 #include "widget/testeditdialog.h"
 #include "widget/containerhierarchyutils.h"
@@ -31,6 +36,22 @@ TestManagementDialog::TestManagementDialog(int containerId, const QSqlDatabase &
 {
     ui->setupUi(this);
     m_title = windowTitle();
+    
+    // 输出构造函数中收到的数据库信息
+    qDebug() << "========== TestManagementDialog 构造 ==========";
+    qDebug() << "Container ID:" << m_containerId;
+    qDebug() << "数据库连接名:" << m_db.connectionName();
+    qDebug() << "数据库文件:" << m_db.databaseName();
+    qDebug() << "数据库是否打开:" << m_db.isOpen();
+    qDebug() << "================================================";
+
+    // 隐藏除"决策树"外的所有tab页
+    ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->tabTests));
+    ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->tabMatrix));
+    ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->tabTargets));
+    ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->tabConstraints));
+    ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->tabPrediction));
+    ui->labelCoverage->setVisible(false);
 
     configureTables();
 
@@ -46,6 +67,10 @@ TestManagementDialog::TestManagementDialog(int containerId, const QSqlDatabase &
     connect(ui->btnApplyConstraints, &QPushButton::clicked, this, &TestManagementDialog::on_btnApplyConstraints_clicked);
     connect(ui->btnEvaluatePrediction, &QPushButton::clicked, this, &TestManagementDialog::on_btnEvaluatePrediction_clicked);
     connect(ui->btnBuildDecisionTree, &QPushButton::clicked, this, &TestManagementDialog::on_btnBuildDecisionTree_clicked);
+    connect(ui->comboDecisionTree, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &TestManagementDialog::on_comboDecisionTree_currentIndexChanged);
+    connect(ui->treeDecision, &QTreeWidget::currentItemChanged,
+            this, &TestManagementDialog::on_treeDecision_currentItemChanged);
 
     loadData();
 }
@@ -83,6 +108,10 @@ void TestManagementDialog::configureTables()
     ui->tablePredictionBreakdown->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
     ui->treeDecision->header()->setStretchLastSection(true);
+
+    // 设置决策树splitter的默认比例为3:1
+    ui->splitterDecision->setStretchFactor(0, 3);
+    ui->splitterDecision->setStretchFactor(1, 1);
 }
 
 void TestManagementDialog::initializeGenerator()
@@ -130,6 +159,7 @@ void TestManagementDialog::loadData()
     updateCoverage();
     refreshPredictionView();
     refreshDecisionTreeView();
+    loadDecisionTreeList();
 
     m_dirty = false;
     setWindowTitle(m_title);
@@ -712,14 +742,334 @@ void TestManagementDialog::on_btnEvaluatePrediction_clicked()
 
 void TestManagementDialog::on_btnBuildDecisionTree_clicked()
 {
-    QStringList testsForTree = m_candidateTests;
-    if (testsForTree.isEmpty()) {
-        for (const GeneratedTest &test : m_tests)
-            testsForTree.append(test.id);
+    // 清空三个控件的所有内容
+    ui->comboDecisionTree->clear();
+    ui->treeDecision->clear();
+    ui->plainDecisionNotes->clear();
+    
+    // 延迟120ms后重新加载并刷新
+    QTimer::singleShot(120, this, [this]() {
+        // 重新加载决策树列表
+        loadDecisionTreeList();
+        
+        // 如果有决策树，选择第一个（索引1，因为索引0是"-- 请选择决策树 --"）
+        if (ui->comboDecisionTree->count() > 1) {
+            ui->comboDecisionTree->setCurrentIndex(1);
+        }
+    });
+}
+
+void TestManagementDialog::loadDecisionTreeList()
+{
+    ui->comboDecisionTree->clear();
+    
+    if (!m_db.isOpen()) {
+        qWarning() << "数据库未打开";
+        return;
     }
 
-    std::shared_ptr<DecisionNode> root = m_matrixBuilder.buildDecisionTree(testsForTree);
-    m_analysisData.insert(QString("decisionTree"), decisionNodeToVariant(root));
-    refreshDecisionTreeView();
-    markDirty();
+    // 输出当前使用的数据库信息
+    qDebug() << "TestManagementDialog 使用的数据库:";
+    qDebug() << "  - 连接名:" << m_db.connectionName();
+    qDebug() << "  - 数据库名:" << m_db.databaseName();
+    qDebug() << "  - container_id:" << m_containerId;
+
+    QSqlQuery query(m_db);
+    // 加载所有决策树，不受 container_id 限制
+    query.prepare("SELECT tree_id, name, description FROM diagnosis_tree ORDER BY tree_id DESC");
+    
+    if (!query.exec()) {
+        qWarning() << "加载决策树列表失败:" << query.lastError().text();
+        return;
+    }
+
+    ui->comboDecisionTree->addItem("-- 请选择决策树 --", -1);
+    
+    int count = 0;
+    while (query.next()) {
+        int treeId = query.value(0).toInt();
+        QString name = query.value(1).toString();
+        QString description = query.value(2).toString();
+        
+        QString displayText = name.isEmpty() ? QString("决策树 #%1").arg(treeId) : name;
+        if (!description.isEmpty()) {
+            displayText += QString(" (%1)").arg(description);
+        }
+        
+        ui->comboDecisionTree->addItem(displayText, treeId);
+        count++;
+    }
+    
+    qDebug() << "从数据库" << m_db.databaseName() << "加载了" << count << "个决策树";
+}
+
+void TestManagementDialog::on_comboDecisionTree_currentIndexChanged(int index)
+{
+    if (index < 0)
+        return;
+
+    int treeId = ui->comboDecisionTree->currentData().toInt();
+    if (treeId <= 0) {
+        ui->treeDecision->clear();
+        ui->plainDecisionNotes->clear();
+        return;
+    }
+
+    loadDecisionTreeFromDatabase(treeId);
+}
+
+void TestManagementDialog::loadDecisionTreeFromDatabase(int treeId)
+{
+    ui->treeDecision->clear();
+    ui->plainDecisionNotes->clear();
+
+    if (!m_db.isOpen())
+        return;
+
+    QSqlQuery query(m_db);
+    query.prepare("SELECT root_node_id FROM diagnosis_tree WHERE tree_id = ?");
+    query.addBindValue(treeId);
+    
+    if (!query.exec() || !query.next()) {
+        ui->plainDecisionNotes->setPlainText("无法加载决策树根节点");
+        return;
+    }
+
+    int rootNodeId = query.value(0).toInt();
+    if (rootNodeId <= 0) {
+        ui->plainDecisionNotes->setPlainText("决策树根节点未设置");
+        return;
+    }
+
+    std::function<void(int, QTreeWidgetItem*, bool, QString, QString)> loadNode = 
+        [&](int nodeId, QTreeWidgetItem *parentItem, bool isRoot, QString parentPassText, QString parentFailText) {
+        QSqlQuery nodeQuery(m_db);
+        nodeQuery.prepare("SELECT node_id, node_type, test_id, state_id, outcome, comment, "
+                         "test_description, expected_result, fault_hypothesis, isolation_level, test_priority, parent_node_id, "
+                         "pass_button_text, fail_button_text "
+                         "FROM diagnosis_tree_node WHERE node_id = ?");
+        nodeQuery.addBindValue(nodeId);
+        
+        if (!nodeQuery.exec() || !nodeQuery.next())
+            return;
+
+        int currentNodeId = nodeQuery.value(0).toInt();
+        QString nodeType = nodeQuery.value(1).toString();
+        int testId = nodeQuery.value(2).toInt();
+        int stateId = nodeQuery.value(3).toInt();
+        QString outcome = nodeQuery.value(4).toString();
+        QString comment = nodeQuery.value(5).toString();
+        QString testDescription = nodeQuery.value(6).toString();
+        QString expectedResult = nodeQuery.value(7).toString();
+        QString faultHypothesis = nodeQuery.value(8).toString();
+        int isolationLevel = nodeQuery.value(9).toInt();
+        double testPriority = nodeQuery.value(10).toDouble();
+        int parentNodeId = nodeQuery.value(11).toInt();
+        QString passButtonText = nodeQuery.value(12).toString();
+        QString failButtonText = nodeQuery.value(13).toString();
+        
+        // 如果按钮文本为空，使用默认值
+        if (passButtonText.isEmpty()) passButtonText = "是";
+        if (failButtonText.isEmpty()) failButtonText = "否";
+
+        QString nodeLabel;
+        
+        // 辅助函数：截断字符串
+        auto truncateString = [](const QString &str, int maxLen = 20) -> QString {
+            if (str.length() <= maxLen)
+                return str;
+            return str.left(maxLen) + "...";
+        };
+        
+        // 辅助函数：查找冒号位置（支持全角和半角）
+        auto findColonPos = [](const QString &str) -> int {
+            int pos1 = str.indexOf(':');   // 半角冒号
+            int pos2 = str.indexOf('：');  // 全角冒号
+            if (pos1 < 0) return pos2;
+            if (pos2 < 0) return pos1;
+            return qMin(pos1, pos2);  // 返回最先出现的冒号位置
+        };
+        
+        // 统一转换为小写进行比较，以支持不同大小写
+        QString nodeTypeLower = nodeType.toLower();
+        
+        if (nodeTypeLower == "branch") {
+            // Branch 节点：根节点显示"根节点"，其他显示父节点的 pass_button_text
+            if (isRoot || parentNodeId == 0) {
+                nodeLabel = "根节点";
+            } else {
+                // 显示父节点的 pass_button_text
+                nodeLabel = parentPassText.isEmpty() ? "分支节点" : QString("[%1]").arg(parentPassText);
+            }
+        } else if (nodeTypeLower == "test") {
+            // Test 节点：显示"测试：..."格式
+            QString testDesc;
+            if (!testDescription.isEmpty()) {
+                testDesc = testDescription;
+            } else if (!comment.isEmpty()) {
+                testDesc = comment;
+            } else {
+                testDesc = QString("【测试】 #%1").arg(testId);
+            }
+            nodeLabel = QString("【测试】 %1").arg(truncateString(testDesc, 40));
+        } else if (nodeTypeLower == "fault") {
+            // Fault 节点：显示父节点的 fail_button_text + 故障类型（冒号前的内容）
+            QString faultType;
+            QString faultText = faultHypothesis.isEmpty() ? comment : faultHypothesis;
+            if (!faultText.isEmpty()) {
+                int colonPos = findColonPos(faultText);  // 支持全角和半角冒号
+                faultType = colonPos > 0 ? faultText.left(colonPos).trimmed() : faultText.trimmed();
+            } else {
+                faultType = QString("故障 #%1").arg(stateId);
+            }
+            
+            // 组合父节点的fail_button_text和故障类型
+            if (!parentFailText.isEmpty()) {
+                nodeLabel = QString("[%1] %2").arg(parentFailText).arg(truncateString(faultType, 30));
+            } else {
+                nodeLabel = truncateString(faultType, 40);
+            }
+        } else {
+            // 未知节点类型，显示节点ID和类型
+            nodeLabel = QString("节点 #%1 [%2]").arg(currentNodeId).arg(nodeType);
+        }
+
+        QTreeWidgetItem *item = nullptr;
+        if (parentItem) {
+            item = new QTreeWidgetItem(parentItem);
+        } else {
+            item = new QTreeWidgetItem(ui->treeDecision);
+        }
+        item->setText(0, nodeLabel);
+        
+        QVariantMap nodeData;
+        nodeData["node_id"] = currentNodeId;
+        nodeData["node_type"] = nodeType;
+        nodeData["test_id"] = testId;
+        nodeData["state_id"] = stateId;
+        nodeData["outcome"] = outcome;
+        nodeData["comment"] = comment;
+        nodeData["test_description"] = testDescription;
+        nodeData["expected_result"] = expectedResult;
+        nodeData["fault_hypothesis"] = faultHypothesis;
+        nodeData["isolation_level"] = isolationLevel;
+        nodeData["test_priority"] = testPriority;
+        nodeData["parent_node_id"] = parentNodeId;
+        nodeData["pass_button_text"] = passButtonText;
+        nodeData["fail_button_text"] = failButtonText;
+        item->setData(0, Qt::UserRole, nodeData);
+
+        QSqlQuery childQuery(m_db);
+        childQuery.prepare("SELECT node_id FROM diagnosis_tree_node WHERE parent_node_id = ? ORDER BY node_id");
+        childQuery.addBindValue(currentNodeId);
+        
+        if (childQuery.exec()) {
+            while (childQuery.next()) {
+                int childNodeId = childQuery.value(0).toInt();
+                // 递归加载子节点，传递当前节点的按钮文本
+                loadNode(childNodeId, item, false, passButtonText, failButtonText);
+            }
+        }
+    };
+
+    loadNode(rootNodeId, nullptr, true, QString(), QString());
+    // 默认折叠所有节点
+    ui->treeDecision->collapseAll();
+}
+
+void TestManagementDialog::on_treeDecision_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous)
+{
+    Q_UNUSED(previous);
+    displayNodeDetails(current);
+}
+
+void TestManagementDialog::displayNodeDetails(QTreeWidgetItem *item)
+{
+    if (!item) {
+        ui->plainDecisionNotes->clear();
+        return;
+    }
+
+    QVariantMap nodeData = item->data(0, Qt::UserRole).toMap();
+    if (nodeData.isEmpty()) {
+        ui->plainDecisionNotes->setPlainText("节点无详细信息");
+        return;
+    }
+
+    QString details;
+    
+    // 定义字段映射表，用于显示所有非空字段
+    QList<QPair<QString, QString>> fieldMap = {
+        {"node_id", "节点ID"},
+        {"node_type", "节点类型"},
+        {"parent_node_id", "父节点ID"},
+        {"test_id", "测试ID"},
+        {"state_id", "状态ID"},
+        {"outcome", "测试结果"},
+        {"test_description", "测试描述"},
+        {"expected_result", "期望结果"},
+        {"fault_hypothesis", "故障假设"},
+        {"isolation_level", "隔离级别"},
+        {"test_priority", "测试优先级"},
+        {"pass_button_text", "通过按钮文本"},
+        {"fail_button_text", "失败按钮文本"},
+        {"comment", "备注"}
+    };
+    
+    // 遍历所有字段，显示非空字段
+    for (const auto &field : fieldMap) {
+        const QString &key = field.first;
+        const QString &label = field.second;
+        
+        if (!nodeData.contains(key))
+            continue;
+            
+        QVariant value = nodeData.value(key);
+        
+        // 跳过空值
+        if (value.isNull())
+            continue;
+            
+        // 根据类型处理值
+        QString displayValue;
+        if (value.type() == QVariant::Int) {
+            int intVal = value.toInt();
+            // 跳过为0的ID字段（表示未设置）
+            if ((key.endsWith("_id") || key == "isolation_level") && intVal == 0)
+                continue;
+            displayValue = QString::number(intVal);
+        } else if (value.type() == QVariant::Double) {
+            double doubleVal = value.toDouble();
+            // 跳过为0的优先级（表示未设置）
+            if (key == "test_priority" && qFuzzyCompare(doubleVal, 0.0))
+                continue;
+            displayValue = QString::number(doubleVal, 'f', 3);
+        } else {
+            QString strVal = value.toString();
+            if (strVal.isEmpty())
+                continue;
+            displayValue = strVal;
+        }
+        
+        // 格式化输出
+        if (key == "comment" && displayValue.length() > 50) {
+            // 备注字段较长时单独一行
+            details += QString("\n%1:\n%2\n").arg(label).arg(displayValue);
+        } else if (key == "test_description" || key == "fault_hypothesis" || key == "expected_result") {
+            // 描述性字段可能较长
+            if (displayValue.length() > 40) {
+                details += QString("\n%1:\n%2\n").arg(label).arg(displayValue);
+            } else {
+                details += QString("%1: %2\n").arg(label).arg(displayValue);
+            }
+        } else {
+            details += QString("%1: %2\n").arg(label).arg(displayValue);
+        }
+    }
+    
+    if (details.isEmpty()) {
+        details = "该节点没有详细信息";
+    }
+
+    ui->plainDecisionNotes->setPlainText(details);
 }

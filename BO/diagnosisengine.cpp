@@ -293,6 +293,66 @@ int DiagnosisEngine::getIsolationLevel() const
     return 0;
 }
 
+QStringList DiagnosisEngine::getCandidateFaults() const
+{
+    QStringList candidates;
+    
+    if (!m_currentTree || !m_currentNode) {
+        return candidates;
+    }
+    
+    // 如果当前节点是测试节点，获取其可隔离故障列表
+    if (m_currentNode->isTestNode()) {
+        QString isolatable = m_currentNode->isolatableFaults();
+        if (!isolatable.isEmpty()) {
+            // 假设故障用逗号或分号分隔
+            QStringList faults = isolatable.split(QRegExp("[,;]"), QString::SkipEmptyParts);
+            for (QString &fault : faults) {
+                fault = fault.trimmed();
+                if (!fault.isEmpty() && !candidates.contains(fault)) {
+                    candidates.append(fault);
+                }
+            }
+        }
+        
+        // 如果 isolatableFaults 为空，尝试从子节点收集故障假设
+        if (candidates.isEmpty() && m_currentNode->hasChildren()) {
+            collectFaultsFromSubtree(m_currentNode, candidates);
+        }
+    } else if (m_currentNode->isFaultNode()) {
+        // 如果当前节点已经是故障节点，只返回这一个故障
+        QString fault = m_currentNode->faultHypothesis();
+        if (!fault.isEmpty()) {
+            candidates.append(fault);
+        }
+    } else {
+        // 从当前节点的子树中收集所有可能的故障
+        collectFaultsFromSubtree(m_currentNode, candidates);
+    }
+    
+    return candidates;
+}
+
+void DiagnosisEngine::collectFaultsFromSubtree(DiagnosisTreeNode* node, QStringList &faults) const
+{
+    if (!node) return;
+    
+    // 如果是故障节点，添加故障假设
+    if (node->isFaultNode()) {
+        QString fault = node->faultHypothesis();
+        if (!fault.isEmpty() && !faults.contains(fault)) {
+            faults.append(fault);
+        }
+    }
+    
+    // 递归处理子节点
+    if (node->hasChildren()) {
+        for (DiagnosisTreeNode* child : node->children()) {
+            collectFaultsFromSubtree(child, faults);
+        }
+    }
+}
+
 QString DiagnosisEngine::getPathSummary() const
 {
     QString summary;
