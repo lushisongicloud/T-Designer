@@ -61,6 +61,8 @@ struct EquipmentData {
     QString partCode;          // PartCode
     QString tModel;            // TModel
     QString tModelDiag;        // TModelDiag (诊断模型)
+    QString factory;           // Factory
+    QString remark;            // Remark
     
     // 关联数据
     QVector<int> symbolIds;    // 关联的Symbol_ID列表

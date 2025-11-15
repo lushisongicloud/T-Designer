@@ -86,10 +86,10 @@ QString SmtFacade::joinAssertions(const QStringList &assertions) const
         if (trimmed.isEmpty()) {
             continue;
         }
-        if (trimmed.startsWith(QStringLiteral("(assert"))) {
+        if (trimmed.startsWith(QString("(assert"))) {
             code += trimmed;
         } else {
-            code += QStringLiteral("(assert %1)").arg(trimmed);
+            code += QString("(assert %1)").arg(trimmed);
         }
     }
     return code;

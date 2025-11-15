@@ -1,0 +1,6 @@
+{
+  "statusLine": {
+    "type": "command",
+    "command": "echo -e \"📁 T-Designer |  \x1b[38;2;255;215;0m$(git --no-pager branch --show-current)\x1b[0m\""
+  }
+}

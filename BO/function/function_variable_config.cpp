@@ -9,8 +9,8 @@ namespace {
 QString normalizeSample(const QString &sample)
 {
     QString trimmed = sample.trimmed();
-    if (trimmed == QStringLiteral("-0")) {
-        trimmed = QStringLiteral("0");
+    if (trimmed == QString("-0")) {
+        trimmed = QString("0");
     }
     return trimmed;
 }
@@ -192,70 +192,70 @@ FunctionVariableConfig FunctionVariableConfig::fromXml(const QDomElement &elemen
         return config;
     }
 
-    QDomElement variableElement = element.firstChildElement(QStringLiteral("variable"));
+    QDomElement variableElement = element.firstChildElement(QString("variable"));
     while (!variableElement.isNull()) {
-        const QString variableName = variableElement.attribute(QStringLiteral("name")).trimmed();
+        const QString variableName = variableElement.attribute(QString("name")).trimmed();
         if (!variableName.isEmpty()) {
             VariableEntry entry;
-            entry.type = variableElement.firstChildElement(QStringLiteral("type")).text().trimmed();
-            entry.typicalValues = variableElement.firstChildElement(QStringLiteral("typical")).text().trimmed();
-            entry.valueRange = variableElement.firstChildElement(QStringLiteral("range")).text().trimmed();
-            entry.constraintValue = variableElement.firstChildElement(QStringLiteral("constraint")).text().trimmed();
-            const QString samplesText = variableElement.firstChildElement(QStringLiteral("satSamples")).text().trimmed();
+            entry.type = variableElement.firstChildElement(QString("type")).text().trimmed();
+            entry.typicalValues = variableElement.firstChildElement(QString("typical")).text().trimmed();
+            entry.valueRange = variableElement.firstChildElement(QString("range")).text().trimmed();
+            entry.constraintValue = variableElement.firstChildElement(QString("constraint")).text().trimmed();
+            const QString samplesText = variableElement.firstChildElement(QString("satSamples")).text().trimmed();
             if (!samplesText.isEmpty()) {
-                entry.satSamples = sanitizedSamples(samplesText.split(QStringLiteral(";")));
+                entry.satSamples = sanitizedSamples(samplesText.split(QString(";")));
             }
             config.setEntry(variableName, entry);
         }
-        variableElement = variableElement.nextSiblingElement(QStringLiteral("variable"));
+        variableElement = variableElement.nextSiblingElement(QString("variable"));
     }
     return config;
 }
 
 QDomElement FunctionVariableConfig::toXml(QDomDocument &document) const
 {
-    QDomElement root = document.createElement(QStringLiteral("variableValueConfig"));
+    QDomElement root = document.createElement(QString("variableValueConfig"));
     for (auto it = entries.constBegin(); it != entries.constEnd(); ++it) {
         const QString variable = it.key();
         const VariableEntry &entry = it.value();
         if (entry.isEmpty()) {
             continue;
         }
-        QDomElement variableElement = document.createElement(QStringLiteral("variable"));
-        variableElement.setAttribute(QStringLiteral("name"), variable);
+        QDomElement variableElement = document.createElement(QString("variable"));
+        variableElement.setAttribute(QString("name"), variable);
         bool hasChild = false;
 
         if (!entry.type.trimmed().isEmpty()) {
-            QDomElement typeElement = document.createElement(QStringLiteral("type"));
+            QDomElement typeElement = document.createElement(QString("type"));
             typeElement.appendChild(document.createTextNode(entry.type));
             variableElement.appendChild(typeElement);
             hasChild = true;
         }
 
         if (!entry.constraintValue.trimmed().isEmpty()) {
-            QDomElement constraintElement = document.createElement(QStringLiteral("constraint"));
+            QDomElement constraintElement = document.createElement(QString("constraint"));
             constraintElement.appendChild(document.createTextNode(entry.constraintValue));
             variableElement.appendChild(constraintElement);
             hasChild = true;
         }
 
         if (!entry.typicalValues.trimmed().isEmpty()) {
-            QDomElement typicalElement = document.createElement(QStringLiteral("typical"));
+            QDomElement typicalElement = document.createElement(QString("typical"));
             typicalElement.appendChild(document.createTextNode(entry.typicalValues));
             variableElement.appendChild(typicalElement);
             hasChild = true;
         }
 
         if (!entry.valueRange.trimmed().isEmpty()) {
-            QDomElement rangeElement = document.createElement(QStringLiteral("range"));
+            QDomElement rangeElement = document.createElement(QString("range"));
             rangeElement.appendChild(document.createTextNode(entry.valueRange));
             variableElement.appendChild(rangeElement);
             hasChild = true;
         }
 
         if (!entry.satSamples.isEmpty()) {
-            QDomElement samplesElement = document.createElement(QStringLiteral("satSamples"));
-            samplesElement.appendChild(document.createTextNode(sanitizedSamples(entry.satSamples).join(QStringLiteral(";"))));
+            QDomElement samplesElement = document.createElement(QString("satSamples"));
+            samplesElement.appendChild(document.createTextNode(sanitizedSamples(entry.satSamples).join(QString(";"))));
             variableElement.appendChild(samplesElement);
             hasChild = true;
         }

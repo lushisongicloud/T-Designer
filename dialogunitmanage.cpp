@@ -2130,8 +2130,8 @@ int DialogUnitManage::resolveContainerId(int equipmentId, bool createIfMissing)
         return 0;
 
     QSqlQuery ddl(T_LibDatabase);
-    ddl.exec(QStringLiteral("CREATE TABLE IF NOT EXISTS equipment_containers (equipment_id INTEGER PRIMARY KEY, container_id INTEGER)"));
-    ddl.exec(QStringLiteral("CREATE INDEX IF NOT EXISTS idx_eq_containers_container ON equipment_containers(container_id)"));
+    ddl.exec(QString("CREATE TABLE IF NOT EXISTS equipment_containers (equipment_id INTEGER PRIMARY KEY, container_id INTEGER)"));
+    ddl.exec(QString("CREATE INDEX IF NOT EXISTS idx_eq_containers_container ON equipment_containers(container_id)"));
 
     ContainerRepository repo(T_LibDatabase);
     if (!repo.ensureTables())
@@ -2385,7 +2385,7 @@ void DialogUnitManage::performTModelValidation()
         m_componentContainerId = resolveContainerId(equipmentId, true);
         if (m_componentContainerId > 0) {
             QSqlQuery configQuery(T_LibDatabase);
-            configQuery.prepare(QStringLiteral("SELECT function_block, port_name, port_type, variables_json "
+            configQuery.prepare(QString("SELECT function_block, port_name, port_type, variables_json "
                                                "FROM port_config WHERE container_id = ?"));
             configQuery.addBindValue(m_componentContainerId);
             if (configQuery.exec()) {
@@ -2408,7 +2408,7 @@ void DialogUnitManage::performTModelValidation()
                             const QJsonArray array = doc.array();
                             for (const QJsonValue &val : array) {
                                 if (val.isObject()) {
-                                    const QString name = val.toObject().value(QStringLiteral("name")).toString().trimmed();
+                                    const QString name = val.toObject().value(QString("name")).toString().trimmed();
                                     if (!name.isEmpty())
                                         variables.append(name);
                                 } else if (val.isString()) {
@@ -2446,7 +2446,7 @@ void DialogUnitManage::performTModelValidation()
         const QString portKeyCombined = makePortKey(info.functionBlock, info.connNum);
         QString configuredType = portTypeMap.value(portKeyCombined);
         if (configuredType.isEmpty())
-            configuredType = QStringLiteral("electric");
+            configuredType = QString("electric");
         info.portType = configuredType;
         info.variableNames = portVariablesMap.value(portKeyCombined);
 
@@ -3421,18 +3421,34 @@ void DialogUnitManage::startBatchAutoGenerationNew(const QString &logPath, bool 
         connect(m_batchManager, &BatchAutoGenerateManager::started,
                 this, [this](int totalCount) {
             m_batchDialog->appendLog(QString("任务总数: %1").arg(totalCount));
-            m_batchDialog->updateProgress(0, totalCount);
+
+            // 显示恢复信息
+            if (m_batchDialog->resumeMode()) {
+                int recovered = m_batchManager->getSuccessCount() + m_batchManager->getFailedCount() + m_batchManager->getNoPortsCount() + m_batchManager->getSkippedCount();
+                m_batchDialog->appendLog(QString("从日志文件中恢复了 %1 个已处理器件：成功%2个 失败%3个 无端口%4个 无Class_ID%5个")
+                    .arg(recovered)
+                    .arg(m_batchManager->getSuccessCount())
+                    .arg(m_batchManager->getFailedCount())
+                    .arg(m_batchManager->getNoPortsCount())
+                    .arg(m_batchManager->getSkippedCount()));
+            }
+
+            // 初始化进度条
+            int initialProcessed = m_batchDialog->resumeMode() ?
+                (m_batchManager->getSuccessCount() + m_batchManager->getFailedCount() + m_batchManager->getNoPortsCount() + m_batchManager->getSkippedCount()) : 0;
+            m_batchDialog->updateProgress(initialProcessed, totalCount);
         });
         
         connect(m_batchManager, &BatchAutoGenerateManager::workerStarted,
-                this, [this](int workerId, const QString &code, const QString &name) {
+                this, [this](int workerId, const QString &code, const QString &name, int equipmentId) {
             // Manager 主日志
-            QString info = QString("[BatchManager] Worker%1 开始处理: %2 (%3)").arg(workerId).arg(code).arg(name);
+            QString info = QString("[BatchManager] Worker%1 开始处理: %2 (%3) [ID:%4]")
+                .arg(workerId).arg(code).arg(name).arg(equipmentId);
             m_batchDialog->appendLog(info);
-            m_batchDialog->setCurrentEquipment(QString("%1 (%2)").arg(code).arg(name));
-            
+            m_batchDialog->setCurrentEquipment(QString("%1 (%2)").arg(code).arg(name), equipmentId);
+
             // 创建 Worker Tab
-            m_batchDialog->createWorkerTab(workerId, code, name);
+            m_batchDialog->createWorkerTab(workerId, code, name, equipmentId);
         });
         
         connect(m_batchManager, &BatchAutoGenerateManager::workerLogMessage,
@@ -3474,10 +3490,10 @@ void DialogUnitManage::startBatchAutoGenerationNew(const QString &logPath, bool 
         });
         
         connect(m_batchManager, &BatchAutoGenerateManager::progressUpdated,
-                this, [this](int processed, int total, int success, int failed, int noPorts, int skipped) {
+                this, [this](int processed, int total, int success, int failed, int noPorts, int noClassId) {
             m_batchDialog->updateProgress(processed, total);
-            QString status = QString("成功:%1 失败:%2 无端口:%3 跳过:%4")
-                .arg(success).arg(failed).arg(noPorts).arg(skipped);
+            QString status = QString("成功:%1 失败:%2 无端口:%3 无Class_ID:%4")
+                .arg(success).arg(failed).arg(noPorts).arg(noClassId);
             m_batchDialog->setStatus(status);
         });
         
@@ -3495,13 +3511,15 @@ void DialogUnitManage::startBatchAutoGenerationNew(const QString &logPath, bool 
     // 启动批量处理 - 使用用户配置的线程数和日志选项
     int threadCount = m_batchDialog->threadCount();
     bool enableWorkerLog = m_batchDialog->enableWorkerLog();
-    
+    bool reverseOrder = m_batchDialog->reverseOrder();
+
     m_batchDialog->appendLog(QString("线程数: %1").arg(threadCount));
     m_batchDialog->appendLog(QString("Worker 详细日志: %1").arg(enableWorkerLog ? "启用" : "禁用"));
-    
+    m_batchDialog->appendLog(QString("逆序遍历器件表: %1").arg(reverseOrder ? "启用" : "禁用"));
+
     m_batchRunning = true;
     m_batchDialog->setRunning(true);
-    m_batchManager->start(effectivePath, resume, threadCount, enableWorkerLog);
+    m_batchManager->start(effectivePath, resume, threadCount, enableWorkerLog, reverseOrder);
 }
 
 void DialogUnitManage::stopBatchAutoGenerationNew()
@@ -3788,10 +3806,12 @@ void DialogUnitManage::startNextBatchTask()
 
     if (m_batchGenerator) {
         if (m_batchDialog) {
-            m_batchDialog->setCurrentEquipment(QString("%1 (%2/%3)")
-                                               .arg(m_currentBatchTask.code)
-                                               .arg(m_batchCompletedTasks + 1)
-                                               .arg(m_batchTotalTasks));
+            m_batchDialog->setCurrentEquipment(
+                QString("%1 (%2/%3) [ID:%4]")
+                    .arg(m_currentBatchTask.code)
+                    .arg(m_batchCompletedTasks + 1)
+                    .arg(m_batchTotalTasks)
+                    .arg(m_currentBatchTask.equipmentId));
             m_batchDialog->setStatus(tr("执行中"));
         }
 

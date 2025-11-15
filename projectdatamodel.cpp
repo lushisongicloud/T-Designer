@@ -183,7 +183,7 @@ bool EquipmentManager::load(QSqlDatabase &db)
     
     QSqlQuery query(db);
     QString sql = "SELECT Equipment_ID, DT, ProjectStructure_ID, Type, Name, "
-                  "Spec, PartCode, TModel, TModelDiag "
+                  "Spec, PartCode, TModel, TModelDiag, Factory, Remark "
                   "FROM Equipment "
                   "ORDER BY DT";
     
@@ -203,6 +203,8 @@ bool EquipmentManager::load(QSqlDatabase &db)
         data.partCode = query.value(6).toString();
         data.tModel = query.value(7).toString();
         data.tModelDiag = query.value(8).toString();
+        data.factory = query.value(9).toString();
+        data.remark = query.value(10).toString();
         
         m_equipments[data.id] = data;
         
@@ -570,7 +572,7 @@ bool ConnectionManager::load(QSqlDatabase &db)
     auto collectColumns = [&db](const QString &tableName) -> QSet<QString> {
         QSet<QString> columns;
         QSqlQuery schemaQuery(db);
-        if (schemaQuery.exec(QStringLiteral("PRAGMA table_info(%1)").arg(tableName))) {
+        if (schemaQuery.exec(QString("PRAGMA table_info(%1)").arg(tableName))) {
             while (schemaQuery.next()) {
                 columns.insert(schemaQuery.value(1).toString());
             }
@@ -580,7 +582,7 @@ bool ConnectionManager::load(QSqlDatabase &db)
         return columns;
     };
     
-    const QSet<QString> columnSet = collectColumns(QStringLiteral("JXB"));
+    const QSet<QString> columnSet = collectColumns(QString("JXB"));
     auto resolveColumn = [&columnSet](const QString &preferred, const QString &fallback) -> QString {
         if (columnSet.contains(preferred)) {
             return preferred;
@@ -591,43 +593,112 @@ bool ConnectionManager::load(QSqlDatabase &db)
         return QString();
     };
     
-    const QString symb1Column = resolveColumn(QStringLiteral("Start_Symbol_ID"), QStringLiteral("Symb1_ID"));
-    const QString symb2Column = resolveColumn(QStringLiteral("End_Symbol_ID"), QStringLiteral("Symb2_ID"));
+    const QString symb1Column = resolveColumn(QString("Start_Symbol_ID"), QString("Symb1_ID"));
+    const QString symb2Column = resolveColumn(QString("End_Symbol_ID"), QString("Symb2_ID"));
     if (symb1Column.isEmpty() || symb2Column.isEmpty()) {
         qWarning() << "[ConnectionManager] Missing Symb1_ID/Symb2_ID columns in JXB table, skip connection loading.";
         return true;
     }
-    
+
+    // 动态构建SELECT列列表，只包含存在的列
+    QStringList selectColumns;
+    selectColumns << "JXB_ID";
+    selectColumns << QString("%1 AS Symb1_ID").arg(symb1Column);
+    selectColumns << QString("%1 AS Symb2_ID").arg(symb2Column);
+
+    // 必要列（通常存在）
+    if (columnSet.contains("ConnectionNumber")) {
+        selectColumns << "ConnectionNumber";
+    }
+    if (columnSet.contains("Page_ID")) {
+        selectColumns << "Page_ID";
+    }
+    if (columnSet.contains("ProjectStructure_ID")) {
+        selectColumns << "ProjectStructure_ID";
+    }
+
+    // 可选列（可能不存在）
+    if (columnSet.contains("Category")) {
+        selectColumns << "Category";
+    }
+    if (columnSet.contains("Wires_Type")) {
+        selectColumns << "Wires_Type";
+    }
+    if (columnSet.contains("Wires_Color")) {
+        selectColumns << "Wires_Color";
+    }
+    if (columnSet.contains("TModel")) {
+        selectColumns << "TModel";
+    }
+    if (columnSet.contains("Symb1_Category")) {
+        selectColumns << "Symb1_Category";
+    }
+    if (columnSet.contains("Symb2_Category")) {
+        selectColumns << "Symb2_Category";
+    }
+
     QSqlQuery query(db);
-    QString sql = QStringLiteral(
-        "SELECT JXB_ID, %1 AS Symb1_ID, %2 AS Symb2_ID, "
-        "ConnectionNumber, Category, Page_ID, ProjectStructure_ID, "
-        "Wires_Type, Wires_Color, TModel, Symb1_Category, Symb2_Category "
-        "FROM JXB "
-        "ORDER BY ProjectStructure_ID, ConnectionNumber").arg(symb1Column, symb2Column);
+    QString sql = QString("SELECT %1 FROM JXB ORDER BY ProjectStructure_ID, ConnectionNumber")
+                      .arg(selectColumns.join(", "));
+
+    qDebug() << "[ConnectionManager] Executing SQL:" << sql;
     
     if (!query.exec(sql)) {
         qWarning() << "[ConnectionManager] Failed to load:" << query.lastError().text();
         return false;
     }
-    
+
+    // 记录每个字段的位置索引
+    QMap<QString, int> fieldIndex;
+    for (int i = 0; i < selectColumns.size(); ++i) {
+        QString fieldName = selectColumns[i];
+        // 移除AS别名，使用原始列名
+        if (fieldName.contains(" AS ")) {
+            QStringList parts = fieldName.split(" AS ");
+            fieldName = parts[1].trimmed();
+        }
+        fieldIndex[fieldName] = i;
+    }
+
     while (query.next()) {
         ConnectionData data;
-        data.id = query.value(0).toInt();
-        data.symb1Id = query.value(1).toString();
-        data.symb2Id = query.value(2).toString();
-        data.connectionNumber = query.value(3).toString();
-        data.category = query.value(4).toString();
-        data.pageId = query.value(5).toInt();
-        data.structureId = query.value(6).toInt();
-        data.wiresType = query.value(7).toString();
-        data.wiresColor = query.value(8).toString();
-        data.tModel = query.value(9).toString();
-        data.symb1Category = query.value(10).toString();
-        data.symb2Category = query.value(11).toString();
-        
+
+        // 按索引顺序读取数据
+        data.id = query.value(0).toInt();  // JXB_ID
+        data.symb1Id = query.value(1).toString();  // Symb1_ID
+        data.symb2Id = query.value(2).toString();  // Symb2_ID
+
+        // 可选字段：检查列是否存在再读取
+        if (fieldIndex.contains("ConnectionNumber")) {
+            data.connectionNumber = query.value(fieldIndex["ConnectionNumber"]).toString();
+        }
+        if (fieldIndex.contains("Category")) {
+            data.category = query.value(fieldIndex["Category"]).toString();
+        }
+        if (fieldIndex.contains("Page_ID")) {
+            data.pageId = query.value(fieldIndex["Page_ID"]).toInt();
+        }
+        if (fieldIndex.contains("ProjectStructure_ID")) {
+            data.structureId = query.value(fieldIndex["ProjectStructure_ID"]).toInt();
+        }
+        if (fieldIndex.contains("Wires_Type")) {
+            data.wiresType = query.value(fieldIndex["Wires_Type"]).toString();
+        }
+        if (fieldIndex.contains("Wires_Color")) {
+            data.wiresColor = query.value(fieldIndex["Wires_Color"]).toString();
+        }
+        if (fieldIndex.contains("TModel")) {
+            data.tModel = query.value(fieldIndex["TModel"]).toString();
+        }
+        if (fieldIndex.contains("Symb1_Category")) {
+            data.symb1Category = query.value(fieldIndex["Symb1_Category"]).toString();
+        }
+        if (fieldIndex.contains("Symb2_Category")) {
+            data.symb2Category = query.value(fieldIndex["Symb2_Category"]).toString();
+        }
+
         m_connections[data.id] = data;
-        
+
         // 建立索引
         m_structureIndex[data.structureId].append(data.id);
         m_connectionNumIndex[data.connectionNumber].append(data.id);
@@ -758,40 +829,60 @@ bool ProjectDataModel::loadAll(QSqlDatabase &db)
     qDebug() << "[ProjectDataModel] === 开始加载项目数据到内存 ===";
     
     // 1. 加载Structure (层次结构)
+    qDebug() << "[ProjectDataModel] 步骤1: 加载结构层次 (Structure)...";
     if (!m_structureMgr->load(db)) {
-        qWarning() << "[ProjectDataModel] Failed to load structures";
+        qCritical() << "[ProjectDataModel] 步骤1失败: 无法加载结构层次数据!";
+        qCritical() << "[ProjectDataModel] 错误详情:" << db.lastError().text();
         return false;
     }
-    
+    qDebug() << "[ProjectDataModel] 步骤1完成: 已加载" << m_structureMgr->count() << "个结构节点";
+    qDebug() << "[ProjectDataModel] 统计:" << m_structureMgr->getStatistics();
+
     // 2. 加载Equipment (器件)
+    qDebug() << "[ProjectDataModel] 步骤2: 加载器件数据 (Equipment)...";
     if (!m_equipmentMgr->load(db)) {
-        qWarning() << "[ProjectDataModel] Failed to load equipments";
+        qCritical() << "[ProjectDataModel] 步骤2失败: 无法加载器件数据!";
+        qCritical() << "[ProjectDataModel] 错误详情:" << db.lastError().text();
         return false;
     }
-    
+    qDebug() << "[ProjectDataModel] 步骤2完成: 已加载" << m_equipmentMgr->count() << "个器件";
+    qDebug() << "[ProjectDataModel] 统计:" << m_equipmentMgr->getStatistics();
+
     // 3. 加载Symbol (功能子块)
+    qDebug() << "[ProjectDataModel] 步骤3: 加载功能子块 (Symbol)...";
     if (!m_symbolMgr->loadSymbols(db)) {
-        qWarning() << "[ProjectDataModel] Failed to load symbols";
+        qCritical() << "[ProjectDataModel] 步骤3失败: 无法加载功能子块!";
+        qCritical() << "[ProjectDataModel] 错误详情:" << db.lastError().text();
         return false;
     }
-    
+    qDebug() << "[ProjectDataModel] 步骤3完成: 已加载" << m_symbolMgr->symbolCount() << "个功能子块";
+
     // 4. 加载Symb2TermInfo (端子信息)
+    qDebug() << "[ProjectDataModel] 步骤4: 加载端子信息 (Symb2TermInfo)...";
     if (!m_symbolMgr->loadSymb2TermInfo(db)) {
-        qWarning() << "[ProjectDataModel] Failed to load term info";
+        qCritical() << "[ProjectDataModel] 步骤4失败: 无法加载端子信息!";
+        qCritical() << "[ProjectDataModel] 错误详情:" << db.lastError().text();
         return false;
     }
-    
+    qDebug() << "[ProjectDataModel] 步骤4完成: 已加载" << m_symbolMgr->termInfoCount() << "条端子信息";
+
     // 5. 加载Page (页面)
+    qDebug() << "[ProjectDataModel] 步骤5: 加载页面数据 (Page)...";
     if (!m_pageMgr->load(db)) {
-        qWarning() << "[ProjectDataModel] Failed to load pages";
+        qCritical() << "[ProjectDataModel] 步骤5失败: 无法加载页面数据!";
+        qCritical() << "[ProjectDataModel] 错误详情:" << db.lastError().text();
         return false;
     }
-    
+    qDebug() << "[ProjectDataModel] 步骤5完成: 已加载" << m_pageMgr->count() << "个页面";
+
     // 6. 加载Connection (连线)
+    qDebug() << "[ProjectDataModel] 步骤6: 加载连线数据 (Connection)...";
     if (!m_connMgr->load(db)) {
-        qWarning() << "[ProjectDataModel] Failed to load connections";
+        qCritical() << "[ProjectDataModel] 步骤6失败: 无法加载连线数据!";
+        qCritical() << "[ProjectDataModel] 错误详情:" << db.lastError().text();
         return false;
     }
+    qDebug() << "[ProjectDataModel] 步骤6完成: 已加载" << m_connMgr->count() << "条连线";
     
     // TODO: 7. 加载Terminal (端子)
     

@@ -42,7 +42,7 @@ struct FunctionDocumentRecord
     int id = 0;
     int containerId = 0;
     QString xmlText;
-    QString formatVersion = QStringLiteral("1.0");
+    QString formatVersion = QString("1.0");
     QString checksum;
     QString sourceHint;
     QString metadataJson;

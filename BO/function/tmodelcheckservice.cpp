@@ -37,8 +37,8 @@ QStringList bindingPreview(const QVector<PortVariableBinding> &bindings)
         std::sort(dirs.begin(), dirs.end());
         // 新规范：不再显示功能子块层级，仅展示端号
         const QString displayName = binding.port.connNum;
-        const QString joined = dirs.isEmpty() ? QStringLiteral("-")
-                                              : dirs.join(QStringLiteral("/"));
+        const QString joined = dirs.isEmpty() ? QString("-")
+                                              : dirs.join(QString("/"));
         preview << QString("%1 (%2)").arg(displayName, joined);
         if (preview.size() >= 6)
             break;
@@ -74,7 +74,7 @@ void TModelCheckService::run(QWidget *parent,
 
     // a) 替换 %Name%
     if (!context.componentName.trimmed().isEmpty()) {
-        expanded.replace(QStringLiteral("%Name%"), context.componentName.trimmed());
+        expanded.replace(QString("%Name%"), context.componentName.trimmed());
     } else {
         // 组件名称为空时记录警告（不直接报错，允许用户后续填写）
         entries << makeEntry(CodeCheckDialog::Severity::Warning,
@@ -83,19 +83,19 @@ void TModelCheckService::run(QWidget *parent,
 
     // b) 直接用常量表进行替换：对每个常量键生成占位符 %key% 替换一次
     for (auto itConst = context.constants.constBegin(); itConst != context.constants.constEnd(); ++itConst) {
-        const QString ph = QStringLiteral("%") + itConst.key() + QStringLiteral("%");
+        const QString ph = QString("%") + itConst.key() + QString("%");
         if (expanded.contains(ph)) {
             expanded.replace(ph, itConst.value());
         }
     }
 
     // c) 二次扫描剩余占位符（除 %Name%），全部视为未定义常量
-    static const QRegularExpression leftoverRe(QStringLiteral("%([^%\n\r]+)%"));
+    static const QRegularExpression leftoverRe(QString("%([^%\n\r]+)%"));
     QRegularExpressionMatchIterator it2 = leftoverRe.globalMatch(expanded);
     while (it2.hasNext()) {
         const QRegularExpressionMatch m = it2.next();
         const QString full = m.captured();
-        if (full == QStringLiteral("%Name%")) // 已替换或等待组件名填写
+        if (full == QString("%Name%")) // 已替换或等待组件名填写
             continue;
         unresolvedPlaceholders << full;
     }
@@ -169,7 +169,7 @@ void TModelCheckService::run(QWidget *parent,
     if (!validationResult.unusedPorts.isEmpty()) {
         entries << makeEntry(CodeCheckDialog::Severity::Warning,
                              QObject::tr("以下端号在模型中未使用: %1")
-                                 .arg(validationResult.unusedPorts.join(QStringLiteral(", "))));
+                                 .arg(validationResult.unusedPorts.join(QString(", "))));
         ++warningCount;
     }
 

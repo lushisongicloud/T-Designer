@@ -130,6 +130,10 @@ SOURCES += \
     BO/function/function_variable_config.cpp \
     projectdatacache.cpp \
     projectdatamodel.cpp \
+    equipmenttreemodel.cpp \
+    equipmenttablemodel.cpp \
+    connectiontreemodel.cpp \
+    connectionbyunittreemodel.cpp \
     BO/function/variable_range_config.cpp \
     BO/function/systemstructureservice.cpp \
     BO/function/constraintutils.cpp \
@@ -161,10 +165,14 @@ SOURCES += \
     cutthread.cpp
 HEADERS += \
         mainwindow.h \
+    connectiontreemodel.h \
+    connectionbyunittreemodel.h \
     common.h \
     performancetimer.h \
     projectdatacache.h \
     projectdatamodel.h \
+    equipmenttreemodel.h \
+    equipmenttablemodel.h \
     mxdrawxlib.h \
     qxlabel.h \
     DrawStyle.h \
@@ -355,4 +363,3 @@ LIBS += $$PWD/lib/libz3.lib
 
 INCLUDEPATH += $$PWD/.
 DEPENDPATH += $$PWD/.
-

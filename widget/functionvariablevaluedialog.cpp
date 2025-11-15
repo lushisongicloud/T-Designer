@@ -80,7 +80,7 @@ void FunctionVariableValueDialog::populateTable(const QVector<FunctionVariableRo
         createItem(2, row.entry.constraintValue);
         createItem(3, row.entry.typicalValues);
         createItem(4, row.entry.valueRange);
-        createItem(5, row.entry.satSamples.join(QStringLiteral(";")));
+        createItem(5, row.entry.satSamples.join(QString(";")));
     }
 }
 

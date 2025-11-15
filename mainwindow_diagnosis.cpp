@@ -3899,7 +3899,12 @@ void MainWindow::on_BtnDataAnalyse_clicked()
         waitDialog->accept();
         waitDialog->deleteLater();
 
-        CurComponentCount = ui->tableWidgetUnit->rowCount(); // 获取行数
+        // 获取表格行数（从模型获取）
+        if (ui->tableWidgetUnit->model()) {
+            CurComponentCount = ui->tableWidgetUnit->model()->rowCount();
+        } else {
+            CurComponentCount = 0;
+        }
 
         TestReportMetrics metrics = hasPrecomputedMetrics ? cachedMetrics
                                                           : buildTestReportMetrics();
@@ -3967,7 +3972,8 @@ TestReportMetrics MainWindow::buildTestReportMetrics() const
         return metrics;
     }
 
-    const int rowCount = ui->tableWidgetUnit->rowCount();
+    // 从模型获取行数
+    const int rowCount = ui->tableWidgetUnit->model() ? ui->tableWidgetUnit->model()->rowCount() : 0;
     metrics.componentCount = rowCount;
 
     struct ComponentAggregate {
@@ -3983,8 +3989,10 @@ TestReportMetrics MainWindow::buildTestReportMetrics() const
 
     for (int row = 0; row < rowCount; ++row) {
         int equipmentId = 0;
-        if (auto *item = ui->tableWidgetUnit->item(row, 0)) {
-            equipmentId = item->data(Qt::UserRole).toInt();
+        // 从模型获取数据
+        if (ui->tableWidgetUnit->model()) {
+            QModelIndex index = ui->tableWidgetUnit->model()->index(row, 0);
+            equipmentId = index.data(Qt::UserRole).toInt();
         }
         if (equipmentId == 0) {
             equipmentId = syntheticSeed--;
@@ -4618,6 +4626,19 @@ void MainWindow::on_btnSkipTest_clicked()
 
 void MainWindow::on_BtnDiagnosisScheme_clicked()
 {
-    TestManagementDialog dialog(1,T_ProjectDatabase,this);
+    // 查找系统级容器
+    QSqlQuery query(T_ProjectDatabase);
+    query.prepare("SELECT container_id FROM container WHERE level='system' ORDER BY container_id LIMIT 1");
+    
+    int systemContainerId = 0;
+    if (query.exec() && query.next()) {
+        systemContainerId = query.value(0).toInt();
+        qDebug() << "找到系统级容器 container_id:" << systemContainerId;
+    } else {
+        qWarning() << "未找到系统级容器,使用默认值 container_id=1";
+        systemContainerId = 1;
+    }
+    
+    TestManagementDialog dialog(systemContainerId, T_ProjectDatabase, this);
     dialog.exec();
 }

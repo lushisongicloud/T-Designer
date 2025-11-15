@@ -27,11 +27,11 @@ SmtSyntaxChecker::CheckResult buildFailureResult(const QString &rawMessage)
 
     QString normalized = rawMessage;
     if (normalized.isEmpty()) {
-        normalized = QStringLiteral("未知的 Z3 语法错误");
+        normalized = QString("未知的 Z3 语法错误");
     }
 
     static const QRegularExpression mainPattern(
-        QStringLiteral("line\\s+(\\d+)\\s+column\\s+(\\d+)\\s*:\\s*(.*)"),
+        QString("line\\s+(\\d+)\\s+column\\s+(\\d+)\\s*:\\s*(.*)"),
         QRegularExpression::CaseInsensitiveOption | QRegularExpression::DotMatchesEverythingOption);
 
     auto tryApplyPattern = [&](const QString &text) -> bool {
@@ -47,7 +47,7 @@ SmtSyntaxChecker::CheckResult buildFailureResult(const QString &rawMessage)
     };
 
     if (!tryApplyPattern(normalized)) {
-        const QStringList lines = normalized.split(QRegularExpression(QStringLiteral("[\\r\\n]+")), QString::SkipEmptyParts);
+        const QStringList lines = normalized.split(QRegularExpression(QString("[\\r\\n]+")), QString::SkipEmptyParts);
         for (const QString &line : lines) {
             if (tryApplyPattern(line))
                 break;
@@ -58,7 +58,7 @@ SmtSyntaxChecker::CheckResult buildFailureResult(const QString &rawMessage)
         result.errorMessage = normalized.trimmed();
 
     if (result.errorMessage.isEmpty())
-        result.errorMessage = QStringLiteral("Z3 返回错误但未给出详细信息");
+        result.errorMessage = QString("Z3 返回错误但未给出详细信息");
 
     return result;
 }
@@ -101,7 +101,7 @@ static QStringList preflightScan(const QString &script)
     }
 
     // 剩余占位符（未被替换的 %CONST%）
-    static const QRegularExpression placeholderRe(QStringLiteral("%[A-Za-z_][A-Za-z0-9_]*%"));
+    static const QRegularExpression placeholderRe(QString("%[A-Za-z_][A-Za-z0-9_]*%"));
     QSet<QString> placeholders;
     auto it = placeholderRe.globalMatch(script);
     while (it.hasNext()) {

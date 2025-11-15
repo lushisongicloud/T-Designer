@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "equipmenttreemodel.h"
 #include <ActiveQt/QAxObject>
 #include <ActiveQt/QAxWidget>
 #include <QTimer>
@@ -1046,32 +1047,11 @@ void MainWindow::PasteUnit()//粘贴元件
     int pasteCount = QInputDialog::getInt(this, tr("粘贴元件数量"), tr("请输入要粘贴的元件数量:"), 1, 1, INT_MAX, 1, &ok);
     if (!ok) return; // 用户取消了输入，直接返回
 
-    //查看当前节点是项目还是高层还是位置，如果是项目则在项目下第一个高层位置下新增元件；如果是高层，则在高层下的第一个位置新增元件；如果是位置，则在位置下新增元件
     QString StrProTag,StrGaoceng,StrPos;
-    if(ui->treeViewUnits->currentIndex().data(Qt::WhatsThisRole).toString()=="项目")
+    if(!resolveGaocengPosForIndex(ui->treeViewUnits->currentIndex(),StrGaoceng,StrPos))
     {
-        if(ModelUnits->itemFromIndex(ui->treeViewUnits->currentIndex())->rowCount()>0)//存在高层
-        {
-            StrGaoceng=ModelUnits->itemFromIndex(ui->treeViewUnits->currentIndex())->child(0,0)->data(Qt::DisplayRole).toString();
-            if(ModelUnits->itemFromIndex(ui->treeViewUnits->currentIndex())->child(0,0)->rowCount()>0)//存在位置
-                StrPos=ModelUnits->itemFromIndex(ui->treeViewUnits->currentIndex())->child(0,0)->child(0,0)->data(Qt::DisplayRole).toString();
-        }
-    }
-    else if(ui->treeViewUnits->currentIndex().data(Qt::WhatsThisRole).toString()=="高层")
-    {
-        StrGaoceng=ui->treeViewUnits->currentIndex().data(Qt::DisplayRole).toString();
-        if(ModelUnits->itemFromIndex(ui->treeViewUnits->currentIndex())->rowCount()>0)//存在位置
-        {
-            StrPos=ModelUnits->itemFromIndex(ui->treeViewUnits->currentIndex())->child(0,0)->data(Qt::DisplayRole).toString();
-        }
-    }
-    else if(ui->treeViewUnits->currentIndex().data(Qt::WhatsThisRole).toString()=="位置")
-    {
-        StrPos=ui->treeViewUnits->currentIndex().data(Qt::DisplayRole).toString();
-        if(ui->treeViewUnits->currentIndex().parent().isValid())//高层
-        {
-            StrGaoceng=ui->treeViewUnits->currentIndex().parent().data(Qt::DisplayRole).toString();
-        }
+        QMessageBox::warning(this,tr("粘贴元件"),tr("请先在树中选择有效的高层/位置节点。"));
+        return;
     }
 
     // 循环粘贴逻辑
@@ -1141,31 +1121,7 @@ void MainWindow::NewUnit()
 {
     //查看当前节点是项目还是高层还是位置，如果是项目则在项目下第一个高层位置下新增元件；如果是高层，则在高层下的第一个位置新增元件；如果是位置，则在位置下新增元件
     QString StrProTag,StrGaoceng,StrPos;
-    if(ui->treeViewUnits->currentIndex().data(Qt::WhatsThisRole).toString()=="项目")
-    {
-        if(ModelUnits->itemFromIndex(ui->treeViewUnits->currentIndex())->rowCount()>0)//存在高层
-        {
-            StrGaoceng=ModelUnits->itemFromIndex(ui->treeViewUnits->currentIndex())->child(0,0)->data(Qt::DisplayRole).toString();
-            if(ModelUnits->itemFromIndex(ui->treeViewUnits->currentIndex())->child(0,0)->rowCount()>0)//存在位置
-                StrPos=ModelUnits->itemFromIndex(ui->treeViewUnits->currentIndex())->child(0,0)->child(0,0)->data(Qt::DisplayRole).toString();
-        }
-    }
-    else if(ui->treeViewUnits->currentIndex().data(Qt::WhatsThisRole).toString()=="高层")
-    {
-        StrGaoceng=ui->treeViewUnits->currentIndex().data(Qt::DisplayRole).toString();
-        if(ModelUnits->itemFromIndex(ui->treeViewUnits->currentIndex())->rowCount()>0)//存在位置
-        {
-            StrPos=ModelUnits->itemFromIndex(ui->treeViewUnits->currentIndex())->child(0,0)->data(Qt::DisplayRole).toString();
-        }
-    }
-    else if(ui->treeViewUnits->currentIndex().data(Qt::WhatsThisRole).toString()=="位置")
-    {
-        StrPos=ui->treeViewUnits->currentIndex().data(Qt::DisplayRole).toString();
-        if(ui->treeViewUnits->currentIndex().parent().isValid())//高层
-        {
-            StrGaoceng=ui->treeViewUnits->currentIndex().parent().data(Qt::DisplayRole).toString();
-        }
-    }
+    resolveGaocengPosForIndex(ui->treeViewUnits->currentIndex(),StrGaoceng,StrPos);
     StrProTag+="="+StrGaoceng+"+"+StrPos;
     //DialogUnitAttr *dlg=new DialogUnitAttr(this);
     //dlgUnitAttr->setGeometry(ui->mdiArea->x(),ui->mdiArea->y(),ui->mdiArea->width(),ui->mdiArea->height());
@@ -1997,20 +1953,24 @@ void MainWindow::ShowtreeViewUnitsPopMenu(const QPoint &pos)
         LoadUnitTree_menu.addAction(&actLoadUnitLastHalfUp);
         connect(&actLoadUnitLastHalfUp,SIGNAL(triggered()),this,SLOT(LoadWholeUnitLastHalfUp()));
 
-        //所有子块都是单端符号或无端口符号才可以整体放置元件；功能子块数量超过2个才可以整体放置元件 LuToDo 先注释掉了
-        //if(ModelUnits->itemFromIndex(ui->treeViewUnits->indexAt(pos))->rowCount()<=1) LoadUnitTree_menu.setEnabled(false);
         QSqlQuery QuerySymb2TermInfo(T_ProjectDatabase);
         QString sqlstr;
-        for(int i=0;i<ModelUnits->itemFromIndex(ui->treeViewUnits->indexAt(pos))->rowCount();i++)
-        {
-            sqlstr="SELECT * FROM Symb2TermInfo WHERE Symbol_ID = '"+ModelUnits->itemFromIndex(ui->treeViewUnits->indexAt(pos))->child(i,0)->data(Qt::UserRole).toString()+"'";
-            QuerySymb2TermInfo.exec(sqlstr);
-            int TermCount=0;
-            while(QuerySymb2TermInfo.next()) TermCount++;
-            if(TermCount>1)
+        QModelIndex equipmentIndex = ui->treeViewUnits->indexAt(pos);
+        if (m_equipmentTreeModel && equipmentIndex.isValid()) {
+            int childCount = m_equipmentTreeModel->rowCount(equipmentIndex);
+            for (int i = 0; i < childCount; ++i)
             {
-                LoadUnitTree_menu.setEnabled(false);
-                break;
+                QModelIndex symbolIndex = m_equipmentTreeModel->index(i, 0, equipmentIndex);
+                int symbolId = symbolIndex.data(Qt::UserRole).toInt();
+                sqlstr = QString("SELECT * FROM Symb2TermInfo WHERE Symbol_ID = '%1'").arg(symbolId);
+                QuerySymb2TermInfo.exec(sqlstr);
+                int TermCount=0;
+                while(QuerySymb2TermInfo.next()) TermCount++;
+                if(TermCount>1)
+                {
+                    LoadUnitTree_menu.setEnabled(false);
+                    break;
+                }
             }
         }
 
@@ -2419,4 +2379,70 @@ void MainWindow::actionAttachComponentsToHigher()
     }
 
     QMessageBox::information(this, tr("完成"), tr("添加到高层级：%1，跳过：%2").arg(attached).arg(skipped));
+}
+
+bool MainWindow::pickFirstGaocengPos(QString &gaoceng, QString &pos) const
+{
+    QStringList gaocengList = getUniqueGaocengList();
+    if (gaocengList.isEmpty()) return false;
+    gaoceng = gaocengList.first();
+    QStringList posList = getUniquePosListByGaoceng(gaoceng);
+    if (posList.isEmpty()) return false;
+    pos = posList.first();
+    return true;
+}
+
+QModelIndex MainWindow::findAncestorByRole(const QModelIndex &index, const QString &roleName) const
+{
+    QModelIndex current = index;
+    while (current.isValid()) {
+        if (current.data(Qt::WhatsThisRole).toString() == roleName) {
+            return current;
+        }
+        current = current.parent();
+    }
+    return QModelIndex();
+}
+
+bool MainWindow::resolveGaocengPosForIndex(const QModelIndex &index, QString &gaoceng, QString &pos) const
+{
+    if (!index.isValid()) {
+        return pickFirstGaocengPos(gaoceng, pos);
+    }
+    QString type = index.data(Qt::WhatsThisRole).toString();
+    if (type == "项目") {
+        return pickFirstGaocengPos(gaoceng, pos);
+    }
+    if (type == "高层") {
+        gaoceng = index.data(Qt::DisplayRole).toString();
+        if (ui->CbUnitPos->currentText() != "位置" && !ui->CbUnitPos->currentText().isEmpty()) {
+            pos = ui->CbUnitPos->currentText();
+            return true;
+        }
+        QStringList posList = getUniquePosListByGaoceng(gaoceng);
+        if (!posList.isEmpty()) {
+            pos = posList.first();
+            return true;
+        }
+        return false;
+    }
+    if (type == "位置") {
+        pos = index.data(Qt::DisplayRole).toString();
+        QModelIndex parent = index.parent();
+        if (parent.isValid())
+            gaoceng = parent.data(Qt::DisplayRole).toString();
+        return !gaoceng.isEmpty() && !pos.isEmpty();
+    }
+    if (type == "元件" || type == "功能子块") {
+        QModelIndex posIndex = findAncestorByRole(index, "位置");
+        QModelIndex gaocengIndex = findAncestorByRole(index, "高层");
+        if (posIndex.isValid())
+            pos = posIndex.data(Qt::DisplayRole).toString();
+        if (gaocengIndex.isValid())
+            gaoceng = gaocengIndex.data(Qt::DisplayRole).toString();
+        if (!gaoceng.isEmpty() && !pos.isEmpty()) {
+            return true;
+        }
+    }
+    return pickFirstGaocengPos(gaoceng, pos);
 }

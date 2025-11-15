@@ -37,7 +37,7 @@ public:
         m_timer.start();
         m_startTime = m_timer.elapsed();
         m_lastCheckpoint = m_startTime;
-        qDebug() << QString(">>> [性能分析] %1 开始").arg(m_label);
+        // 移除详细开始日志，只保留总结
     }
 
     /**
@@ -71,23 +71,15 @@ public:
         qint64 now = m_timer.elapsed();
         qint64 duration = now - m_lastCheckpoint;
         qint64 elapsed = now - m_startTime;
-        
+
         CheckpointInfo info;
         info.name = name;
         info.duration = duration;
         info.elapsed = elapsed;
         info.additionalInfo = additionalInfo;
         m_checkpoints.append(info);
-        
-        QString msg = QString("... [性能分析] %1 -> %2: %3 毫秒")
-                          .arg(m_label)
-                          .arg(name)
-                          .arg(duration);
-        if (!additionalInfo.isEmpty()) {
-            msg += QString(" (%1)").arg(additionalInfo);
-        }
-        qDebug() << msg;
-        
+
+        // 移除详细的checkpoint日志，只在析构时打印累计统计
         m_lastCheckpoint = now;
     }
 

@@ -29,14 +29,14 @@ QString writeZ3FailureLog(const QString &logic, const QString &errorMessage)
 {
     QMutexLocker locker(&g_z3LogMutex);
     QDir baseDir(QDir::current());
-    const QString logDir = QStringLiteral("logs");
+    const QString logDir = QString("logs");
     if (!baseDir.exists(logDir)) {
         baseDir.mkpath(logDir);
     }
     baseDir.cd(logDir);
 
-    const QString timestamp = QDateTime::currentDateTimeUtc().toString(QStringLiteral("yyyyMMdd_HHmmsszzz"));
-    const QString fileName = QStringLiteral("z3_error_%1.txt").arg(timestamp);
+    const QString timestamp = QDateTime::currentDateTimeUtc().toString(QString("yyyyMMdd_HHmmsszzz"));
+    const QString fileName = QString("z3_error_%1.txt").arg(timestamp);
 
     QFile file(baseDir.filePath(fileName));
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
@@ -146,17 +146,17 @@ z3::sort parseSortString(z3::context &ctx, const QString &sortText)
     if (trimmed.isEmpty()) {
         throw std::runtime_error("empty sort string");
     }
-    if (trimmed.compare(QStringLiteral("Real"), Qt::CaseInsensitive) == 0) {
+    if (trimmed.compare(QString("Real"), Qt::CaseInsensitive) == 0) {
         return ctx.real_sort();
     }
-    if (trimmed.compare(QStringLiteral("Int"), Qt::CaseInsensitive) == 0) {
+    if (trimmed.compare(QString("Int"), Qt::CaseInsensitive) == 0) {
         return ctx.int_sort();
     }
-    if (trimmed.compare(QStringLiteral("Bool"), Qt::CaseInsensitive) == 0) {
+    if (trimmed.compare(QString("Bool"), Qt::CaseInsensitive) == 0) {
         return ctx.bool_sort();
     }
-    if (trimmed.startsWith(QStringLiteral("(Array"), Qt::CaseInsensitive)) {
-        QString inner = trimmed.mid(QStringLiteral("(Array").size());
+    if (trimmed.startsWith(QString("(Array"), Qt::CaseInsensitive)) {
+        QString inner = trimmed.mid(QString("(Array").size());
         if (inner.endsWith(')')) {
             inner.chop(1);
         }
@@ -182,7 +182,7 @@ std::vector<std::pair<QString, QString>> collectFunctionDeclarations(const QStri
         if (pos >= logic.size()) {
             break;
         }
-        if (logic.midRef(pos, 12) == QStringLiteral("(declare-fun")) {
+        if (logic.midRef(pos, 12) == QString("(declare-fun")) {
             pos += 12;
             QString name = readSymbolToken(logic, pos);
             QString argsToken = readBalancedToken(logic, pos);
@@ -217,10 +217,10 @@ QString formatRangeValue(double number)
         }
     }
     if (text == QLatin1String("-0")) {
-        text = QStringLiteral("0");
+        text = QString("0");
     }
     if (text.isEmpty()) {
-        text = QStringLiteral("0");
+        text = QString("0");
     }
     return text;
 }
@@ -230,11 +230,11 @@ QString formatModelExpr(const z3::expr &value)
     if (value.is_bool()) {
         switch (value.bool_value()) {
         case Z3_L_TRUE:
-            return QStringLiteral("true");
+            return QString("true");
         case Z3_L_FALSE:
-            return QStringLiteral("false");
+            return QString("false");
         default:
-            return QStringLiteral("unknown");
+            return QString("unknown");
         }
     }
     if (value.is_int() || value.is_real()) {
@@ -255,13 +255,13 @@ QString formatModelExpr(const z3::expr &value)
         while (asArray.is_app() && asArray.decl().decl_kind() == Z3_OP_STORE) {
             z3::expr index = asArray.arg(1);
             z3::expr val = asArray.arg(2);
-            entries.append(QStringLiteral("(%1 -> %2)")
+            entries.append(QString("(%1 -> %2)")
                                .arg(QString::fromStdString(index.to_string()),
                                     QString::fromStdString(val.to_string())));
             asArray = asArray.arg(0);
         }
-        entries.append(QStringLiteral("else -> %1").arg(QString::fromStdString(asArray.to_string())));
-        return QStringLiteral("{%1}").arg(entries.join(QStringLiteral(", ")));
+        entries.append(QString("else -> %1").arg(QString::fromStdString(asArray.to_string())));
+        return QString("{%1}").arg(entries.join(QString(", ")));
     }
     return QString::fromStdString(value.to_string());
 }
@@ -367,13 +367,13 @@ SystemEntity::IncrementalSolveSession SystemEntity::createIncrementalSolveSessio
 
     session.context = std::make_shared<z3::context>();
     if (!session.context) {
-        errorMessage = QStringLiteral("无法创建Z3上下文");
+        errorMessage = QString("无法创建Z3上下文");
         return session;
     }
 
     session.solver = std::make_shared<z3::solver>(*session.context);
     if (!session.solver) {
-        errorMessage = QStringLiteral("无法创建Z3求解器");
+        errorMessage = QString("无法创建Z3求解器");
         session.context.reset();
         return session;
     }
@@ -416,9 +416,9 @@ SystemEntity::IncrementalSolveSession SystemEntity::createIncrementalSolveSessio
     }
 
     if (result == z3::check_result::unsat) {
-        errorMessage = QStringLiteral("基础约束不可满足");
+        errorMessage = QString("基础约束不可满足");
     } else {
-        errorMessage = QStringLiteral("Z3 返回 unknown 结果");
+        errorMessage = QString("Z3 返回 unknown 结果");
     }
     session.context.reset();
     session.solver.reset();
@@ -438,7 +438,7 @@ bool SystemEntity::checkIncrementalSession(IncrementalSolveSession &session,
         modelOut->clear();
     }
     if (!session.valid || !session.context || !session.solver) {
-        errorMessage = QStringLiteral("增量求解会话未初始化");
+        errorMessage = QString("增量求解会话未初始化");
         return false;
     }
 
@@ -459,7 +459,7 @@ bool SystemEntity::checkIncrementalSession(IncrementalSolveSession &session,
 
     QString incrementalLogic;
     if (!extraAssertions.isEmpty()) {
-        incrementalLogic = extraAssertions.join(QStringLiteral("\n"));
+        incrementalLogic = extraAssertions.join(QString("\n"));
         try {
             z3::sort_vector sortVector(*session.context);
             z3::func_decl_vector declVector(*session.context);
@@ -530,7 +530,7 @@ bool SystemEntity::checkIncrementalSession(IncrementalSolveSession &session,
             modelOut->clear();
         }
     } else {
-        errorMessage = QStringLiteral("Z3 返回 unknown 结果");
+        errorMessage = QString("Z3 返回 unknown 结果");
         sat = false;
     }
 

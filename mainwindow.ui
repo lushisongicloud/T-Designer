@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1633</width>
+    <width>1740</width>
     <height>869</height>
    </rect>
   </property>
@@ -420,7 +420,7 @@ rgba(17,255,255,128));
 </string>
             </property>
             <property name="currentIndex">
-             <number>0</number>
+             <number>1</number>
             </property>
             <widget class="QWidget" name="tab_8">
              <property name="styleSheet">
@@ -843,7 +843,7 @@ QTreeView::branch:open:has-children{
                    <number>0</number>
                   </property>
                   <item>
-                   <widget class="QTableWidget" name="tableWidgetUnit">
+                   <widget class="QTableView" name="tableWidgetUnit">
                     <property name="styleSheet">
                      <string notr="true"/>
                     </property>
@@ -859,46 +859,6 @@ QTreeView::branch:open:has-children{
                     <attribute name="verticalHeaderVisible">
                      <bool>false</bool>
                     </attribute>
-                    <column>
-                     <property name="text">
-                      <string>序号</string>
-                     </property>
-                    </column>
-                    <column>
-                     <property name="text">
-                      <string>项目代号</string>
-                     </property>
-                    </column>
-                    <column>
-                     <property name="text">
-                      <string>型号</string>
-                     </property>
-                    </column>
-                    <column>
-                     <property name="text">
-                      <string>名称</string>
-                     </property>
-                    </column>
-                    <column>
-                     <property name="text">
-                      <string>数量</string>
-                     </property>
-                    </column>
-                    <column>
-                     <property name="text">
-                      <string>厂家</string>
-                     </property>
-                    </column>
-                    <column>
-                     <property name="text">
-                      <string>部件编号</string>
-                     </property>
-                    </column>
-                    <column>
-                     <property name="text">
-                      <string>元件备注</string>
-                     </property>
-                    </column>
                    </widget>
                   </item>
                  </layout>

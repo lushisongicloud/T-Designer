@@ -15,17 +15,17 @@
 #include <QDebug>
 
 namespace {
-const QString kElectric = QStringLiteral("electric");
-const QString kHydraulic = QStringLiteral("hydraulic");
-const QString kMechanical = QStringLiteral("mechanical");
-const QString kOther = QStringLiteral("other");
+const QString kElectric = QString("electric");
+const QString kHydraulic = QString("hydraulic");
+const QString kMechanical = QString("mechanical");
+const QString kOther = QString("other");
 
 const QStringList kPortTypes = {kElectric, kHydraulic, kMechanical, kOther};
 const QStringList kDirections = {
-    QStringLiteral("input"),
-    QStringLiteral("output"),
-    QStringLiteral("bidirectional"),
-    QStringLiteral("internal")
+    QString("input"),
+    QString("output"),
+    QString("bidirectional"),
+    QString("internal")
 };
 
 QString toJson(const QStringList &vars)
@@ -33,7 +33,7 @@ QString toJson(const QStringList &vars)
     QJsonArray array;
     for (const QString &name : vars) {
         QJsonObject obj;
-        obj.insert(QStringLiteral("name"), name);
+        obj.insert(QString("name"), name);
         array.append(obj);
     }
     return QString::fromUtf8(QJsonDocument(array).toJson(QJsonDocument::Compact));
@@ -42,24 +42,24 @@ QString toJson(const QStringList &vars)
 QStringList defaultVariables(const QString &type)
 {
     if (type == kElectric)
-        return {QStringLiteral("i"), QStringLiteral("u")};
+        return {QString("i"), QString("u")};
     if (type == kHydraulic)
-        return {QStringLiteral("p"), QStringLiteral("q")};
+        return {QString("p"), QString("q")};
     if (type == kMechanical)
-        return {QStringLiteral("F"), QStringLiteral("v")};
+        return {QString("F"), QString("v")};
     return {};
 }
 
 QString defaultMacro(const QString &type, int arity)
 {
     if (type == kElectric) {
-        return arity == 3 ? QStringLiteral("connect3e") : QStringLiteral("connect2e");
+        return arity == 3 ? QString("connect3e") : QString("connect2e");
     }
     if (type == kHydraulic) {
-        return arity == 3 ? QStringLiteral("connect3h") : QStringLiteral("connect2h");
+        return arity == 3 ? QString("connect3h") : QString("connect2h");
     }
     if (type == kMechanical) {
-        return arity == 3 ? QStringLiteral("connect3m") : QStringLiteral("connect2m");
+        return arity == 3 ? QString("connect3m") : QString("connect2m");
     }
     return {};
 }
@@ -166,7 +166,7 @@ bool PortConfigPanel::validate(QString *errorMessage) const
     QTableWidget *macroTable = ui->tableMacros;
     QSet<QString> macroNames;
     QStringList allowedDomains = kPortTypes;
-    allowedDomains << QStringLiteral("generic");
+    allowedDomains << QString("generic");
     for (int row = 0; row < macroTable->rowCount(); ++row) {
         const QTableWidgetItem *nameItem = macroTable->item(row, 0);
         const QTableWidgetItem *domainItem = macroTable->item(row, 1);
@@ -198,8 +198,8 @@ void PortConfigPanel::addPort()
     table->insertRow(row);
     PortConfigEntry entry;
     entry.portType = kElectric;
-    entry.direction = QStringLiteral("bidirectional");
-    entry.variableProfile = QStringLiteral("default");
+    entry.direction = QString("bidirectional");
+    entry.variableProfile = QString("default");
     entry.variablesJson = toJson(defaultVariables(kElectric));
     entry.connectMacro = defaultMacro(kElectric, 2);
     writePortRow(row, entry);
@@ -223,7 +223,7 @@ void PortConfigPanel::addMacro()
     ConnectMacroEntry entry;
     entry.domain = kElectric;
     entry.arity = 2;
-    entry.expansionTemplate = QStringLiteral("(assert (= (+ %ARG1%.i %ARG2%.i) 0))");
+    entry.expansionTemplate = QString("(assert (= (+ %ARG1%.i %ARG2%.i) 0))");
     writeMacroRow(row, entry);
     emit panelChanged();
 }
@@ -365,8 +365,8 @@ void PortConfigPanel::writePortRow(int row, const PortConfigEntry &entry)
     table->item(row, 0)->setData(Qt::UserRole, entry.portConfigId);
     table->setItem(row, 1, new QTableWidgetItem(entry.portName));
     table->setItem(row, 2, new QTableWidgetItem(entry.portType.isEmpty() ? kElectric : entry.portType));
-    table->setItem(row, 3, new QTableWidgetItem(entry.direction.isEmpty() ? QStringLiteral("bidirectional") : entry.direction));
-    table->setItem(row, 4, new QTableWidgetItem(entry.variableProfile.isEmpty() ? QStringLiteral("default") : entry.variableProfile));
+    table->setItem(row, 3, new QTableWidgetItem(entry.direction.isEmpty() ? QString("bidirectional") : entry.direction));
+    table->setItem(row, 4, new QTableWidgetItem(entry.variableProfile.isEmpty() ? QString("default") : entry.variableProfile));
     table->setItem(row, 5, new QTableWidgetItem(entry.variablesJson));
     table->setItem(row, 6, new QTableWidgetItem(entry.connectMacro));
 }
@@ -407,10 +407,10 @@ bool PortConfigPanel::loadPorts()
     if (m_containerId <= 0)
         return true;
     QSqlQuery query(m_db);
-    query.prepare(QStringLiteral(
+    query.prepare(QString(
         "SELECT port_config_id, function_block, port_name, port_type, direction, variable_profile, variables_json, connect_macro, custom_metadata "
         "FROM port_config WHERE container_id = :cid ORDER BY function_block, port_name"));
-    query.bindValue(QStringLiteral(":cid"), m_containerId);
+    query.bindValue(QString(":cid"), m_containerId);
     if (!query.exec()) {
         QMessageBox::warning(this, tr("读取失败"), query.lastError().text());
         return false;
@@ -441,10 +441,10 @@ bool PortConfigPanel::loadMacros()
     if (m_containerId <= 0)
         return true;
     QSqlQuery query(m_db);
-    query.prepare(QStringLiteral(
+    query.prepare(QString(
         "SELECT macro_id, macro_name, domain, arity, expansion_template, description, metadata_json "
         "FROM port_connect_macro WHERE container_id = :cid ORDER BY macro_name"));
-    query.bindValue(QStringLiteral(":cid"), m_containerId);
+    query.bindValue(QString(":cid"), m_containerId);
     if (!query.exec()) {
         QMessageBox::warning(this, tr("读取失败"), query.lastError().text());
         return false;
@@ -472,29 +472,29 @@ bool PortConfigPanel::savePorts()
     if (!m_db.transaction())
         return false;
     QSqlQuery del(m_db);
-    del.prepare(QStringLiteral("DELETE FROM port_config WHERE container_id = :cid"));
-    del.bindValue(QStringLiteral(":cid"), m_containerId);
+    del.prepare(QString("DELETE FROM port_config WHERE container_id = :cid"));
+    del.bindValue(QString(":cid"), m_containerId);
     if (!del.exec()) {
         m_db.rollback();
         QMessageBox::warning(this, tr("保存失败"), del.lastError().text());
         return false;
     }
     QSqlQuery ins(m_db);
-    ins.prepare(QStringLiteral(
+    ins.prepare(QString(
         "INSERT INTO port_config(container_id, function_block, port_name, port_type, direction, variable_profile, variables_json, connect_macro, custom_metadata) "
         "VALUES(:cid,:block,:port,:type,:dir,:profile,:vars,:macro,:meta)"));
     auto *table = ui->tablePorts;
     for (int row = 0; row < table->rowCount(); ++row) {
         PortConfigEntry entry = readPortRow(row);
-        ins.bindValue(QStringLiteral(":cid"), m_containerId);
-        ins.bindValue(QStringLiteral(":block"), entry.functionBlock);
-        ins.bindValue(QStringLiteral(":port"), entry.portName);
-        ins.bindValue(QStringLiteral(":type"), entry.portType);
-        ins.bindValue(QStringLiteral(":dir"), entry.direction);
-        ins.bindValue(QStringLiteral(":profile"), entry.variableProfile);
-        ins.bindValue(QStringLiteral(":vars"), entry.variablesJson);
-        ins.bindValue(QStringLiteral(":macro"), entry.connectMacro);
-        ins.bindValue(QStringLiteral(":meta"), entry.customMetadata);
+        ins.bindValue(QString(":cid"), m_containerId);
+        ins.bindValue(QString(":block"), entry.functionBlock);
+        ins.bindValue(QString(":port"), entry.portName);
+        ins.bindValue(QString(":type"), entry.portType);
+        ins.bindValue(QString(":dir"), entry.direction);
+        ins.bindValue(QString(":profile"), entry.variableProfile);
+        ins.bindValue(QString(":vars"), entry.variablesJson);
+        ins.bindValue(QString(":macro"), entry.connectMacro);
+        ins.bindValue(QString(":meta"), entry.customMetadata);
         if (!ins.exec()) {
             m_db.rollback();
             QMessageBox::warning(this, tr("保存失败"), ins.lastError().text());
@@ -515,27 +515,27 @@ bool PortConfigPanel::saveMacros()
     if (!m_db.transaction())
         return false;
     QSqlQuery del(m_db);
-    del.prepare(QStringLiteral("DELETE FROM port_connect_macro WHERE container_id = :cid"));
-    del.bindValue(QStringLiteral(":cid"), m_containerId);
+    del.prepare(QString("DELETE FROM port_connect_macro WHERE container_id = :cid"));
+    del.bindValue(QString(":cid"), m_containerId);
     if (!del.exec()) {
         m_db.rollback();
         QMessageBox::warning(this, tr("保存失败"), del.lastError().text());
         return false;
     }
     QSqlQuery ins(m_db);
-    ins.prepare(QStringLiteral(
+    ins.prepare(QString(
         "INSERT INTO port_connect_macro(container_id, macro_name, domain, arity, expansion_template, description, metadata_json) "
         "VALUES(:cid,:name,:domain,:arity,:expr,:desc,:meta)"));
     auto *table = ui->tableMacros;
     for (int row = 0; row < table->rowCount(); ++row) {
         ConnectMacroEntry entry = readMacroRow(row);
-        ins.bindValue(QStringLiteral(":cid"), m_containerId);
-        ins.bindValue(QStringLiteral(":name"), entry.macroName);
-        ins.bindValue(QStringLiteral(":domain"), entry.domain);
-        ins.bindValue(QStringLiteral(":arity"), entry.arity);
-        ins.bindValue(QStringLiteral(":expr"), entry.expansionTemplate);
-        ins.bindValue(QStringLiteral(":desc"), entry.description);
-        ins.bindValue(QStringLiteral(":meta"), entry.metadataJson);
+        ins.bindValue(QString(":cid"), m_containerId);
+        ins.bindValue(QString(":name"), entry.macroName);
+        ins.bindValue(QString(":domain"), entry.domain);
+        ins.bindValue(QString(":arity"), entry.arity);
+        ins.bindValue(QString(":expr"), entry.expansionTemplate);
+        ins.bindValue(QString(":desc"), entry.description);
+        ins.bindValue(QString(":meta"), entry.metadataJson);
         if (!ins.exec()) {
             m_db.rollback();
             QMessageBox::warning(this, tr("保存失败"), ins.lastError().text());

@@ -30,17 +30,18 @@ public:
     QString logPath() const;
     bool resumeMode() const;
     bool enableWorkerLog() const;     // 是否启用 Worker 详细日志
+    bool reverseOrder() const;        // 是否逆序遍历器件表
     int threadCount() const;          // 获取线程数配置
 
     void setLogPath(const QString &path, bool resume);
     void appendLog(const QString &text);  // 追加到 Manager 主日志
     void updateProgress(int current, int total);
     void setStatus(const QString &status);
-    void setCurrentEquipment(const QString &info);
+    void setCurrentEquipment(const QString &info, int equipmentId = -1);
     void setRunning(bool running);
     
     // Worker Tab 管理
-    void createWorkerTab(int workerId, const QString &code, const QString &name);
+    void createWorkerTab(int workerId, const QString &code, const QString &name, int equipmentId);
     void appendWorkerLog(int workerId, const QString &text);
     void appendWorkerStream(int workerId, const QString &text);
     void closeWorkerTab(int workerId);
@@ -73,6 +74,7 @@ private:
     
     // 新增配置项
     QCheckBox *m_chkEnableWorkerLog;   // 是否启用 Worker 详细日志文件
+    QCheckBox *m_chkReverseOrder;      // 逆序遍历器件表
     QSpinBox *m_spinThreadCount;       // 线程数配置
     
     bool m_resumeMode = false;

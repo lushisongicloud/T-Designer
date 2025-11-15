@@ -579,7 +579,7 @@ void SelectFunctionDialog::on_btn_DelObs_clicked() {
 void SelectFunctionDialog::on_functionTree_itemClicked(QTreeWidgetItem *item, int column) {
     // 这个函数会在用户点击树形列表中的一个节点时被调用。
     currentFunctionName = item->text(0);
-    currentConstraintIntegrityStatus = functionConstraintIntegrityMap.value(currentFunctionName, QStringLiteral("未检查"));
+    currentConstraintIntegrityStatus = functionConstraintIntegrityMap.value(currentFunctionName, QString("未检查"));
     // 获取节点数据
     QString functionData = item->data(0, Qt::UserRole).toString();
 
@@ -859,10 +859,10 @@ void SelectFunctionDialog::addFunction(bool isSubFunction) {
     QTreeWidgetItem *newItem = new QTreeWidgetItem();
     newItem->setText(0, functionName);
 
-    functionConstraintIntegrityMap.insert(functionName, QStringLiteral("未检查"));
+    functionConstraintIntegrityMap.insert(functionName, QString("未检查"));
 
     // 使用createFunctionXML生成QDomDocument
-    QDomDocument doc = createFunctionXML(functionName, functionDesc, link, functionDependency, componentDependency,allComponentDependency,attributeString, testItemList, localResultEntityList, functionConstraintIntegrityMap.value(functionName, QStringLiteral("未检查")));
+    QDomDocument doc = createFunctionXML(functionName, functionDesc, link, functionDependency, componentDependency,allComponentDependency,attributeString, testItemList, localResultEntityList, functionConstraintIntegrityMap.value(functionName, QString("未检查")));
 
     // 将XML保存到树形列表节点的data中
     newItem->setData(0, Qt::UserRole, doc.toString());
@@ -937,7 +937,7 @@ void SelectFunctionDialog::on_btn_UpdateSubFunc_clicked()
         functionFaultProbabilityMap.insert(mFunc.functionName, mFunc.faultProbability);
 
         QString constraintIntegrity = functionDefine.firstChildElement("constraintIntegrity").text().trimmed();
-        if (constraintIntegrity.isEmpty()) constraintIntegrity = QStringLiteral("未检查");
+        if (constraintIntegrity.isEmpty()) constraintIntegrity = QString("未检查");
         mFunc.constraintIntegrity = constraintIntegrity;
         functionConstraintIntegrityMap.insert(mFunc.functionName, constraintIntegrity);
 
@@ -1115,7 +1115,7 @@ void SelectFunctionDialog::addTreeItemsFromXML(QDomElement &element, QTreeWidget
 
             QString attributeString = functionElement.firstChildElement("attribute").text();
             QString constraintIntegrity = functionElement.firstChildElement("constraintIntegrity").text().trimmed();
-            if (constraintIntegrity.isEmpty()) constraintIntegrity = QStringLiteral("未检查");
+            if (constraintIntegrity.isEmpty()) constraintIntegrity = QString("未检查");
             functionConstraintIntegrityMap.insert(functionName, constraintIntegrity);
 
             QList<TestItem> testItemList;
@@ -1565,13 +1565,13 @@ QList<TestItem> SelectFunctionDialog::buildConstraintCheckItems(bool invertActua
     QList<TestItem> assembled;
     for (const TestItem &item : testItemList) {
         TestItem converted = item;
-        if (converted.testType == QStringLiteral("依赖功能")) {
-            if (converted.value == QStringLiteral("功能正常")) {
+        if (converted.testType == QString("依赖功能")) {
+            if (converted.value == QString("功能正常")) {
                 const QStringList meta = functionActuatorConstraintMap.value(converted.variable);
                 if (meta.size() >= 2) {
                     converted.variable = meta.at(0);
                     converted.value = meta.at(1);
-                    converted.testType = QStringLiteral("一般变量");
+                    converted.testType = QString("一般变量");
                     converted.checkState = Qt::Unchecked;
                     assembled.append(converted);
                 }
@@ -1579,12 +1579,12 @@ QList<TestItem> SelectFunctionDialog::buildConstraintCheckItems(bool invertActua
             continue;
         }
 
-        if (invertActuator && converted.testType == QStringLiteral("功能执行器")) {
+        if (invertActuator && converted.testType == QString("功能执行器")) {
             const QString type = systemEntity->obsVarsMap.value(converted.variable);
-            if (type == QStringLiteral("Bool")) {
-                converted.value = (converted.value.trimmed().compare(QStringLiteral("true"), Qt::CaseInsensitive) == 0)
-                        ? QStringLiteral("false")
-                        : QStringLiteral("true");
+            if (type == QString("Bool")) {
+                converted.value = (converted.value.trimmed().compare(QString("true"), Qt::CaseInsensitive) == 0)
+                        ? QString("false")
+                        : QString("true");
             } else {
                 converted.value = functionconstraints::negateRange(converted.value);
             }
@@ -1602,7 +1602,7 @@ void SelectFunctionDialog::markConstraintIntegrityUnknown()
     if (!currentItem) return;
 
     currentFunctionName = currentItem->text(0);
-    currentConstraintIntegrityStatus = QStringLiteral("未检查");
+    currentConstraintIntegrityStatus = QString("未检查");
     functionConstraintIntegrityMap.insert(currentFunctionName, currentConstraintIntegrityStatus);
     if (functionInfoMap.contains(currentFunctionName)) {
         functionInfoMap[currentFunctionName].constraintIntegrity = currentConstraintIntegrityStatus;
@@ -1630,10 +1630,10 @@ void SelectFunctionDialog::writeCurrentFunctionToTree()
     if (!currentItem) return;
 
     const QString functionName = currentItem->text(0);
-    const QString integrity = functionConstraintIntegrityMap.value(functionName, QStringLiteral("未检查"));
+    const QString integrity = functionConstraintIntegrityMap.value(functionName, QString("未检查"));
 
-    QString attributeString = ui->checkBoxPersistent->isChecked() ? QStringLiteral("Persistent") : QStringLiteral("NotPersistent");
-    attributeString += QStringLiteral(",") + ui->textEditFaultProbability->toPlainText();
+    QString attributeString = ui->checkBoxPersistent->isChecked() ? QString("Persistent") : QString("NotPersistent");
+    attributeString += QString(",") + ui->textEditFaultProbability->toPlainText();
 
     QDomDocument doc = createFunctionXML(
                 functionName,
@@ -1959,14 +1959,14 @@ void SelectFunctionDialog::on_btn_CheckConstraints_clicked()
 
     QString status;
     if (!positiveSat) {
-        status = QStringLiteral("不正确");
+        status = QString("不正确");
     } else {
         const QList<TestItem> negativeItems = buildConstraintCheckItems(true);
         const bool negativeSat = systemEntity->satisfiabilitySolve(croppedSystemDescription, negativeItems);
-        status = negativeSat ? QStringLiteral("不完整") : QStringLiteral("完整");
+        status = negativeSat ? QString("不完整") : QString("完整");
     }
 
-    if (status == QStringLiteral("完整")) {
+    if (status == QString("完整")) {
         QMessageBox::information(this, tr("检查约束完整性"), status);
     } else {
         QMessageBox::warning(this, tr("检查约束完整性"), status);

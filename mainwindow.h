@@ -44,6 +44,11 @@ namespace Ui {
 class MainWindow;
 }
 
+class EquipmentTreeModel;
+class EquipmentTableModel;
+class ConnectionTreeModel;
+class ConnectionByUnitTreeModel;
+
 extern QSqlDatabase  T_ProjectDatabase;
 extern QString CurProjectPath;
 extern QString CurProjectName;
@@ -160,7 +165,11 @@ public:
     QStringList getUniquePageGaocengList() const;
     QStringList getUniquePagePosList() const;
 
-    QStandardItemModel *ModelPages,*ModelUnits,*ModelTerminals,*ModelLineDT,*ModelLineByUnits;
+    QStandardItemModel *ModelPages,*ModelTerminals,*ModelLineDT,*ModelLineByUnits;
+    EquipmentTreeModel *m_equipmentTreeModel = nullptr;
+    EquipmentTableModel *m_equipmentTableModel = nullptr;
+    ConnectionTreeModel *m_connectionTreeModel = nullptr;
+    ConnectionByUnitTreeModel *m_connectionByUnitTreeModel = nullptr;
     DialogLoadSymbol *dlgLoadSymbol;
     DialogSymbols *dlgDialogSymbols;
     DialogUnitManage *dlgUnitManage;
@@ -209,6 +218,12 @@ private:
     void initializeMxModules();
     TestReportMetrics buildTestReportMetrics() const;
     bool tryGetPrecomputedMetrics(const QString &projectName, TestReportMetrics &metrics) const;
+    QString buildStructureTag(int projectStructureId) const;
+    QString buildUnitTag(const EquipmentData *equipment) const;
+    bool resolveGaocengPosForIndex(const QModelIndex &index, QString &gaoceng, QString &pos) const;
+    bool pickFirstGaocengPos(QString &gaoceng, QString &pos) const;
+    QModelIndex findAncestorByRole(const QModelIndex &index, const QString &roleName) const;
+    bool symbolMatchesPageFilter(int symbolId, const QString &pageName) const;
 
 private slots:
     void initAfterShow();

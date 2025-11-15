@@ -49,14 +49,14 @@ QStringList parseDelimitedListUnique(const QString &text)
 TestItem buildTestItem(const QDomElement &constraintElement)
 {
     TestItem item;
-    item.variable = constraintElement.firstChildElement(QStringLiteral("variable")).text().trimmed();
-    item.value = constraintElement.firstChildElement(QStringLiteral("value")).text().trimmed();
+    item.variable = constraintElement.firstChildElement(QString("variable")).text().trimmed();
+    item.value = constraintElement.firstChildElement(QString("value")).text().trimmed();
     bool ok = false;
-    const QString confidenceText = constraintElement.firstChildElement(QStringLiteral("confidence")).text().trimmed();
+    const QString confidenceText = constraintElement.firstChildElement(QString("confidence")).text().trimmed();
     item.confidence = confidenceText.toDouble(&ok);
     if (!ok) item.confidence = 0.0;
-    item.testType = constraintElement.firstChildElement(QStringLiteral("type")).text().trimmed();
-    item.checkState = item.testType.contains(QStringLiteral("执行器")) ? Qt::Checked : Qt::Unchecked;
+    item.testType = constraintElement.firstChildElement(QString("type")).text().trimmed();
+    item.checkState = item.testType.contains(QString("执行器")) ? Qt::Checked : Qt::Unchecked;
     return item;
 }
 
@@ -83,7 +83,7 @@ bool FunctionRepository::ensureTables()
         return false;
 
     QSqlQuery pragma(m_db);
-    pragma.exec(QStringLiteral("PRAGMA foreign_keys = ON"));
+    pragma.exec(QString("PRAGMA foreign_keys = ON"));
 
     if (!ensureFunctionTable())
         return false;
@@ -99,24 +99,24 @@ bool FunctionRepository::ensureFunctionTable()
 {
     auto ensureColumn = [&](const QString &name, const QString &definition) -> bool {
         QSqlQuery info(m_db);
-        if (!info.exec(QStringLiteral("PRAGMA table_info(Function)"))) {
-            logError(info, QStringLiteral("pragma table_info Function"));
+        if (!info.exec(QString("PRAGMA table_info(Function)"))) {
+            logError(info, QString("pragma table_info Function"));
             return false;
         }
         while (info.next()) {
-            if (info.value(QStringLiteral("name")).toString().compare(name, Qt::CaseInsensitive) == 0)
+            if (info.value(QString("name")).toString().compare(name, Qt::CaseInsensitive) == 0)
                 return true;
         }
         QSqlQuery alter(m_db);
-        if (!alter.exec(QStringLiteral("ALTER TABLE Function ADD COLUMN %1 %2").arg(name, definition))) {
-            logError(alter, QStringLiteral("alter table add column %1").arg(name));
+        if (!alter.exec(QString("ALTER TABLE Function ADD COLUMN %1 %2").arg(name, definition))) {
+            logError(alter, QString("alter table add column %1").arg(name));
             return false;
         }
         return true;
     };
 
     QSqlQuery query(m_db);
-    if (!query.exec(QStringLiteral(
+    if (!query.exec(QString(
             "CREATE TABLE IF NOT EXISTS Function ("
             " FunctionID INTEGER PRIMARY KEY,"
             " FunctionName TEXT NOT NULL,"
@@ -129,7 +129,7 @@ bool FunctionRepository::ensureFunctionTable()
             " FunctionDependency TEXT DEFAULT '',"
             " PersistentFlag INTEGER DEFAULT 1,"
             " FaultProbability REAL DEFAULT 0.0)"))) {
-        logError(query, QStringLiteral("create Function"));
+        logError(query, QString("create Function"));
         return false;
     }
 
@@ -156,20 +156,20 @@ bool FunctionRepository::ensureFunctionTable()
 bool FunctionRepository::ensureFunctionBindingTable()
 {
     QSqlQuery query(m_db);
-    if (!query.exec(QStringLiteral(
+    if (!query.exec(QString(
             "CREATE TABLE IF NOT EXISTS function_bindings ("
             " id INTEGER PRIMARY KEY AUTOINCREMENT,"
             " function_id INTEGER NOT NULL UNIQUE,"
             " symbol_id INTEGER NOT NULL,"
             " FOREIGN KEY(function_id) REFERENCES Function(FunctionID) ON DELETE CASCADE,"
             " FOREIGN KEY(symbol_id) REFERENCES Symbol(Symbol_ID) ON DELETE CASCADE)"))) {
-        logError(query, QStringLiteral("create function_bindings"));
+        logError(query, QString("create function_bindings"));
         return false;
     }
 
-    if (!query.exec(QStringLiteral(
+    if (!query.exec(QString(
             "CREATE INDEX IF NOT EXISTS idx_function_bindings_symbol ON function_bindings(symbol_id)"))) {
-        logError(query, QStringLiteral("create index function_bindings"));
+        logError(query, QString("create index function_bindings"));
         return false;
     }
     return true;
@@ -178,7 +178,7 @@ bool FunctionRepository::ensureFunctionBindingTable()
 bool FunctionRepository::ensureFunctionDocumentTable()
 {
     QSqlQuery query(m_db);
-    if (!query.exec(QStringLiteral(
+    if (!query.exec(QString(
             "CREATE TABLE IF NOT EXISTS function_document ("
             " function_document_id INTEGER PRIMARY KEY AUTOINCREMENT,"
             " container_id INTEGER NOT NULL,"
@@ -189,13 +189,13 @@ bool FunctionRepository::ensureFunctionDocumentTable()
             " metadata_json TEXT,"
             " created_at TEXT DEFAULT CURRENT_TIMESTAMP,"
             " updated_at TEXT DEFAULT CURRENT_TIMESTAMP)"))) {
-        logError(query, QStringLiteral("create function_document"));
+        logError(query, QString("create function_document"));
         return false;
     }
 
-    if (!query.exec(QStringLiteral(
+    if (!query.exec(QString(
             "CREATE UNIQUE INDEX IF NOT EXISTS idx_function_document_container ON function_document(container_id)"))) {
-        logError(query, QStringLiteral("create index function_document"));
+        logError(query, QString("create index function_document"));
         return false;
     }
     return true;
@@ -423,13 +423,13 @@ FunctionDocumentRecord FunctionRepository::loadDocument(int containerId) const
         return record;
 
     QSqlQuery query(m_db);
-    query.prepare(QStringLiteral(
+    query.prepare(QString(
         "SELECT function_document_id, container_id, xml_text, format_version, checksum, "
         "source_hint, metadata_json, created_at, updated_at "
         "FROM function_document WHERE container_id = :cid LIMIT 1"));
-    query.bindValue(QStringLiteral(":cid"), containerId);
+    query.bindValue(QString(":cid"), containerId);
     if (!query.exec()) {
-        logError(query, QStringLiteral("load function_document"));
+        logError(query, QString("load function_document"));
         return record;
     }
 
@@ -466,41 +466,41 @@ bool FunctionRepository::saveDocument(FunctionDocumentRecord &record)
     }
 
     if (record.formatVersion.trimmed().isEmpty()) {
-        record.formatVersion = QStringLiteral("1.0");
+        record.formatVersion = QString("1.0");
     }
 
     if (record.id > 0) {
         QSqlQuery query(m_db);
-        query.prepare(QStringLiteral(
+        query.prepare(QString(
             "UPDATE function_document "
             "SET xml_text = :xml, format_version = :version, checksum = :checksum, "
             "source_hint = :source, metadata_json = :metadata, updated_at = CURRENT_TIMESTAMP "
             "WHERE function_document_id = :id"));
-        query.bindValue(QStringLiteral(":xml"), record.xmlText);
-        query.bindValue(QStringLiteral(":version"), record.formatVersion);
-        query.bindValue(QStringLiteral(":checksum"), record.checksum);
-        query.bindValue(QStringLiteral(":source"), record.sourceHint);
-        query.bindValue(QStringLiteral(":metadata"), record.metadataJson);
-        query.bindValue(QStringLiteral(":id"), record.id);
+        query.bindValue(QString(":xml"), record.xmlText);
+        query.bindValue(QString(":version"), record.formatVersion);
+        query.bindValue(QString(":checksum"), record.checksum);
+        query.bindValue(QString(":source"), record.sourceHint);
+        query.bindValue(QString(":metadata"), record.metadataJson);
+        query.bindValue(QString(":id"), record.id);
         if (!query.exec()) {
-            logError(query, QStringLiteral("update function_document"));
+            logError(query, QString("update function_document"));
             return false;
         }
         return true;
     }
 
     QSqlQuery insert(m_db);
-    insert.prepare(QStringLiteral(
+    insert.prepare(QString(
         "INSERT INTO function_document(container_id, xml_text, format_version, checksum, source_hint, metadata_json)"
         " VALUES(:cid, :xml, :version, :checksum, :source, :metadata)"));
-    insert.bindValue(QStringLiteral(":cid"), record.containerId);
-    insert.bindValue(QStringLiteral(":xml"), record.xmlText);
-    insert.bindValue(QStringLiteral(":version"), record.formatVersion);
-    insert.bindValue(QStringLiteral(":checksum"), record.checksum);
-    insert.bindValue(QStringLiteral(":source"), record.sourceHint);
-    insert.bindValue(QStringLiteral(":metadata"), record.metadataJson);
+    insert.bindValue(QString(":cid"), record.containerId);
+    insert.bindValue(QString(":xml"), record.xmlText);
+    insert.bindValue(QString(":version"), record.formatVersion);
+    insert.bindValue(QString(":checksum"), record.checksum);
+    insert.bindValue(QString(":source"), record.sourceHint);
+    insert.bindValue(QString(":metadata"), record.metadataJson);
     if (!insert.exec()) {
-        logError(insert, QStringLiteral("insert function_document"));
+        logError(insert, QString("insert function_document"));
         return false;
     }
     record.id = insert.lastInsertId().toInt();
@@ -512,10 +512,10 @@ bool FunctionRepository::deleteDocument(int containerId)
     if (!m_db.isOpen() || containerId <= 0)
         return false;
     QSqlQuery query(m_db);
-    query.prepare(QStringLiteral("DELETE FROM function_document WHERE container_id = :cid"));
-    query.bindValue(QStringLiteral(":cid"), containerId);
+    query.prepare(QString("DELETE FROM function_document WHERE container_id = :cid"));
+    query.bindValue(QString(":cid"), containerId);
     if (!query.exec()) {
-        logError(query, QStringLiteral("delete function_document"));
+        logError(query, QString("delete function_document"));
         return false;
     }
     return true;
@@ -525,7 +525,7 @@ FunctionDocumentParseResult FunctionRepository::parseFunctionDocument(const QStr
 {
     FunctionDocumentParseResult result;
     if (xml.trimmed().isEmpty()) {
-        result.warnings.append(QStringLiteral("功能 XML 内容为空"));
+        result.warnings.append(QString("功能 XML 内容为空"));
         return result;
     }
 
@@ -534,40 +534,40 @@ FunctionDocumentParseResult FunctionRepository::parseFunctionDocument(const QStr
     int errorLine = 0;
     int errorColumn = 0;
     if (!doc.setContent(xml, &errorMsg, &errorLine, &errorColumn)) {
-        result.warnings.append(QStringLiteral("解析功能 XML 失败: %1 (line %2, column %3)")
+        result.warnings.append(QString("解析功能 XML 失败: %1 (line %2, column %3)")
                                .arg(errorMsg).arg(errorLine).arg(errorColumn));
         return result;
     }
 
     QDomElement root = doc.documentElement();
     if (root.isNull()) {
-        result.warnings.append(QStringLiteral("功能 XML 缺少根节点"));
+        result.warnings.append(QString("功能 XML 缺少根节点"));
         return result;
     }
 
-    QDomElement treeStruct = root.firstChildElement(QStringLiteral("treestruct"));
+    QDomElement treeStruct = root.firstChildElement(QString("treestruct"));
     if (!treeStruct.isNull()) {
-        QDomElement itemElement = treeStruct.firstChildElement(QStringLiteral("item"));
+        QDomElement itemElement = treeStruct.firstChildElement(QString("item"));
         while (!itemElement.isNull()) {
             result.tree.append(parseTreeItem(itemElement));
-            itemElement = itemElement.nextSiblingElement(QStringLiteral("item"));
+            itemElement = itemElement.nextSiblingElement(QString("item"));
         }
     }
 
     QMap<QString, FunctionInfo> map;
     QStringList warnings;
-    QDomNodeList functionNodes = root.elementsByTagName(QStringLiteral("functiondefine"));
+    QDomNodeList functionNodes = root.elementsByTagName(QString("functiondefine"));
     for (int i = 0; i < functionNodes.count(); ++i) {
         const QDomElement funcElement = functionNodes.at(i).toElement();
         if (funcElement.isNull())
             continue;
         FunctionInfo info = parseFunctionElement(funcElement, warnings);
         if (info.functionName.isEmpty()) {
-            warnings.append(QStringLiteral("检测到未命名的功能定义。"));
+            warnings.append(QString("检测到未命名的功能定义。"));
             continue;
         }
         if (map.contains(info.functionName)) {
-            warnings.append(QStringLiteral("功能名称重复: %1，已覆盖之前的定义").arg(info.functionName));
+            warnings.append(QString("功能名称重复: %1，已覆盖之前的定义").arg(info.functionName));
         }
         map.insert(info.functionName, info);
     }
@@ -621,11 +621,11 @@ QString FunctionRepository::computeChecksum(const QString &xml) const
 FunctionTreeNode FunctionRepository::parseTreeItem(const QDomElement &element) const
 {
     FunctionTreeNode node;
-    node.name = element.attribute(QStringLiteral("name")).trimmed();
-    QDomElement child = element.firstChildElement(QStringLiteral("item"));
+    node.name = element.attribute(QString("name")).trimmed();
+    QDomElement child = element.firstChildElement(QString("item"));
     while (!child.isNull()) {
         node.children.append(parseTreeItem(child));
-        child = child.nextSiblingElement(QStringLiteral("item"));
+        child = child.nextSiblingElement(QString("item"));
     }
     return node;
 }
@@ -636,16 +636,16 @@ FunctionInfo FunctionRepository::parseFunctionElement(const QDomElement &element
     if (element.isNull())
         return info;
 
-    info.functionName = trimmedChildText(element, QStringLiteral("name"));
-    info.description = trimmedChildText(element, QStringLiteral("describe"));
-    info.link = trimmedChildText(element, QStringLiteral("link"));
+    info.functionName = trimmedChildText(element, QString("name"));
+    info.description = trimmedChildText(element, QString("describe"));
+    info.link = trimmedChildText(element, QString("link"));
     info.linkElements = parseComponentList(info.link);
 
-    const QDomElement dependencyElement = element.firstChildElement(QStringLiteral("dependency"));
+    const QDomElement dependencyElement = element.firstChildElement(QString("dependency"));
     if (!dependencyElement.isNull()) {
-        info.functionDependency = dependencyElement.firstChildElement(QStringLiteral("function")).text().trimmed();
-        info.componentDependency = dependencyElement.firstChildElement(QStringLiteral("component")).text().trimmed();
-        info.allRelatedComponent = dependencyElement.firstChildElement(QStringLiteral("allComponent")).text().trimmed();
+        info.functionDependency = dependencyElement.firstChildElement(QString("function")).text().trimmed();
+        info.componentDependency = dependencyElement.firstChildElement(QString("component")).text().trimmed();
+        info.allRelatedComponent = dependencyElement.firstChildElement(QString("allComponent")).text().trimmed();
     }
 
     info.allComponentList = parseComponentList(info.allRelatedComponent);
@@ -658,10 +658,10 @@ FunctionInfo FunctionRepository::parseFunctionElement(const QDomElement &element
         info.allComponentList = info.linkElements;
     }
 
-    const QString attribute = trimmedChildText(element, QStringLiteral("attribute"));
+    const QString attribute = trimmedChildText(element, QString("attribute"));
     const QStringList attributeParts = attribute.split(QLatin1Char(','), QString::SkipEmptyParts);
     if (!attributeParts.isEmpty()) {
-        info.persistent = attributeParts.at(0).trimmed() != QStringLiteral("NotPersistent");
+        info.persistent = attributeParts.at(0).trimmed() != QString("NotPersistent");
     }
     if (attributeParts.size() >= 2) {
         bool ok = false;
@@ -671,18 +671,18 @@ FunctionInfo FunctionRepository::parseFunctionElement(const QDomElement &element
         info.faultProbability = 0.0;
     }
 
-    info.constraintIntegrity = trimmedChildText(element, QStringLiteral("constraintIntegrity"));
+    info.constraintIntegrity = trimmedChildText(element, QString("constraintIntegrity"));
     if (info.constraintIntegrity.isEmpty())
-        info.constraintIntegrity = QStringLiteral("未检查");
+        info.constraintIntegrity = QString("未检查");
 
     info.constraintList.clear();
-    QDomElement constraintElement = element.firstChildElement(QStringLiteral("constraint"));
+    QDomElement constraintElement = element.firstChildElement(QString("constraint"));
     while (!constraintElement.isNull()) {
         info.constraintList.append(buildTestItem(constraintElement));
-        constraintElement = constraintElement.nextSiblingElement(QStringLiteral("constraint"));
+        constraintElement = constraintElement.nextSiblingElement(QString("constraint"));
     }
 
-    const QString actuatorKeyword = QStringLiteral("执行器");
+    const QString actuatorKeyword = QString("执行器");
     bool actuatorSelected = false;
     bool hasFallback = false;
     TestItem fallbackItem;
@@ -703,24 +703,24 @@ FunctionInfo FunctionRepository::parseFunctionElement(const QDomElement &element
     }
 
     info.offlineResults.clear();
-    QDomElement offlineElement = element.firstChildElement(QStringLiteral("offlineSolveResult"));
+    QDomElement offlineElement = element.firstChildElement(QString("offlineSolveResult"));
     while (!offlineElement.isNull()) {
         FunctionOfflineResult entry;
-        entry.componentNames = parseComponentList(offlineElement.firstChildElement(QStringLiteral("componentNames")).text());
-        entry.failureModes = parseComponentList(offlineElement.firstChildElement(QStringLiteral("failureModes")).text());
+        entry.componentNames = parseComponentList(offlineElement.firstChildElement(QString("componentNames")).text());
+        entry.failureModes = parseComponentList(offlineElement.firstChildElement(QString("failureModes")).text());
         bool ok = false;
-        entry.probability = offlineElement.firstChildElement(QStringLiteral("probability")).text().trimmed().toDouble(&ok);
+        entry.probability = offlineElement.firstChildElement(QString("probability")).text().trimmed().toDouble(&ok);
         if (!ok)
             entry.probability = 0.0;
         info.offlineResults.append(entry);
-        offlineElement = offlineElement.nextSiblingElement(QStringLiteral("offlineSolveResult"));
+        offlineElement = offlineElement.nextSiblingElement(QString("offlineSolveResult"));
     }
 
-    const QDomElement variableConfig = element.firstChildElement(QStringLiteral("variableValueConfig"));
+    const QDomElement variableConfig = element.firstChildElement(QString("variableValueConfig"));
     info.variableConfigXml = elementToString(variableConfig);
 
     if (info.functionName.isEmpty()) {
-        warnings.append(QStringLiteral("检测到缺少名称的功能定义。"));
+        warnings.append(QString("检测到缺少名称的功能定义。"));
     }
 
     return info;

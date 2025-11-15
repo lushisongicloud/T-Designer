@@ -36,14 +36,6 @@ TestManagementDialog::TestManagementDialog(int containerId, const QSqlDatabase &
 {
     ui->setupUi(this);
     m_title = windowTitle();
-    
-    // 输出构造函数中收到的数据库信息
-    qDebug() << "========== TestManagementDialog 构造 ==========";
-    qDebug() << "Container ID:" << m_containerId;
-    qDebug() << "数据库连接名:" << m_db.connectionName();
-    qDebug() << "数据库文件:" << m_db.databaseName();
-    qDebug() << "数据库是否打开:" << m_db.isOpen();
-    qDebug() << "================================================";
 
     // 隐藏除"决策树"外的所有tab页
     ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->tabTests));
@@ -119,15 +111,22 @@ void TestManagementDialog::initializeGenerator()
     m_generator.reset();
     m_aggregator.reset();
 
-    if (m_containerId == 0)
+    if (m_containerId == 0) {
+        qWarning() << "TestManagementDialog: m_containerId == 0";
         return;
+    }
 
-    if (!m_repo.ensureTables())
+    if (!m_repo.ensureTables()) {
+        qWarning() << "TestManagementDialog: ensureTables() 失败";
         return;
+    }
 
     m_entity = m_repo.getById(m_containerId);
-    if (m_entity.id() == 0)
+    
+    if (m_entity.id() == 0) {
+        qWarning() << "TestManagementDialog: 未找到 container_id =" << m_containerId;
         return;
+    }
 
     auto loader = [this](int id) { return m_repo.getById(id); };
     auto fetcher = [this](int id) { return m_repo.fetchChildren(id); };
@@ -764,18 +763,11 @@ void TestManagementDialog::loadDecisionTreeList()
     ui->comboDecisionTree->clear();
     
     if (!m_db.isOpen()) {
-        qWarning() << "数据库未打开";
+        qWarning() << "TestManagementDialog: 数据库未打开";
         return;
     }
 
-    // 输出当前使用的数据库信息
-    qDebug() << "TestManagementDialog 使用的数据库:";
-    qDebug() << "  - 连接名:" << m_db.connectionName();
-    qDebug() << "  - 数据库名:" << m_db.databaseName();
-    qDebug() << "  - container_id:" << m_containerId;
-
     QSqlQuery query(m_db);
-    // 加载所有决策树，不受 container_id 限制
     query.prepare("SELECT tree_id, name, description FROM diagnosis_tree ORDER BY tree_id DESC");
     
     if (!query.exec()) {
@@ -785,7 +777,6 @@ void TestManagementDialog::loadDecisionTreeList()
 
     ui->comboDecisionTree->addItem("-- 请选择决策树 --", -1);
     
-    int count = 0;
     while (query.next()) {
         int treeId = query.value(0).toInt();
         QString name = query.value(1).toString();
@@ -797,10 +788,7 @@ void TestManagementDialog::loadDecisionTreeList()
         }
         
         ui->comboDecisionTree->addItem(displayText, treeId);
-        count++;
     }
-    
-    qDebug() << "从数据库" << m_db.databaseName() << "加载了" << count << "个决策树";
 }
 
 void TestManagementDialog::on_comboDecisionTree_currentIndexChanged(int index)
@@ -823,35 +811,54 @@ void TestManagementDialog::loadDecisionTreeFromDatabase(int treeId)
     ui->treeDecision->clear();
     ui->plainDecisionNotes->clear();
 
-    if (!m_db.isOpen())
+    if (!m_db.isOpen()) {
+        qWarning() << "TestManagementDialog: 数据库未打开";
         return;
+    }
 
     QSqlQuery query(m_db);
     query.prepare("SELECT root_node_id FROM diagnosis_tree WHERE tree_id = ?");
     query.addBindValue(treeId);
     
-    if (!query.exec() || !query.next()) {
+    if (!query.exec()) {
+        qWarning() << "查询决策树失败:" << query.lastError().text();
+        ui->plainDecisionNotes->setPlainText("无法加载决策树根节点");
+        return;
+    }
+    
+    if (!query.next()) {
+        qWarning() << "未找到 tree_id =" << treeId;
         ui->plainDecisionNotes->setPlainText("无法加载决策树根节点");
         return;
     }
 
     int rootNodeId = query.value(0).toInt();
+    
     if (rootNodeId <= 0) {
+        qWarning() << "决策树 tree_id =" << treeId << "的 root_node_id 无效:" << rootNodeId;
         ui->plainDecisionNotes->setPlainText("决策树根节点未设置");
         return;
     }
 
     std::function<void(int, QTreeWidgetItem*, bool, QString, QString)> loadNode = 
         [&](int nodeId, QTreeWidgetItem *parentItem, bool isRoot, QString parentPassText, QString parentFailText) {
+        
         QSqlQuery nodeQuery(m_db);
+        // 基础查询,只查询所有数据库都有的字段
         nodeQuery.prepare("SELECT node_id, node_type, test_id, state_id, outcome, comment, "
-                         "test_description, expected_result, fault_hypothesis, isolation_level, test_priority, parent_node_id, "
-                         "pass_button_text, fail_button_text "
+                         "test_description, expected_result, fault_hypothesis, isolation_level, test_priority, parent_node_id "
                          "FROM diagnosis_tree_node WHERE node_id = ?");
         nodeQuery.addBindValue(nodeId);
         
-        if (!nodeQuery.exec() || !nodeQuery.next())
+        if (!nodeQuery.exec()) {
+            qWarning() << "查询节点" << nodeId << "失败:" << nodeQuery.lastError().text();
             return;
+        }
+        
+        if (!nodeQuery.next()) {
+            qWarning() << "未找到 node_id =" << nodeId;
+            return;
+        }
 
         int currentNodeId = nodeQuery.value(0).toInt();
         QString nodeType = nodeQuery.value(1).toString();
@@ -865,12 +872,10 @@ void TestManagementDialog::loadDecisionTreeFromDatabase(int treeId)
         int isolationLevel = nodeQuery.value(9).toInt();
         double testPriority = nodeQuery.value(10).toDouble();
         int parentNodeId = nodeQuery.value(11).toInt();
-        QString passButtonText = nodeQuery.value(12).toString();
-        QString failButtonText = nodeQuery.value(13).toString();
         
-        // 如果按钮文本为空，使用默认值
-        if (passButtonText.isEmpty()) passButtonText = "是";
-        if (failButtonText.isEmpty()) failButtonText = "否";
+        // 使用默认按钮文本(旧数据库不支持自定义按钮文本)
+        QString passButtonText = "是";
+        QString failButtonText = "否";
 
         QString nodeLabel;
         
@@ -884,7 +889,7 @@ void TestManagementDialog::loadDecisionTreeFromDatabase(int treeId)
         // 辅助函数：查找冒号位置（支持全角和半角）
         auto findColonPos = [](const QString &str) -> int {
             int pos1 = str.indexOf(':');   // 半角冒号
-            int pos2 = str.indexOf('：');  // 全角冒号
+            int pos2 = str.indexOf("：");  // 全角冒号
             if (pos1 < 0) return pos2;
             if (pos2 < 0) return pos1;
             return qMin(pos1, pos2);  // 返回最先出现的冒号位置
@@ -973,8 +978,14 @@ void TestManagementDialog::loadDecisionTreeFromDatabase(int treeId)
     };
 
     loadNode(rootNodeId, nullptr, true, QString(), QString());
+    
     // 默认折叠所有节点
     ui->treeDecision->collapseAll();
+    
+    // 检查是否成功加载
+    if (ui->treeDecision->topLevelItemCount() == 0) {
+        qWarning() << "决策树 tree_id =" << treeId << "加载失败: 未生成任何节点";
+    }
 }
 
 void TestManagementDialog::on_treeDecision_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous)

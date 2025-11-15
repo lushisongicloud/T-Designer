@@ -299,24 +299,24 @@ functionvalues::FunctionVariableConfig FunctionEditDialog::variableConfigFromXml
 
     QDomDocument doc;
     if (!doc.setContent(trimmed)) {
-        const QString wrapped = QStringLiteral("<root>%1</root>").arg(trimmed);
+        const QString wrapped = QString("<root>%1</root>").arg(trimmed);
         if (!doc.setContent(wrapped))
             return config;
         QDomElement wrapper = doc.documentElement();
-        return functionvalues::FunctionVariableConfig::fromXml(wrapper.firstChildElement(QStringLiteral("variableValueConfig")));
+        return functionvalues::FunctionVariableConfig::fromXml(wrapper.firstChildElement(QString("variableValueConfig")));
     }
     QDomElement root = doc.documentElement();
-    if (root.tagName() == QStringLiteral("variableValueConfig")) {
+    if (root.tagName() == QString("variableValueConfig")) {
         return functionvalues::FunctionVariableConfig::fromXml(root);
     }
-    return functionvalues::FunctionVariableConfig::fromXml(root.firstChildElement(QStringLiteral("variableValueConfig")));
+    return functionvalues::FunctionVariableConfig::fromXml(root.firstChildElement(QString("variableValueConfig")));
 }
 
 QString FunctionEditDialog::variableConfigToXml(const functionvalues::FunctionVariableConfig &config) const
 {
     if (config.isEmpty())
         return QString();
-    QDomDocument doc(QStringLiteral("VariableValueConfig"));
+    QDomDocument doc(QString("VariableValueConfig"));
     QDomElement root = config.toXml(doc);
     doc.appendChild(root);
     return doc.toString(2);

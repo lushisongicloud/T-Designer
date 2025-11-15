@@ -8,9 +8,14 @@
 #include <QDir>
 #include <QStringList>
 #include <QMenu>
+#include <QComboBox>
 #include <QSet>
 #include <QInputDialog>
 #include <QShortcut>
+#include <QMap>
+#include <QSqlError>
+#include <algorithm>
+#include <functional>
 #include <QLabel>
 #include <QPushButton>
 #include "BO/containerrepository.h"
@@ -23,6 +28,10 @@
 #include "demo_projectbuilder.h"
 #include "performancetimer.h"
 #include "projectdatamodel.h"
+#include "equipmenttreemodel.h"
+#include "equipmenttablemodel.h"
+#include "connectiontreemodel.h"
+#include "connectionbyunittreemodel.h"
 
 using namespace ContainerHierarchy;
 
@@ -858,10 +867,12 @@ void MainWindow::InitNavigatorTree()
     ui->treeViewPages->setColumnWidth(0,50);
     ui->treeViewPages->setModel(ModelPages);
 
-    ModelUnits = new QStandardItemModel(ui->treeViewUnits);
+    if (!m_equipmentTreeModel) {
+        m_equipmentTreeModel = new EquipmentTreeModel(ui->treeViewUnits);
+    }
     ui->treeViewUnits->header()->setVisible(false);
     ui->treeViewUnits->setColumnWidth(0,50);
-    ui->treeViewUnits->setModel(ModelUnits);
+    ui->treeViewUnits->setModel(m_equipmentTreeModel);
 
     ModelTerminals=new QStandardItemModel(ui->treeViewTerminal);
     ui->treeViewTerminal->header()->setVisible(false);
@@ -1399,207 +1410,83 @@ void MainWindow::InsertLineToItem(QStandardItem *Item,QSqlQuery QueryJXBLine)
 void MainWindow::LoadModelLineDT()
 {
     PerformanceTimer timer("LoadModelLineDT");
-    
-    //根据线号================
-    ModelLineDT->clear();
-    QSqlQuery QueryVar = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
-    QString temp = QString("SELECT Structure_INT FROM ProjectStructure WHERE Structure_ID = '1'");
-    QueryVar.exec(temp);
-    if(!QueryVar.next()) return;
-    QStandardItem *fatherItem;
-    fatherItem= new QStandardItem(QIcon("C:/TBD/data/项目图标.png"),QueryVar.value(0).toString());
-    fatherItem->setData(QVariant("项目"),Qt::WhatsThisRole);
-    ModelLineDT->appendRow(fatherItem);
 
-    timer.checkpoint("初始化完成");
-
-    QSqlQuery QueryJXB = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
-    temp = "SELECT * FROM JXB ORDER BY ConnectionNumber";
-    QueryJXB.exec(temp);
-    
-    int jxbCount = 0;
-    int structureQueryCount = 0;
-    
-    // 使用 QHash 缓存节点,避免 O(n²) 的查找
-    QHash<QString, QStandardItem*> gaocengCache;  // key: 高层名称
-    QHash<QString, QStandardItem*> posCache;      // key: "高层名称|位置名称"
-    
-    timer.checkpoint("JXB表查询开始");
-    
-    while(QueryJXB.next())
-    {
-        jxbCount++;
-        QString ProjectStructure_ID=QueryJXB.value("ProjectStructure_ID").toString();
-
-        QString StrGaoceng,StrPos;
-        
-        // 使用缓存版本避免重复查询
-        if (m_projectCache && m_useCacheOptimization) {
-            int structureId = ProjectStructure_ID.toInt();
-            auto structInfo = m_projectCache->getStructureInfo(structureId);
-            if (structInfo.isValid) {
-                StrPos = structInfo.structureInt;
-                // 获取父节点信息
-                if (structInfo.parentId > 0) {
-                    auto parentInfo = m_projectCache->getStructureInfo(structInfo.parentId);
-                    if (parentInfo.isValid) {
-                        StrGaoceng = parentInfo.structureInt;
-                    }
-                }
-            }
-        } else {
-            // 原有实现
-            QSqlQuery queryPos=QSqlQuery(T_ProjectDatabase);
-            QString SqlStr="SELECT * FROM ProjectStructure WHERE ProjectStructure_ID = "+ProjectStructure_ID;
-            queryPos.exec(SqlStr);
-            structureQueryCount++;
-            if(queryPos.next()) StrPos=queryPos.value("Structure_INT").toString();
-            QSqlQuery queryGaoceng=QSqlQuery(T_ProjectDatabase);
-            SqlStr="SELECT * FROM ProjectStructure WHERE ProjectStructure_ID = "+queryPos.value("Parent_ID").toString();
-            queryGaoceng.exec(SqlStr);
-            structureQueryCount++;
-            if(queryGaoceng.next()) StrGaoceng=queryGaoceng.value("Structure_INT").toString();
-        }
-
-        // 使用 Hash 缓存查找节点 (O(1) vs O(n))
-        QStandardItem *GaoCengNodeItem;
-        if (gaocengCache.contains(StrGaoceng)) {
-            GaoCengNodeItem = gaocengCache[StrGaoceng];
-        } else {
-            GaoCengNodeItem = new QStandardItem(QIcon("C:/TBD/data/高层图标.png"), StrGaoceng);
-            GaoCengNodeItem->setData(QVariant("高层"), Qt::WhatsThisRole);
-            fatherItem->appendRow(GaoCengNodeItem);
-            gaocengCache[StrGaoceng] = GaoCengNodeItem;
-        }
-        if (GaoCengNodeItem == nullptr) continue;
-        
-        QStandardItem *PosNodeItem;
-        QString posKey = StrGaoceng + "|" + StrPos;
-        if (posCache.contains(posKey)) {
-            PosNodeItem = posCache[posKey];
-        } else {
-            PosNodeItem = new QStandardItem(QIcon("C:/TBD/data/位置图标.png"), StrPos);
-            PosNodeItem->setData(QVariant("位置"), Qt::WhatsThisRole);
-            GaoCengNodeItem->appendRow(PosNodeItem);
-            posCache[posKey] = PosNodeItem;
-        }
-        if (PosNodeItem == nullptr) continue;
-        //在PosNodeItem下插入连线
-        InsertLineToItem(PosNodeItem,QueryJXB);
+    // 初始化连线树模型（如果还未创建）
+    if (!m_connectionTreeModel) {
+        m_connectionTreeModel = new ConnectionTreeModel(ui->treeViewLineDT);
+        ui->treeViewLineDT->setModel(m_connectionTreeModel);
+        ui->treeViewLineDT->header()->setVisible(false);
+        ui->treeViewLineDT->setColumnWidth(0, 50);
     }
-    
-    timer.checkpoint("JXB处理完成", QString("JXB数: %1, Structure查询次数: %2").arg(jxbCount).arg(structureQueryCount));
-    
-    if(ModelLineDT->rowCount()>0) ui->treeViewLineDT->expand(fatherItem->index());
-    
+
+    // 设置数据源并重建模型
+    m_connectionTreeModel->setProjectDataModel(m_projectDataModel);
+    m_connectionTreeModel->rebuild();
+
+    qDebug() << "[LoadModelLineDT] 使用 ConnectionTreeModel 加载数据";
+    if (m_projectDataModel) {
+        qDebug() << "[LoadModelLineDT] ProjectDataModel 统计:" << m_projectDataModel->getStatistics();
+        const auto *connMgr = m_projectDataModel->connectionManager();
+        if (connMgr) {
+            qDebug() << "[LoadModelLineDT] 连线数量:" << connMgr->count();
+        }
+    }
+
+    // 展开根节点
+    if (m_connectionTreeModel->rowCount() > 0) {
+        ui->treeViewLineDT->expand(QModelIndex());
+    }
+
     timer.checkpoint("树视图展开完成");
 }
 
 void MainWindow::LoadModelLineByUnits()
 {
     PerformanceTimer timer("LoadModelLineByUnits");
-    
-    //根据元件=================
-    ModelLineByUnits->clear();
-    QSqlQuery QueryVar = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
-    QString temp = QString("SELECT Structure_INT FROM ProjectStructure WHERE Structure_ID = '1'");
-    QueryVar.exec(temp);
-    if(!QueryVar.next()) return;
-    QStandardItem *fatherItem;
-    fatherItem= new QStandardItem(QIcon("C:/TBD/data/项目图标.png"),QueryVar.value(0).toString());
-    fatherItem->setData(QVariant("项目"),Qt::WhatsThisRole);
-    ModelLineByUnits->appendRow(fatherItem);
 
-    timer.checkpoint("初始化完成");
-
-    QSqlQuery QueryJXB = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
-    temp = "SELECT * FROM JXB ORDER BY ConnectionNumber";
-    QueryJXB.exec(temp);
-    
-    int jxbCount = 0;
-    int getGaocengPosCallCount = 0;
-    
-    // 使用 QHash 缓存节点,避免 O(n²) 的查找
-    QHash<QString, QStandardItem*> gaocengCacheByUnits;  // key: 高层名称
-    QHash<QString, QStandardItem*> posCacheByUnits;      // key: "高层名称|位置名称"
-    
-    timer.checkpoint("JXB表查询开始");
-    
-    while(QueryJXB.next())
-    {
-        jxbCount++;
-        QString StrGaoceng,StrPos;
-        for(int index=0;index<2;index++)
-        {
-            if(index==0)
-            {
-                if(QueryJXB.value("Symb1_ID").toString()!="")
-                {
-                    GetUnitTermimalGaocengAndPos_Cached(m_projectCache, QueryJXB.value("Symb1_Category").toInt(),QueryJXB.value("Symb1_ID").toInt(),StrGaoceng,StrPos);
-                    getGaocengPosCallCount++;
-                }
-                else continue;
-            }
-            else if(index==1)
-            {
-                if(QueryJXB.value("Symb2_ID").toString()!="")
-                {
-                    GetUnitTermimalGaocengAndPos_Cached(m_projectCache, QueryJXB.value("Symb2_Category").toInt(),QueryJXB.value("Symb2_ID").toInt(),StrGaoceng,StrPos);
-                    getGaocengPosCallCount++;
-                }
-                else continue;
-            }
-            //qDebug()<<"StrGaoceng="<<StrGaoceng<<",StrPos="<<StrPos<<",index="<<index<<",ConnectionNumber="<<QueryJXB.value("ConnectionNumber").toString();
-            
-            // 使用 Hash 缓存查找节点 (O(1) vs O(n))
-            QStandardItem *GaoCengNodeItem;
-            if (gaocengCacheByUnits.contains(StrGaoceng)) {
-                GaoCengNodeItem = gaocengCacheByUnits[StrGaoceng];
-            } else {
-                GaoCengNodeItem = new QStandardItem(QIcon("C:/TBD/data/高层图标.png"), StrGaoceng);
-                GaoCengNodeItem->setData(QVariant("高层"), Qt::WhatsThisRole);
-                fatherItem->appendRow(GaoCengNodeItem);
-                gaocengCacheByUnits[StrGaoceng] = GaoCengNodeItem;
-            }
-            if (GaoCengNodeItem == nullptr) continue;
-            
-            QStandardItem *PosNodeItem;
-            QString posKey = StrGaoceng + "|" + StrPos;
-            if (posCacheByUnits.contains(posKey)) {
-                PosNodeItem = posCacheByUnits[posKey];
-            } else {
-                PosNodeItem = new QStandardItem(QIcon("C:/TBD/data/位置图标.png"), StrPos);
-                PosNodeItem->setData(QVariant("位置"), Qt::WhatsThisRole);
-                GaoCengNodeItem->appendRow(PosNodeItem);
-                posCacheByUnits[posKey] = PosNodeItem;
-            }
-            if (PosNodeItem == nullptr) continue;
-            //在PosNodeItem下插入器件
-            InsertUnitTerminalToItem(PosNodeItem,QueryJXB,index);
-        }//for(int index=0;index<2;index++)
+    // 初始化按单元分组连线树模型（如果还未创建）
+    if (!m_connectionByUnitTreeModel) {
+        m_connectionByUnitTreeModel = new ConnectionByUnitTreeModel(ui->treeViewLineByUnit);
+        ui->treeViewLineByUnit->setModel(m_connectionByUnitTreeModel);
+        ui->treeViewLineByUnit->header()->setVisible(false);
+        ui->treeViewLineByUnit->setColumnWidth(0, 50);
     }
-    
-    timer.checkpoint("JXB处理完成", QString("JXB数: %1, GetUnitTermimalGaocengAndPos调用: %2次").arg(jxbCount).arg(getGaocengPosCallCount));
-    
-    if(ModelLineByUnits->rowCount()>0) ui->treeViewLineByUnit->expand(fatherItem->index());
-    
+
+    // 设置数据源并重建模型
+    m_connectionByUnitTreeModel->setProjectDataModel(m_projectDataModel);
+    m_connectionByUnitTreeModel->rebuild();
+
+    qDebug() << "[LoadModelLineByUnits] 使用 ConnectionByUnitTreeModel 加载数据";
+    if (m_projectDataModel) {
+        qDebug() << "[LoadModelLineByUnits] ProjectDataModel 统计:" << m_projectDataModel->getStatistics();
+        const auto *connMgr = m_projectDataModel->connectionManager();
+        if (connMgr) {
+            qDebug() << "[LoadModelLineByUnits] 连线数量:" << connMgr->count();
+        }
+    }
+
+    // 展开根节点
+    if (m_connectionByUnitTreeModel->rowCount() > 0) {
+        ui->treeViewLineByUnit->expand(QModelIndex());
+    }
+
     timer.checkpoint("树视图展开完成");
 
-    QString OriginalLineGaoceng=ui->CbLineGaoceng->currentText();
-    QString OriginalLinePos=ui->CbLinePos->currentText();
-    // ✅ 从ProjectDataModel获取数据,避免依赖UI树
+    // 填充ComboBox（保留原有逻辑）
+    QString OriginalLineGaoceng = ui->CbLineGaoceng->currentText();
+    QString OriginalLinePos = ui->CbLinePos->currentText();
     ui->CbLineGaoceng->clear();
     ui->CbLineGaoceng->addItem("高层");
     ui->CbLinePos->clear();
     ui->CbLinePos->addItem("位置");
-    
+
     // 从内存模型获取唯一的高层列表
     QStringList gaocengList = getUniqueGaocengList();
     for (const QString &gaoceng : gaocengList) {
         ui->CbLineGaoceng->addItem(gaoceng);
     }
-    
-    // 获取所有位置(跨所有高层去重)
+
+    // 获取所有位置（跨所有高层去重）
     QSet<QString> allPosSet;
     for (const QString &gaoceng : gaocengList) {
         QStringList posList = getUniquePosListByGaoceng(gaoceng);
@@ -1612,27 +1499,26 @@ void MainWindow::LoadModelLineByUnits()
     for (const QString &pos : allPosList) {
         ui->CbLinePos->addItem(pos);
     }
-    
+
     ui->CbLineGaoceng->setCurrentText(OriginalLineGaoceng);
     ui->CbLinePos->setCurrentText(OriginalLinePos);
 
-    //载入页
-    QString OriginalPageName=ui->CbLinePage->currentText();
+    // 载入页
+    QString OriginalPageName = ui->CbLinePage->currentText();
     ui->CbLinePage->clear();
     ui->CbLinePage->addItem("页");
-    QSqlQuery QueryPage = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
+    QSqlQuery QueryPage = QSqlQuery(T_ProjectDatabase);
     QString SqlStr = "SELECT * FROM Page WHERE PageType = '原理图' ORDER BY ProjectStructure_ID";
     QueryPage.exec(SqlStr);
-    while(QueryPage.next())
-    {
+    while (QueryPage.next()) {
         ui->CbLinePage->addItem(GetPageNameByPageID(QueryPage.value("Page_ID").toInt()));
     }
     ui->CbLinePage->setCurrentText(OriginalPageName);
-    
+
     timer.checkpoint("ComboBox填充完成");
-    
+
     FilterLines();
-    
+
     timer.checkpoint("FilterLines 完成");
 }
 
@@ -1870,229 +1756,209 @@ void MainWindow::LoadProjectTerminals()
     FilterTerminal();
 }
 
+QString MainWindow::buildStructureTag(int projectStructureId) const
+{
+    if (!m_projectDataModel || !m_projectDataModel->isLoaded()) {
+        return GetProjectStructureStrByProjectStructureID(projectStructureId);
+    }
+    const auto *structureMgr = m_projectDataModel->structureManager();
+    if (!structureMgr) {
+        return GetProjectStructureStrByProjectStructureID(projectStructureId);
+    }
+    const StructureData *structure = structureMgr->getStructure(projectStructureId);
+    if (!structure) {
+        return GetProjectStructureStrByProjectStructureID(projectStructureId);
+    }
+
+    QString gaocengName;
+    QString posName;
+    if (structure->isGaoceng()) {
+        gaocengName = structure->structureInt;
+    } else {
+        gaocengName = structureMgr->getGaoceng(projectStructureId);
+    }
+    if (structure->isPos()) {
+        posName = structure->structureInt;
+    } else if (structure->isGaoceng()) {
+        // 高层没有位置信息
+        return "=" + gaocengName;
+    } else {
+        posName = structure->structureInt;
+    }
+
+    if (gaocengName.isEmpty() || posName.isEmpty()) {
+        return GetProjectStructureStrByProjectStructureID(projectStructureId);
+    }
+    return "=" + gaocengName + "+" + posName;
+}
+
+QString MainWindow::buildUnitTag(const EquipmentData *equipment) const
+{
+    if (!equipment) return QString();
+    QString structureTag = buildStructureTag(equipment->structureId);
+    if (structureTag.isEmpty()) {
+        structureTag = GetProjectStructureStrByProjectStructureID(equipment->structureId);
+    }
+    if (structureTag.isEmpty()) return equipment->dt;
+    return structureTag + "-" + equipment->dt;
+}
+
+bool MainWindow::symbolMatchesPageFilter(int symbolId, const QString &pageName) const
+{
+    if (pageName == "页") {
+        return true;
+    }
+    const SymbolData *symbol = getSymbolFromModel(symbolId);
+    if (!symbol || symbol->pageId == 0) {
+        return false;
+    }
+    if (!m_projectDataModel || !m_projectDataModel->isLoaded()) {
+        return false;
+    }
+    const auto *pageMgr = m_projectDataModel->pageManager();
+    if (!pageMgr) {
+        return false;
+    }
+    const PageData *page = pageMgr->getPage(symbol->pageId);
+    QString name = page ? page->pageName : QString();
+    if (name.isEmpty()) {
+        name = GetPageNameByPageID(symbol->pageId);
+    }
+    return name == pageName;
+}
+
 void MainWindow::LoadProjectUnits()
 {
     PerformanceTimer timer("LoadProjectUnits");
-    
-    //记录当前展开的index
-    QList<int> listGaocengExpendID,listPosExpendID,listEquipmentExpendID;
-    if(ModelUnits->rowCount()>0)
-    {
-        for(int i=0;i<ModelUnits->item(0,0)->rowCount();i++)//位置
-        {
-            if(ui->treeViewUnits->isExpanded(ModelUnits->item(0,0)->child(i,0)->index()))//高层
-                listGaocengExpendID.append(ModelUnits->item(0,0)->child(i,0)->data(Qt::UserRole).toInt());
-            for(int j=0;j<ModelUnits->item(0,0)->child(i,0)->rowCount();j++)//位置
-            {
-                if(ui->treeViewUnits->isExpanded(ModelUnits->item(0,0)->child(i,0)->child(j,0)->index()))
-                    listPosExpendID.append(ModelUnits->item(0,0)->child(i,0)->child(j,0)->data(Qt::UserRole).toInt());
-                for(int k=0;k<ModelUnits->item(0,0)->child(i,0)->child(j,0)->rowCount();k++)//元件
-                {
-                    if(ui->treeViewUnits->isExpanded(ModelUnits->item(0,0)->child(i,0)->child(j,0)->child(k,0)->index()))
-                        listEquipmentExpendID.append(ModelUnits->item(0,0)->child(i,0)->child(j,0)->child(k,0)->data(Qt::UserRole).toInt());
-                }
-            }
-        }
+
+    if (!m_equipmentTreeModel) {
+        qWarning() << "[LoadProjectUnits] EquipmentTreeModel 未初始化";
+        return;
     }
-    
+
+    if (!m_projectDataModel) {
+        qWarning() << "[LoadProjectUnits] ProjectDataModel 为 nullptr，LoadProject()中加载失败";
+        m_equipmentTreeModel->setProjectDataModel(nullptr);
+        m_equipmentTreeModel->rebuild();
+        return;
+    }
+
+    if (!m_projectDataModel->isLoaded()) {
+        qWarning() << "[LoadProjectUnits] ProjectDataModel 未完成加载 (isLoaded=false)";
+        m_equipmentTreeModel->setProjectDataModel(m_projectDataModel);
+        m_equipmentTreeModel->rebuild();
+        return;
+    }
+
+    qDebug() << "[LoadProjectUnits] ProjectDataModel 已加载，开始重建 EquipmentTreeModel";
+    qDebug() << "[LoadProjectUnits] 数据统计:" << m_projectDataModel->getStatistics();
+
+    struct TreeState {
+        QSet<int> gaocengExpanded;
+        QSet<int> posExpanded;
+        QSet<int> equipmentExpanded;
+        QString selectedRole;
+        int selectedId = 0;
+    };
+
+    auto captureState = [&]() {
+        TreeState state;
+        std::function<void(const QModelIndex &)> dfs = [&](const QModelIndex &parent) {
+            int rows = m_equipmentTreeModel->rowCount(parent);
+            for (int row = 0; row < rows; ++row) {
+                QModelIndex idx = m_equipmentTreeModel->index(row, 0, parent);
+                QString type = idx.data(Qt::WhatsThisRole).toString();
+                int id = idx.data(Qt::UserRole).toInt();
+                if (ui->treeViewUnits->isExpanded(idx)) {
+                    if (type == "高层") state.gaocengExpanded.insert(id);
+                    else if (type == "位置") state.posExpanded.insert(id);
+                    else if (type == "元件") state.equipmentExpanded.insert(id);
+                }
+                dfs(idx);
+            }
+        };
+        dfs(QModelIndex());
+        QModelIndex current = ui->treeViewUnits->currentIndex();
+        if (current.isValid()) {
+            state.selectedRole = current.data(Qt::WhatsThisRole).toString();
+            state.selectedId = current.data(Qt::UserRole).toInt();
+        }
+        return state;
+    };
+
+    TreeState state = captureState();
     timer.checkpoint("展开状态保存完成");
 
-    ModelUnits->clear();
-    timer.checkpoint("模型清空完成");
-    QSqlQuery QueryVar = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
-    QString temp = QString("SELECT Structure_INT FROM ProjectStructure WHERE Structure_ID = '1'");
-    QueryVar.exec(temp);
-    if(!QueryVar.next()) return;
-    QStandardItem *fatherItem;
-    fatherItem= new QStandardItem(QIcon("C:/TBD/data/项目图标.png"),QueryVar.value(0).toString());
-    fatherItem->setData(QVariant("项目"),Qt::WhatsThisRole);
-    ModelUnits->appendRow(fatherItem);
-    ui->treeViewUnits->expand(fatherItem->index());
-    
-    timer.checkpoint("根节点创建完成");
-    
-    // 使用 QHash 缓存节点,避免 O(n²) 的查找
-    QHash<QString, QStandardItem*> gaocengNodeCache;  // key: 高层名称
-    QHash<QString, QStandardItem*> posNodeCache;      // key: "高层名称|位置名称"
-    
-    //在Equipment表中检索元件
-    QSqlQuery QueryEquipment = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
-    temp = QString("SELECT * FROM Equipment ORDER BY DT");
-    QueryEquipment.exec(temp);
-    
-    int equipmentCount = 0;
-    int symbolQueryCount = 0;
-    timer.checkpoint("Equipment表查询开始");
-    
-    while(QueryEquipment.next())
-    {
-        equipmentCount++;
-        QString ProjectStructure_ID=QueryEquipment.value("ProjectStructure_ID").toString();
-        int Equipment_ID=QueryEquipment.value("Equipment_ID").toInt();
-        QString UnitTag=QueryEquipment.value("DT").toString();
-        QString UnitType=QueryEquipment.value("Type").toString();
-        QString UnitName=QueryEquipment.value("Name").toString();
-        //根据ProjectStructure_ID在ProjectStructure表中查找元件所处位置
-        QSqlQuery QueryPos = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
-        temp = QString("SELECT * FROM ProjectStructure WHERE ProjectStructure_ID="+ProjectStructure_ID);
-        QueryPos.exec(temp);
-        if(!QueryPos.next()) continue;
-        QString PosStr=QueryPos.value("Structure_INT").toString();
-        //查找对应的高层
-        QSqlQuery QueryGaoceng = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
-        temp = QString("SELECT * FROM ProjectStructure WHERE ProjectStructure_ID="+QueryPos.value("Parent_ID").toString());
-        QueryGaoceng.exec(temp);
-        if(!QueryGaoceng.next()) continue;
-        QString GaocengStr=QueryGaoceng.value("Structure_INT").toString();
-        QString UnitNodeStr;
-        //UnitNodeStr+="="+GaocengStr;
-        UnitNodeStr=UnitTag;
-        if((UnitType!="")||(UnitName!="")) UnitNodeStr+="(";
-        UnitNodeStr+=UnitType;
-        if(UnitType!="") UnitNodeStr+=",";
-        UnitNodeStr+=UnitName;
-        if((UnitType!="")||(UnitName!="")) UnitNodeStr+=")";
-        //在treeViewUnits中查看位置是否存在，不存在则新增位置节点 (使用缓存优化)
-        QStandardItem *PosNodeItem, *GaocengNodeItem;
-        
-        // 使用 Hash 查找高层节点 (O(1) vs O(n))
-        if (gaocengNodeCache.contains(GaocengStr)) {
-            GaocengNodeItem = gaocengNodeCache[GaocengStr];
-        } else {
-            // 新增高层节点
-            GaocengNodeItem = new QStandardItem(QIcon("C:/TBD/data/高层图标.png"), GaocengStr);
-            GaocengNodeItem->setData(QVariant("高层"), Qt::WhatsThisRole);
-            GaocengNodeItem->setData(QVariant(QueryGaoceng.value("ProjectStructure_ID").toInt()), Qt::UserRole);
-            fatherItem->appendRow(GaocengNodeItem);
-            gaocengNodeCache[GaocengStr] = GaocengNodeItem;
+    m_equipmentTreeModel->setProjectDataModel(m_projectDataModel);
+    m_equipmentTreeModel->rebuild();
+    timer.checkpoint("EquipmentTreeModel 重建完成");
+
+    for (int row = 0; row < m_equipmentTreeModel->rowCount(); ++row) {
+        ui->treeViewUnits->expand(m_equipmentTreeModel->index(row, 0));
+    }
+
+    auto expandChain = [&](const QModelIndex &index) {
+        QModelIndex parent = index.parent();
+        while (parent.isValid()) {
+            ui->treeViewUnits->expand(parent);
+            parent = parent.parent();
         }
-        
-        if (GaocengNodeItem == nullptr) continue;
-        
-        // 检查是否需要展开高层节点
-        for (int i = 0; i < listGaocengExpendID.count(); i++) {
-            if (listGaocengExpendID.at(i) == QueryGaoceng.value("ProjectStructure_ID").toInt()) {
-                ui->treeViewUnits->expand(GaocengNodeItem->index());
-                break;
-            }
-        }
-        
-        // 使用 Hash 查找位置节点 (O(1) vs O(m))
-        QString posKey = GaocengStr + "|" + PosStr;
-        if (posNodeCache.contains(posKey)) {
-            PosNodeItem = posNodeCache[posKey];
-        } else {
-            // 新增位置节点
-            PosNodeItem = new QStandardItem(QIcon("C:/TBD/data/位置图标.png"), PosStr);
-            PosNodeItem->setData(QVariant("位置"), Qt::WhatsThisRole);
-            PosNodeItem->setData(QVariant(QueryPos.value("ProjectStructure_ID").toInt()), Qt::UserRole);
-            GaocengNodeItem->appendRow(PosNodeItem);
-            posNodeCache[posKey] = PosNodeItem;
-        }
-        
-        if (PosNodeItem == nullptr) continue;
-        
-        // 检查是否需要展开位置节点
-        for (int i = 0; i < listPosExpendID.count(); i++) {
-            if (listPosExpendID.at(i) == QueryPos.value("ProjectStructure_ID").toInt()) {
-                ui->treeViewUnits->expand(PosNodeItem->index());
-                break;
-            }
-        }
-        //在位置节点下插入元件
-        QStandardItem *UnitItem=new QStandardItem(QIcon("C:/TBD/data/元件图标.png"),UnitNodeStr);
-        UnitItem->setData(QVariant("元件"),Qt::WhatsThisRole);
-        UnitItem->setData(QVariant(Equipment_ID),Qt::UserRole);
-        PosNodeItem->appendRow(UnitItem);
-        //在元件节点下插入所有的功能子块,在Symbol表中检索与元件关联的所有子块
-        QSqlQuery QuerySymbol = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
-        temp = QString("SELECT * FROM Symbol WHERE Equipment_ID = '"+QString::number(Equipment_ID)+"'");
-        QuerySymbol.exec(temp);
-        symbolQueryCount++;
-        //qDebug()<<"LoadProjectUnits Equipment_ID:"<<Equipment_ID;
-        while(QuerySymbol.next())
-        {
-            QStandardItem *UnitSpurItem;
-            QString UnitSpurStr;
-            // 使用缓存版本避免重复查询数据库
-            if (m_projectCache && m_useCacheOptimization) {
-                UnitSpurStr = GetUnitSpurStrBySymbol_ID_Cached(
-                    m_projectCache, 
-                    QuerySymbol.value("Symbol_ID").toInt(),
-                    QuerySymbol.value("Designation").toString()
-                );
-            } else {
-                UnitSpurStr = GetUnitSpurStrBySymbol_ID(QuerySymbol);
-            }
-            //根据Symbol_Handle是否存在确定功能子块图标和文字
-            //qDebug()<<"Symbol:"<<QuerySymbol.value("Symbol").toString()<<"  Symbol_Handle:"<<QuerySymbol.value("Symbol_Handle").toString();
-            if(QuerySymbol.value("Symbol").toString()==""&&(QuerySymbol.value("FunDefine").toString()!="黑盒")&&(QuerySymbol.value("FunDefine").toString()!="PLC 盒子"))
-            {
-                UnitSpurStr+="-"+QuerySymbol.value("FunDefine").toString();
-                UnitSpurItem=new QStandardItem(QIcon("C:/TBD/data/逻辑支路图标_不可插入.png"),UnitSpurStr);
-            }
-            else
-            {
-                if(QuerySymbol.value("Symbol_Handle").toString()!="")//
-                {
-                    //根据实际子块插入的位置
-                    //得到子块实际放置的图纸位置名称
-                    UnitSpurStr+="("+GetPageNameByPageID(QuerySymbol.value("Page_ID").toString().toInt())+")";
-                    UnitSpurStr+=QuerySymbol.value("FunDefine").toString();
-                    UnitSpurItem=new QStandardItem(QIcon("C:/TBD/data/逻辑支路图标_已插入.png"),UnitSpurStr);
-                }
-                else
-                {
-                    UnitSpurStr+="-"+QuerySymbol.value("FunDefine").toString();
-                    UnitSpurItem=new QStandardItem(QIcon("C:/TBD/data/逻辑支路图标_未插入.png"),UnitSpurStr);
-                }
-            }
-            UnitSpurItem->setData(QVariant("功能子块"),Qt::WhatsThisRole);
-            UnitSpurItem->setData(QVariant(QuerySymbol.value("Symbol_ID").toInt()),Qt::UserRole);
-            UnitSpurItem->setFlags(UnitSpurItem->flags()|Qt::ItemIsDragEnabled);
-            UnitItem->appendRow(UnitSpurItem);
-            if(SelectSymbol_ID==QuerySymbol.value("Symbol_ID").toInt())
-            {
-                ui->treeViewUnits->expand(UnitItem->index());
-                ui->treeViewUnits->setCurrentIndex(UnitSpurItem->index());
-            }
-        }
-        if(SelectEquipment_ID==Equipment_ID)
-        {
-            ui->treeViewUnits->expand(UnitItem->index());
-            ui->treeViewUnits->setCurrentIndex(UnitItem->index());
-        }
-        else
-        {
-            for(int i=0;i<listEquipmentExpendID.count();i++)
-            {
-                if(listEquipmentExpendID.at(i)==Equipment_ID) {ui->treeViewUnits->expand(UnitItem->index());break;}
-            }
+    };
+
+    for (int id : state.gaocengExpanded) {
+        QModelIndex idx = m_equipmentTreeModel->indexForStructure(EquipmentTreeModel::NodeType::Gaoceng, id);
+        if (idx.isValid()) ui->treeViewUnits->expand(idx);
+    }
+    for (int id : state.posExpanded) {
+        QModelIndex idx = m_equipmentTreeModel->indexForStructure(EquipmentTreeModel::NodeType::Pos, id);
+        if (idx.isValid()) ui->treeViewUnits->expand(idx);
+    }
+    for (int id : state.equipmentExpanded) {
+        QModelIndex idx = m_equipmentTreeModel->indexForEquipment(id);
+        if (idx.isValid()) ui->treeViewUnits->expand(idx);
+    }
+
+    QModelIndex targetIndex;
+    if (SelectSymbol_ID > 0) {
+        targetIndex = m_equipmentTreeModel->indexForSymbol(SelectSymbol_ID);
+    }
+    if (!targetIndex.isValid() && SelectEquipment_ID > 0) {
+        targetIndex = m_equipmentTreeModel->indexForEquipment(SelectEquipment_ID);
+    }
+    if (!targetIndex.isValid() && state.selectedId > 0) {
+        if (state.selectedRole == "功能子块") {
+            targetIndex = m_equipmentTreeModel->indexForSymbol(state.selectedId);
+        } else if (state.selectedRole == "元件") {
+            targetIndex = m_equipmentTreeModel->indexForEquipment(state.selectedId);
+        } else if (state.selectedRole == "高层") {
+            targetIndex = m_equipmentTreeModel->indexForStructure(EquipmentTreeModel::NodeType::Gaoceng, state.selectedId);
+        } else if (state.selectedRole == "位置") {
+            targetIndex = m_equipmentTreeModel->indexForStructure(EquipmentTreeModel::NodeType::Pos, state.selectedId);
         }
     }
-    
-    timer.checkpoint("Equipment表处理完成", QString("器件数: %1, Symbol查询次数: %2").arg(equipmentCount).arg(symbolQueryCount));
+
+    if (targetIndex.isValid()) {
+        expandChain(targetIndex);
+        ui->treeViewUnits->setCurrentIndex(targetIndex);
+    } else {
+        ui->treeViewUnits->setCurrentIndex(QModelIndex());
+    }
 
     LoadUnitTable();
-    
     timer.checkpoint("LoadUnitTable 完成");
 
-    // ✅ 从ProjectDataModel获取唯一的高层/位置列表,而非遍历UI树
-    // 这样在引入LazyTreeModel后仍然能获取完整数据
-    QString OriginalUnitGaoceng=ui->CbUnitGaoceng->currentText();
-    QString OriginalUnitPos=ui->CbUnitPos->currentText();
+    QString OriginalUnitGaoceng = ui->CbUnitGaoceng->currentText();
+    QString OriginalUnitPos = ui->CbUnitPos->currentText();
     ui->CbUnitGaoceng->clear();
     ui->CbUnitGaoceng->addItem("高层");
     ui->CbUnitPos->clear();
     ui->CbUnitPos->addItem("位置");
-    
-    // 从内存模型获取唯一的高层列表
+
     QStringList gaocengList = getUniqueGaocengList();
     for (const QString &gaoceng : gaocengList) {
         ui->CbUnitGaoceng->addItem(gaoceng);
     }
-    
-    // 获取所有位置(跨所有高层去重)
+
     QSet<QString> allPosSet;
     for (const QString &gaoceng : gaocengList) {
         QStringList posList = getUniquePosListByGaoceng(gaoceng);
@@ -2105,105 +1971,69 @@ void MainWindow::LoadProjectUnits()
     for (const QString &pos : allPosList) {
         ui->CbUnitPos->addItem(pos);
     }
-    
-    ui->CbUnitGaoceng->setCurrentText(OriginalUnitGaoceng);
-    ui->CbUnitPos->setCurrentText(OriginalUnitPos);
 
-    //载入页
-    QString OriginalPageName=ui->CbUnitPage->currentText();
+    auto restoreComboSelection = [](QComboBox *combo, const QString &value, const QString &fallback) {
+        QString target = value;
+        if (target.isEmpty()) {
+            target = fallback;
+        }
+        int index = combo->findText(target);
+        if (index < 0) {
+            index = combo->findText(fallback);
+        }
+        if (index < 0) {
+            index = 0;
+        }
+        combo->setCurrentIndex(index);
+    };
+
+    restoreComboSelection(ui->CbUnitGaoceng, OriginalUnitGaoceng, "高层");
+    restoreComboSelection(ui->CbUnitPos, OriginalUnitPos, "位置");
+
+    QString OriginalPageName = ui->CbUnitPage->currentText();
     ui->CbUnitPage->clear();
     ui->CbUnitPage->addItem("页");
-    QSqlQuery QueryPage = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
+    QSqlQuery QueryPage = QSqlQuery(T_ProjectDatabase);
     QString SqlStr = "SELECT * FROM Page WHERE PageType = '原理图' ORDER BY ProjectStructure_ID";
     QueryPage.exec(SqlStr);
-    while(QueryPage.next())
+    while (QueryPage.next())
     {
         ui->CbUnitPage->addItem(GetPageNameByPageID(QueryPage.value("Page_ID").toInt()));
     }
-    ui->CbUnitPage->setCurrentText(OriginalPageName);
+    restoreComboSelection(ui->CbUnitPage, OriginalPageName, "页");
     FilterUnit();
     LoadProjectSystemDescription();
 }
 
+
 void MainWindow::LoadUnitTable()
 {
-    ui->tableWidgetUnit->setRowCount(0);
-    QSqlQuery QueryEquipment = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
-    //载入table
-    if(!ui->CbUnitTogether->isChecked())//不汇总
-    {
-        for(int i=0;i<ModelUnits->rowCount();i++)
-        {
-            for(int j=0;j<ModelUnits->item(i,0)->rowCount();j++)
-            {
-                for(int k=0;k<ModelUnits->item(i,0)->child(j,0)->rowCount();k++)
-                {
-                    for(int m=0;m<ModelUnits->item(i,0)->child(j,0)->child(k,0)->rowCount();m++)
-                    {
-                        int Equipment_ID = ModelUnits->item(i,0)->child(j,0)->child(k,0)->child(m,0)->data(Qt::UserRole).toInt();
-                        QString SqlStr = "SELECT * FROM Equipment WHERE Equipment_ID = "+QString::number(Equipment_ID);
-                        QueryEquipment.exec(SqlStr);
-                        if(QueryEquipment.next())
-                        {
-                            ui->tableWidgetUnit->setRowCount(ui->tableWidgetUnit->rowCount()+1);
-                            ui->tableWidgetUnit->setItem(ui->tableWidgetUnit->rowCount()-1,0,new QTableWidgetItem(QString::number(ui->tableWidgetUnit->rowCount())));//序号
-                            ui->tableWidgetUnit->item(ui->tableWidgetUnit->rowCount()-1,0)->setData(Qt::UserRole,QueryEquipment.value("Equipment_ID").toInt());
-                            QString UnitTag=GetProjectStructureStrByProjectStructureID(QueryEquipment.value("ProjectStructure_ID").toInt())+"-"+QueryEquipment.value("DT").toString();
-                            ui->tableWidgetUnit->setItem(ui->tableWidgetUnit->rowCount()-1,1,new QTableWidgetItem(UnitTag));//项目代号
-                            ui->tableWidgetUnit->setItem(ui->tableWidgetUnit->rowCount()-1,2,new QTableWidgetItem(QueryEquipment.value("Type").toString()));//型号
-                            ui->tableWidgetUnit->setItem(ui->tableWidgetUnit->rowCount()-1,3,new QTableWidgetItem(QueryEquipment.value("Name").toString()));//名称
-                            ui->tableWidgetUnit->setItem(ui->tableWidgetUnit->rowCount()-1,4,new QTableWidgetItem("1"));//数量
-                            ui->tableWidgetUnit->setItem(ui->tableWidgetUnit->rowCount()-1,5,new QTableWidgetItem(QueryEquipment.value("Factory").toString()));//厂家
-                            ui->tableWidgetUnit->setItem(ui->tableWidgetUnit->rowCount()-1,6,new QTableWidgetItem(QueryEquipment.value("PartCode").toString()));//部件编号
-                            ui->tableWidgetUnit->setItem(ui->tableWidgetUnit->rowCount()-1,7,new QTableWidgetItem(QueryEquipment.value("Remark").toString()));//元件备注
-                        }
-                    }
-                }
+    PerformanceTimer timer("LoadUnitTable");
 
-            }
-        }
+    // 初始化表格模型（如果还未创建）
+    if (!m_equipmentTableModel) {
+        m_equipmentTableModel = new EquipmentTableModel(this);
+        ui->tableWidgetUnit->setModel(m_equipmentTableModel);
+        ui->tableWidgetUnit->setSelectionBehavior(QAbstractItemView::SelectRows);
+        ui->tableWidgetUnit->setSelectionMode(QAbstractItemView::ExtendedSelection);
+        ui->tableWidgetUnit->verticalHeader()->setVisible(false);
+        ui->tableWidgetUnit->horizontalHeader()->setStretchLastSection(true);
     }
-    else//汇总
-    {
-        QString StrSql;
-        QStringList ListedPart;
-        ListedPart.clear();
-        StrSql="SELECT * FROM Equipment ORDER BY ProjectStructure_ID";
-        QueryEquipment.exec(StrSql);
-        while(QueryEquipment.next())
-        {
-            if(QueryEquipment.value("PartCode").toString()=="") continue;
-            bool PartExisted=false;
-            for(int i=0;i<ListedPart.count();i++)
-            {
-                if(ListedPart.at(i)==QueryEquipment.value("PartCode").toString())
-                {
-                    PartExisted=true;
-                    break;
-                }
-            }
-            if(PartExisted) continue;
-            ListedPart.append(QueryEquipment.value("PartCode").toString());
-            ui->tableWidgetUnit->setRowCount(ui->tableWidgetUnit->rowCount()+1);
-            ui->tableWidgetUnit->setItem(ui->tableWidgetUnit->rowCount()-1,0,new QTableWidgetItem(QString::number(ui->tableWidgetUnit->rowCount())));//序号
-            ui->tableWidgetUnit->item(ui->tableWidgetUnit->rowCount()-1,0)->setData(Qt::UserRole,QueryEquipment.value("Equipment_ID").toInt());
-            QString UnitTag=GetProjectStructureStrByProjectStructureID(QueryEquipment.value("ProjectStructure_ID").toInt())+"-"+QueryEquipment.value("DT").toString();
-            ui->tableWidgetUnit->setItem(ui->tableWidgetUnit->rowCount()-1,1,new QTableWidgetItem(UnitTag));//项目代号
-            ui->tableWidgetUnit->setItem(ui->tableWidgetUnit->rowCount()-1,2,new QTableWidgetItem(QueryEquipment.value("Type").toString()));//型号
-            ui->tableWidgetUnit->setItem(ui->tableWidgetUnit->rowCount()-1,3,new QTableWidgetItem(QueryEquipment.value("Name").toString()));//名称
-            QSqlQuery QuerySearch = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
-            StrSql="SELECT * FROM Equipment WHERE PartCode = '"+QueryEquipment.value("PartCode").toString()+"'";
-            QuerySearch.exec(StrSql);
-            if(QuerySearch.last())
-                ui->tableWidgetUnit->setItem(ui->tableWidgetUnit->rowCount()-1,4,new QTableWidgetItem(QString::number(QuerySearch.at()+1)));//数量
-            else
-                ui->tableWidgetUnit->setItem(ui->tableWidgetUnit->rowCount()-1,4,new QTableWidgetItem("0"));//数量
-            ui->tableWidgetUnit->setItem(ui->tableWidgetUnit->rowCount()-1,5,new QTableWidgetItem(QueryEquipment.value("Factory").toString()));//厂家
-            ui->tableWidgetUnit->setItem(ui->tableWidgetUnit->rowCount()-1,6,new QTableWidgetItem(QueryEquipment.value("PartCode").toString()));//部件编号
-            ui->tableWidgetUnit->setItem(ui->tableWidgetUnit->rowCount()-1,7,new QTableWidgetItem(QueryEquipment.value("Remark").toString()));//元件备注
-        }
-    }
+
+    // 设置聚合模式（按部件编号聚合）
+    m_equipmentTableModel->setAggregatedMode(ui->CbUnitTogether->isChecked());
+
+    // 设置数据源
+    m_equipmentTableModel->setProjectDataModel(m_projectDataModel);
+    m_equipmentTableModel->refresh();
+
+    qDebug() << "[LoadUnitTable] 使用 EquipmentTableModel 加载数据";
+    qDebug() << "[LoadUnitTable] ProjectDataModel 统计:" << m_projectDataModel->getStatistics();
+    qDebug() << "[LoadUnitTable] 表格行数:" << m_equipmentTableModel->rowCount();
+
+    timer.checkpoint("LoadUnitTable 完成");
 }
+
 
 void MainWindow::LoadProjectPages()
 {
@@ -2903,122 +2733,56 @@ void MainWindow::FilterLines()
 
 void MainWindow::FilterUnit()
 {
-    if(ModelUnits->rowCount()<=0) return;
-
-    for(int i=0;i<ModelUnits->item(0,0)->rowCount();i++)
-    {
-        if(ui->CbUnitGaoceng->currentText()!="高层")
-        {
-            if(ModelUnits->item(0,0)->child(i,0)->data(Qt::DisplayRole).toString()!=ui->CbUnitGaoceng->currentText())
-                ui->treeViewUnits->setRowHidden(i,ModelUnits->indexFromItem(ModelUnits->item(0,0)),true);
-            else
-                ui->treeViewUnits->setRowHidden(i,ModelUnits->indexFromItem(ModelUnits->item(0,0)),false);
-        }
-        else
-            ui->treeViewUnits->setRowHidden(i,ModelUnits->indexFromItem(ModelUnits->item(0,0)),false);
-
-        for(int j=0;j<ModelUnits->item(0,0)->child(i,0)->rowCount();j++)
-        {
-            if(ui->CbUnitPos->currentText()!="位置")
-            {
-                if(ModelUnits->item(0,0)->child(i,0)->child(j,0)->data(Qt::DisplayRole).toString()!=ui->CbUnitPos->currentText())
-                    ui->treeViewUnits->setRowHidden(j,ModelUnits->indexFromItem(ModelUnits->item(0,0)->child(i,0)),true);
-                else
-                    ui->treeViewUnits->setRowHidden(j,ModelUnits->indexFromItem(ModelUnits->item(0,0)->child(i,0)),false);
-            }
-            else
-                ui->treeViewUnits->setRowHidden(j,ModelUnits->indexFromItem(ModelUnits->item(0,0)->child(i,0)),false);
-
-            for(int k=0;k<ModelUnits->item(0,0)->child(i,0)->child(j,0)->rowCount();k++)
-            {
-                //元件
-                if(ui->EdUnitTagSearch->text()!="")
-                {
-                    if(ModelUnits->item(0,0)->child(i,0)->child(j,0)->child(k,0)->data(Qt::DisplayRole).toString().contains(ui->EdUnitTagSearch->text()))
-                        ui->treeViewUnits->setRowHidden(k,ModelUnits->indexFromItem(ModelUnits->item(0,0)->child(i,0)->child(j,0)),false);
-                    else
-                        ui->treeViewUnits->setRowHidden(k,ModelUnits->indexFromItem(ModelUnits->item(0,0)->child(i,0)->child(j,0)),true);
-                }
-                else
-                {
-                    ui->treeViewUnits->setRowHidden(k,ModelUnits->indexFromItem(ModelUnits->item(0,0)->child(i,0)->child(j,0)),false);
-                }
-
-
-                for(int m=0;m<ModelUnits->item(0,0)->child(i,0)->child(j,0)->child(k,0)->rowCount();m++)//功能子块
-                {
-                    if(ui->CbUnitPage->currentText()!="页")
-                    {
-                        //查看当前功能子块是否在所筛选页面上
-                        QSqlQuery QuerySymbol = QSqlQuery(T_ProjectDatabase);//设置数据库选择模型
-                        QString SqlStr="SELECT * FROM Symbol WHERE Symbol_ID = "+ModelUnits->item(0,0)->child(i,0)->child(j,0)->child(k,0)->child(m,0)->data(Qt::UserRole).toString();
-                        QuerySymbol.exec(SqlStr);
-                        if(QuerySymbol.next())
-                        {
-                            if(QuerySymbol.value("Page_ID").toString()!="")
-                            {
-                                if(GetPageNameByPageID(QuerySymbol.value("Page_ID").toInt())==ui->CbUnitPage->currentText())
-                                    ui->treeViewUnits->setRowHidden(m,ModelUnits->indexFromItem(ModelUnits->item(0,0)->child(i,0)->child(j,0)->child(k,0)),false);
-                                else
-                                    ui->treeViewUnits->setRowHidden(m,ModelUnits->indexFromItem(ModelUnits->item(0,0)->child(i,0)->child(j,0)->child(k,0)),true);
-                            }
-                            else
-                                ui->treeViewUnits->setRowHidden(m,ModelUnits->indexFromItem(ModelUnits->item(0,0)->child(i,0)->child(j,0)->child(k,0)),true);
-                        }
-                        else
-                            ui->treeViewUnits->setRowHidden(m,ModelUnits->indexFromItem(ModelUnits->item(0,0)->child(i,0)->child(j,0)->child(k,0)),true);
-                    }
-                    else
-                    {
-                        ui->treeViewUnits->setRowHidden(m,ModelUnits->indexFromItem(ModelUnits->item(0,0)->child(i,0)->child(j,0)->child(k,0)),false);
-                    }
-                }
-            }
-        }
+    if (!m_equipmentTreeModel) {
+        return;
     }
 
-    //隐藏没有功能子块的节点
-    for(int i=0;i<ModelUnits->item(0,0)->rowCount();i++)//高层
-    {
-        for(int j=0;j<ModelUnits->item(0,0)->child(i,0)->rowCount();j++)//位置
-        {
-            for(int k=0;k<ModelUnits->item(0,0)->child(i,0)->child(j,0)->rowCount();k++)//元件
-            {
-                bool AllHide=true;
-                for(int m=0;m<ModelUnits->item(0,0)->child(i,0)->child(j,0)->child(k,0)->rowCount();m++)
-                {
-                    if(!ui->treeViewUnits->isRowHidden(m,ModelUnits->indexFromItem(ModelUnits->item(0,0)->child(i,0)->child(j,0)->child(k,0))))
-                        AllHide=false;
-                }
-                if(AllHide&&(ModelUnits->item(0,0)->child(i,0)->child(j,0)->child(k,0)->rowCount()>0)) ui->treeViewUnits->setRowHidden(k,ModelUnits->indexFromItem(ModelUnits->item(0,0)->child(i,0)->child(j,0)),true);
-            }
+    const QString gaocengFilter = ui->CbUnitGaoceng->currentText();
+    const QString posFilter = ui->CbUnitPos->currentText();
+    const QString keyword = ui->EdUnitTagSearch->text();
+    const QString pageFilter = ui->CbUnitPage->currentText();
+
+    std::function<bool(const QModelIndex &)> applyFilter = [&](const QModelIndex &index) -> bool {
+        QString type = index.data(Qt::WhatsThisRole).toString();
+        QString text = index.data(Qt::DisplayRole).toString();
+        bool selfVisible = true;
+
+        if (type == "高层" && gaocengFilter != "高层") {
+            selfVisible = (text == gaocengFilter);
+        } else if (type == "位置" && posFilter != "位置") {
+            selfVisible = (text == posFilter);
+        } else if (type == "元件" && !keyword.isEmpty()) {
+            selfVisible = text.contains(keyword, Qt::CaseInsensitive);
+        } else if (type == "功能子块" && pageFilter != "页") {
+            int symbolId = index.data(Qt::UserRole).toInt();
+            selfVisible = symbolMatchesPageFilter(symbolId, pageFilter);
         }
-    }
-    for(int i=0;i<ModelUnits->item(0,0)->rowCount();i++)//高层
-    {
-        for(int j=0;j<ModelUnits->item(0,0)->child(i,0)->rowCount();j++)//位置
-        {
-            //ModelPages->item(0,0)->child(i,0)->child(j,0)下面所有的子节点均隐藏
-            bool AllHide=true;
-            for(int k=0;k<ModelUnits->item(0,0)->child(i,0)->child(j,0)->rowCount();k++)
-            {
-                if(!ui->treeViewUnits->isRowHidden(k,ModelUnits->indexFromItem(ModelUnits->item(0,0)->child(i,0)->child(j,0))))
-                    AllHide=false;
-            }
-            if(AllHide&&(ModelUnits->item(0,0)->child(i,0)->child(j,0)->rowCount()>0)) ui->treeViewUnits->setRowHidden(j,ModelUnits->indexFromItem(ModelUnits->item(0,0)->child(i,0)),true);
+
+        int childCount = m_equipmentTreeModel->rowCount(index);
+        bool childVisible = false;
+        for (int row = 0; row < childCount; ++row) {
+            QModelIndex child = m_equipmentTreeModel->index(row, 0, index);
+            bool visible = applyFilter(child);
+            ui->treeViewUnits->setRowHidden(row, index, !visible);
+            if (visible) childVisible = true;
         }
-    }
-    for(int i=0;i<ModelUnits->item(0,0)->rowCount();i++)//高层
-    {
-        bool AllHide=true;
-        for(int k=0;k<ModelUnits->item(0,0)->child(i,0)->rowCount();k++)//位置
-        {
-            if(!ui->treeViewUnits->isRowHidden(k,ModelUnits->indexFromItem(ModelUnits->item(0,0)->child(i,0))))
-                AllHide=false;
+
+        if (type == "功能子块") {
+            return selfVisible;
         }
-        if(AllHide&&(ModelUnits->item(0,0)->child(i,0)->rowCount()>0)) ui->treeViewUnits->setRowHidden(i,ModelUnits->indexFromItem(ModelUnits->item(0,0)),true);
+        if (childCount == 0) {
+            return selfVisible;
+        }
+        return selfVisible && childVisible;
+    };
+
+    for (int row = 0; row < m_equipmentTreeModel->rowCount(); ++row) {
+        QModelIndex idx = m_equipmentTreeModel->index(row, 0);
+        bool visible = applyFilter(idx);
+        ui->treeViewUnits->setRowHidden(row, QModelIndex(), !visible);
     }
 }
+
 
 void MainWindow::FilterPage()
 {
@@ -3516,14 +3280,110 @@ QStringList MainWindow::selectSystemConnections()
 
 void MainWindow::LoadProjectSystemDescription()
 {
-    ui->textEditSystemDiscription->clear();
-    QStringList ListEquipmentsInfo=selectSystemUnitStripLineInfo();
-    QStringList ListSystemConnections=selectSystemConnections();
-    QString SystemDescription="DEF BEGIN\n";
-    for(QString EquipmentsInfo:ListEquipmentsInfo) SystemDescription+=EquipmentsInfo+"\n";
-    SystemDescription+="DEF END\n\n";
-    for(QString SystemConnections:ListSystemConnections) SystemDescription+=SystemConnections+"\n";
+    PerformanceTimer timer("LoadProjectSystemDescription");
+
+    // 如果ProjectDataModel未加载，使用旧方法
+    if (!m_projectDataModel || !m_projectDataModel->isLoaded()) {
+        qWarning() << "[LoadProjectSystemDescription] ProjectDataModel 未就绪，使用旧SQL方法";
+        QStringList ListEquipmentsInfo = selectSystemUnitStripLineInfo();
+        QStringList ListSystemConnections = selectSystemConnections();
+        QString SystemDescription = "DEF BEGIN\n";
+        for (QString EquipmentsInfo : ListEquipmentsInfo) SystemDescription += EquipmentsInfo + "\n";
+        SystemDescription += "DEF END\n\n";
+        for (QString SystemConnections : ListSystemConnections) SystemDescription += SystemConnections + "\n";
+        ui->textEditSystemDiscription->setText(SystemDescription);
+        return;
+    }
+
+    // 使用ProjectDataModel优化版本
+    QStringList ListEquipmentsInfo;
+    QStringList ListSystemConnections;
+
+    const auto *connMgr = m_projectDataModel->connectionManager();
+    const auto *symbolMgr = m_projectDataModel->symbolManager();
+    const auto *equipmentMgr = m_projectDataModel->equipmentManager();
+
+    if (!connMgr || !symbolMgr || !equipmentMgr) {
+        qWarning() << "[LoadProjectSystemDescription] Manager未初始化，使用旧方法";
+        QStringList ListEquipmentsInfo = selectSystemUnitStripLineInfo();
+        QStringList ListSystemConnections = selectSystemConnections();
+        QString SystemDescription = "DEF BEGIN\n";
+        for (QString EquipmentsInfo : ListEquipmentsInfo) SystemDescription += EquipmentsInfo + "\n";
+        SystemDescription += "DEF END\n\n";
+        for (QString SystemConnections : ListSystemConnections) SystemDescription += SystemConnections + "\n";
+        ui->textEditSystemDiscription->setText(SystemDescription);
+        return;
+    }
+
+    QSet<QString> processedUnits;  // 记录已处理的单元（避免重复）
+    QVector<int> connectionIds = connMgr->getAllConnectionIds();
+
+    // 优化：预加载Symbol到Equipment的映射
+    QHash<int, int> symbolToEquipment;
+    QHash<int, QString> symbolIdToDT;
+    {
+        QVector<int> symbolIds = symbolMgr->getAllSymbolIds();
+        for (int symbolId : symbolIds) {
+            const SymbolData *symbol = symbolMgr->getSymbol(symbolId);
+            if (symbol && symbol->equipmentId > 0) {
+                symbolToEquipment.insert(symbolId, symbol->equipmentId);
+                const EquipmentData *equipment = equipmentMgr->getEquipment(symbol->equipmentId);
+                if (equipment) {
+                    symbolIdToDT.insert(symbolId, equipment->dt);
+                }
+            }
+        }
+    }
+
+    // 处理所有连线
+    for (int connId : connectionIds) {
+        const ConnectionData *connection = connMgr->getConnection(connId);
+        if (!connection) continue;
+
+        // 处理两个端点
+        for (int endpoint = 0; endpoint < 2; ++endpoint) {
+            QString symbId = (endpoint == 0) ? connection->symb1Id : connection->symb2Id;
+            QString category = (endpoint == 0) ? connection->symb1Category : connection->symb2Category;
+
+            if (symbId.isEmpty() ||
+                symbId.contains(":C") || symbId.contains(":G") ||
+                symbId.contains(":1") || symbId.contains(":2") || symbId.contains(":3")) {
+                continue;
+            }
+
+            // 获取Equipment ID和DT
+            bool ok = false;
+            int symbolTermId = symbId.toInt(&ok);
+            if (!ok) continue;
+
+            int equipmentId = symbolToEquipment.value(symbolTermId, 0);
+            QString dt = symbolIdToDT.value(symbolTermId, QString());
+
+            if (equipmentId > 0 && category == "0") {
+                QString unitKey = QString::number(equipmentId) + "," + category;
+                if (!processedUnits.contains(unitKey)) {
+                    processedUnits.insert(unitKey);
+
+                    const EquipmentData *equipment = equipmentMgr->getEquipment(equipmentId);
+                    if (equipment) {
+                        QString unitInfo = equipment->name + " " + dt;
+                        ListEquipmentsInfo.append(unitInfo);
+                    }
+                }
+            }
+        }
+
+        // 添加连线信息
+        ListSystemConnections.append("导线 " + connection->connectionNumber);
+    }
+
+    QString SystemDescription = "DEF BEGIN\n";
+    for (QString EquipmentsInfo : ListEquipmentsInfo) SystemDescription += EquipmentsInfo + "\n";
+    SystemDescription += "DEF END\n\n";
+    for (QString SystemConnections : ListSystemConnections) SystemDescription += SystemConnections + "\n";
+
     ui->textEditSystemDiscription->setText(SystemDescription);
+    timer.checkpoint("系统描述生成完成");
 }
 
 void MainWindow::LoadModel()
@@ -6910,9 +6770,16 @@ void MainWindow::on_TabUnit_currentChanged(int index)
 
 void MainWindow::on_tableWidgetUnit_doubleClicked(const QModelIndex &index)
 {
-    if(!index.isValid()) return;
-    int Equipment_ID=ui->tableWidgetUnit->item(index.row(),0)->data(Qt::UserRole).toInt();
-    qDebug()<<"Equipment_ID="<<Equipment_ID;
+    if (!index.isValid()) return;
+
+    // 从模型中获取equipmentId
+    int Equipment_ID = index.sibling(index.row(), 0).data(Qt::UserRole).toInt();
+    if (Equipment_ID == 0) {
+        // 如果第一列没有数据，尝试从模型直接获取
+        Equipment_ID = index.data(Qt::UserRole).toInt();
+    }
+
+    qDebug() << "Equipment_ID=" << Equipment_ID;
     ShowUnitAttrByEquipment_ID(Equipment_ID);
 }
 

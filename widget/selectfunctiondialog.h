@@ -142,7 +142,7 @@ private:
     QMap<QString, double> functionFaultProbabilityMap;//功能-失效概率
     QMap<QString,FunctionInfo> functionInfoMap;
     QMap<QString, QString> functionConstraintIntegrityMap;
-    QString currentConstraintIntegrityStatus = QStringLiteral("未检查");
+    QString currentConstraintIntegrityStatus = QString("未检查");
     bool isLoading = false;
 };
 

@@ -284,7 +284,7 @@ void FunctionManagerDialog::onAutoBoundary()
         const QString trimmed = candidate.trimmed();
         if (trimmed.isEmpty() || existing.contains(trimmed))
             continue;
-        pairs.append(qMakePair(trimmed, QStringLiteral("boundary")));
+        pairs.append(qMakePair(trimmed, QString("boundary")));
         existing.insert(trimmed);
         ++added;
     }
@@ -422,8 +422,8 @@ void FunctionManagerDialog::populateOfflineTable()
             item->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEditable | Qt::ItemIsEnabled);
             ui->tableOffline->setItem(row, column, item);
         };
-        setItem(0, entry.componentNames.join(QStringLiteral(";")));
-        setItem(1, entry.failureModes.join(QStringLiteral(";")));
+        setItem(0, entry.componentNames.join(QString(";")));
+        setItem(1, entry.failureModes.join(QString(";")));
         setItem(2, QString::number(entry.probability, 'g', 6));
     }
 }
@@ -496,7 +496,7 @@ QString FunctionManagerDialog::serializeCmdValList(const QList<QPair<QString, QS
         if (value.isEmpty())
             entries.append(key);
         else
-            entries.append(QStringLiteral("%1=%2").arg(key, value));
+            entries.append(QString("%1=%2").arg(key, value));
     }
     return entries.join(',');
 }
@@ -514,7 +514,7 @@ void FunctionManagerDialog::applyOfflineResultsToRecord(FunctionRecord &record) 
         if (!serialized.isEmpty()) {
             if (!remark.isEmpty())
                 remark.append(QLatin1Char('\n'));
-            remark.append(QStringLiteral("%1%2").arg(QLatin1String(kOfflinePrefix), serialized));
+            remark.append(QString("%1%2").arg(QLatin1String(kOfflinePrefix), serialized));
         }
     }
     record.remark = remark;
@@ -542,9 +542,9 @@ QString FunctionManagerDialog::serializeOfflineResults() const
     QJsonArray array;
     for (const FunctionOfflineResult &entry : m_offlineResults) {
         QJsonObject obj;
-        obj.insert(QStringLiteral("components"), QJsonArray::fromStringList(entry.componentNames));
-        obj.insert(QStringLiteral("modes"), QJsonArray::fromStringList(entry.failureModes));
-        obj.insert(QStringLiteral("probability"), entry.probability);
+        obj.insert(QString("components"), QJsonArray::fromStringList(entry.componentNames));
+        obj.insert(QString("modes"), QJsonArray::fromStringList(entry.failureModes));
+        obj.insert(QString("probability"), entry.probability);
         array.append(obj);
     }
     const QJsonDocument doc(array);
@@ -564,13 +564,13 @@ void FunctionManagerDialog::deserializeOfflineResults(const QString &serialized)
             continue;
         const QJsonObject obj = value.toObject();
         FunctionOfflineResult entry;
-        const QJsonArray comps = obj.value(QStringLiteral("components")).toArray();
+        const QJsonArray comps = obj.value(QString("components")).toArray();
         for (const QJsonValue &compVal : comps)
             entry.componentNames.append(compVal.toString());
-        const QJsonArray modes = obj.value(QStringLiteral("modes")).toArray();
+        const QJsonArray modes = obj.value(QString("modes")).toArray();
         for (const QJsonValue &modeVal : modes)
             entry.failureModes.append(modeVal.toString());
-        entry.probability = obj.value(QStringLiteral("probability")).toDouble();
+        entry.probability = obj.value(QString("probability")).toDouble();
         m_offlineResults.append(entry);
     }
 }
@@ -621,7 +621,7 @@ QStringList FunctionManagerDialog::computeAutoDependency(const FunctionRecord &r
                 if (componentFromExec(exec).compare(normalizedComponent, Qt::CaseInsensitive) == 0) {
                     const QString key = normalizedComponent + QLatin1Char('|') + other.name;
                     if (!unique.contains(key)) {
-                        formatted.append(QStringLiteral("%1,%2,").arg(normalizedComponent, other.name));
+                        formatted.append(QString("%1,%2,").arg(normalizedComponent, other.name));
                         unique.insert(key);
                     }
                 }
@@ -638,7 +638,7 @@ QStringList FunctionManagerDialog::computeBoundaryCandidates(const FunctionRecor
     QString systemDescription = m_systemDescription;
     if (systemDescription.trimmed().isEmpty() && m_db.isOpen()) {
         QSqlQuery query(m_db);
-        if (query.exec(QStringLiteral("SELECT systemDescription FROM models LIMIT 1")) && query.next()) {
+        if (query.exec(QString("SELECT systemDescription FROM models LIMIT 1")) && query.next()) {
             systemDescription = query.value(0).toString();
         }
     }

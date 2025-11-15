@@ -78,6 +78,51 @@ SELECT Symbol_ID, ConnNum FROM Symb2TermInfo
 ```cpp
 // 原函数: GetUnitTermimalGaocengAndPos (每次调用执行~6条SQL)
 // 新函数: GetUnitTermimalGaocengAndPos_Cached (使用QHash O(1)查找)
+```
+
+## 优化后性能数据 (2025-11-12)
+
+### 架构变更：Model/View 迁移
+
+**主要变更**:
+1. **EquipmentTreeModel**: 替代 QStandardItemModel，直接从 ProjectDataModel 获取数据
+2. **ConnectionTreeModel**: 替代 QStandardItemModel，支持两种视图模式
+3. **EquipmentTableModel**: 替代 QTableWidget，继承自 QAbstractTableModel
+4. **ProjectDataModel**: 内存缓存层，提供 O(1) 数据访问
+
+**性能监控**:
+- ✅ LoadProjectUnits: 使用 PerformanceTimer 监控，目标 <1s
+- ✅ LoadProjectLines: 使用 PerformanceTimer 监控，目标 <1s
+- ✅ LoadProjectTerminals: 使用 PerformanceTimer 监控
+- ✅ LoadProjectPages: 使用 PerformanceTimer 监控
+
+**关键改进**:
+```
+// 原有架构: UI控件 ← QStandardItemModel ← 数据库查询 (N+1问题)
+// 新架构: UI控件 ← QAbstractItemModel ← ProjectDataModel ← 内存缓存
+```
+
+**内存模型统计** (基于 ProjectDataModel):
+- Structures: 高层/位置层次结构
+- Equipments: 设备实例数据
+- Symbols: 功能块数据
+- Connections: 连线信息
+- Pages: 图纸页面数据
+- 所有数据预加载到内存，避免运行期查询
+
+**过滤器实现**:
+```cpp
+// FilterUnit() 已适配新架构
+void MainWindow::FilterUnit() {
+    // 从UI控件读取过滤条件
+    const QString gaocengFilter = ui->CbUnitGaoceng->currentText();
+    const QString posFilter = ui->CbUnitPos->currentText();
+    const QString keyword = ui->EdUnitTagSearch->text();
+
+    // 应用到 EquipmentTreeModel
+    m_equipmentTreeModel->applyFilter(...);
+}
+```
 void GetUnitTermimalGaocengAndPos_Cached(
     ProjectDataCache* cache,
     int Category, int Symb_ID,

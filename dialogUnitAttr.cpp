@@ -898,7 +898,7 @@ void DialogUnitAttr::on_BtnOk_clicked()//dataFunc 将界面上的器件信息保
 
     // 同步端子表中的测试代价/描述修改
     if (T_ProjectDatabase.isValid()) {
-        const QString updateSql = QStringLiteral(
+        const QString updateSql = QString(
             "UPDATE Symb2TermInfo SET ConnDesc=:ConnDesc, TestCost=:TestCost "
             "WHERE Symb2TermInfo_ID=:Symb2TermInfo_ID");
         for (int row = 0; row < ui->tableTerm->rowCount(); ++row) {
@@ -952,8 +952,8 @@ int DialogUnitAttr::resolveContainerId(int equipmentId, bool createIfMissing)
         return 0;
 
     QSqlQuery ddl(T_ProjectDatabase);
-    ddl.exec(QStringLiteral("CREATE TABLE IF NOT EXISTS equipment_containers (equipment_id INTEGER PRIMARY KEY, container_id INTEGER)"));
-    ddl.exec(QStringLiteral("CREATE INDEX IF NOT EXISTS idx_eq_containers_container ON equipment_containers(container_id)"));
+    ddl.exec(QString("CREATE TABLE IF NOT EXISTS equipment_containers (equipment_id INTEGER PRIMARY KEY, container_id INTEGER)"));
+    ddl.exec(QString("CREATE INDEX IF NOT EXISTS idx_eq_containers_container ON equipment_containers(container_id)"));
 
     ContainerRepository repo(T_ProjectDatabase);
     if (!repo.ensureTables())
@@ -1012,8 +1012,8 @@ bool DialogUnitAttr::copyPortConfigAndMacrosFromLibrary(const QString &libEquipm
     // 获取库侧 container_id
     {
         QSqlQuery ddl(T_LibDatabase);
-        ddl.exec(QStringLiteral("CREATE TABLE IF NOT EXISTS equipment_containers (equipment_id INTEGER PRIMARY KEY, container_id INTEGER)"));
-        ddl.exec(QStringLiteral("CREATE INDEX IF NOT EXISTS idx_eq_containers_container ON equipment_containers(container_id)"));
+        ddl.exec(QString("CREATE TABLE IF NOT EXISTS equipment_containers (equipment_id INTEGER PRIMARY KEY, container_id INTEGER)"));
+        ddl.exec(QString("CREATE INDEX IF NOT EXISTS idx_eq_containers_container ON equipment_containers(container_id)"));
     }
     ContainerRepository repoLib(T_LibDatabase);
     if (!repoLib.ensureTables()) {
@@ -1040,7 +1040,7 @@ bool DialogUnitAttr::copyPortConfigAndMacrosFromLibrary(const QString &libEquipm
     // 确保工程侧存在 port_config / port_connect_macro 表
     {
         QSqlQuery ddlProj(T_ProjectDatabase);
-        ddlProj.exec(QStringLiteral("CREATE TABLE IF NOT EXISTS port_config ("
+        ddlProj.exec(QString("CREATE TABLE IF NOT EXISTS port_config ("
                                     " port_config_id INTEGER PRIMARY KEY AUTOINCREMENT,"
                                     " container_id INTEGER NOT NULL,"
                                     " function_block TEXT NOT NULL,"
@@ -1052,7 +1052,7 @@ bool DialogUnitAttr::copyPortConfigAndMacrosFromLibrary(const QString &libEquipm
                                     " connect_macro TEXT,"
                                     " custom_metadata TEXT,"
                                     " updated_at TEXT DEFAULT CURRENT_TIMESTAMP)"));
-        ddlProj.exec(QStringLiteral("CREATE TABLE IF NOT EXISTS port_connect_macro ("
+        ddlProj.exec(QString("CREATE TABLE IF NOT EXISTS port_connect_macro ("
                                     " macro_id INTEGER PRIMARY KEY AUTOINCREMENT,"
                                     " container_id INTEGER NOT NULL,"
                                     " macro_name TEXT NOT NULL,"
@@ -1062,12 +1062,12 @@ bool DialogUnitAttr::copyPortConfigAndMacrosFromLibrary(const QString &libEquipm
                                     " description TEXT,"
                                     " metadata_json TEXT,"
                                     " updated_at TEXT DEFAULT CURRENT_TIMESTAMP)"));
-        ddlProj.exec(QStringLiteral("CREATE UNIQUE INDEX IF NOT EXISTS idx_port_config_unique ON port_config(container_id, function_block, port_name)"));
-        ddlProj.exec(QStringLiteral("CREATE UNIQUE INDEX IF NOT EXISTS idx_connect_macro_unique ON port_connect_macro(container_id, macro_name)"));
+        ddlProj.exec(QString("CREATE UNIQUE INDEX IF NOT EXISTS idx_port_config_unique ON port_config(container_id, function_block, port_name)"));
+        ddlProj.exec(QString("CREATE UNIQUE INDEX IF NOT EXISTS idx_connect_macro_unique ON port_connect_macro(container_id, macro_name)"));
     }
 
     QSqlQuery selLibCfg(T_LibDatabase);
-    selLibCfg.prepare(QStringLiteral("SELECT function_block, port_name, port_type, direction, variable_profile, variables_json, connect_macro, custom_metadata "
+    selLibCfg.prepare(QString("SELECT function_block, port_name, port_type, direction, variable_profile, variables_json, connect_macro, custom_metadata "
                                      "FROM port_config WHERE container_id = ?"));
     selLibCfg.addBindValue(libContainerId);
     if (!selLibCfg.exec()) {
@@ -1077,7 +1077,7 @@ bool DialogUnitAttr::copyPortConfigAndMacrosFromLibrary(const QString &libEquipm
 
     // 清理工程侧旧配置（若重新选择型号）
     QSqlQuery delProj(T_ProjectDatabase);
-    delProj.prepare(QStringLiteral("DELETE FROM port_config WHERE container_id = ?"));
+    delProj.prepare(QString("DELETE FROM port_config WHERE container_id = ?"));
     delProj.addBindValue(projectContainerId);
     if (!delProj.exec()) {
         qWarning() << "[copyPortConfig] 删除旧工程 port_config 失败:" << delProj.lastError();
@@ -1085,7 +1085,7 @@ bool DialogUnitAttr::copyPortConfigAndMacrosFromLibrary(const QString &libEquipm
     }
 
     QSqlQuery insProjCfg(T_ProjectDatabase);
-    insProjCfg.prepare(QStringLiteral("INSERT INTO port_config(container_id,function_block,port_name,port_type,direction,variable_profile,variables_json,connect_macro,custom_metadata)"
+    insProjCfg.prepare(QString("INSERT INTO port_config(container_id,function_block,port_name,port_type,direction,variable_profile,variables_json,connect_macro,custom_metadata)"
                                       " VALUES(?,?,?,?,?,?,?,?,?)"));
     int copiedPorts = 0;
     while (selLibCfg.next()) {
@@ -1107,19 +1107,19 @@ bool DialogUnitAttr::copyPortConfigAndMacrosFromLibrary(const QString &libEquipm
 
     // 拷贝连接宏（包含自定义与内置映射；内置宏族若后续改为全局，可在此处过滤）
     QSqlQuery selLibMacro(T_LibDatabase);
-    selLibMacro.prepare(QStringLiteral("SELECT macro_name, domain, arity, expansion_template, description, metadata_json FROM port_connect_macro WHERE container_id = ?"));
+    selLibMacro.prepare(QString("SELECT macro_name, domain, arity, expansion_template, description, metadata_json FROM port_connect_macro WHERE container_id = ?"));
     selLibMacro.addBindValue(libContainerId);
     if (!selLibMacro.exec()) {
         qWarning() << "[copyPortConfig] 读取库侧 port_connect_macro 失败:" << selLibMacro.lastError();
     } else {
         // 删除工程侧旧宏
         QSqlQuery delMacro(T_ProjectDatabase);
-        delMacro.prepare(QStringLiteral("DELETE FROM port_connect_macro WHERE container_id = ?"));
+        delMacro.prepare(QString("DELETE FROM port_connect_macro WHERE container_id = ?"));
         delMacro.addBindValue(projectContainerId);
         delMacro.exec();
 
         QSqlQuery insProjMacro(T_ProjectDatabase);
-        insProjMacro.prepare(QStringLiteral("INSERT INTO port_connect_macro(container_id,macro_name,domain,arity,expansion_template,description,metadata_json) VALUES(?,?,?,?,?,?,?)"));
+        insProjMacro.prepare(QString("INSERT INTO port_connect_macro(container_id,macro_name,domain,arity,expansion_template,description,metadata_json) VALUES(?,?,?,?,?,?,?)"));
         int copiedMacros = 0;
         while (selLibMacro.next()) {
             insProjMacro.addBindValue(projectContainerId);
@@ -1494,7 +1494,7 @@ void DialogUnitAttr::on_BtnValidateTModel_clicked()
     const QString rawModelText = QsciEdit->text();
     QString componentName = ui->EdUnitTag->text().trimmed();
     if (componentName.isEmpty()) {
-        componentName = QStringLiteral("COMPONENT");
+        componentName = QString("COMPONENT");
     }
 
     // 准备校验上下文
@@ -1555,7 +1555,7 @@ void DialogUnitAttr::on_BtnValidateTModel_clicked()
 
     QString preparedModel = TModelParser::replacePlaceholders(rawModelText, componentName, placeholderValues);
 
-    QRegularExpression placeholderPattern(QStringLiteral("%([^%\\s]+)%"));
+    QRegularExpression placeholderPattern(QString("%([^%\\s]+)%"));
     QRegularExpressionMatchIterator placeholderIter = placeholderPattern.globalMatch(preparedModel);
     QStringList unresolvedPlaceholders;
     while (placeholderIter.hasNext()) {
@@ -1567,18 +1567,18 @@ void DialogUnitAttr::on_BtnValidateTModel_clicked()
     unresolvedPlaceholders.removeDuplicates();
 
     int syntheticIndex = 0;
-    const QRegularExpression invalidPlaceholderChars(QStringLiteral("[^A-Za-z0-9_]+"));
-    const QRegularExpression leadingUnderscores(QStringLiteral("^_+"));
-    const QRegularExpression trailingUnderscores(QStringLiteral("_+$"));
+    const QRegularExpression invalidPlaceholderChars(QString("[^A-Za-z0-9_]+"));
+    const QRegularExpression leadingUnderscores(QString("^_+"));
+    const QRegularExpression trailingUnderscores(QString("_+$"));
     for (const QString &name : unresolvedPlaceholders) {
         QString sanitized = name;
-        sanitized.replace(invalidPlaceholderChars, QStringLiteral("_"));
+        sanitized.replace(invalidPlaceholderChars, QString("_"));
         sanitized.remove(leadingUnderscores);
         sanitized.remove(trailingUnderscores);
         if (sanitized.isEmpty())
-            sanitized = QStringLiteral("placeholder");
-        const QString replacement = QStringLiteral("__placeholder_%1_%2__").arg(sanitized).arg(syntheticIndex++);
-        preparedModel.replace(QStringLiteral("%") + name + QStringLiteral("%"), replacement);
+            sanitized = QString("placeholder");
+        const QString replacement = QString("__placeholder_%1_%2__").arg(sanitized).arg(syntheticIndex++);
+        preparedModel.replace(QString("%") + name + QString("%"), replacement);
     }
 
     auto makePortKey = [](const QString &functionBlock, const QString &portName) -> QString {
@@ -1595,7 +1595,7 @@ void DialogUnitAttr::on_BtnValidateTModel_clicked()
     QMap<QString, QStringList> portVariablesMap;
     if (m_componentContainerId > 0 && T_ProjectDatabase.isValid()) {
         QSqlQuery configQuery(T_ProjectDatabase);
-        configQuery.prepare(QStringLiteral("SELECT function_block, port_name, port_type, variables_json "
+        configQuery.prepare(QString("SELECT function_block, port_name, port_type, variables_json "
                                            "FROM port_config WHERE container_id = ?"));
         configQuery.addBindValue(m_componentContainerId);
         if (configQuery.exec()) {
@@ -1618,7 +1618,7 @@ void DialogUnitAttr::on_BtnValidateTModel_clicked()
                         const QJsonArray array = doc.array();
                         for (const QJsonValue &val : array) {
                             if (val.isObject()) {
-                                const QString name = val.toObject().value(QStringLiteral("name")).toString().trimmed();
+                                const QString name = val.toObject().value(QString("name")).toString().trimmed();
                                 if (!name.isEmpty())
                                     variables.append(name);
                             } else if (val.isString()) {
@@ -1654,7 +1654,7 @@ void DialogUnitAttr::on_BtnValidateTModel_clicked()
         const QString portKeyCombined = makePortKey(info.functionBlock, info.connNum);
         QString configuredType = portTypeMap.value(portKeyCombined).trimmed();
         if (configuredType.isEmpty())
-            configuredType = QStringLiteral("electric");
+            configuredType = QString("electric");
         info.portType = configuredType.toLower();
         info.variableNames = portVariablesMap.value(portKeyCombined);
 

@@ -218,7 +218,6 @@ MainWindow::~MainWindow()
     delete dlgUnitManage;
     delete dlgFuncDefine;
     delete ModelPages;
-    delete ModelUnits;
     delete ModelTerminals;
     delete ModelLineDT;
     delete ModelLineByUnits;
@@ -623,16 +622,7 @@ QStringList MainWindow::getUniqueGaocengList() const
         result.sort();
         return result;
     }
-    QStringList result;
-    if (ModelUnits && ModelUnits->item(0, 0)) {
-        for (int i = 0; i < ModelUnits->item(0, 0)->rowCount(); ++i) {
-            QString gaoceng = ModelUnits->item(0, 0)->child(i, 0)->data(Qt::DisplayRole).toString();
-            if (!result.contains(gaoceng)) {
-                result.append(gaoceng);
-            }
-        }
-    }
-    return result;
+    return QStringList();
 }
 
 QStringList MainWindow::getUniquePosListByGaoceng(const QString &gaoceng) const
@@ -661,21 +651,7 @@ QStringList MainWindow::getUniquePosListByGaoceng(const QString &gaoceng) const
         result.sort();
         return result;
     }
-    QStringList result;
-    if (ModelUnits && ModelUnits->item(0, 0)) {
-        for (int i = 0; i < ModelUnits->item(0, 0)->rowCount(); ++i) {
-            if (ModelUnits->item(0, 0)->child(i, 0)->data(Qt::DisplayRole).toString() == gaoceng) {
-                for (int j = 0; j < ModelUnits->item(0, 0)->child(i, 0)->rowCount(); ++j) {
-                    QString pos = ModelUnits->item(0, 0)->child(i, 0)->child(j, 0)->data(Qt::DisplayRole).toString();
-                    if (!result.contains(pos)) {
-                        result.append(pos);
-                    }
-                }
-                break;
-            }
-        }
-    }
-    return result;
+    return QStringList();
 }
 
 QStringList MainWindow::getUniquePageGaocengList() const

@@ -43,7 +43,7 @@ TModelAutoGenerator::TModelAutoGenerator(const QSqlDatabase &db, QObject *parent
     connect(m_deepseekClient, &DeepSeekClient::errorOccurred, this, &TModelAutoGenerator::onErrorOccurred);
 
     // 从环境变量获取 API Key
-    QString apiKey = qEnvironmentVariable("DEEPSEEK_API_KEY");
+    QString apiKey = qEnvironmentVariable("DEEPSEEK_API_KEY2");
     if (apiKey.isEmpty()) {
         qWarning() << "DEEPSEEK_API_KEY 环境变量未设置";
     }

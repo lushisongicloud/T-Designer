@@ -28,22 +28,22 @@ QString normalizePortToken(const QString &rawPath)
 QString normalizeDirection(const QString &suffix)
 {
     const QString trimmed = suffix.trimmed();
-    if (trimmed.compare(QStringLiteral("F"), Qt::CaseInsensitive) == 0)
-        return QStringLiteral("F");
-    if (trimmed.compare(QStringLiteral("I"), Qt::CaseInsensitive) == 0)
-        return QStringLiteral("i");
-    if (trimmed.compare(QStringLiteral("U"), Qt::CaseInsensitive) == 0)
-        return QStringLiteral("u");
-    if (trimmed.compare(QStringLiteral("P"), Qt::CaseInsensitive) == 0)
-        return QStringLiteral("p");
-    if (trimmed.compare(QStringLiteral("Q"), Qt::CaseInsensitive) == 0)
-        return QStringLiteral("q");
-    if (trimmed.compare(QStringLiteral("V"), Qt::CaseInsensitive) == 0)
-        return QStringLiteral("v");
-    if (trimmed.compare(QStringLiteral("N"), Qt::CaseInsensitive) == 0)
-        return QStringLiteral("n");
-    if (trimmed.compare(QStringLiteral("X"), Qt::CaseInsensitive) == 0)
-        return QStringLiteral("x");
+    if (trimmed.compare(QString("F"), Qt::CaseInsensitive) == 0)
+        return QString("F");
+    if (trimmed.compare(QString("I"), Qt::CaseInsensitive) == 0)
+        return QString("i");
+    if (trimmed.compare(QString("U"), Qt::CaseInsensitive) == 0)
+        return QString("u");
+    if (trimmed.compare(QString("P"), Qt::CaseInsensitive) == 0)
+        return QString("p");
+    if (trimmed.compare(QString("Q"), Qt::CaseInsensitive) == 0)
+        return QString("q");
+    if (trimmed.compare(QString("V"), Qt::CaseInsensitive) == 0)
+        return QString("v");
+    if (trimmed.compare(QString("N"), Qt::CaseInsensitive) == 0)
+        return QString("n");
+    if (trimmed.compare(QString("X"), Qt::CaseInsensitive) == 0)
+        return QString("x");
     return trimmed;
 }
 
@@ -75,33 +75,33 @@ ExpectedDirectionSpec expectedSpecForPort(const PortInfo &info)
     }
 
     const QString type = info.portType.trimmed().toLower();
-    if (type == QStringLiteral("hydraulic")) {
-        spec.required.insert(QStringLiteral("p"));
-        spec.required.insert(QStringLiteral("q"));
-        spec.displayOrder = QStringList{QStringLiteral("p"), QStringLiteral("q")};
+    if (type == QString("hydraulic")) {
+        spec.required.insert(QString("p"));
+        spec.required.insert(QString("q"));
+        spec.displayOrder = QStringList{QString("p"), QString("q")};
         return spec;
     }
 
-    if (type == QStringLiteral("mechanical")) {
-        spec.required.insert(QStringLiteral("F"));
+    if (type == QString("mechanical")) {
+        spec.required.insert(QString("F"));
         spec.optionalAnyOf = QSet<QString>{
-            QStringLiteral("v"),
-            QStringLiteral("n"),
-            QStringLiteral("x")
+            QString("v"),
+            QString("n"),
+            QString("x")
         };
-        spec.optionalLabel = QStringLiteral("v/n/x");
-        spec.displayOrder = QStringList{QStringLiteral("F"), QStringLiteral("v")};
+        spec.optionalLabel = QString("v/n/x");
+        spec.displayOrder = QStringList{QString("F"), QString("v")};
         return spec;
     }
 
-    if (type == QStringLiteral("other")) {
+    if (type == QString("other")) {
         return spec;
     }
 
     // default: electric
-    spec.required.insert(QStringLiteral("i"));
-    spec.required.insert(QStringLiteral("u"));
-    spec.displayOrder = QStringList{QStringLiteral("i"), QStringLiteral("u")};
+    spec.required.insert(QString("i"));
+    spec.required.insert(QString("u"));
+    spec.displayOrder = QStringList{QString("i"), QString("u")};
     return spec;
 }
 
@@ -141,7 +141,7 @@ TModelValidationResult TModelValidator::validate(const QString &tmodelText,
     // 1. 检查器件名称占位符
     if (!context.componentName.isEmpty()) {
         // 检查是否使用了%Name%占位符
-        QRegularExpression namePattern(QStringLiteral("%Name%"));
+        QRegularExpression namePattern(QString("%Name%"));
         if (!namePattern.match(tmodelText).hasMatch()) {
             result.formatErrors << QString("T语言模型中应使用 %Name% 作为器件名称占位符");
         }
@@ -248,7 +248,7 @@ TModelValidationResult TModelValidator::validate(const QString &tmodelText,
     // 支持任意字符（包括 +、*、/、- 等特殊字符）作为端口名和变量名
     // 格式：(declare-fun %Name%.端口路径.变量名 () 类型)
     QRegularExpression declPattern(
-        QStringLiteral("\\(\\s*declare-fun\\s+(?:%[A-Za-z0-9_]+%|[A-Za-z0-9_]+)\\.([^\\s()]+)\\s*\\("));
+        QString("\\(\\s*declare-fun\\s+(?:%[A-Za-z0-9_]+%|[A-Za-z0-9_]+)\\.([^\\s()]+)\\s*\\("));
     
     auto declIter = declPattern.globalMatch(portVarsSection);
     while (declIter.hasNext()) {
@@ -299,7 +299,7 @@ TModelValidationResult TModelValidator::validate(const QString &tmodelText,
     // 优化后的变量引用正则：支持任意字符的端口名
     // 匹配格式：%Name%.端口路径.变量名 或 ComponentName.端口路径.变量名
     QRegularExpression varPattern(
-        QStringLiteral("(?:%[A-Za-z0-9_]+%|[A-Za-z0-9_]+)\\.([^\\s()]+\\.[^\\s()]+)\\b"));
+        QString("(?:%[A-Za-z0-9_]+%|[A-Za-z0-9_]+)\\.([^\\s()]+\\.[^\\s()]+)\\b"));
     
     auto varMatchIter = varPattern.globalMatch(normalized);
     while (varMatchIter.hasNext()) {
@@ -360,7 +360,7 @@ TModelValidationResult TModelValidator::validate(const QString &tmodelText,
             }
             if (!satisfied) {
                 const QString label = binding.alternativeLabel.isEmpty()
-                        ? binding.alternativeDirections.values().join(QStringLiteral("/"))
+                        ? binding.alternativeDirections.values().join(QString("/"))
                         : binding.alternativeLabel;
                 result.missingDeclarations.append(
                     formatPortVariableName(portName, label));

@@ -35,7 +35,7 @@ struct EquipmentProcessResult {
         Success,    // 成功
         Failed,     // 失败
         NoPorts,    // 无有效端号
-        Skipped     // 跳过（从log恢复时）
+        Skipped     // 无Class_ID（Class_ID字段为空）
     };
     Status status;
     
@@ -50,7 +50,7 @@ struct EquipmentProcessResult {
             case Success: return "success";
             case Failed: return "failed";
             case NoPorts: return "NoPorts";
-            case Skipped: return "skipped";
+            case Skipped: return "无Class_ID";
         }
         return "unknown";
     }

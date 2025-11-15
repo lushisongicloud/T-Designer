@@ -17,6 +17,7 @@ BatchAutoGenerateManager::BatchAutoGenerateManager(const QSqlDatabase &db, QObje
     : QObject(parent)
     , m_connectionName(db.connectionName())  // 保存连接名而非拷贝对象
     , m_workerCount(1)
+    , m_recoveredCount(0)
     , m_totalCount(0)
     , m_processedCount(0)
     , m_successCount(0)
@@ -26,6 +27,7 @@ BatchAutoGenerateManager::BatchAutoGenerateManager(const QSqlDatabase &db, QObje
     , m_stopped(false)
     , m_lastLoadedEquipmentId(0)
     , m_totalEquipmentCount(0)
+    , m_reverseOrder(false)
 {
     // 注册元类型，以便在跨线程信号槽中使用
     qRegisterMetaType<EquipmentProcessResult>("EquipmentProcessResult");
@@ -41,22 +43,35 @@ BatchAutoGenerateManager::~BatchAutoGenerateManager()
     }
 }
 
-void BatchAutoGenerateManager::start(const QString &logFilePath, 
-                                      bool resumeFromLog, 
+void BatchAutoGenerateManager::start(const QString &logFilePath,
+                                      bool resumeFromLog,
                                       int workerCount,
-                                      bool enableWorkerLog)
+                                      bool enableWorkerLog,
+                                      bool reverseOrder)
 {
     m_logFilePath = logFilePath;
     m_workerCount = qMax(1, workerCount);
     m_enableWorkerLog = enableWorkerLog;
+    m_reverseOrder = reverseOrder;
     m_stopped = false;
-    
+
+    // 每次开始前清空所有历史统计状态，确保从干净状态重新开始
+    m_recoveredCount = 0;
+    m_totalCount = 0;
+    m_processedCount = 0;
+    m_successCount = 0;
+    m_failedCount = 0;
+    m_noPortsCount = 0;
+    m_skippedCount = 0;
+    m_processedEquipmentIds.clear();
+    m_skippedEquipmentIds.clear();
+
     // 1. 初始化日志文件
     if (!initializeLogFile(resumeFromLog)) {
         emit finished();
         return;
     }
-    
+
     // 2. 如果恢复模式，解析日志文件
     if (resumeFromLog) {
         parseLogAndMarkProcessed(logFilePath);
@@ -64,8 +79,21 @@ void BatchAutoGenerateManager::start(const QString &logFilePath,
     
     // 3. 加载任务队列
     loadTaskQueue();
-    
-    m_totalCount = m_taskQueue.size() + m_skippedCount;
+
+    // 使用Equipment表中的总器件数作为进度条分母，符合用户期望
+    // 已处理器件 = 成功 + 失败 + 无端口 + 无Class_ID
+    // 无Class_ID = 已处理器件中因Class_ID字段为空的器件（包括从日志恢复的和当前运行的）
+    // 总器件数 = Equipment表中的总记录数
+    m_totalCount = m_totalEquipmentCount;
+
+    // 恢复模式下显示从日志加载的已处理器件信息
+    // parseLogAndMarkProcessed中已将统计结果存储在m_successCount等变量中
+    // 注意：m_skippedCount包含了从日志恢复的无Class_ID器件，它们也属于已处理器件
+    if (resumeFromLog) {
+        int recovered = m_recoveredCount;
+        qInfo() << QString("[BatchManager] 从日志恢复: 共有 %1 个器件已完成处理")
+            .arg(recovered);
+    }
     
     if (m_taskQueue.isEmpty()) {
         qInfo() << "[BatchManager] 没有待处理的器件";
@@ -74,16 +102,19 @@ void BatchAutoGenerateManager::start(const QString &logFilePath,
         return;
     }
     
-    qInfo() << QString("[BatchManager] 开始批量处理: 总数=%1, 待处理=%2, 已跳过=%3, 工作线程=%4")
+    qInfo() << QString("[BatchManager] 开始批量处理: 总数=%1, 待处理=%2, 无Class_ID=%3, 工作线程=%4")
         .arg(m_totalCount)
         .arg(m_taskQueue.size())
         .arg(m_skippedCount)
         .arg(m_workerCount);
-    
+
     // 4. 写入日志头部
     writeLogStart();
-    
-    // 5. 创建工作线程
+
+    // 5. 记录无Class_ID的器件到日志文件（仅当前运行中因Class_ID字段为空而跳过的器件）
+    writeSkippedResults();
+
+    // 6. 创建工作线程
     m_totalTimer.start();
     createWorkers();
     
@@ -178,8 +209,8 @@ void BatchAutoGenerateManager::parseLogAndMarkProcessed(const QString &logFilePa
     
     QTextStream stream(&file);
     stream.setCodec("UTF-8");
-    
-    int skippedCount = 0;
+
+    int recoveredCount = 0;  // 从日志恢复的已处理器件数
     while (!stream.atEnd()) {
         QString line = stream.readLine().trimmed();
         if (!line.startsWith("[RESULT]")) continue;
@@ -194,20 +225,37 @@ void BatchAutoGenerateManager::parseLogAndMarkProcessed(const QString &logFilePa
         
         QString status = parts[4];
         
-        // 只跳过 success 和 NoPorts 的器件
-        if (status == "success" || status == "NoPorts") {
+        // 恢复所有4种已处理器件状态：success、failed、NoPorts、无Class_ID
+        // 这些都是已处理器件，应该计入恢复计数
+        if (status == "success" || status == "failed" || status == "NoPorts" || status == "无Class_ID") {
             m_processedEquipmentIds.insert(equipmentId);
-            skippedCount++;
-            
+            recoveredCount++;
+
+            // 统计各类已处理器件数，用于进度显示
             if (status == "success") m_successCount++;
+            else if (status == "failed") m_failedCount++;
             else if (status == "NoPorts") m_noPortsCount++;
+            else if (status == "无Class_ID") {
+                // 无Class_ID状态的器件也计入跳过
+                // 这些是已处理过的无Class_ID器件，但统计上仍归类为"无Class_ID"
+                m_skippedCount++;
+                m_skippedEquipmentIds.insert(equipmentId);
+            }
         }
     }
-    
+
     file.close();
-    
-    m_skippedCount = skippedCount;
-    qInfo() << QString("[BatchManager] 从日志恢复: 跳过 %1 个已完成器件").arg(skippedCount);
+
+    // recoveredCount是恢复的已处理器件数（success + failed + NoPorts + 无Class_ID）
+    qInfo() << QString("[BatchManager] 从日志恢复: 共有 %1 个器件已完成处理").arg(recoveredCount);
+    qInfo() << QString("[BatchManager] 其中: 成功=%1, 失败=%2, 无端口=%3, 无Class_ID=%4")
+        .arg(m_successCount)
+        .arg(m_failedCount)
+        .arg(m_noPortsCount)
+        .arg(m_skippedCount);
+
+    // 保存恢复的总数，后续用于UI显示和进度计算
+    m_recoveredCount = recoveredCount;
 }
 
 void BatchAutoGenerateManager::loadTaskQueue()
@@ -262,54 +310,91 @@ void BatchAutoGenerateManager::loadTaskQueue()
 int BatchAutoGenerateManager::loadBatchTasks(int batchSize)
 {
     QSqlDatabase db = QSqlDatabase::database(m_connectionName);
-    
+
     int loadedCount = 0;
     int rowCount = 0;
-    
-    // 从上次加载的位置继续，按 Equipment_ID 升序加载
+
     QSqlQuery query(db);
-    query.prepare(
-        "SELECT Equipment_ID, PartCode, Name, Class_ID "
-        "FROM Equipment "
-        "WHERE Equipment_ID > ? "
-        "ORDER BY Equipment_ID "
-        "LIMIT ?"
-    );
-    query.addBindValue(m_lastLoadedEquipmentId);
-    query.addBindValue(batchSize);
-    
+
+    if (m_reverseOrder) {
+        // 逆序遍历：从上次加载的位置往前，按 Equipment_ID 降序加载
+        QString sql = QString(
+            "SELECT Equipment_ID, PartCode, Name, Class_ID "
+            "FROM Equipment "
+            "WHERE Equipment_ID < ? "
+            "ORDER BY Equipment_ID DESC "
+            "LIMIT ?"
+        );
+
+        // 如果是第一次加载（m_lastLoadedEquipmentId为0），需要先获取最大ID
+        if (m_lastLoadedEquipmentId == 0) {
+            QSqlQuery maxIdQuery(db);
+            if (maxIdQuery.exec("SELECT MAX(Equipment_ID) FROM Equipment")) {
+                if (maxIdQuery.next()) {
+                    m_lastLoadedEquipmentId = maxIdQuery.value(0).toInt() + 1;
+                }
+            }
+        }
+
+        query.prepare(sql);
+        query.addBindValue(m_lastLoadedEquipmentId);
+        query.addBindValue(batchSize);
+    } else {
+        // 升序遍历：从上次加载的位置继续，按 Equipment_ID 升序加载
+        query.prepare(
+            "SELECT Equipment_ID, PartCode, Name, Class_ID "
+            "FROM Equipment "
+            "WHERE Equipment_ID > ? "
+            "ORDER BY Equipment_ID "
+            "LIMIT ?"
+        );
+        query.addBindValue(m_lastLoadedEquipmentId);
+        query.addBindValue(batchSize);
+    }
+
     if (!query.exec()) {
         qWarning() << "[BatchManager] 加载器件任务失败:" << query.lastError().text();
         return -1;  // 返回 -1 表示查询失败
     }
-    
+
     while (query.next()) {
         rowCount++;
         int equipmentId = query.value(0).toInt();
-        
+        QString classId = query.value(3).toString();  // 获取Class_ID
+
+        // 更新加载位置
+        m_lastLoadedEquipmentId = equipmentId;
+
         // 跳过已处理的器件
         if (m_processedEquipmentIds.contains(equipmentId)) {
-            m_lastLoadedEquipmentId = equipmentId;
             continue;
         }
-        
+
+        // 跳过Class_ID为空的器件（无Class_ID）
+        if (classId.isEmpty()) {
+            qInfo() << QString("[BatchManager] 跳过Equipment_ID %1: Class_ID为空").arg(equipmentId);
+            // 记录到无Class_ID集合，待稍后统一记录到日志
+            m_skippedEquipmentIds.insert(equipmentId);
+            m_skippedCount++;
+            continue;
+        }
+
         EquipmentTask task;
         task.equipmentId = equipmentId;
         task.code = query.value(1).toString();
         task.name = query.value(2).toString();
         task.categoryPath = getCategoryPathInternal(equipmentId);  // 使用内部方法（已持有锁）
         task.categoryIndex = 0;  // 不再使用类别索引
-        
+
         m_taskQueue.enqueue(task);
-        m_lastLoadedEquipmentId = equipmentId;
         loadedCount++;
     }
-    
+
     // 如果查询返回 0 行，说明已经到达数据库末尾，返回 -1 作为标记
     if (rowCount == 0) {
         return -1;
     }
-    
+
     return loadedCount;
 }
 
@@ -339,7 +424,7 @@ bool BatchAutoGenerateManager::loadMoreTasksIfNeeded()
                 totalLoaded += loaded;
             }
             
-            // 如果本批次全部跳过但还没到末尾，继续尝试
+            // 如果本批次全部跳过但还没到末尾，继续尝试（跳过指Class_ID为空）
             if (loaded == 0) {
                 qInfo() << QString("[BatchManager] 队列补充: 本批次全部跳过，继续尝试 (%1/%2)")
                     .arg(attempts).arg(MAX_RELOAD_ATTEMPTS);
@@ -435,11 +520,12 @@ void BatchAutoGenerateManager::assignTaskToWorker(int workerId, const EquipmentT
         
         // 直接触发完成
         QMetaObject::invokeMethod(this, [this, workerId, result]() {
-            m_processedCount++;
+            // 不在这里增加m_processedCount，避免重复计数
+            // 统一在onWorkerFinished中计算总处理数
             m_noPortsCount++;
             writeLogResult(result);
             emit workerFinished(workerId, result);
-            emit progressUpdated(m_processedCount, m_totalCount, 
+            emit progressUpdated(m_processedCount, m_totalCount,
                                 m_successCount, m_failedCount, m_noPortsCount, m_skippedCount);
             startNextTask(workerId);
         }, Qt::QueuedConnection);
@@ -481,7 +567,7 @@ void BatchAutoGenerateManager::assignTaskToWorker(int workerId, const EquipmentT
     m_workers[workerId] = worker;
     m_workerIds[worker] = workerId;
     
-    emit workerStarted(workerId, task.code, task.name);
+    emit workerStarted(workerId, task.code, task.name, task.equipmentId);
     
     // 处理事件，让 UI 有机会更新
     QCoreApplication::processEvents();
@@ -499,8 +585,7 @@ void BatchAutoGenerateManager::onWorkerFinished(const EquipmentProcessResult &re
     int workerId = m_workerIds.value(worker, -1);
     if (workerId < 0) return;
     
-    // 更新统计
-    m_processedCount++;
+    // 先更新分类统计，再统一计算总处理数
     switch (result.status) {
         case EquipmentProcessResult::Success:
             m_successCount++;
@@ -515,9 +600,15 @@ void BatchAutoGenerateManager::onWorkerFinished(const EquipmentProcessResult &re
         case EquipmentProcessResult::NoPorts:
             m_noPortsCount++;
             break;
+        case EquipmentProcessResult::Skipped:
+            m_skippedCount++;
+            break;
         default:
             break;
     }
+
+    // 统一计算总处理器件数，确保与各类统计之和一致
+    m_processedCount = m_successCount + m_failedCount + m_noPortsCount + m_skippedCount;
     
     // 写入日志
     writeLogResult(result);
@@ -566,6 +657,41 @@ void BatchAutoGenerateManager::writeLogResult(const EquipmentProcessResult &resu
     m_logStream.flush();
 }
 
+void BatchAutoGenerateManager::writeSkippedResults()
+{
+    if (m_skippedEquipmentIds.isEmpty()) {
+        return;
+    }
+
+    // 为每个无Class_ID的器件创建EquipmentProcessResult并记录到日志
+    for (int equipmentId : m_skippedEquipmentIds) {
+        // 获取器件信息
+        QSqlDatabase db = QSqlDatabase::database(m_connectionName);
+        QSqlQuery query(db);
+        query.prepare("SELECT PartCode, Name FROM Equipment WHERE Equipment_ID = ?");
+        query.addBindValue(equipmentId);
+
+        EquipmentProcessResult result;
+        result.equipmentId = equipmentId;
+        result.code = "";
+        result.name = "";
+        result.categoryName = "";
+        result.status = EquipmentProcessResult::Skipped;
+        result.errorMessage = "无Class_ID";
+
+        if (query.exec() && query.next()) {
+            result.code = query.value(0).toString();
+            result.name = query.value(1).toString();
+            result.categoryName = getCategoryPathInternal(equipmentId);
+        }
+
+        // 记录到日志
+        writeLogResult(result);
+    }
+
+    qInfo() << QString("[BatchManager] 记录了 %1 个无Class_ID的器件到日志文件").arg(m_skippedEquipmentIds.size());
+}
+
 void BatchAutoGenerateManager::writeLogEnd()
 {
     int elapsedSeconds = m_totalTimer.elapsed() / 1000;
@@ -573,7 +699,7 @@ void BatchAutoGenerateManager::writeLogEnd()
     m_logStream << QString("# End Time: %1\n")
         .arg(QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss"));
     m_logStream << QString("# Total Time: %1s\n").arg(elapsedSeconds);
-    m_logStream << QString("# Success: %1, Failed: %2, NoPorts: %3, Skipped: %4\n")
+    m_logStream << QString("# Success: %1, Failed: %2, NoPorts: %3, 无Class_ID: %4\n")
         .arg(m_successCount)
         .arg(m_failedCount)
         .arg(m_noPortsCount)
