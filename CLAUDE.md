@@ -11,6 +11,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Diagnosis Engine**: Fault diagnosis with decision trees and test management
 - **Model/View Architecture**: Recent migration from QStandardItemModel to Qt Model/View for performance
 
+On Windows, for any file tools (`Read`, `Write`, `Edit`, `MultiEdit`, `NotebookRead`, `NotebookEdit`) and search tools (`Glob`, `Grep`), always use project-root-relative paths (e.g. `BO/ai/tmodelautogenerator.cpp`) or Windows-style absolute paths (e.g. `D:/SynologyDrive/Project/T_DESIGNER/...`), even if the shell prompt shows an MSYS/Git Bash path like `/d/...`. Do **not** pass Git Bash / WSL-style prefixes such as `/d/...` or `/mnt/d/...` into these tools — they will not resolve correctly, although Bash commands themselves may still use those prefixes.
+
 ## Architecture Overview
 
 ### Three-Layer Architecture
@@ -203,32 +205,38 @@ Returns: Syntax errors, undeclared variables, missing variables, port/variable c
 
 ## Building the Project
 
-### Prerequisites
-- Qt 5.12+ (Qt Creator recommended)
-- Visual Studio 2019/2022 or MinGW
-- QScintilla2 library
-- Z3 SMT Solver library (included in `lib/`)
-- SQLite3
+The repository root is assumed to be:
 
-### Build Commands
-
-```bash
-# Using qmake
-qmake T_DESIGNER.pro
-make -j4  # or nmake on Windows
-
-# In Qt Creator
-# 1. Open T_DESIGNER.pro
-# 2. Choose Kit (Desktop Qt 5.12.x MSVC2019 64-bit)
-# 3. Build (Ctrl+B)
-# 4. Run (Ctrl+R)
+```text
+D:/SynologyDrive/Project/T_DESIGNER
 ```
 
-**Note**: The `axcontainer` module is Windows-specific (ActiveX). Full compilation not possible in WSL/Linux environments.
+The build directory is:
+
+```text
+D:/SynologyDrive/Project/T_DESIGNER/build
+```
+
+### Build Commands(from Git Bash / Claude `Bash(...)`)
+
+```bash
+# 1) 确认当前目录为仓库根目录,并进入build目录
+#    pwd应该为/d/SynologyDrive/Project/T_DESIGNER
+pwd
+cd build
+
+# 2) 生成Makefile(运行 qmake)
+"D:/Qt/Qt5.12.9/5.12.9/msvc2017_64/bin/qmake.exe" ../T_DESIGNER.pro -spec win32-msvc CONFIG+=qtquickcompiler
+
+# 3) Build release with jom
+"D:/Qt/Qt5.12.9/Tools/QtCreator/bin/jom.exe" -j 20 -f Makefile.Release
+```
+
+注意，始终应在build目录下才能执行qmake.exe或jom.exe。
 
 ### Output
-- Executable: `build/release/T-DESIGNER.exe`
-- Dependencies automatically copied during build
+
+- 可执行文件: `build/release/T-DESIGNER.exe`
 
 ## Database & Schema Management
 
@@ -236,7 +244,6 @@ make -j4  # or nmake on Windows
 - **Template**: `templete/project.db` - For new projects
 - **Reference**: `ref/LdMainData.db` (offline mirror), `ref/Model.db` (SMT samples)
 - **Project-specific**: `MyProjects/<ProjectName>/<ProjectName>.db`
-- **Runtime**: `C:/TBD/data/LdMainData.db` (local component library)
 
 ### Key Tables
 - `ProjectStructure` - Hierarchical structure (高层/Position)

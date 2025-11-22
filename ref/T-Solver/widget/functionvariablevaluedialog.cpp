@@ -395,14 +395,14 @@ void FunctionVariableValueDialog::onAutofillRangeClicked()
         const QStringList typicalList = splitSamples(typicalText);
         auto isBoolean = [&]() -> bool {
             const QString lowerType = typeText.toLower();
-            if (lowerType == QStringLiteral("bool") || lowerType == QStringLiteral("boolean")
-                || typeText.contains(QStringLiteral("布尔"), Qt::CaseInsensitive)) {
+            if (lowerType == QString("bool") || lowerType == QString("boolean")
+                || typeText.contains(QString("布尔"), Qt::CaseInsensitive)) {
                 return true;
             }
             for (const QString &item : typicalList) {
                 const QString value = item.trimmed().toLower();
-                if (value == QStringLiteral("true") || value == QStringLiteral("false")
-                    || value == QStringLiteral("是") || value == QStringLiteral("否")) {
+                if (value == QString("true") || value == QString("false")
+                    || value == QString("是") || value == QString("否")) {
                     return true;
                 }
             }

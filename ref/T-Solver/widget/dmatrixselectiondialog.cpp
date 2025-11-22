@@ -47,7 +47,7 @@ QString faultKindName(FaultKind kind)
 {
     switch (kind) {
     case FaultKind::Component:
-        return QObject::tr("器件故障");
+        return QObject::tr("器件故障模式");
     case FaultKind::Function:
     default:
         return QObject::tr("功能故障");
@@ -86,7 +86,7 @@ DMatrixSelectionDialog::DMatrixSelectionDialog(Target targetType, QWidget *paren
     } else {
         typeCombo->addItem(tr("全部"));
         typeCombo->addItem(tr("功能故障"));
-        typeCombo->addItem(tr("器件故障"));
+        typeCombo->addItem(tr("器件故障模式"));
         typeCombo->addItem(tr("已禁用"));
     }
     filterLayout->addWidget(filterLabel);

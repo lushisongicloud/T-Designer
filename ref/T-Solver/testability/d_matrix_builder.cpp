@@ -49,7 +49,7 @@ QString sanitizeId(const QString &prefix, const QString &name)
         sanitized = QString("id");
     }
     const QString hashSuffix = QString::number(qHash(name), 16);
-    return prefix + sanitized + QStringLiteral("_") + hashSuffix;
+    return prefix + sanitized + QString("_") + hashSuffix;
 }
 
 QStringList splitTrimmed(const QString &text, QChar delimiter)
@@ -70,7 +70,7 @@ bool parseIntervalToken(const QString &text, NumericInterval *interval)
     if (!interval) {
         return false;
     }
-    static const QRegularExpression re(QStringLiteral("^\\s*([\\[(])\\s*([-+]?\\d+(?:\\.\\d+)?(?:[eE][-+]?\\d+)?)\\s*,\\s*([-+]?\\d+(?:\\.\\d+)?(?:[eE][-+]?\\d+)?)\\s*([\\])])\\s*$"));
+    static const QRegularExpression re(QString("^\\s*([\\[(])\\s*([-+]?\\d+(?:\\.\\d+)?(?:[eE][-+]?\\d+)?)\\s*,\\s*([-+]?\\d+(?:\\.\\d+)?(?:[eE][-+]?\\d+)?)\\s*([\\])])\\s*$"));
     QRegularExpressionMatch match = re.match(text);
     if (!match.hasMatch()) {
         return false;
@@ -229,7 +229,7 @@ QString intervalsToString(const QVector<NumericInterval> &intervals)
                      .arg(QString::number(interval.lower, 'g', 12),
                           QString::number(interval.upper, 'g', 12)));
     }
-    return parts.join(QStringLiteral(";"));
+    return parts.join(QString(";"));
 }
 
 QStringList orderedBooleanValues(const QSet<QString> &boolValues)
@@ -482,7 +482,8 @@ QVector<FaultDefinition> DMatrixBuilder::collectFunctionFaults() const
                            << " type=" << info.actuatorConstraint.testType;
         FaultDefinition fault;
         fault.id = sanitizeId(QString("func."), info.functionName);
-        fault.name = info.functionName;
+        // 故障名增加前缀，保留原功能名中的下划线等字符
+        fault.name = QString("故障_%1").arg(info.functionName);
         fault.kind = FaultKind::Function;
         fault.relatedFunction = info.functionName;
         fault.constraintIntegrity = info.constraintIntegrity.trimmed();
@@ -542,6 +543,46 @@ QVector<FaultDefinition> DMatrixBuilder::collectFunctionFaults() const
     return faults;
 }
 
+QVector<FaultDefinition> DMatrixBuilder::collectComponentModeFaults(const SmtFacade &smt) const
+{
+    QVector<FaultDefinition> faults;
+    const auto &components = smt.fragments().components;
+    for (const auto &component : components) {
+        const QString componentName = component.name.trimmed();
+        if (componentName.isEmpty()) {
+            continue;
+        }
+        qDebug().noquote() << "[DMatrix] collectComponentModeFaults component" << componentName
+                           << "modeCandidates=" << component.failureModes.size();
+        for (const FailureMode &mode : component.failureModes) {
+            const QString modeName = mode.name.trimmed();
+            const QString describe = mode.describe.trimmed();
+            if (modeName.isEmpty() || describe.isEmpty()) {
+                qDebug().noquote() << "  skip mode entry for faults nameEmpty=" << modeName.isEmpty()
+                                   << "describeEmpty=" << describe.isEmpty();
+                continue;
+            }
+
+            FaultDefinition fault;
+            fault.id = sanitizeId(QString("comp."), componentName + QString(".") + modeName);
+            // 器件故障模式故障名增加前缀，区分测试/故障
+            fault.name = QString("故障_%1/%2").arg(componentName, modeName);
+            fault.kind = FaultKind::Component;
+            fault.componentName = componentName;
+            fault.failureModeName = modeName;
+            fault.relatedComponents = QStringList{componentName};
+            fault.enabled = true;
+
+            faults.append(fault);
+            qDebug().noquote() << "  added component-mode fault" << fault.id
+                               << "component=" << fault.componentName
+                               << "mode=" << fault.failureModeName;
+        }
+    }
+    qDebug().noquote() << "[DMatrix] total component-mode faults:" << faults.size();
+    return faults;
+}
+
 /**
  * @brief 收集函数测试定义
  * 根据函数信息生成对应的测试定义
@@ -569,7 +610,8 @@ QVector<TestDefinition> DMatrixBuilder::collectFunctionTests() const
 
         TestDefinition test;
         test.id = sanitizeId(QString("func."), info.functionName);
-        test.name = info.functionName;
+        // 功能测试名增加前缀，避免与功能名混淆
+        test.name = QString("测试_%1").arg(info.functionName);
         test.kind = TestKind::Function;
         test.sourceItem = info.actuatorConstraint;
         test.relatedFunction = info.functionName;
@@ -616,7 +658,8 @@ QVector<TestDefinition> DMatrixBuilder::collectModeTests(const SmtFacade &smt) c
 
             TestDefinition test;
             test.id = sanitizeId(QString("mode."), component.name + QString(".") + modeName);
-            test.name = component.name + QString("/") + modeName;
+            // 故障模式测试名增加前缀，与器件故障模式故障名对称
+            test.name = QString("测试_%1/%2").arg(component.name, modeName);
             test.kind = TestKind::Mode;
             test.componentName = component.name;
             test.failureModeName = modeName;
@@ -813,7 +856,7 @@ QVector<TestDefinition> DMatrixBuilder::collectSignalTests(const SmtFacade &smt,
             if (predicates.size() == 1) {
                 test.predicate = predicates.first();
             } else {
-                test.predicate = QString("(or %1)").arg(predicates.join(QStringLiteral(" ")));
+                test.predicate = QString("(or %1)").arg(predicates.join(QString(" ")));
             }
         }
 
@@ -851,6 +894,149 @@ DetectabilityResult DMatrixBuilder::detectability(const FaultDefinition &fault,
         }
         return result;
     };
+
+    // 器件故障模式相关判定优先处理
+    if (fault.kind == FaultKind::Component) {
+        // 1) 故障模式测试 vs 器件故障模式：直接一一对应
+        if (test.kind == TestKind::Mode) {
+            result.method = QString("模式测试");
+            const QString faultComp = fault.componentName.trimmed();
+            const QString faultMode = fault.failureModeName.trimmed();
+            const QString testComp = test.componentName.trimmed();
+            const QString testMode = test.failureModeName.trimmed();
+            if (faultComp.isEmpty() || faultMode.isEmpty()
+                || testComp.isEmpty() || testMode.isEmpty()) {
+                result.detail = QString("组件或故障模式信息不完整");
+                return finalize(false);
+            }
+            const bool matched = (QString::compare(faultComp, testComp, Qt::CaseInsensitive) == 0)
+                                 && (faultMode == testMode);
+            result.detail = matched ? QString("测试直接对应器件故障模式")
+                                    : QString("测试与该器件故障模式不匹配");
+            return finalize(matched);
+        }
+
+        // 2) 功能测试 vs 器件故障模式：复用原“故障模式测试×功能故障”的判定语义
+        if (test.kind == TestKind::Function) {
+            result.method = QString("功能测试");
+            if (test.relatedFunction.trimmed().isEmpty()) {
+                result.detail = QString("测试未绑定功能");
+                return finalize(false);
+            }
+
+            const auto infoIt = functionInfoMap.constFind(test.relatedFunction);
+            if (infoIt == functionInfoMap.constEnd()) {
+                result.detail = QString("未找到功能定义");
+                return finalize(false);
+            }
+            const FunctionInfo &info = infoIt.value();
+
+            const QStringList scope = info.allComponentList.isEmpty() ? info.linkElements
+                                                                      : info.allComponentList;
+            qDebug().noquote() << "[DMatrix][FuncDetect-CompFault] function=" << info.functionName
+                               << "componentScope=" << scope
+                               << "targetComponent=" << fault.componentName
+                               << "mode=" << fault.failureModeName;
+            if (!componentMatchesScope(scope, fault.componentName)) {
+                if (info.allComponentList.isEmpty()) {
+                    result.detail = QString("组件不在功能链路内");
+                    qDebug().noquote() << "  skip because component not in link";
+                } else {
+                    result.detail = QString("组件不在全部相关器件内");
+                    qDebug().noquote() << "  skip because component not in all components";
+                }
+                return finalize(false);
+            }
+
+            // 若功能约束完整，优先使用离线求解结果
+            if (info.constraintIntegrity.trimmed() == QString("完整")) {
+                const QHash<QString, QSet<QString>> offlineMap = buildOfflineModeMap(info.offlineResults);
+                const QSet<QString> modes = offlineMap.value(fault.componentName);
+                const bool detected = modes.contains(fault.failureModeName);
+                QStringList modeList = modes.values();
+                modeList.sort();
+                qDebug().noquote() << "  offline modes for component" << fault.componentName
+                                   << ":" << modeList
+                                   << "detected=" << detected;
+                result.detail = detected ? QString("离线求解包含故障模式")
+                                         : QString("离线求解未覆盖该故障模式");
+                return finalize(detected);
+            }
+
+            // 否则在功能约束 + 器件故障模式注入下，通过SMT判定
+            QList<TestItem> inputItems;
+            TestItem actuatorItem = info.actuatorConstraint;
+            for (const auto &item : info.constraintList) {
+                if (!actuatorItem.variable.isEmpty()
+                    && item.variable == actuatorItem.variable
+                    && item.value == actuatorItem.value) {
+                    continue;
+                }
+                inputItems.append(item);
+            }
+
+            QStringList inputAssertions = toAssertions(inputItems);
+            QStringList actuatorAssertions;
+            if (!actuatorItem.variable.isEmpty()) {
+                actuatorAssertions = toAssertions({actuatorItem});
+            }
+
+            QStringList positive = inputAssertions;
+            positive.append(actuatorAssertions);
+            if (positive.isEmpty()) {
+                result.detail = QString("缺少执行器正向约束，无法验证");
+                qDebug().noquote() << "  skip because positive assertions empty (component fault)";
+                return finalize(false);
+            }
+
+            // 查找器件故障模式的约束描述
+            QString modeDescribe;
+            const auto &components = smt.fragments().components;
+            for (const auto &compBlock : components) {
+                if (QString::compare(compBlock.name.trimmed(),
+                                     fault.componentName.trimmed(),
+                                     Qt::CaseInsensitive) != 0) {
+                    continue;
+                }
+                for (const FailureMode &modeEntry : compBlock.failureModes) {
+                    const QString modeName = modeEntry.name.trimmed();
+                    if (modeName == fault.failureModeName.trimmed()) {
+                        modeDescribe = modeEntry.describe.trimmed();
+                        break;
+                    }
+                }
+                if (!modeDescribe.isEmpty()) {
+                    break;
+                }
+            }
+
+            if (modeDescribe.trimmed().isEmpty()) {
+                result.detail = QString("未找到器件故障模式描述，无法验证");
+                return finalize(false);
+            }
+
+            ComponentOverride override;
+            override.componentName = fault.componentName;
+            override.assertions = QStringList{modeDescribe};
+            override.replaceNormal = true;
+            QList<ComponentOverride> overrides;
+            overrides.append(override);
+
+            const QString code = smt.buildFaultCode(QStringList(), overrides, positive);
+            const bool sat = isSatCached(smt, code, timeoutMs);
+            result.faultSat = sat;
+            qDebug().noquote() << "[DMatrix][FuncDetect-CompFault] SAT query result sat=" << sat;
+            result.detail = sat ? QString("模式成立时仍可满足功能输出")
+                                 : QString("模式导致功能输出矛盾");
+            return finalize(!sat);
+        }
+
+        if (test.kind == TestKind::Signal) {
+            result.method = QString("信号测试");
+            result.detail = QString("暂不支持对器件故障模式的信号测试判定");
+            return finalize(false);
+        }
+    }
 
     if (test.kind == TestKind::Mode) {
         result.method = QString("模式测试");
@@ -1163,6 +1349,8 @@ bool DMatrixBuilder::exportDMatrix(const DMatrixBuildResult &result,
         obj.insert(QString("name"), fault.name);
         obj.insert(QString("kind"), faultKindToString(fault.kind));
         obj.insert(QString("function"), fault.relatedFunction);
+        obj.insert(QString("component"), fault.componentName);
+        obj.insert(QString("failureMode"), fault.failureModeName);
         obj.insert(QString("constraintIntegrity"), fault.constraintIntegrity);
         obj.insert(QString("linkElements"), QJsonArray::fromStringList(fault.linkElements));
         obj.insert(QString("relatedComponents"), QJsonArray::fromStringList(fault.relatedComponents));

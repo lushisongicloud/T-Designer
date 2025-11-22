@@ -69,7 +69,10 @@ bool runHydroDemo(SQliteDatabase *database, QString *log)
 
     for (const auto &fault : faults) {
         for (const auto &test : tests) {
-            if (fault.relatedFunction == test.name) {
+            // 通过关联功能匹配，而不是测试显示名称（名称已增加前缀）
+            if (!fault.relatedFunction.isEmpty()
+                && fault.relatedFunction == test.relatedFunction
+                && test.kind == TestKind::Function) {
                 targetFault = &fault;
                 targetTest = &test;
                 break;

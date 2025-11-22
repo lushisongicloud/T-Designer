@@ -57,7 +57,7 @@ QString faultKindText(FaultKind kind)
 {
     switch (kind) {
     case FaultKind::Component:
-        return QObject::tr("器件故障");
+        return QObject::tr("器件故障模式");
     case FaultKind::Function:
     default:
         return QObject::tr("功能故障");
@@ -108,6 +108,11 @@ DMatrixViewerDialog::DMatrixViewerDialog(QWidget *parent)
     , ui(new Ui::DMatrixViewerDialog)
     , model(new DMatrixModel(this))
 {
+    // 设置窗口标志，启用最大化/最小化按钮
+    setWindowFlags(windowFlags() | Qt::WindowMaximizeButtonHint | Qt::WindowMinimizeButtonHint);
+    // 设置默认窗口大小为 1920x1000
+    resize(1920, 1000);
+
     ui->setupUi(this);
     ui->tableView->setModel(model);
     ui->tableView->setAlternatingRowColors(false);
@@ -214,9 +219,29 @@ void DMatrixViewerDialog::updateSummary()
     const QVector<bool> &testStates = model->testEnabledStates();
 
     int faultEnabledCount = 0;
-    for (bool state : faultStates) {
-        if (state) {
+    int functionFaultCount = 0;
+    int functionFaultEnabledCount = 0;
+    int componentFaultCount = 0;
+    int componentFaultEnabledCount = 0;
+    for (int i = 0; i < matrix.faults.size(); ++i) {
+        const auto &fault = matrix.faults.at(i);
+        const bool enabled = i < faultStates.size() ? faultStates.at(i) : true;
+        if (enabled) {
             ++faultEnabledCount;
+        }
+        switch (fault.kind) {
+        case FaultKind::Function:
+            ++functionFaultCount;
+            if (enabled) {
+                ++functionFaultEnabledCount;
+            }
+            break;
+        case FaultKind::Component:
+            ++componentFaultCount;
+            if (enabled) {
+                ++componentFaultEnabledCount;
+            }
+            break;
         }
     }
 
@@ -260,7 +285,12 @@ void DMatrixViewerDialog::updateSummary()
     }
 
     QStringList parts;
-    parts << tr("故障: %1 (启用 %2)").arg(matrix.faults.size()).arg(faultEnabledCount);
+    parts << tr("故障: %1 (功能 %2 (启用 %3), 器件故障模式 %4 (启用 %5))")
+               .arg(matrix.faults.size())
+               .arg(functionFaultCount)
+               .arg(functionFaultEnabledCount)
+               .arg(componentFaultCount)
+               .arg(componentFaultEnabledCount);
     parts << tr("测试: %1 (功能 %2 (启用 %3), 故障模式 %4 (启用 %5), 信号 %6 (启用 %7))")
                .arg(matrix.tests.size())
                .arg(functionCount)
@@ -272,7 +302,13 @@ void DMatrixViewerDialog::updateSummary()
     parts << tr("启用测试: %1").arg(testEnabledCount);
     parts << tr("模式: %1").arg(detectModeToString(currentOptions.mode));
     if (!metadataPath.isEmpty()) {
-        parts << tr("元数据: %1").arg(QDir::toNativeSeparators(metadataPath));
+        // 显示相对路径而不是绝对路径，提高可读性
+        QFileInfo fileInfo(metadataPath);
+        QString displayPath = fileInfo.filePath();
+        if (fileInfo.isAbsolute()) {
+            displayPath = QDir::current().relativeFilePath(metadataPath);
+        }
+        parts << tr("元数据: %1").arg(displayPath);
     }
     ui->labelSummary->setText(parts.join(QString("  |  ")));
 }
@@ -535,6 +571,12 @@ void DMatrixViewerDialog::showCellDetails(const QModelIndex &index)
     lines << tr("故障启用: %1").arg(index.row() < faultStates.size() && faultStates.at(index.row()) ? tr("是") : tr("否"));
     if (!fault->relatedFunction.trimmed().isEmpty()) {
         lines << tr("相关功能: %1").arg(fault->relatedFunction);
+    }
+    if (!fault->componentName.trimmed().isEmpty()) {
+        lines << tr("器件: %1").arg(fault->componentName);
+    }
+    if (!fault->failureModeName.trimmed().isEmpty()) {
+        lines << tr("故障模式: %1").arg(fault->failureModeName);
     }
     if (!fault->relatedComponents.isEmpty()) {
         lines << tr("相关器件: %1").arg(fault->relatedComponents.join(QStringLiteral(", ")));

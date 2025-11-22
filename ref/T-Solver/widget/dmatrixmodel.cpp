@@ -47,7 +47,7 @@ QString faultKindDisplay(FaultKind kind)
 {
     switch (kind) {
     case FaultKind::Component:
-        return QObject::tr("器件故障");
+        return QObject::tr("器件故障模式");
     case FaultKind::Function:
     default:
         return QObject::tr("功能故障");

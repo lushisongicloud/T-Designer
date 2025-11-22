@@ -625,7 +625,7 @@ void SelectFunctionDialog::on_functionTree_itemClicked(QTreeWidgetItem *item, in
     QDomElement functionDefine = doc.firstChildElement(QString("functiondefine"));
     if (!functionDefine.isNull()) {
         currentFunctionVariableConfig = functionvalues::FunctionVariableConfig::fromXml(
-                    functionDefine.firstChildElement(QStringLiteral("variableValueConfig")));
+                    functionDefine.firstChildElement(QString("variableValueConfig")));
         functionVariableConfigMap.insert(currentFunctionName, currentFunctionVariableConfig);
     }
 
@@ -1751,7 +1751,7 @@ void SelectFunctionDialog::on_btn_OfflineSolve_clicked()
             if(componentsInEntityString.contains(",")) {
                 // 把","替换成空格，并用括号括起来
                 const QString cleaned = componentsInEntityString.replace(",", " ").trimmed();
-                appendComponent(QStringLiteral("(%1)").arg(cleaned));
+                appendComponent(QString("(%1)").arg(cleaned));
             } else {
                 // 单个器件故障，直接加入到componentSet中
                 appendComponent(componentsInEntityString);
@@ -2354,7 +2354,7 @@ QStringList SelectFunctionDialog::collectFunctionVariables(const QStringList &co
             continue;
         }
         const QString trimmedType = item.testType.trimmed();
-        const bool isBoundaryCondition = (trimmedType == QStringLiteral("边界条件"));
+        const bool isBoundaryCondition = (trimmedType == QString("边界条件"));
         const bool hasConstraint = constraintMap.contains(variable);
         if (!componentElements.isEmpty()
             && !variableMatchesLink(variable, componentElements)
@@ -2618,7 +2618,7 @@ QString SelectFunctionDialog::solveVariableFeasibleRange(const QString &variable
         }
 
         if (feasibleValues.contains(QString("true")) && feasibleValues.contains(QString("false"))) {
-            return QStringLiteral("true;false");
+            return QString("true;false");
         }
 
         return feasibleValues.join(QString(";"));
@@ -2763,10 +2763,10 @@ void SelectFunctionDialog::showFunctionVariableValueDialog()
     }
 
     const QStringList linkElements = currentLinkElements();
-    const QString linkText = linkElements.join(QStringLiteral(","));
+    const QString linkText = linkElements.join(QString(","));
     SystemStructure currentSystemStructure(systemDescription, linkText);
     if (!currentSystemStructure.isSystemConsistent()) {
-        QMessageBox::warning(this, QStringLiteral("提示"), QStringLiteral("当前功能关联的系统描述不自洽，请检查功能链路或系统描述。"));
+        QMessageBox::warning(this, QString("提示"), QString("当前功能关联的系统描述不自洽，请检查功能链路或系统描述。"));
         return;
     }
 
@@ -2819,7 +2819,7 @@ void SelectFunctionDialog::writeFunctionXml(const QString &functionName,
     }
 
     QString attributeString = ui->checkBoxPersistent->isChecked() ? QString("Persistent") : QString("NotPersistent");
-    attributeString += QStringLiteral(",") + ui->textEditFaultProbability->toPlainText();
+    attributeString += QString(",") + ui->textEditFaultProbability->toPlainText();
 
     const QString constraintStatus = functionConstraintIntegrityMap.value(functionName, QString("未检查"));
 

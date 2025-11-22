@@ -54,7 +54,11 @@ struct FaultDefinition {
     QString id;
     QString name;
     FaultKind kind = FaultKind::Function;
+    // 对于功能故障：relatedFunction 为功能名称；
+    // 对于器件故障模式：componentName/failureModeName 标识所属器件及故障模式。
     QString relatedFunction;
+    QString componentName;
+    QString failureModeName;
     QStringList inputAssertions;   // 输入约束
     QStringList faultAssertions;   // 故障特定约束（如执行器取反）
     QList<ComponentOverride> overrides; // 器件故障注入

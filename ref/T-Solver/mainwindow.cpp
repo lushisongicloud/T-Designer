@@ -131,6 +131,8 @@ bool loadDMatrixFromFiles(const QString &metadataPath,
         fault.name = obj.value(QStringLiteral("name")).toString();
         fault.kind = faultKindFromString(obj.value(QStringLiteral("kind")).toString());
         fault.relatedFunction = obj.value(QStringLiteral("function")).toString();
+        fault.componentName = obj.value(QStringLiteral("component")).toString();
+        fault.failureModeName = obj.value(QStringLiteral("failureMode")).toString();
         fault.inputAssertions.clear();
         fault.faultAssertions.clear();
         for (const QJsonValue &value : obj.value(QStringLiteral("inputAssertions")).toArray()) {
@@ -1533,13 +1535,15 @@ void MainWindow::on_actionGenerateDMatrix_triggered()
                            << "parsedAll=" << info.allComponentList;
     }
 
+    testability::SmtFacade smt = testability::SmtFacade::fromSystemDescription(*systemEntity, systemDescription);
+
     QVector<testability::FaultDefinition> faults = builder.collectFunctionFaults();
+    QVector<testability::FaultDefinition> componentModeFaults = builder.collectComponentModeFaults(smt);
+    faults += componentModeFaults;
     if (faults.isEmpty()) {
-        QMessageBox::warning(this, tr("提示"), tr("未找到功能故障定义"));
+        QMessageBox::warning(this, tr("提示"), tr("未找到任何故障定义"));
         return;
     }
-
-    testability::SmtFacade smt = testability::SmtFacade::fromSystemDescription(*systemEntity, systemDescription);
 
     QVector<testability::TestDefinition> tests;
     QSet<QString> seenIds;
@@ -1637,4 +1641,3 @@ void MainWindow::on_actionOpenDMatrix_triggered()
     viewer->resize(900, 600);
     viewer->show();
 }
-

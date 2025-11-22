@@ -19,6 +19,7 @@ public:
     void setFunctionInfoMap(const QMap<QString, FunctionInfo> &map);
 
     QVector<FaultDefinition> collectFunctionFaults() const;
+    QVector<FaultDefinition> collectComponentModeFaults(const SmtFacade &smt) const;
     QVector<TestDefinition> collectFunctionTests() const;
     QVector<TestDefinition> collectModeTests(const SmtFacade &smt) const;
     QVector<TestDefinition> collectSignalTests(const SmtFacade &smt,
