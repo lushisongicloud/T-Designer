@@ -1,6 +1,148 @@
 #include "connectionbyunittreemodel.h"
 #include <QIcon>
+#include <QSqlQuery>
+#include <QSqlError>
 #include "performancetimer.h"
+#include "common.h"
+#include "projectdatacache.h"
+
+extern QSqlDatabase T_ProjectDatabase;
+
+namespace {
+
+bool shouldSkipSymbId(const QString &symbId)
+{
+    return symbId.contains(":C") || symbId.contains(":G") || symbId.contains(":1") ||
+           symbId.contains(":2") || symbId.contains(":3");
+}
+
+QString buildUnitTermStr(const QString &termId)
+{
+    bool ok = false;
+    const int termInfoId = termId.toInt(&ok);
+    if (!ok || !T_ProjectDatabase.isOpen()) {
+        return QString();
+    }
+
+    QSqlQuery querySymb(T_ProjectDatabase);
+    querySymb.prepare("SELECT Symbol_ID, ConnNum FROM Symb2TermInfo WHERE Symb2TermInfo_ID = :id");
+    querySymb.bindValue(":id", termInfoId);
+    if (!querySymb.exec() || !querySymb.next()) {
+        return QString();
+    }
+    const int symbolId = querySymb.value("Symbol_ID").toInt();
+    const QString connNum = querySymb.value("ConnNum").toString();
+
+    QSqlQuery querySymbol(T_ProjectDatabase);
+    querySymbol.prepare("SELECT Equipment_ID FROM Symbol WHERE Symbol_ID = :sid");
+    querySymbol.bindValue(":sid", symbolId);
+    if (!querySymbol.exec() || !querySymbol.next()) {
+        return QString();
+    }
+    const int equipmentId = querySymbol.value("Equipment_ID").toInt();
+
+    QSqlQuery queryEquipment(T_ProjectDatabase);
+    queryEquipment.prepare("SELECT ProjectStructure_ID, DT FROM Equipment WHERE Equipment_ID = :eid");
+    queryEquipment.bindValue(":eid", equipmentId);
+    if (!queryEquipment.exec() || !queryEquipment.next()) {
+        return QString();
+    }
+    const int structureId = queryEquipment.value("ProjectStructure_ID").toInt();
+    const QString dt = queryEquipment.value("DT").toString();
+    const QString structureTag = GetProjectStructureStrByProjectStructureID(structureId);
+
+    if (structureTag.isEmpty()) {
+        return dt + ":" + connNum;
+    }
+    return structureTag + "-" + dt + ":" + connNum;
+}
+
+QString buildTerminalTermStr(const QString &termId)
+{
+    if (!T_ProjectDatabase.isOpen()) {
+        return QString();
+    }
+
+    const int dotPos = termId.indexOf(".");
+    const QString instanceIdStr = dotPos > 0 ? termId.left(dotPos) : termId;
+    bool ok = false;
+    const int instanceId = instanceIdStr.toInt(&ok);
+    if (!ok) {
+        return QString();
+    }
+
+    QSqlQuery queryInstance(T_ProjectDatabase);
+    queryInstance.prepare("SELECT Terminal_ID FROM TerminalInstance WHERE TerminalInstanceID = :id");
+    queryInstance.bindValue(":id", instanceId);
+    if (!queryInstance.exec() || !queryInstance.next()) {
+        return QString();
+    }
+    const int terminalId = queryInstance.value("Terminal_ID").toInt();
+
+    QSqlQuery queryTerminal(T_ProjectDatabase);
+    queryTerminal.prepare("SELECT TerminalStrip_ID, Designation FROM Terminal WHERE Terminal_ID = :tid");
+    queryTerminal.bindValue(":tid", terminalId);
+    if (!queryTerminal.exec() || !queryTerminal.next()) {
+        return QString();
+    }
+    const int stripId = queryTerminal.value("TerminalStrip_ID").toInt();
+    const QString designation = queryTerminal.value("Designation").toString();
+
+    QSqlQuery queryStrip(T_ProjectDatabase);
+    queryStrip.prepare("SELECT ProjectStructure_ID, DT FROM TerminalStrip WHERE TerminalStrip_ID = :sid");
+    queryStrip.bindValue(":sid", stripId);
+    if (!queryStrip.exec() || !queryStrip.next()) {
+        return QString();
+    }
+    const int structureId = queryStrip.value("ProjectStructure_ID").toInt();
+    const QString dt = queryStrip.value("DT").toString();
+    const QString structureTag = GetProjectStructureStrByProjectStructureID(structureId);
+    const QString suffix = dotPos > 0 ? termId.mid(dotPos) : QString();
+
+    QString prefix = dt;
+    if (!structureTag.isEmpty()) {
+        prefix = structureTag + "-" + dt;
+    }
+    return prefix + ":" + designation + suffix;
+}
+
+QString getTerminalDesignation(const QString &termId)
+{
+    bool ok = false;
+    const int terminalTermId = termId.toInt(&ok);
+    if (!ok || !T_ProjectDatabase.isOpen()) {
+        return QString();
+    }
+
+    QSqlQuery queryTerm(T_ProjectDatabase);
+    queryTerm.prepare("SELECT Terminal_ID FROM TerminalTerm WHERE TerminalTerm_ID = :id");
+    queryTerm.bindValue(":id", terminalTermId);
+    if (!queryTerm.exec() || !queryTerm.next()) {
+        return QString();
+    }
+
+    QSqlQuery queryTerminal(T_ProjectDatabase);
+    queryTerminal.prepare("SELECT Designation FROM Terminal WHERE Terminal_ID = :tid");
+    queryTerminal.bindValue(":tid", queryTerm.value("Terminal_ID").toInt());
+    if (!queryTerminal.exec() || !queryTerminal.next()) {
+        return QString();
+    }
+
+    return queryTerminal.value("Designation").toString();
+}
+
+QString buildEndpointDisplay(const QString &symbId, const QString &category)
+{
+    if (category == QStringLiteral("0")) {
+        return buildUnitTermStr(symbId);
+    }
+    if (category == QStringLiteral("1")) {
+        return buildTerminalTermStr(symbId);
+    }
+    return QString();
+}
+
+} // namespace
 
 ConnectionByUnitTreeModel::ConnectionByUnitTreeModel(QObject *parent)
     : QAbstractItemModel(parent)
@@ -99,13 +241,17 @@ QVariant ConnectionByUnitTreeModel::data(const QModelIndex &index, int role) con
         case Type_UnitStrip:
             return node->category == "1" ? "端子排" : "元件";
         case Type_ConnectionEnd:
-            return "连线端点";
+            return "功能子块";
         default:
             return "未知";
         }
     } else if (role == Qt::UserRole) {
         if (node->type == Type_ConnectionEnd) {
-            return node->connectionId;
+            QStringList list;
+            list << QString::number(node->connectionId)
+                 << node->symbId << node->category
+                 << node->otherSymbId << node->otherCategory;
+            return list;
         } else if (node->type == Type_UnitStrip) {
             return node->unitStripId;
         }
@@ -127,6 +273,11 @@ QVariant ConnectionByUnitTreeModel::headerData(int section, Qt::Orientation orie
 void ConnectionByUnitTreeModel::setProjectDataModel(ProjectDataModel *model)
 {
     m_projectDataModel = model;
+}
+
+void ConnectionByUnitTreeModel::setProjectDataCache(ProjectDataCache *cache)
+{
+    m_projectCache = cache;
 }
 
 void ConnectionByUnitTreeModel::rebuild()
@@ -156,190 +307,141 @@ void ConnectionByUnitTreeModel::buildTreeData()
 
     const auto *connectionMgr = m_projectDataModel->connectionManager();
     const auto *structureMgr = m_projectDataModel->structureManager();
-    const auto *symbolMgr = m_projectDataModel->symbolManager();
-    const auto *equipmentMgr = m_projectDataModel->equipmentManager();
 
-    if (!connectionMgr || !structureMgr || !symbolMgr || !equipmentMgr) {
+    if (!connectionMgr || !structureMgr) {
         return;
     }
 
-    QVector<int> connectionIds = connectionMgr->getAllConnectionIds();
+    const auto addEndpoint = [&](const ConnectionData *connection, int endpointIndex) {
+        if (!connection) return;
 
-    // 收集所有端点信息
-    struct EndpointInfo {
-        int connectionId;
-        int symbolId;
-        QString symbId;         // Symb1_ID or Symb2_ID
-        QString category;       // Symb1_Category or Symb2_Category
-        QString gaoceng;
-        QString position;
-        int structureId;
-    };
+        const QString endpointSymbId = (endpointIndex == 0) ? connection->symb1Id : connection->symb2Id;
+        const QString endpointCategory = (endpointIndex == 0) ? connection->symb1Category : connection->symb2Category;
+        const QString otherSymbId = (endpointIndex == 0) ? connection->symb2Id : connection->symb1Id;
+        const QString otherCategory = (endpointIndex == 0) ? connection->symb2Category : connection->symb1Category;
 
-    QVector<EndpointInfo> allEndpoints;
-    allEndpoints.reserve(connectionIds.size() * 2);
+        if (endpointSymbId.isEmpty() || shouldSkipSymbId(endpointSymbId)) return;
 
-    for (int connId : connectionIds) {
-        const ConnectionData *connection = connectionMgr->getConnection(connId);
-        if (!connection) continue;
-
-        // 获取端点1
         bool ok = false;
-        int symb1Id = connection->symb1Id.toInt(&ok);
-        if (ok) {
-            EndpointInfo endpoint1;
-            endpoint1.connectionId = connId;
-            endpoint1.symbolId = symb1Id;
-            endpoint1.symbId = connection->symb1Id;
-            endpoint1.category = connection->symb1Category;
-            endpoint1.gaoceng = structureMgr->getGaoceng(connection->structureId);
-            endpoint1.position = structureMgr->getPos(connection->structureId);
-            endpoint1.structureId = connection->structureId;
-            allEndpoints.append(endpoint1);
-        }
+        const int endpointId = endpointSymbId.toInt(&ok);
+        if (!ok) return;
 
-        // 获取端点2
-        int symb2Id = connection->symb2Id.toInt(&ok);
-        if (ok) {
-            EndpointInfo endpoint2;
-            endpoint2.connectionId = connId;
-            endpoint2.symbolId = symb2Id;
-            endpoint2.symbId = connection->symb2Id;
-            endpoint2.category = connection->symb2Category;
-            endpoint2.gaoceng = structureMgr->getGaoceng(connection->structureId);
-            endpoint2.position = structureMgr->getPos(connection->structureId);
-            endpoint2.structureId = connection->structureId;
-            allEndpoints.append(endpoint2);
-        }
-    }
+        // 获取端点所属的高层/位置
+        QString gaoceng = structureMgr->getGaoceng(connection->structureId);
+        QString pos = structureMgr->getPos(connection->structureId);
+        GetUnitTermimalGaocengAndPos_Cached(m_projectCache, endpointCategory.toInt(), endpointId, gaoceng, pos);
+        if (gaoceng.isEmpty()) gaoceng = QString("未分配高层");
+        if (pos.isEmpty()) pos = QString("未分配位置");
 
-    // 按元件/端子排分组
-    QMap<QString, QVector<EndpointInfo>> unitEndpointsMap;
+        // 获取元件/端子排ID与显示名称
+        QString unitDt;
+        int unitStripId = GetUnitStripIDByTermID(endpointCategory.toInt(), endpointId, unitDt);
+        if (unitStripId <= 0) return;
 
-    for (const EndpointInfo &endpoint : allEndpoints) {
-        QString unitKey;
-        if (endpoint.category == "0") {
-            // 元件：从Symbol获取Equipment
-            const SymbolData *symbol = symbolMgr->getSymbol(endpoint.symbolId);
-            if (symbol && symbol->equipmentId > 0) {
-                unitKey = QString("EQ_%1").arg(symbol->equipmentId);
-            }
-        } else if (endpoint.category == "1") {
-            // 端子排：直接使用terminalStripId (简化处理，这里使用symbolId作为标识)
-            unitKey = QString("TS_%1").arg(endpoint.symbolId);
-        }
-
-        if (!unitKey.isEmpty()) {
-            unitEndpointsMap[unitKey].append(endpoint);
-        }
-    }
-
-    // 构建树结构
-    for (auto it = unitEndpointsMap.begin(); it != unitEndpointsMap.end(); ++it) {
-        const QString &unitKey = it.key();
-        const QVector<EndpointInfo> &endpoints = it.value();
-
-        if (endpoints.isEmpty()) continue;
-
-        const EndpointInfo &firstEndpoint = endpoints.first();
-
-        // 获取显示名称
-        QString displayText;
-        QString category = firstEndpoint.category;
-        if (category == "0") {
-            // 元件
-            const SymbolData *symbol = symbolMgr->getSymbol(firstEndpoint.symbolId);
-            if (symbol) {
-                const EquipmentData *equipment = equipmentMgr->getEquipment(symbol->equipmentId);
-                displayText = equipment ? equipment->dt : QString("元件_%1").arg(symbol->equipmentId);
-            }
-        } else if (category == "1") {
-            // 端子排 (简化显示)
-            displayText = QString("端子排_%1").arg(firstEndpoint.symbolId);
-        }
-
-        // 创建或获取高层节点（按名称去重）
-        TreeNode *gaocengNode = nullptr;
-        QString gaocengKey = QString::number(firstEndpoint.structureId);
-
-        // 首先尝试按structureId查找
-        if (m_gaocengKeyToNode.contains(gaocengKey)) {
-            gaocengNode = m_gaocengKeyToNode[gaocengKey];
+        int structureId = connection->structureId;
+        QSqlQuery query(T_ProjectDatabase);
+        if (endpointCategory == "0") {
+            query.prepare("SELECT ProjectStructure_ID FROM Equipment WHERE Equipment_ID = :id");
         } else {
-            // 按名称查找已存在的同名节点，避免重复创建
-            QString gaocengName = firstEndpoint.gaoceng;
+            query.prepare("SELECT ProjectStructure_ID FROM TerminalStrip WHERE TerminalStrip_ID = :id");
+        }
+        query.bindValue(":id", unitStripId);
+        if (query.exec() && query.next()) {
+            structureId = query.value(0).toInt();
+        }
+
+        // 创建或获取高层节点
+        TreeNode *gaocengNode = nullptr;
+        const QString gaocengKey = QString::number(structureId) + "|" + gaoceng;
+        if (m_gaocengKeyToNode.contains(gaocengKey)) {
+            gaocengNode = m_gaocengKeyToNode.value(gaocengKey);
+        } else {
             for (TreeNode *existingNode : m_rootNode->children) {
-                if (existingNode->type == Type_Gaoceng && existingNode->displayText == gaocengName) {
+                if (existingNode->type == Type_Gaoceng && existingNode->displayText == gaoceng) {
                     gaocengNode = existingNode;
                     break;
                 }
             }
-
-            // 如果没有找到同名节点，创建新节点
             if (!gaocengNode) {
                 gaocengNode = new TreeNode(Type_Gaoceng);
-                gaocengNode->displayText = gaocengName;
-                gaocengNode->structureId = firstEndpoint.structureId;
-                gaocengNode->gaoceng = gaocengName;
+                gaocengNode->displayText = gaoceng;
+                gaocengNode->structureId = structureId;
+                gaocengNode->gaoceng = gaoceng;
                 gaocengNode->parent = m_rootNode;
                 m_rootNode->children.append(gaocengNode);
             }
-
-            // 缓存节点
-            m_gaocengKeyToNode[gaocengKey] = gaocengNode;
+            m_gaocengKeyToNode.insert(gaocengKey, gaocengNode);
         }
 
-        // 创建或获取位置节点（按名称去重，空名称显示为"未分配位置"）
+        // 创建或获取位置节点
         TreeNode *positionNode = nullptr;
-        QString positionDisplay = firstEndpoint.position.isEmpty() ? QString("未分配位置") : firstEndpoint.position;
-        QString posKey = firstEndpoint.gaoceng + "|" + positionDisplay;
+        const QString positionDisplay = pos.isEmpty() ? QString("未分配位置") : pos;
+        const QString posKey = gaoceng + "|" + positionDisplay;
         if (m_posKeyToNode.contains(posKey)) {
-            positionNode = m_posKeyToNode[posKey];
+            positionNode = m_posKeyToNode.value(posKey);
         } else {
             positionNode = new TreeNode(Type_Position);
             positionNode->displayText = positionDisplay;
-            positionNode->structureId = firstEndpoint.structureId;
-            positionNode->gaoceng = firstEndpoint.gaoceng;
-            positionNode->position = firstEndpoint.position;
+            positionNode->structureId = structureId;
+            positionNode->gaoceng = gaoceng;
+            positionNode->position = pos;
             positionNode->parent = gaocengNode;
             gaocengNode->children.append(positionNode);
-            m_posKeyToNode[posKey] = positionNode;
+            m_posKeyToNode.insert(posKey, positionNode);
         }
 
         // 创建或获取元件/端子排节点
         TreeNode *unitNode = nullptr;
-        QString unitNodeKey = posKey + "|" + unitKey;
+        const QString unitNodeKey = posKey + "|" + QString::number(unitStripId) + "|" + endpointCategory;
         if (m_unitKeyToNode.contains(unitNodeKey)) {
-            unitNode = m_unitKeyToNode[unitNodeKey];
+            unitNode = m_unitKeyToNode.value(unitNodeKey);
         } else {
             unitNode = new TreeNode(Type_UnitStrip);
-            unitNode->displayText = displayText;
-            unitNode->unitStripId = firstEndpoint.symbolId;
-            unitNode->category = category;
-            unitNode->structureId = firstEndpoint.structureId;
-            unitNode->gaoceng = firstEndpoint.gaoceng;
-            unitNode->position = firstEndpoint.position;
+            unitNode->displayText = unitDt;
+            unitNode->unitStripId = unitStripId;
+            unitNode->category = endpointCategory;
+            unitNode->structureId = structureId;
+            unitNode->gaoceng = gaoceng;
+            unitNode->position = pos;
             unitNode->parent = positionNode;
             positionNode->children.append(unitNode);
-            m_unitKeyToNode[unitNodeKey] = unitNode;
+            m_unitKeyToNode.insert(unitNodeKey, unitNode);
         }
 
-        // 添加连线端点
-        for (const EndpointInfo &endpoint : endpoints) {
-            const ConnectionData *connection = connectionMgr->getConnection(endpoint.connectionId);
-            if (!connection) continue;
-
-            TreeNode *connectionEndNode = new TreeNode(Type_ConnectionEnd);
-            connectionEndNode->displayText = buildConnectionEndText(connection,
-                endpoint.symbId == connection->symb1Id ? 0 : 1);
-            connectionEndNode->connectionId = endpoint.connectionId;
-            connectionEndNode->endpointIndex = (endpoint.symbId == connection->symb1Id) ? 0 : 1;
-            connectionEndNode->structureId = endpoint.structureId;
-            connectionEndNode->gaoceng = endpoint.gaoceng;
-            connectionEndNode->position = endpoint.position;
-            connectionEndNode->parent = unitNode;
-            unitNode->children.append(connectionEndNode);
+        // 防止重复插入
+        for (TreeNode *child : unitNode->children) {
+            if (child->connectionId == connection->id &&
+                child->symbId == endpointSymbId &&
+                child->otherSymbId == otherSymbId) {
+                return;
+            }
         }
+
+        // 添加连线端点节点
+        TreeNode *connectionEndNode = new TreeNode(Type_ConnectionEnd);
+        connectionEndNode->displayText = buildConnectionEndText(connection, endpointIndex);
+        connectionEndNode->connectionId = connection->id;
+        connectionEndNode->endpointIndex = endpointIndex;
+        connectionEndNode->structureId = structureId;
+        connectionEndNode->gaoceng = gaoceng;
+        connectionEndNode->position = pos;
+        connectionEndNode->symbId = endpointSymbId;
+        connectionEndNode->category = endpointCategory;
+        connectionEndNode->otherSymbId = otherSymbId;
+        connectionEndNode->otherCategory = otherCategory;
+        connectionEndNode->parent = unitNode;
+        unitNode->children.append(connectionEndNode);
+    };
+
+    QVector<int> connectionIds = connectionMgr->getAllConnectionIds();
+    for (int connId : connectionIds) {
+        const ConnectionData *connection = connectionMgr->getConnection(connId);
+        if (!connection) continue;
+        if (shouldSkipSymbId(connection->symb1Id) || shouldSkipSymbId(connection->symb2Id)) {
+            continue;
+        }
+        addEndpoint(connection, 0);
+        addEndpoint(connection, 1);
     }
 }
 
@@ -357,28 +459,44 @@ QString ConnectionByUnitTreeModel::buildConnectionEndText(const ConnectionData *
         return QString();
     }
 
-    QString endpointSymbId = (endpointIndex == 0) ? connection->symb1Id : connection->symb2Id;
-    QString endpointCategory = (endpointIndex == 0) ? connection->symb1Category : connection->symb2Category;
+    const QString endpointSymbId = (endpointIndex == 0) ? connection->symb1Id : connection->symb2Id;
+    const QString endpointCategory = (endpointIndex == 0) ? connection->symb1Category : connection->symb2Category;
+    const QString otherSymbId = (endpointIndex == 0) ? connection->symb2Id : connection->symb1Id;
+    const QString otherCategory = (endpointIndex == 0) ? connection->symb2Category : connection->symb1Category;
 
-    QString endpointText;
+    QString termLabel;
     if (endpointCategory == "0") {
-        // 元件端点
         bool ok = false;
-        int symbId = endpointSymbId.toInt(&ok);
+        const int termId = endpointSymbId.toInt(&ok);
         if (ok) {
-            endpointText = getSymbolDisplayText(symbId);
+            QSqlQuery query(T_ProjectDatabase);
+            query.prepare("SELECT ConnNum FROM Symb2TermInfo WHERE Symb2TermInfo_ID = :id");
+            query.bindValue(":id", termId);
+            if (query.exec() && query.next()) {
+                termLabel = query.value(0).toString();
+            }
         }
     } else if (endpointCategory == "1") {
-        // 端子排端点
-        endpointText = getTerminalDisplayText(endpointSymbId.toInt());
+        termLabel = getTerminalDesignation(endpointSymbId);
     }
 
-    // 格式：ConnectionNumber -> 端点描述
-    QString text = connection->connectionNumber;
-    if (!endpointText.isEmpty()) {
-        text += " → " + endpointText;
+    QString text = termLabel;
+    if (!connection->connectionNumber.isEmpty()) {
+        text += "(" + connection->connectionNumber + ")";
     }
 
+    const QString otherSide = buildEndpointDisplay(otherSymbId, otherCategory);
+    if (!otherSide.isEmpty()) {
+        if (!text.isEmpty()) {
+            text += "<->" + otherSide;
+        } else {
+            text = otherSide;
+        }
+    }
+
+    if (text.isEmpty()) {
+        return connection->connectionNumber;
+    }
     return text;
 }
 

@@ -96,6 +96,7 @@ public:
     void LoadModel();
     void UpdateFuncTree();
     void LoadProjectSystemDescription();
+    void reloadProjectDataModel();
     QStringList selectSystemUnitStripLineInfo();
     QStringList selectSystemConnections();
     //void MakeListFinalLinkInfo();

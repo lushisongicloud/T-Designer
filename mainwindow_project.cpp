@@ -1454,6 +1454,7 @@ void MainWindow::LoadModelLineByUnits()
 
     // 设置数据源并重建模型
     m_connectionByUnitTreeModel->setProjectDataModel(m_projectDataModel);
+    m_connectionByUnitTreeModel->setProjectDataCache(m_projectCache);
     m_connectionByUnitTreeModel->rebuild();
 
     qDebug() << "[LoadModelLineByUnits] 使用 ConnectionByUnitTreeModel 加载数据";
@@ -1525,6 +1526,10 @@ void MainWindow::LoadModelLineByUnits()
 void MainWindow::LoadProjectLines()
 {
     PerformanceTimer timer("LoadProjectLines");
+
+    if (T_ProjectDatabase.isOpen()) {
+        reloadProjectDataModel();
+    }
     
     LoadModelLineDT();
     timer.checkpoint("LoadModelLineDT 完成");
@@ -1827,6 +1832,16 @@ bool MainWindow::symbolMatchesPageFilter(int symbolId, const QString &pageName) 
     return name == pageName;
 }
 
+void MainWindow::reloadProjectDataModel()
+{
+    if (m_projectDataModel) {
+        m_projectDataModel->loadAll(T_ProjectDatabase);
+    }
+    if (m_projectCache) {
+        m_projectCache->loadAll(T_ProjectDatabase);
+    }
+}
+
 void MainWindow::LoadProjectUnits()
 {
     PerformanceTimer timer("LoadProjectUnits");
@@ -1841,6 +1856,10 @@ void MainWindow::LoadProjectUnits()
         m_equipmentTreeModel->setProjectDataModel(nullptr);
         m_equipmentTreeModel->rebuild();
         return;
+    }
+
+    if (T_ProjectDatabase.isOpen()) {
+        reloadProjectDataModel();
     }
 
     if (!m_projectDataModel->isLoaded()) {

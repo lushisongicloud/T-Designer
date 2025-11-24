@@ -63,6 +63,10 @@ private:
         QString position;     // 位置名称
         int structureId = 0;  // 结构ID
         int connectionId = 0; // 连线ID (JXB_ID)
+        QString symb1Id;
+        QString symb2Id;
+        QString symb1Category;
+        QString symb2Category;
         QVector<TreeNode*> children;
         TreeNode *parent = nullptr;
 

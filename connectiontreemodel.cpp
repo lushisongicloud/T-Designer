@@ -1,6 +1,122 @@
 #include "connectiontreemodel.h"
 #include <QIcon>
+#include <QSqlQuery>
+#include <QSqlError>
 #include "performancetimer.h"
+#include "common.h"
+
+extern QSqlDatabase T_ProjectDatabase;
+
+namespace {
+
+bool shouldSkipSymbId(const QString &symbId)
+{
+    return symbId.contains(":C") || symbId.contains(":G") || symbId.contains(":1") ||
+           symbId.contains(":2") || symbId.contains(":3");
+}
+
+QString buildUnitTermStr(const QString &termId)
+{
+    bool ok = false;
+    const int termInfoId = termId.toInt(&ok);
+    if (!ok || !T_ProjectDatabase.isOpen()) {
+        return QString();
+    }
+
+    QSqlQuery querySymb(T_ProjectDatabase);
+    querySymb.prepare("SELECT Symbol_ID, ConnNum FROM Symb2TermInfo WHERE Symb2TermInfo_ID = :id");
+    querySymb.bindValue(":id", termInfoId);
+    if (!querySymb.exec() || !querySymb.next()) {
+        return QString();
+    }
+    const int symbolId = querySymb.value("Symbol_ID").toInt();
+    const QString connNum = querySymb.value("ConnNum").toString();
+
+    QSqlQuery querySymbol(T_ProjectDatabase);
+    querySymbol.prepare("SELECT Equipment_ID FROM Symbol WHERE Symbol_ID = :sid");
+    querySymbol.bindValue(":sid", symbolId);
+    if (!querySymbol.exec() || !querySymbol.next()) {
+        return QString();
+    }
+    const int equipmentId = querySymbol.value("Equipment_ID").toInt();
+
+    QSqlQuery queryEquipment(T_ProjectDatabase);
+    queryEquipment.prepare("SELECT ProjectStructure_ID, DT FROM Equipment WHERE Equipment_ID = :eid");
+    queryEquipment.bindValue(":eid", equipmentId);
+    if (!queryEquipment.exec() || !queryEquipment.next()) {
+        return QString();
+    }
+    const int structureId = queryEquipment.value("ProjectStructure_ID").toInt();
+    const QString dt = queryEquipment.value("DT").toString();
+    const QString structureTag = GetProjectStructureStrByProjectStructureID(structureId);
+
+    if (structureTag.isEmpty()) {
+        return dt + ":" + connNum;
+    }
+    return structureTag + "-" + dt + ":" + connNum;
+}
+
+QString buildTerminalTermStr(const QString &termId)
+{
+    if (!T_ProjectDatabase.isOpen()) {
+        return QString();
+    }
+
+    const int dotPos = termId.indexOf(".");
+    const QString instanceIdStr = dotPos > 0 ? termId.left(dotPos) : termId;
+    bool ok = false;
+    const int instanceId = instanceIdStr.toInt(&ok);
+    if (!ok) {
+        return QString();
+    }
+
+    QSqlQuery queryInstance(T_ProjectDatabase);
+    queryInstance.prepare("SELECT Terminal_ID FROM TerminalInstance WHERE TerminalInstanceID = :id");
+    queryInstance.bindValue(":id", instanceId);
+    if (!queryInstance.exec() || !queryInstance.next()) {
+        return QString();
+    }
+    const int terminalId = queryInstance.value("Terminal_ID").toInt();
+
+    QSqlQuery queryTerminal(T_ProjectDatabase);
+    queryTerminal.prepare("SELECT TerminalStrip_ID, Designation FROM Terminal WHERE Terminal_ID = :tid");
+    queryTerminal.bindValue(":tid", terminalId);
+    if (!queryTerminal.exec() || !queryTerminal.next()) {
+        return QString();
+    }
+    const int stripId = queryTerminal.value("TerminalStrip_ID").toInt();
+    const QString designation = queryTerminal.value("Designation").toString();
+
+    QSqlQuery queryStrip(T_ProjectDatabase);
+    queryStrip.prepare("SELECT ProjectStructure_ID, DT FROM TerminalStrip WHERE TerminalStrip_ID = :sid");
+    queryStrip.bindValue(":sid", stripId);
+    if (!queryStrip.exec() || !queryStrip.next()) {
+        return QString();
+    }
+    const int structureId = queryStrip.value("ProjectStructure_ID").toInt();
+    const QString dt = queryStrip.value("DT").toString();
+    const QString structureTag = GetProjectStructureStrByProjectStructureID(structureId);
+    const QString suffix = dotPos > 0 ? termId.mid(dotPos) : QString();
+
+    QString prefix = dt;
+    if (!structureTag.isEmpty()) {
+        prefix = structureTag + "-" + dt;
+    }
+    return prefix + ":" + designation + suffix;
+}
+
+QString buildEndpointDisplay(const QString &symbId, const QString &category)
+{
+    if (category == QStringLiteral("0")) {
+        return buildUnitTermStr(symbId);
+    }
+    if (category == QStringLiteral("1")) {
+        return buildTerminalTermStr(symbId);
+    }
+    return QString();
+}
+
+} // namespace
 
 ConnectionTreeModel::ConnectionTreeModel(QObject *parent)
     : QAbstractItemModel(parent)
@@ -99,11 +215,18 @@ QVariant ConnectionTreeModel::data(const QModelIndex &index, int role) const
         case Type_ConnectionNum:
             return "线号";
         case Type_Connection:
-            return "导线";
+            return "连线";
         default:
             return "未知";
         }
     } else if (role == Qt::UserRole) {
+        if (node->type == Type_Connection) {
+            QStringList list;
+            list << QString::number(node->connectionId)
+                 << node->symb1Id << node->symb1Category
+                 << node->symb2Id << node->symb2Category;
+            return list;
+        }
         return node->connectionId;
     }
 
@@ -152,9 +275,8 @@ void ConnectionTreeModel::buildTreeData()
 
     const auto *connectionMgr = m_projectDataModel->connectionManager();
     const auto *structureMgr = m_projectDataModel->structureManager();
-    const auto *symbolMgr = m_projectDataModel->symbolManager();
 
-    if (!connectionMgr || !structureMgr || !symbolMgr) {
+    if (!connectionMgr || !structureMgr) {
         return;
     }
 
@@ -164,6 +286,11 @@ void ConnectionTreeModel::buildTreeData()
     for (int connId : connectionIds) {
         const ConnectionData *connection = connectionMgr->getConnection(connId);
         if (!connection) continue;
+
+        // 过滤特殊节点（CO、G等）
+        if (shouldSkipSymbId(connection->symb1Id) || shouldSkipSymbId(connection->symb2Id)) {
+            continue;
+        }
 
         // 获取高层和位置信息
         QString gaoceng = structureMgr->getGaoceng(connection->structureId);
@@ -240,6 +367,10 @@ void ConnectionTreeModel::buildTreeData()
         connectionNode->structureId = connection->structureId;
         connectionNode->gaoceng = gaoceng;
         connectionNode->position = position;
+        connectionNode->symb1Id = connection->symb1Id;
+        connectionNode->symb2Id = connection->symb2Id;
+        connectionNode->symb1Category = connection->symb1Category;
+        connectionNode->symb2Category = connection->symb2Category;
         connectionNode->parent = connNumNode;
         connNumNode->children.append(connectionNode);
     }
@@ -251,47 +382,19 @@ QString ConnectionTreeModel::buildConnectionText(const ConnectionData *connectio
         return QString();
     }
 
-    QString startStr = buildTerminalStr(connection->symb1Id, connection->symb1Category);
-    QString endStr = buildTerminalStr(connection->symb2Id, connection->symb2Category);
+    const QString startStr = buildTerminalStr(connection->symb1Id, connection->symb1Category);
+    const QString endStr = buildTerminalStr(connection->symb2Id, connection->symb2Category);
 
-    // 格式：ConnectionNumber (起点 → 终点)
-    QString text = connection->connectionNumber;
-    if (!startStr.isEmpty() && !endStr.isEmpty()) {
-        text += QString(" (%1 → %2)").arg(startStr).arg(endStr);
+    if (!startStr.isEmpty() || !endStr.isEmpty()) {
+        return startStr + "<->" + endStr;
     }
 
-    return text;
+    return connection->connectionNumber;
 }
 
 QString ConnectionTreeModel::buildTerminalStr(const QString &symbId, const QString &category) const
 {
-    if (symbId.isEmpty()) {
-        return QString();
-    }
-
-    // 判断是端子排还是元件
-    if (category == "1") {
-        // 端子排：格式为 TerminalInstanceID.Format
-        int dotPos = symbId.indexOf(".");
-        if (dotPos > 0) {
-            QString termInstanceId = symbId.left(dotPos);
-            QString format = symbId.mid(dotPos);
-            // 这里需要查询端子排信息
-            // 简化处理，返回原始ID
-            return QString("端子排%1%2").arg(termInstanceId).arg(format);
-        }
-    } else if (category == "0") {
-        // 元件：从Symb2TermInfo获取Symbol和Terminal信息
-        bool ok = false;
-        int termId = symbId.toInt(&ok);
-        if (ok) {
-            // 这里需要查询Symb2TermInfo表
-            // 简化处理，返回termId
-            return QString("T%1").arg(termId);
-        }
-    }
-
-    return symbId;
+    return buildEndpointDisplay(symbId, category);
 }
 
 QString ConnectionTreeModel::getSymbolDisplayText(int symbolId) const

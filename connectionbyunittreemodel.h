@@ -7,6 +7,8 @@
 #include <QHash>
 #include "projectdatamodel.h"
 
+class ProjectDataCache;
+
 /**
  * @brief ConnectionByUnitTreeModel - 按单元分组的连线树 Model/View实现
  *
@@ -39,6 +41,7 @@ public:
 
     // 设置数据源
     void setProjectDataModel(ProjectDataModel *model);
+    void setProjectDataCache(ProjectDataCache *cache);
     void rebuild();
     void clear();
 
@@ -69,6 +72,9 @@ private:
         int unitStripId = 0;       // 元件或端子排ID
         int endpointIndex = 0;     // 端点索引 (0: Symb1, 1: Symb2)
         QString category;          // 类别 (0:元件, 1:端子排)
+        QString symbId;
+        QString otherSymbId;
+        QString otherCategory;
         QVector<TreeNode*> children;
         TreeNode *parent = nullptr;
 
@@ -79,6 +85,7 @@ private:
     // 根节点
     TreeNode *m_rootNode = nullptr;
     ProjectDataModel *m_projectDataModel = nullptr;
+    ProjectDataCache *m_projectCache = nullptr;
 
     // 缓存映射：快速查找
     QMap<QString, TreeNode*> m_gaocengKeyToNode;      // "StructureId" -> GaocengNode
