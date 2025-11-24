@@ -402,16 +402,23 @@ bool FunctionRepository::remove(int id)
 {
     if (!m_db.isOpen() || id == 0) return false;
 
-    QSqlQuery query(m_db);
-    query.prepare(QString("DELETE FROM UserTest WHERE FunctionID=:fid"));
-    query.bindValue(":fid", id);
-    query.exec();
+    // Remove bindings first
+    {
+        QSqlQuery query(m_db);
+        query.prepare(QString("DELETE FROM function_bindings WHERE function_id=:fid"));
+        query.bindValue(":fid", id);
+        query.exec();
+    }
 
-    query.prepare(QString("DELETE FROM Function WHERE FunctionID=:id"));
-    query.bindValue(":id", id);
-    if (!query.exec()) {
-        logError(query, QString("delete function"));
-        return false;
+    // Remove function
+    {
+        QSqlQuery query(m_db);
+        query.prepare(QString("DELETE FROM Function WHERE FunctionID=:id"));
+        query.bindValue(":id", id);
+        if (!query.exec()) {
+            logError(query, QString("delete function"));
+            return false;
+        }
     }
     return true;
 }
@@ -591,14 +598,25 @@ int FunctionRepository::nextId() const
 bool FunctionRepository::bindSymbol(int functionId, int symbolId)
 {
     QSqlQuery query(m_db);
-    query.prepare(QString(
-        "INSERT INTO function_bindings(function_id, symbol_id)"
-        " VALUES(:fid,:sid)"
-        " ON CONFLICT(function_id) DO UPDATE SET symbol_id = excluded.symbol_id"));
-    query.bindValue(":fid", functionId);
+    // Try update first
+    query.prepare(QString("UPDATE function_bindings SET symbol_id=:sid WHERE function_id=:fid"));
     query.bindValue(":sid", symbolId);
+    query.bindValue(":fid", functionId);
     if (!query.exec()) {
-        logError(query, QString("bind symbol"));
+        logError(query, QString("bind symbol (update)"));
+        return false;
+    }
+    
+    if (query.numRowsAffected() > 0)
+        return true;
+
+    // If no rows updated, insert
+    QSqlQuery insertQuery(m_db);
+    insertQuery.prepare(QString("INSERT INTO function_bindings(function_id, symbol_id) VALUES(:fid,:sid)"));
+    insertQuery.bindValue(":fid", functionId);
+    insertQuery.bindValue(":sid", symbolId);
+    if (!insertQuery.exec()) {
+        logError(insertQuery, QString("bind symbol (insert)"));
         return false;
     }
     return true;
