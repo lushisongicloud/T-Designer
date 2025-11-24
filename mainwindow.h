@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QMessageBox>
 #include <QFormLayout>
+#include <QSplitter>
 //#include "windows.h"
 #include "sqlitedatabase.h"
 #include "formaxwidget.h"

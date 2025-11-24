@@ -3140,6 +3140,16 @@ void MainWindow::AddDwgFileToIndex(QStandardItem *item,QSqlQuery query,QList<int
 void MainWindow::on_BtnNavigatorShow_clicked()
 {
     ui->widgetNavigator->setVisible(true);
+    QSplitter *splitter = qobject_cast<QSplitter*>(ui->widgetNavigator->parentWidget());
+    if(splitter)
+    {
+        QList<int> sizes = splitter->sizes();
+        if(sizes.count() > 0 && sizes.at(0) == 0)
+        {
+            sizes[0] = 400;
+            splitter->setSizes(sizes);
+        }
+    }
 }
 
 void MainWindow::on_BtnCloseNavigator_clicked()

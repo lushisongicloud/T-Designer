@@ -70,6 +70,32 @@ MainWindow::MainWindow(QWidget *parent) :
     }
     
     ui->setupUi(this);
+
+    // Make navigator resizable
+    ui->widgetNavigator->setMinimumWidth(0);
+    ui->widgetNavigator->setMaximumWidth(QWIDGETSIZE_MAX);
+
+    QSplitter *splitter = new QSplitter(Qt::Horizontal, this);
+    // Remove widgets from grid layout
+    ui->gridLayout->removeWidget(ui->widgetNavigator);
+    ui->gridLayout->removeWidget(ui->stackedWidget);
+
+    // Add to splitter
+    splitter->addWidget(ui->widgetNavigator);
+    splitter->addWidget(ui->stackedWidget);
+
+    // Set collapsible
+    splitter->setCollapsible(0, true); // Navigator is collapsible
+    splitter->setCollapsible(1, false); // Main content is not collapsible
+
+    // Set initial size
+    QList<int> sizes;
+    sizes << 400 << 1000; // 400 for navigator, rest for content
+    splitter->setSizes(sizes);
+
+    // Add splitter to grid layout
+    ui->gridLayout->addWidget(splitter, 1, 0, 1, 2);
+
     ui->mdiArea->setViewMode(QMdiArea::TabbedView); //Tab多页显示模式
     ui->mdiArea->setTabsClosable(true); //页面可关闭
     InitNavigatorTree();
