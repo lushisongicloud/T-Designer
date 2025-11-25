@@ -2828,3 +2828,131 @@ QList<TestItem> SystemEntity::RecommendObs(QString currentfunctionName, QList<QS
     std::sort(recommendTestItemList.begin(), recommendTestItemList.end(), [](const TestItem& a, const TestItem& b) { return a.confidence < b.confidence; });
     return recommendTestItemList;
 }
+
+ComponentEntity SystemEntity::getComponentByName(const QString &name) const
+{
+    for (const ComponentEntity &entity : componentEntityList) {
+        if (entity.getName() == name) {
+            return entity;
+        }
+    }
+    return ComponentEntity(); // Return empty entity if not found
+}
+
+QStringList SystemEntity::getConnectionDescriptions() const
+{
+    QStringList connections;
+    // Parse systemLinkCode to extract connection descriptions
+    // systemLinkCode contains lines like: connect2e(A.1, B.2)
+    QStringList lines = systemLinkCode.split('\n', QString::SkipEmptyParts);
+    for (const QString &line : lines) {
+        QString trimmed = line.trimmed();
+        if (trimmed.startsWith("connect") || trimmed.startsWith("link(")) {
+            connections.append(trimmed);
+        }
+    }
+    return connections;
+}
+
+QString SystemEntity::buildSystemDescriptionFromDatabase(QSqlDatabase &projectDb, QString *errorMsg)
+{
+    if (!projectDb.isValid() || !projectDb.isOpen()) {
+        if (errorMsg) *errorMsg = "项目数据库未打开";
+        return QString();
+    }
+    
+    QStringList equipmentDefinitions;
+    QStringList connectionLines;
+    QSet<QString> processedEquipment;
+    
+    // Query all connections to get equipment involved
+    QSqlQuery connQuery(projectDb);
+    if (!connQuery.exec("SELECT ConnectionNumber, Symb1_ID, Symb2_ID, Symb1_Category, Symb2_Category FROM JXB ORDER BY ConnectionNumber")) {
+        if (errorMsg) *errorMsg = "查询连接失败: " + connQuery.lastError().text();
+        return QString();
+    }
+    
+    while (connQuery.next()) {
+        QString connectionNumber = connQuery.value(0).toString();
+        
+        // Process both endpoints
+        for (int endpoint = 0; endpoint < 2; ++endpoint) {
+            QString symbId = (endpoint == 0) ? connQuery.value(1).toString() : connQuery.value(2).toString();
+            QString category = (endpoint == 0) ? connQuery.value(3).toString() : connQuery.value(4).toString();
+            
+            // Skip special symbols
+            if (symbId.contains(":C") || symbId.contains(":G") || 
+                symbId.contains(":1") || symbId.contains(":2") || symbId.contains(":3")) {
+                continue;
+            }
+            
+            // Get equipment information
+            QSqlQuery symbolQuery(projectDb);
+            symbolQuery.prepare("SELECT Equipment_ID FROM Symbol WHERE Symbol_ID = ?");
+            symbolQuery.addBindValue(symbId.toInt());
+            
+            if (symbolQuery.exec() && symbolQuery.next()) {
+                int equipmentId = symbolQuery.value(0).toInt();
+                QString equipKey = QString::number(equipmentId) + "," + category;
+                
+                if (category == "0" && !processedEquipment.contains(equipKey)) {
+                    processedEquipment.insert(equipKey);
+                    
+                    // Get equipment details
+                    QSqlQuery equipQuery(projectDb);
+                    equipQuery.prepare("SELECT Name, DT, TModel FROM Equipment WHERE Equipment_ID = ?");
+                    equipQuery.addBindValue(equipmentId);
+                    
+                    if (equipQuery.exec() && equipQuery.next()) {
+                        QString name = equipQuery.value(0).toString();
+                        QString dt = equipQuery.value(1).toString();
+                        QString tmodel = equipQuery.value(2).toString();
+                        
+                        // Build equipment definition line
+                        // Format: TModel Name(param1=val1,param2=val2,...)
+                        QString defLine = tmodel + " " + name;
+                        
+                        // Get parameters from EquipmentDiagnosePara table
+                        QSqlQuery paramQuery(projectDb);
+                        paramQuery.prepare("SELECT Parametername, Parametervalue FROM EquipmentDiagnosePara WHERE Equipment_ID = ?");
+                        paramQuery.addBindValue(equipmentId);
+                        
+                        QStringList params;
+                        if (paramQuery.exec()) {
+                            while (paramQuery.next()) {
+                                QString paramName = paramQuery.value(0).toString();
+                                QString paramValue = paramQuery.value(1).toString();
+                                if (!paramName.isEmpty() && !paramValue.isEmpty()) {
+                                    params.append(paramName + "=" + paramValue);
+                                }
+                            }
+                        }
+                        
+                        if (!params.isEmpty()) {
+                            defLine += "(" + params.join(",") + ")";
+                        } else {
+                            defLine += "()";
+                        }
+                        
+                        equipmentDefinitions.append(defLine);
+                    }
+                }
+            }
+        }
+        
+        // Add connection line
+        connectionLines.append("导线 " + connectionNumber);
+    }
+    
+    // Build system description in T-Solver format
+    QString systemDescription = "DEF BEGIN\n";
+    for (const QString &def : equipmentDefinitions) {
+        systemDescription += def + "\n";
+    }
+    systemDescription += "DEF END\n\n";
+    for (const QString &conn : connectionLines) {
+        systemDescription += conn + "\n";
+    }
+    
+    return systemDescription;
+}

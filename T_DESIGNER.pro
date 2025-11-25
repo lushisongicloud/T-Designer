@@ -158,6 +158,7 @@ SOURCES += \
     testability/d_matrix_builder.cpp \
     testability/smt_facade.cpp \
     BO/containerrepository.cpp \
+    BO/smtrepository.cpp \
     BO/componententity.cpp \
     BO/systementity.cpp \
     BO/worker.cpp \
@@ -292,6 +293,7 @@ HEADERS += \
     testability/smt_facade.h \
     testability/testability_types.h \
     BO/containerrepository.h \
+    BO/smtrepository.h \
     BO/componententity.h \
     BO/systementity.h \
     BO/worker.h \

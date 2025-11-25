@@ -106,6 +106,16 @@ public:
     QList<resultEntity> resultEntityList;//诊断结果列表
     QMap<QString, double> componentFailureProbability; //器件名称-先验失效概率
     QMap<QString,FunctionInfo> functionInfoMap;
+    
+    // New interfaces for accessing component and connection information
+    QList<ComponentEntity> getComponentEntityList() const { return componentEntityList; }
+    QStringList getComponentNames() const { return componentNameList; }
+    QString getSystemLinkCode() const { return systemLinkCode; }
+    ComponentEntity getComponentByName(const QString &name) const;
+    QStringList getConnectionDescriptions() const;
+    
+    // Build system description from database (for integration with database-stored SMT)
+    QString buildSystemDescriptionFromDatabase(QSqlDatabase &projectDb, QString *errorMsg = nullptr);
  private:
 
     int num = 0;
