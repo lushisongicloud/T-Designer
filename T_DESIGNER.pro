@@ -159,6 +159,8 @@ SOURCES += \
     testability/smt_facade.cpp \
     BO/containerrepository.cpp \
     BO/smtrepository.cpp \
+    BO/portconfigrepository.cpp \
+    BO/macrofamilyrepository.cpp \
     BO/componententity.cpp \
     BO/systementity.cpp \
     BO/worker.cpp \
@@ -294,6 +296,8 @@ HEADERS += \
     testability/testability_types.h \
     BO/containerrepository.h \
     BO/smtrepository.h \
+    BO/portconfigrepository.h \
+    BO/macrofamilyrepository.h \
     BO/componententity.h \
     BO/systementity.h \
     BO/worker.h \
