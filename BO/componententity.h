@@ -5,6 +5,7 @@
 #include <QDebug>
 #include <QStringList>
 #include <QHash>
+#include <QSet>
 #include "./DO/component.h"
 
 struct TestItem {
@@ -14,6 +15,7 @@ struct TestItem {
     int level=0;
     QString testType; //观测类型:一般变量/功能执行器/边界条件/依赖功能/参照功能
     Qt::CheckState checkState;//是否已实际执行
+    QHash<QString, QSet<QString>> offlineModeMap; // 器件-故障模式映射，用于离线求解结果标注
     friend QDebug operator<<(QDebug dbg, const TestItem& item);
 };
 

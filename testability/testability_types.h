@@ -55,6 +55,8 @@ struct FaultDefinition {
     QString name;
     FaultKind kind = FaultKind::Function;
     QString relatedFunction;
+    QString componentName;
+    QString failureModeName;
     QStringList inputAssertions;
     QStringList faultAssertions;
     QList<ComponentOverride> overrides;

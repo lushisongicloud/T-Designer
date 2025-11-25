@@ -41,6 +41,7 @@ private slots:
     void on_btnBuildDecisionTree_clicked();
     void on_comboDecisionTree_currentIndexChanged(int index);
     void on_treeDecision_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous);
+    void onViewDMatrix();
 
 private:
     void initializeGenerator();

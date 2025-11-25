@@ -612,6 +612,7 @@ private slots:
     void UpdateFuncStrSystemDefine(QStringList ListExec);
 
     void on_BtnUserTest_clicked();
+    void on_BtnDMatrix_clicked();
 
 private:
     Ui::MainWindow *ui;   

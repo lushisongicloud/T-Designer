@@ -16,9 +16,14 @@
 #include <QSqlError>
 #include <QDebug>
 #include <QTimer>
+#include <QPushButton>
+#include <QFileInfo>
+#include <QDir>
 
 #include "widget/testeditdialog.h"
 #include "widget/containerhierarchyutils.h"
+#include "BO/test/dmatrixservice.h"
+#include "widget/dmatrixviewerdialog.h"
 
 namespace {
 struct TestScore {
@@ -36,6 +41,10 @@ TestManagementDialog::TestManagementDialog(int containerId, const QSqlDatabase &
 {
     ui->setupUi(this);
     m_title = windowTitle();
+
+    auto *btnViewDMatrix = new QPushButton(tr("D矩阵"), this);
+    ui->verticalLayout->insertWidget(0, btnViewDMatrix);
+    connect(btnViewDMatrix, &QPushButton::clicked, this, &TestManagementDialog::onViewDMatrix);
 
     // 隐藏除"决策树"外的所有tab页
     ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->tabTests));
@@ -1083,4 +1092,42 @@ void TestManagementDialog::displayNodeDetails(QTreeWidgetItem *item)
     }
 
     ui->plainDecisionNotes->setPlainText(details);
+}
+
+void TestManagementDialog::onViewDMatrix()
+{
+    DMatrixService service(m_db);
+    if (!service.ensureTable()) {
+        QMessageBox::warning(this, tr("提示"), tr("dmatrix_meta 表不可用"));
+        return;
+    }
+
+    QFileInfo dbInfo(m_db.databaseName());
+    const QString projectDir = dbInfo.absolutePath();
+    const QString projectName = dbInfo.completeBaseName();
+
+    DMatrixLoadResult load = service.loadLatest(m_containerId, projectDir, projectName);
+    if (!load.found) {
+        QMessageBox::information(this, tr("提示"), tr("尚未生成 D 矩阵，请在主界面通过“D矩阵”按钮生成。"));
+        return;
+    }
+
+    DMatrixViewerDialog dialog(this);
+    dialog.setMatrix(load.result, load.options, load.csvPath, load.metadataPath);
+    dialog.applyState(load.stateJson);
+
+    connect(&dialog, &DMatrixViewerDialog::saveRequested, this,
+            [service, cid = m_containerId](const QString &metadataPath,
+                                           const QString &csvPath,
+                                           const QVector<bool> &faultStates,
+                                           const QVector<bool> &testStates) {
+                const QString state = DMatrixService::serializeState(faultStates, testStates);
+                service.saveState(cid, state, metadataPath, csvPath);
+            });
+
+    connect(&dialog, &DMatrixViewerDialog::buildRequested, &dialog, [&dialog]() {
+        QMessageBox::information(&dialog, QObject::tr("提示"), QObject::tr("请在主界面通过“D矩阵”按钮生成或更新。"));
+    });
+
+    dialog.exec();
 }

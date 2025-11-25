@@ -24,6 +24,9 @@
 #include "widget/testmanagementdialog.h"
 #include "BO/function/functionrepository.h"
 #include "demo_projectbuilder.h"
+#include "BO/test/dmatrixservice.h"
+#include "widget/dmatrixviewerdialog.h"
+#include "widget/dmatrixoptionsdialog.h"
 
 using namespace ContainerHierarchy;
 
@@ -3802,6 +3805,84 @@ void MainWindow::on_BtnUserTest_clicked()
         SendCmd(dlg->CmdStr,true);
     }
     delete dlg;
+}
+
+void MainWindow::on_BtnDMatrix_clicked()
+{
+    if (!database || !systemEntity) {
+        QMessageBox::warning(this, tr("提示"), tr("系统尚未初始化，无法生成 D 矩阵。"));
+        return;
+    }
+
+    DMatrixService service(T_ProjectDatabase);
+    if (!service.ensureTable()) {
+        QMessageBox::warning(this, tr("提示"), tr("dmatrix_meta 表不可用"));
+        return;
+    }
+
+    ContainerRepository repo(T_ProjectDatabase);
+    repo.ensureTables();
+    const QList<ContainerEntity> roots = repo.fetchRoots();
+    int containerId = roots.isEmpty() ? 0 : roots.first().id();
+    if (containerId == 0) {
+        QMessageBox::warning(this, tr("提示"), tr("未找到容器，请先建立项目容器。"));
+        return;
+    }
+
+    const QString systemDescription = ui->textEditSystemDiscription
+            ? ui->textEditSystemDiscription->toPlainText()
+            : QString();
+
+    const QString projectDir = QDir(CurProjectPath).filePath(CurProjectName);
+    const QString projectName = CurProjectName;
+
+    DMatrixLoadResult load = service.loadLatest(containerId, projectDir, projectName);
+    testability::DMatrixBuildOptions options = load.options;
+    if (options.outputDirectory.isEmpty())
+        options.outputDirectory = projectDir;
+
+    DMatrixViewerDialog dialog(this);
+    if (load.found) {
+        dialog.setMatrix(load.result, load.options, load.csvPath, load.metadataPath);
+        dialog.applyState(load.stateJson);
+    } else {
+        dialog.setMatrix(testability::DMatrixBuildResult(), options, QString(), QString());
+    }
+
+    connect(&dialog, &DMatrixViewerDialog::saveRequested, this,
+            [&, containerId](const QString &metadataPath, const QString &csvPath,
+                             const QVector<bool> &faultStates, const QVector<bool> &testStates) {
+                const QString state = DMatrixService::serializeState(faultStates, testStates);
+                service.saveState(containerId, state, metadataPath, csvPath);
+            });
+
+    connect(&dialog, &DMatrixViewerDialog::buildRequested, this,
+            [this, &dialog, &service, containerId, projectDir, projectName, options]() mutable {
+        DMatrixOptionsDialog optDialog(&dialog);
+        optDialog.setOptions(options);
+        if (optDialog.exec() != QDialog::Accepted)
+            return;
+        options = optDialog.options();
+
+        QString error;
+        testability::DMatrixBuildResult result;
+        QString metadataPath;
+        QString csvPath;
+        const QString sysDesc = ui->textEditSystemDiscription
+                ? ui->textEditSystemDiscription->toPlainText()
+                : QString();
+        if (!service.buildAndPersist(systemEntity, sysDesc, containerId,
+                                     projectDir, projectName, options,
+                                     &result, &metadataPath, &csvPath, &error)) {
+            QMessageBox::warning(&dialog, tr("生成失败"), error.isEmpty() ? tr("生成 D 矩阵失败") : error);
+            return;
+        }
+
+        dialog.setMatrix(result, options, csvPath, metadataPath);
+        dialog.applyState(QString());
+    });
+
+    dialog.exec();
 }
 
 //自动上端子

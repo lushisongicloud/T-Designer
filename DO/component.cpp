@@ -112,4 +112,3 @@ void component::setFailureProbability(QList<FailureMode> ListFailureMode) {
 }
 
 
-

@@ -3,15 +3,23 @@
 
 #include <QString>
 #include <QStringList>
+#include <QList>
 
 class FailureMode {
 public:
     QString name;
     QString describe;
     double probability;
+    struct ModeOverride {
+        QString componentName;
+        QStringList assertions;
+        bool replaceNormal = true;
+    };
+    QList<ModeOverride> overrides;
 
     FailureMode(QString n, QString d, double p) : name(n), describe(d), probability(p) {}
     FailureMode(double p) : name(""), describe(""), probability(p) {}  // 用于unknownfault
+    FailureMode() : name(""), describe(""), probability(0.0) {}
 
     QString getName() const { return name; }
     QString getDescribe() const { return describe; }
