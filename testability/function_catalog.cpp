@@ -8,7 +8,7 @@
 #include <QDebug>
 
 #include "BO/componententity.h"
-#include "../function_variable_config.h"
+#include "BO/function/function_variable_config.h"
 
 namespace testability {
 

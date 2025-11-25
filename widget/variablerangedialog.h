@@ -5,7 +5,7 @@
 #include <QMap>
 #include <QStringList>
 
-#include "../variable_range_config.h"
+#include "BO/function/variable_range_config.h"
 
 class QListWidget;
 class QLabel;

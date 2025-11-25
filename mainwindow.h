@@ -53,6 +53,9 @@ class EquipmentTableModel;
 class ConnectionTreeModel;
 class ConnectionByUnitTreeModel;
 class SelectFunctionDialog;
+class SQliteDatabase;
+class SystemEntity;
+class model;
 
 extern QSqlDatabase  T_ProjectDatabase;
 extern QString CurProjectPath;

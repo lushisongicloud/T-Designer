@@ -51,7 +51,6 @@ SOURCES += \
     qxlabel.cpp \
     DrawStyle.cpp \
     formaxwidget.cpp \
-    function_variable_config.cpp \
     dialognewproject.cpp \
     dialogloadsymbol.cpp \
     dialogsymbolattribute.cpp \
@@ -99,7 +98,6 @@ SOURCES += \
     bqgraphicsscene.cpp \
     bqgraphicsview.cpp \
     dialogtag.cpp \
-    variable_range_config.cpp \
     widget/variablerangedialog.cpp \
     widget/codecheckdialog.cpp \
     widget/mycombobox.cpp \
@@ -188,7 +186,6 @@ HEADERS += \
     qxlabel.h \
     DrawStyle.h \
     formaxwidget.h \
-    function_variable_config.h \
     dialognewproject.h \
     dialogloadsymbol.h \
     dialogsymbolattribute.h \
@@ -237,7 +234,6 @@ HEADERS += \
     bqgraphicsscene.h \
     bqgraphicsview.h \
     dialogtag.h \
-    variable_range_config.h \
     widget/variablerangedialog.h \
     widget/codecheckdialog.h \
     widget/mycombobox.h \

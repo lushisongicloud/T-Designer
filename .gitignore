@@ -41,7 +41,6 @@ ui_*.h
 image/
 lib/
 include/
-*.ico
 *.png
 *.jpg
 *.jpeg

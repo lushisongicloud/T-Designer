@@ -8,6 +8,7 @@
 #include <QMainWindow>
 #include <QMouseEvent>
 #include <QObject>
+#include <QKeyEvent>
 #include <QtXml>
 #include <QPushButton>
 #include <QLayout>
@@ -15,11 +16,12 @@
 #include <QTreeWidget>
 #include <QTableWidgetItem>
 #include <QFormLayout>
+#include "ui_selectfunctiondialog.h"
 #include "mycombobox.h"
 #include "../BO/componententity.h"
 #include "BO/systementity.h"
-#include "../variable_range_config.h"
-#include "../function_variable_config.h"
+#include "BO/function/variable_range_config.h"
+#include "BO/function/function_variable_config.h"
 #include "functionvariablevaluedialog.h"
 
 namespace Ui {
