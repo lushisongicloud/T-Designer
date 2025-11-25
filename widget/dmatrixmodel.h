@@ -23,6 +23,7 @@ public:
     void setShowTestNames(bool show);
     bool showFaultNames() const { return showFaultNames_; }
     bool showTestNames() const { return showTestNames_; }
+    void updateTests(const QVector<testability::TestDefinition> &tests);
     const testability::FaultDefinition *faultAt(int row) const;
     const testability::TestDefinition *testAt(int column) const;
 

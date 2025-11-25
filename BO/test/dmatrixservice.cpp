@@ -190,6 +190,25 @@ QMap<QString, FunctionInfo> DMatrixService::loadFunctionInfoMap(const QString &p
     return functionMap;
 }
 
+QString DMatrixService::loadActiveResultJson(int containerId) const
+{
+    if (!m_db.isOpen() || containerId <= 0) {
+        return QString();
+    }
+    QSqlQuery query(m_db);
+    query.prepare(QString("SELECT result_json FROM dmatrix_meta WHERE container_id=:cid AND is_active=1 "
+                          "ORDER BY updated_at DESC, dmatrix_meta_id DESC LIMIT 1"));
+    query.bindValue(QString(":cid"), containerId);
+    if (!query.exec()) {
+        qWarning() << "DMatrixService loadActiveResultJson failed" << query.lastError();
+        return QString();
+    }
+    if (query.next()) {
+        return query.value(0).toString();
+    }
+    return QString();
+}
+
 bool DMatrixService::ensureTable() const
 {
     if (!m_db.isOpen()) return false;
@@ -340,6 +359,10 @@ bool DMatrixService::parseMetadata(const QString &json, DMatrixBuildResult *resu
         for (const auto &i : faultA) fault.faultAssertions.append(i.toString());
         const QJsonArray actuators = obj.value(QString("actuatorAssertions")).toArray();
         for (const auto &i : actuators) fault.actuatorAssertions.append(i.toString());
+        const QJsonArray relatedComps = obj.value(QStringLiteral("relatedComponents")).toArray();
+        for (const auto &rc : relatedComps) fault.relatedComponents.append(rc.toString());
+        const QJsonArray linkElems = obj.value(QStringLiteral("linkElements")).toArray();
+        for (const auto &le : linkElems) fault.linkElements.append(le.toString());
         fault.enabled = obj.value(QString("enabled")).toBool(true);
         result->faults.append(fault);
     }
@@ -627,18 +650,88 @@ bool DMatrixService::saveState(int containerId,
                                const QString &metadataPath,
                                const QString &csvPath) const
 {
+    return saveMetadata(containerId, metadataPath, csvPath, stateJson);
+}
+
+bool DMatrixService::saveMetadata(int containerId,
+                                  const QString &metadataPath,
+                                  const QString &csvPath,
+                                  const QString &stateJson) const
+{
     if (!m_db.isOpen() || containerId <= 0)
         return false;
+
+    // 合并存量 result_json（含 cells）与文件中的 tests/faults 变化，避免丢失矩阵单元
+    QString dbJsonText = loadActiveResultJson(containerId);
+    QString fileJsonText;
+    if (!metadataPath.isEmpty()) {
+        fileJsonText = readFile(metadataPath);
+    }
+
+    QJsonObject merged;
+    QJsonObject dbObj;
+    QJsonObject fileObj;
+
+    auto parseObj = [](const QString &text, QJsonObject *out) {
+        if (!out) return;
+        QJsonParseError err;
+        const QJsonDocument doc = QJsonDocument::fromJson(text.toUtf8(), &err);
+        if (err.error == QJsonParseError::NoError && doc.isObject()) {
+            *out = doc.object();
+        }
+    };
+
+    parseObj(dbJsonText, &dbObj);
+    parseObj(fileJsonText, &fileObj);
+
+    if (!dbObj.isEmpty()) {
+        merged = dbObj;
+    } else if (!fileObj.isEmpty()) {
+        merged = fileObj;
+    }
+
+    // 用文件中的 tests/faults/options/csv/metaPath 覆盖，但保留 cells
+    if (!fileObj.isEmpty()) {
+        if (fileObj.contains(QStringLiteral("tests")))
+            merged.insert(QStringLiteral("tests"), fileObj.value(QStringLiteral("tests")));
+        if (fileObj.contains(QStringLiteral("faults")))
+            merged.insert(QStringLiteral("faults"), fileObj.value(QStringLiteral("faults")));
+        if (fileObj.contains(QStringLiteral("options")))
+            merged.insert(QStringLiteral("options"), fileObj.value(QStringLiteral("options")));
+        if (fileObj.contains(QStringLiteral("csvPath")))
+            merged.insert(QStringLiteral("csvPath"), fileObj.value(QStringLiteral("csvPath")));
+        if (fileObj.contains(QStringLiteral("metadataPath")))
+            merged.insert(QStringLiteral("metadataPath"), fileObj.value(QStringLiteral("metadataPath")));
+        if (fileObj.contains(QStringLiteral("modelName")))
+            merged.insert(QStringLiteral("modelName"), fileObj.value(QStringLiteral("modelName")));
+        if (fileObj.contains(QStringLiteral("generatedAt")))
+            merged.insert(QStringLiteral("generatedAt"), fileObj.value(QStringLiteral("generatedAt")));
+        // 如果 fileObj 也有 cells，则同步
+        if (fileObj.contains(QStringLiteral("cells")))
+            merged.insert(QStringLiteral("cells"), fileObj.value(QStringLiteral("cells")));
+        if (fileObj.contains(QStringLiteral("cellMetadata")))
+            merged.insert(QStringLiteral("cellMetadata"), fileObj.value(QStringLiteral("cellMetadata")));
+        if (fileObj.contains(QStringLiteral("faultSummary")))
+            merged.insert(QStringLiteral("faultSummary"), fileObj.value(QStringLiteral("faultSummary")));
+    }
+
+    const QString mergedJson = QJsonDocument(merged).toJson(QJsonDocument::Indented);
+
     QSqlQuery query(m_db);
     query.prepare(QString(
-        "UPDATE dmatrix_meta SET state_json=:state, "
+        "UPDATE dmatrix_meta SET "
+        "state_json=COALESCE(:state, state_json), "
         "csv_path=COALESCE(:csv, csv_path), "
+        "result_json=COALESCE(:result, result_json), "
         "updated_at=CURRENT_TIMESTAMP WHERE container_id=:cid AND is_active=1"));
-    query.bindValue(QString(":state"), stateJson);
-    query.bindValue(QString(":csv"), csvPath);
+    query.bindValue(QString(":state"), stateJson.isEmpty() ? QVariant(QVariant::String) : QVariant(stateJson));
+    query.bindValue(QString(":csv"), csvPath.isEmpty() ? QVariant(QVariant::String) : QVariant(csvPath));
+    // 如果 metadata 文件读取失败则不覆盖已有 result_json
+    query.bindValue(QString(":result"),
+                    merged.isEmpty() ? QVariant(QVariant::String) : QVariant(mergedJson));
     query.bindValue(QString(":cid"), containerId);
     if (!query.exec()) {
-        qWarning() << "DMatrixService saveState failed" << query.lastError();
+        qWarning() << "DMatrixService saveMetadata failed" << query.lastError();
         return false;
     }
     return true;

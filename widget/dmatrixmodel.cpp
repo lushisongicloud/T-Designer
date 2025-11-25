@@ -108,7 +108,11 @@ QVariant DMatrixModel::data(const QModelIndex &index, int role) const
         return QVariant();
     }
 
-    const DetectabilityResult &cell = matrix_.cells.at(index.row()).at(index.column());
+    const auto &rowCells = matrix_.cells.at(index.row());
+    if (index.column() >= rowCells.size()) {
+        return QVariant();
+    }
+    const DetectabilityResult &cell = rowCells.at(index.column());
     const bool faultEnabled = index.row() < faultEnabled_.size() ? faultEnabled_.at(index.row()) : true;
     const bool testEnabled = index.column() < testEnabled_.size() ? testEnabled_.at(index.column()) : true;
     const auto &test = matrix_.tests.at(index.column());
@@ -315,6 +319,38 @@ void DMatrixModel::setShowTestNames(bool show)
         return;
     }
     showTestNames_ = show;
+    if (!matrix_.tests.isEmpty()) {
+        emit headerDataChanged(Qt::Horizontal, 0, matrix_.tests.size() - 1);
+    }
+}
+
+void DMatrixModel::updateTests(const QVector<testability::TestDefinition> &tests)
+{
+    if (tests.isEmpty() || tests.size() != matrix_.tests.size()) {
+        beginResetModel();
+        matrix_.tests = tests;
+        testEnabled_.fill(true, matrix_.tests.size());
+        for (auto &row : matrix_.cells) {
+            row.resize(matrix_.tests.size());
+        }
+        endResetModel();
+        return;
+    }
+
+    matrix_.tests = tests;
+    testEnabled_.resize(matrix_.tests.size());
+    for (int i = 0; i < matrix_.tests.size(); ++i) {
+        testEnabled_[i] = matrix_.tests.at(i).enabled;
+    }
+    for (auto &row : matrix_.cells) {
+        row.resize(matrix_.tests.size());
+    }
+
+    if (rowCount() > 0 && columnCount() > 0) {
+        const QModelIndex top = index(0, 0);
+        const QModelIndex bottom = index(rowCount() - 1, columnCount() - 1);
+        emit dataChanged(top, bottom, {Qt::BackgroundRole, Qt::ToolTipRole, Qt::DisplayRole});
+    }
     if (!matrix_.tests.isEmpty()) {
         emit headerDataChanged(Qt::Horizontal, 0, matrix_.tests.size() - 1);
     }

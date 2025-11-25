@@ -315,6 +315,13 @@
    <item>
     <layout class="QHBoxLayout" name="buttonLayout">
      <item>
+      <widget class="QPushButton" name="btnViewDMatrix">
+       <property name="text">
+        <string>D矩阵</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QPushButton" name="btnGenerate">
        <property name="text">
         <string>自动生成</string>

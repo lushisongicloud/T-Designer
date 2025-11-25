@@ -42,21 +42,18 @@ TestManagementDialog::TestManagementDialog(int containerId, const QSqlDatabase &
     ui->setupUi(this);
     m_title = windowTitle();
 
-    auto *btnViewDMatrix = new QPushButton(tr("D矩阵"), this);
-    ui->verticalLayout->insertWidget(0, btnViewDMatrix);
-    connect(btnViewDMatrix, &QPushButton::clicked, this, &TestManagementDialog::onViewDMatrix);
-
     // 隐藏除"决策树"外的所有tab页
-//    ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->tabTests));
-//    ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->tabMatrix));
-//    ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->tabTargets));
-//    ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->tabConstraints));
-//    ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->tabPrediction));
+    ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->tabTests));
+    ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->tabMatrix));
+    ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->tabTargets));
+    ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->tabConstraints));
+    ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->tabPrediction));
     ui->labelCoverage->setVisible(false);
 
     configureTables();
 
     connect(ui->btnClose, &QPushButton::clicked, this, &QDialog::reject);
+    connect(ui->btnViewDMatrix, &QPushButton::clicked, this, &TestManagementDialog::onViewDMatrix);
     connect(ui->btnGenerate, &QPushButton::clicked, this, &TestManagementDialog::on_btnGenerate_clicked);
     connect(ui->btnAdd, &QPushButton::clicked, this, &TestManagementDialog::on_btnAdd_clicked);
     connect(ui->btnEdit, &QPushButton::clicked, this, &TestManagementDialog::on_btnEdit_clicked);
@@ -1122,7 +1119,7 @@ void TestManagementDialog::onViewDMatrix()
                                            const QVector<bool> &faultStates,
                                            const QVector<bool> &testStates) {
                 const QString state = DMatrixService::serializeState(faultStates, testStates);
-                service.saveState(cid, state, metadataPath, csvPath);
+                service.saveMetadata(cid, metadataPath, csvPath, state);
             });
 
     connect(&dialog, &DMatrixViewerDialog::buildRequested, &dialog, [&dialog]() {

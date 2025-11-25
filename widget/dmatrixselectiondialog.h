@@ -30,6 +30,7 @@ public:
                    const QVector<bool> &enabledStates);
 
     QVector<bool> enabledStates() const;
+    QVector<testability::TestDefinition> testDefinitions() const { return testsDefinitions(); }
 
 private slots:
     void onFilterTextChanged(const QString &text);
@@ -58,6 +59,15 @@ private:
     bool matchesFilter(int row) const;
     void setRowChecked(int row, bool checked);
     QList<int> selectedRows() const;
+    QVector<testability::TestDefinition> testsDefinitions() const
+    {
+        QVector<testability::TestDefinition> defs;
+        defs.reserve(tests.size());
+        for (const auto &row : tests) {
+            defs.append(row.definition);
+        }
+        return defs;
+    }
 
     bool updatingModel = false;
 

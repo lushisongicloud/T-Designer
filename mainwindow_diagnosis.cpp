@@ -3854,7 +3854,7 @@ void MainWindow::on_BtnDMatrix_clicked()
             [&, containerId](const QString &metadataPath, const QString &csvPath,
                              const QVector<bool> &faultStates, const QVector<bool> &testStates) {
                 const QString state = DMatrixService::serializeState(faultStates, testStates);
-                service.saveState(containerId, state, metadataPath, csvPath);
+                service.saveMetadata(containerId, metadataPath, csvPath, state);
             });
 
     connect(&dialog, &DMatrixViewerDialog::buildRequested, this,

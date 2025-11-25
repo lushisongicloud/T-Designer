@@ -41,6 +41,10 @@ public:
                    const QString &stateJson,
                    const QString &metadataPath = QString(),
                    const QString &csvPath = QString()) const;
+    bool saveMetadata(int containerId,
+                      const QString &metadataPath,
+                      const QString &csvPath = QString(),
+                      const QString &stateJson = QString()) const;
 
     bool buildAndPersist(SystemEntity *systemEntity,
                          const QString &systemDescription,
@@ -74,6 +78,7 @@ private:
     void deactivateOld(int containerId) const;
     QString loadFunctionDescriptionFromModels(const QString &projectName) const;
     QMap<QString, FunctionInfo> loadFunctionInfoMap(const QString &projectName) const;
+    QString loadActiveResultJson(int containerId) const;
 
     QSqlDatabase m_db;
 };

@@ -472,6 +472,7 @@ void DMatrixViewerDialog::openSelectionDialog(bool forTests)
     if (dialog.exec() == QDialog::Accepted) {
         if (forTests) {
             qDebug().noquote() << "[DMatrixViewer] dialog accepted — updating test enabled states";
+            model->updateTests(dialog.testDefinitions());
             model->setTestEnabledStates(dialog.enabledStates());
         } else {
             qDebug().noquote() << "[DMatrixViewer] dialog accepted — updating fault enabled states";
@@ -543,11 +544,21 @@ bool DMatrixViewerDialog::saveMetadataToPath(const QString &path)
     }
     root.insert(QStringLiteral("faults"), faultsArray);
 
+    auto setOptionalNumber = [](QJsonObject &obj, const QString &key, double value) {
+        if (std::isfinite(value)) {
+            obj.insert(key, value);
+        } else {
+            obj.remove(key);
+        }
+    };
+
     QHash<QString, bool> testEnabledMap;
     const QVector<bool> &testStates = model->testEnabledStates();
+    QHash<QString, testability::TestDefinition> testDefMap;
     for (int i = 0; i < matrix.tests.size(); ++i) {
         const QString id = matrix.tests.at(i).id;
         testEnabledMap.insert(id, i < testStates.size() ? testStates.at(i) : true);
+        testDefMap.insert(id, matrix.tests.at(i));
     }
 
     QJsonArray testsArray = root.value(QStringLiteral("tests")).toArray();
@@ -556,8 +567,19 @@ bool DMatrixViewerDialog::saveMetadataToPath(const QString &path)
         const QString id = obj.value(QStringLiteral("id")).toString();
         if (testEnabledMap.contains(id)) {
             obj.insert(QStringLiteral("enabled"), testEnabledMap.value(id));
-            testsArray.replace(i, obj);
         }
+        const auto defIt = testDefMap.constFind(id);
+        if (defIt != testDefMap.constEnd()) {
+            const testability::TestDefinition &def = defIt.value();
+            obj.insert(QStringLiteral("description"), def.description);
+            obj.insert(QStringLiteral("note"), def.note);
+            obj.insert(QStringLiteral("remark"), def.note);
+            setOptionalNumber(obj, QStringLiteral("complexity"), def.complexity);
+            setOptionalNumber(obj, QStringLiteral("cost"), def.cost);
+            setOptionalNumber(obj, QStringLiteral("duration"), def.duration);
+            setOptionalNumber(obj, QStringLiteral("successRate"), def.successRate);
+        }
+        testsArray.replace(i, obj);
     }
     root.insert(QStringLiteral("tests"), testsArray);
 

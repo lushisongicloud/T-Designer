@@ -16,6 +16,8 @@
 #include <QVBoxLayout>
 
 #include <algorithm>
+#include <cmath>
+#include <limits>
 
 using namespace testability;
 
@@ -58,6 +60,37 @@ QString joinList(const QStringList &list)
 {
     return list.join(QStringLiteral(", "));
 }
+
+enum TestColumn {
+    ColCheck = 0,
+    ColLabel,
+    ColId,
+    ColName,
+    ColType,
+    ColFunction,
+    ColComponent,
+    ColMode,
+    ColSignal,
+    ColDescription,
+    ColComplexity,
+    ColCost,
+    ColDuration,
+    ColSuccessRate,
+    ColNote,
+    ColCount
+};
+
+enum FaultColumn {
+    FaultColCheck = 0,
+    FaultColLabel,
+    FaultColId,
+    FaultColName,
+    FaultColType,
+    FaultColFunction,
+    FaultColComponents,
+    FaultColLinks,
+    FaultColCount
+};
 } // namespace
 
 DMatrixSelectionDialog::DMatrixSelectionDialog(Target targetType, QWidget *parent)
@@ -100,7 +133,7 @@ DMatrixSelectionDialog::DMatrixSelectionDialog(Target targetType, QWidget *paren
     tableView->setModel(model);
     tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
     tableView->setSelectionMode(QAbstractItemView::ExtendedSelection);
-    tableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    tableView->setEditTriggers(QAbstractItemView::DoubleClicked | QAbstractItemView::SelectedClicked | QAbstractItemView::EditKeyPressed);
     tableView->horizontalHeader()->setStretchLastSection(true);
     tableView->verticalHeader()->setVisible(false);
     mainLayout->addWidget(tableView, 1);
@@ -277,22 +310,84 @@ void DMatrixSelectionDialog::onInvertSelection()
 
 void DMatrixSelectionDialog::onItemChanged(QStandardItem *item)
 {
-    if (!item || item->column() != 0) {
+    if (!item) {
         return;
     }
     if (updatingModel) {
         return;
     }
     const int row = item->row();
-    const bool checked = item->checkState() == Qt::Checked;
-    if (target == Target::Tests) {
-        if (row >= 0 && row < tests.size()) {
-            tests[row].enabled = checked;
+    const int column = item->column();
+
+    auto parseOptionalDouble = [](const QString &text) {
+        const QString trimmed = text.trimmed();
+        if (trimmed.isEmpty()) {
+            return std::numeric_limits<double>::quiet_NaN();
         }
-    } else if (row >= 0 && row < faults.size()) {
-        faults[row].enabled = checked;
+        bool ok = false;
+        const double value = trimmed.toDouble(&ok);
+        return ok ? value : std::numeric_limits<double>::quiet_NaN();
+    };
+
+    auto normalizeBounded = [&](double value, double minV, double maxV, int decimals) {
+        if (!std::isfinite(value)) {
+            return std::numeric_limits<double>::quiet_NaN();
+        }
+        double clamped = std::min(std::max(value, minV), maxV);
+        const double scale = std::pow(10.0, decimals);
+        clamped = std::round(clamped * scale) / scale;
+        return clamped;
+    };
+
+    if (target == Target::Tests) {
+        if (row < 0 || row >= tests.size()) {
+            return;
+        }
+        auto &entry = tests[row];
+        if (column == ColCheck) {
+            entry.enabled = item->checkState() == Qt::Checked;
+            updateRowVisibility();
+            return;
+        }
+        auto setNumberAndText = [&](double &field, double minV, double maxV, int decimals) {
+            const double parsed = parseOptionalDouble(item->text());
+            const double normalized = normalizeBounded(parsed, minV, maxV, decimals);
+            field = normalized;
+            if (std::isfinite(normalized)) {
+                item->setText(QString::number(normalized, 'f', decimals));
+            } else {
+                item->setText(QString());
+            }
+        };
+
+        switch (column) {
+        case ColDescription:
+            entry.definition.description = item->text();
+            break;
+        case ColComplexity:
+            setNumberAndText(entry.definition.complexity, 0.0, 1.0, 2);
+            break;
+        case ColCost:
+            setNumberAndText(entry.definition.cost, 0.0, std::numeric_limits<double>::infinity(), 2);
+            break;
+        case ColDuration:
+            setNumberAndText(entry.definition.duration, 0.0, std::numeric_limits<double>::infinity(), 1);
+            break;
+        case ColSuccessRate:
+            setNumberAndText(entry.definition.successRate, 0.0, 1.0, 2);
+            break;
+        case ColNote:
+            entry.definition.note = item->text();
+            break;
+        default:
+            break;
+        }
+    } else {
+        if (column == FaultColCheck && row >= 0 && row < faults.size()) {
+            faults[row].enabled = item->checkState() == Qt::Checked;
+            updateRowVisibility();
+        }
     }
-    updateRowVisibility();
 }
 
 void DMatrixSelectionDialog::rebuildModel()
@@ -301,15 +396,21 @@ void DMatrixSelectionDialog::rebuildModel()
                        << (target == Target::Tests);
     if (target == Target::Tests) {
         const QStringList headers = {
-            tr("选择"),
-            tr("标号"),
-            tr("编号"),
-            tr("名称"),
-            tr("类型"),
-            tr("关联功能"),
-            tr("关联器件"),
-            tr("故障模式"),
-            tr("信号变量")
+            tr("选择"),       // ColCheck
+            tr("标号"),       // ColLabel
+            tr("编号"),       // ColId
+            tr("名称"),       // ColName
+            tr("类型"),       // ColType
+            tr("关联功能"),   // ColFunction
+            tr("关联器件"),   // ColComponent
+            tr("故障模式"),   // ColMode
+            tr("信号变量"),   // ColSignal
+            tr("描述"),       // ColDescription
+            tr("复杂性"),     // ColComplexity
+            tr("费用"),       // ColCost
+            tr("时间"),       // ColDuration
+            tr("成功率"),     // ColSuccessRate
+            tr("备注")        // ColNote
         };
         model->setColumnCount(headers.size());
         model->setHorizontalHeaderLabels(headers);
@@ -336,6 +437,28 @@ void DMatrixSelectionDialog::rebuildModel()
             items << makeItem(row.definition.componentName);
             items << makeItem(row.definition.failureModeName);
             items << makeItem(row.definition.signalVariable);
+            auto makeEditableText = [](const QString &text) {
+                auto *item = new QStandardItem(text);
+                item->setEditable(true);
+                return item;
+            };
+            auto makeEditableNumber = [](double value) {
+                QString text;
+                if (std::isfinite(value)) {
+                    text = QString::number(value, 'g', 10);
+                }
+                auto *item = new QStandardItem(text);
+                item->setEditable(true);
+                item->setTextAlignment(Qt::AlignCenter);
+                return item;
+            };
+
+            items << makeEditableText(row.definition.description);
+            items << makeEditableNumber(row.definition.complexity);
+            items << makeEditableNumber(row.definition.cost);
+            items << makeEditableNumber(row.definition.duration);
+            items << makeEditableNumber(row.definition.successRate);
+            items << makeEditableText(row.definition.note);
 
             model->appendRow(items);
         }
@@ -438,13 +561,15 @@ bool DMatrixSelectionDialog::matchesFilter(int row) const
             const QString lowerMode = data.failureModeName.toLower();
             const QString lowerSignal = data.signalVariable.toLower();
             const QString lowerNote = data.note.toLower();
+            const QString lowerDesc = data.description.toLower();
             textMatch = lowerId.contains(filterText)
                 || lowerName.contains(filterText)
                 || lowerFunction.contains(filterText)
                 || lowerComponent.contains(filterText)
                 || lowerMode.contains(filterText)
                 || lowerSignal.contains(filterText)
-                || lowerNote.contains(filterText);
+                || lowerNote.contains(filterText)
+                || lowerDesc.contains(filterText);
         }
         switch (typeFilterIndex) {
         case 1:
