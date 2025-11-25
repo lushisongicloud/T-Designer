@@ -170,7 +170,7 @@ FunctionRecord FunctionManagerDialog::fromFunctionInfo(const FunctionInfo &info)
     rec.remark = info.description;
     rec.link = info.link;
     rec.componentDependency = info.componentDependency;
-    rec.allComponents = info.allRelatedComponent.isEmpty() ? info.allComponentList.join(QStringLiteral(",")) : info.allRelatedComponent;
+    rec.allComponents = info.allRelatedComponent.isEmpty() ? info.allComponentList.join(QString(",")) : info.allRelatedComponent;
     rec.functionDependency = info.functionDependency;
     rec.persistent = info.persistent;
     rec.faultProbability = info.faultProbability;
@@ -182,17 +182,17 @@ FunctionRecord FunctionManagerDialog::fromFunctionInfo(const FunctionInfo &info)
     } else if (!info.actuatorName.trimmed().isEmpty()) {
         execs << info.actuatorName;
     }
-    rec.execsList = execs.join(QStringLiteral(","));
+    rec.execsList = execs.join(QString(","));
 
     QStringList cmdPairs;
     for (const TestItem &item : info.constraintList) {
-        if (item.testType.contains(QStringLiteral("执行器")))
+        if (item.testType.contains(QString("执行器")))
             continue;
         if (item.variable.trimmed().isEmpty() || item.value.trimmed().isEmpty())
             continue;
-        cmdPairs << QStringLiteral("%1=%2").arg(item.variable, item.value);
+        cmdPairs << QString("%1=%2").arg(item.variable, item.value);
     }
-    rec.cmdValList = cmdPairs.join(QStringLiteral(","));
+    rec.cmdValList = cmdPairs.join(QString(","));
 
     return rec;
 }
@@ -210,7 +210,7 @@ FunctionInfo FunctionManagerDialog::toFunctionInfo(const FunctionRecord &record)
     info.functionDependency = record.functionDependency;
     info.persistent = record.persistent;
     info.faultProbability = record.faultProbability;
-    info.constraintIntegrity = QStringLiteral("未检查");
+    info.constraintIntegrity = QString("未检查");
     info.variableConfigXml = record.variableConfigXml;
 
     QList<QPair<QString, QString>> pairs = parseCmdValList(record.cmdValList);
@@ -219,18 +219,18 @@ FunctionInfo FunctionManagerDialog::toFunctionInfo(const FunctionRecord &record)
         item.variable = p.first;
         item.value = p.second;
         item.confidence = 0.1;
-        item.testType = QStringLiteral("一般变量");
+        item.testType = QString("一般变量");
         item.checkState = Qt::Unchecked;
         info.constraintList.append(item);
     }
 
     if (!record.execsList.trimmed().isEmpty()) {
-        QString actuatorVar = record.execsList.split(QStringLiteral(","), QString::SkipEmptyParts).value(0).trimmed();
+        QString actuatorVar = record.execsList.split(QString(","), QString::SkipEmptyParts).value(0).trimmed();
         if (!actuatorVar.isEmpty()) {
             info.actuatorConstraint.variable = actuatorVar;
-            info.actuatorConstraint.value = QStringLiteral("true");
+            info.actuatorConstraint.value = QString("true");
             info.actuatorConstraint.confidence = 1.0;
-            info.actuatorConstraint.testType = QStringLiteral("功能执行器");
+            info.actuatorConstraint.testType = QString("功能执行器");
             info.actuatorConstraint.checkState = Qt::Unchecked;
             info.actuatorName = actuatorVariable(record);
             info.constraintList.prepend(info.actuatorConstraint);
@@ -279,12 +279,12 @@ void FunctionManagerDialog::persistFunctionDocument()
     FunctionDocumentRecord doc = m_repo.loadDocument(m_containerId);
     doc.containerId = m_containerId;
     doc.xmlText = m_repo.buildFunctionDocument(m_functionMap);
-    doc.sourceHint = QStringLiteral("FunctionManagerDialog");
+    doc.sourceHint = QString("FunctionManagerDialog");
     m_repo.saveDocument(doc);
 
     // 兼容性：重写 Function 表摘要
     QSqlQuery clear(m_db);
-    clear.exec(QStringLiteral("DELETE FROM Function"));
+    clear.exec(QString("DELETE FROM Function"));
     for (const auto &rec : m_records) {
         m_repo.insert(rec);
     }

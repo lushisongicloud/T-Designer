@@ -72,6 +72,8 @@ private:
     QString relativeToProject(const QString &projectDir, const QString &path) const;
     QString absoluteFromProject(const QString &projectDir, const QString &path) const;
     void deactivateOld(int containerId) const;
+    QString loadFunctionDescriptionFromModels(const QString &projectName) const;
+    QMap<QString, FunctionInfo> loadFunctionInfoMap(const QString &projectName) const;
 
     QSqlDatabase m_db;
 };

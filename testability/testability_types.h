@@ -42,6 +42,11 @@ struct TestDefinition {
     QString predicate;
     QString negatedPredicate;
     QString note;
+    QString description;
+    double complexity = std::numeric_limits<double>::quiet_NaN();
+    double cost = std::numeric_limits<double>::quiet_NaN();
+    double duration = std::numeric_limits<double>::quiet_NaN();
+    double successRate = std::numeric_limits<double>::quiet_NaN();
     QString relatedFunction;
     QString componentName;
     QString failureModeName;

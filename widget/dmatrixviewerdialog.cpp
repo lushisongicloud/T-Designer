@@ -602,6 +602,28 @@ void DMatrixViewerDialog::showCellDetails(const QModelIndex &index)
     }
     lines << tr("测试类型: %1").arg(testKindText(test->kind));
     lines << tr("测试启用: %1").arg(index.column() < testStates.size() && testStates.at(index.column()) ? tr("是") : tr("否"));
+    auto formatOptional = [this](double value, int precision = 2) {
+        if (std::isfinite(value)) {
+            return QString::number(value, 'f', precision);
+        }
+        return tr("未提供");
+    };
+    if (!test->description.trimmed().isEmpty()) {
+        lines << tr("测试描述: %1").arg(test->description.trimmed());
+    }
+    if (std::isfinite(test->complexity)) {
+        lines << tr("测试复杂性: %1").arg(formatOptional(test->complexity));
+    }
+    if (std::isfinite(test->cost)) {
+        lines << tr("测试费用: %1").arg(formatOptional(test->cost));
+    }
+    if (std::isfinite(test->duration)) {
+        lines << tr("测试时间: %1").arg(formatOptional(test->duration));
+    }
+    if (std::isfinite(test->successRate)) {
+        const double rate = test->successRate <= 1.0 ? test->successRate * 100.0 : test->successRate;
+        lines << tr("检测成功率: %1%").arg(rate, 0, 'f', 2);
+    }
     if (!test->relatedFunction.trimmed().isEmpty()) {
         lines << tr("关联功能: %1").arg(test->relatedFunction);
     }

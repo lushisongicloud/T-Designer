@@ -10,12 +10,15 @@
 #include <QSqlError>
 #include <QVariant>
 #include <QtDebug>
+#include <cmath>
+#include <limits>
 
 #include "widget/containerhierarchyutils.h"
 #include "BO/function/functionrepository.h"
 #include "BO/systementity.h"
 #include "DO/model.h"
 #include "testability/smt_facade.h"
+#include "testability/function_catalog.h"
 
 using namespace testability;
 
@@ -40,13 +43,13 @@ bool ensureBuiltinMacroFamilies(const QSqlDatabase &db)
     if (!db.isOpen())
         return false;
     QSqlQuery count(db);
-    if (count.exec(QStringLiteral("SELECT COUNT(1) FROM sqlite_master WHERE type='table' AND name='port_connect_macro_family'"))
+    if (count.exec(QString("SELECT COUNT(1) FROM sqlite_master WHERE type='table' AND name='port_connect_macro_family'"))
         && count.next() && count.value(0).toInt() == 0) {
         return false;
     }
 
     QSqlQuery exists(db);
-    exists.exec(QStringLiteral("SELECT COUNT(1) FROM port_connect_macro_family WHERE is_builtin = 1"));
+    exists.exec(QString("SELECT COUNT(1) FROM port_connect_macro_family WHERE is_builtin = 1"));
     if (exists.next() && exists.value(0).toInt() > 0) {
         return true;
     }
@@ -55,20 +58,20 @@ bool ensureBuiltinMacroFamilies(const QSqlDatabase &db)
         QJsonArray arr;
         auto add = [&](int arity, const QString &name, const QString &expansion) {
             QJsonObject obj;
-            obj.insert(QStringLiteral("arity"), arity);
-            obj.insert(QStringLiteral("macro_name"), name);
-            obj.insert(QStringLiteral("expansion"), expansion);
+            obj.insert(QString("arity"), arity);
+            obj.insert(QString("macro_name"), name);
+            obj.insert(QString("expansion"), expansion);
             arr.append(obj);
         };
-        if (domain == QStringLiteral("electric")) {
-            add(2, QStringLiteral("connect2e"), QStringLiteral("(assert (= (+ %1.i %2.i) 0)) (assert (= %1.u %2.u))"));
-            add(3, QStringLiteral("connect3e"), QStringLiteral("(assert (= (+ %1.i %2.i %3.i) 0)) (assert (= %1.u %2.u %3.u))"));
-        } else if (domain == QStringLiteral("hydraulic")) {
-            add(2, QStringLiteral("connect2h"), QStringLiteral("(assert (= (+ %1.q %2.q) 0)) (assert (= %1.p %2.p))"));
-            add(3, QStringLiteral("connect3h"), QStringLiteral("(assert (= (+ %1.q %2.q %3.q) 0)) (assert (= %1.p %2.p %3.p))"));
-        } else if (domain == QStringLiteral("mechanical")) {
-            add(2, QStringLiteral("connect2m"), QStringLiteral("(assert (= (+ %1.F %2.F) 0)) (assert (= %1.M %2.M))"));
-            add(3, QStringLiteral("connect3m"), QStringLiteral("(assert (= (+ %1.F %2.F %3.F) 0)) (assert (= %1.M %2.M %3.M))"));
+        if (domain == QString("electric")) {
+            add(2, QString("connect2e"), QString("(assert (= (+ %1.i %2.i) 0)) (assert (= %1.u %2.u))"));
+            add(3, QString("connect3e"), QString("(assert (= (+ %1.i %2.i %3.i) 0)) (assert (= %1.u %2.u %3.u))"));
+        } else if (domain == QString("hydraulic")) {
+            add(2, QString("connect2h"), QString("(assert (= (+ %1.q %2.q) 0)) (assert (= %1.p %2.p))"));
+            add(3, QString("connect3h"), QString("(assert (= (+ %1.q %2.q %3.q) 0)) (assert (= %1.p %2.p %3.p))"));
+        } else if (domain == QString("mechanical")) {
+            add(2, QString("connect2m"), QString("(assert (= (+ %1.F %2.F) 0)) (assert (= %1.M %2.M))"));
+            add(3, QString("connect3m"), QString("(assert (= (+ %1.F %2.F %3.F) 0)) (assert (= %1.M %2.M %3.M))"));
         }
         return arr;
     };
@@ -79,22 +82,43 @@ bool ensureBuiltinMacroFamilies(const QSqlDatabase &db)
         QString description;
     };
     const QVector<BuiltinFamily> families = {
-        {QStringLiteral("electric-connect"), QStringLiteral("electric"), QStringLiteral("电气连接宏族")},
-        {QStringLiteral("hydraulic-connect"), QStringLiteral("hydraulic"), QStringLiteral("液压连接宏族")},
-        {QStringLiteral("mechanical-connect"), QStringLiteral("mechanical"), QStringLiteral("机械连接宏族")}
+        {QString("electric-connect"), QString("electric"), QString("电气连接宏族")},
+        {QString("hydraulic-connect"), QString("hydraulic"), QString("液压连接宏族")},
+        {QString("mechanical-connect"), QString("mechanical"), QString("机械连接宏族")}
     };
 
     for (const auto &fam : families) {
         QSqlQuery ins(db);
-        ins.prepare(QStringLiteral("INSERT OR IGNORE INTO port_connect_macro_family(family_name, domain, description, is_builtin, macros_json) "
+        ins.prepare(QString("INSERT OR IGNORE INTO port_connect_macro_family(family_name, domain, description, is_builtin, macros_json) "
                                    "VALUES(:name, :domain, :desc, 1, :json)"));
-        ins.bindValue(QStringLiteral(":name"), fam.name);
-        ins.bindValue(QStringLiteral(":domain"), fam.domain);
-        ins.bindValue(QStringLiteral(":desc"), fam.description);
-        ins.bindValue(QStringLiteral(":json"), QString::fromUtf8(QJsonDocument(makeMacros(fam.domain)).toJson(QJsonDocument::Compact)));
+        ins.bindValue(QString(":name"), fam.name);
+        ins.bindValue(QString(":domain"), fam.domain);
+        ins.bindValue(QString(":desc"), fam.description);
+        ins.bindValue(QString(":json"), QString::fromUtf8(QJsonDocument(makeMacros(fam.domain)).toJson(QJsonDocument::Compact)));
         ins.exec();
     }
     return true;
+}
+
+double optionalDouble(const QJsonObject &obj, const QString &key)
+{
+    const QJsonValue value = obj.value(key);
+    if (value.isDouble()) {
+        return value.toDouble();
+    }
+    if (value.isString()) {
+        bool ok = false;
+        double d = value.toString().toDouble(&ok);
+        return ok ? d : std::numeric_limits<double>::quiet_NaN();
+    }
+    return std::numeric_limits<double>::quiet_NaN();
+}
+
+void insertIfFinite(QJsonObject &obj, const QString &key, double value)
+{
+    if (std::isfinite(value)) {
+        obj.insert(key, value);
+    }
 }
 
 } // namespace
@@ -104,11 +128,73 @@ DMatrixService::DMatrixService(const QSqlDatabase &db)
 {
 }
 
+QString DMatrixService::loadFunctionDescriptionFromModels(const QString &projectName) const
+{
+    if (!m_db.isOpen()) {
+        return QString();
+    }
+
+    QString tableName;
+    QSqlQuery check(m_db);
+    if (!check.exec(QString("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('models','model') LIMIT 1"))) {
+        qWarning() << "DMatrixService failed to inspect models table" << check.lastError();
+        return QString();
+    }
+    if (check.next()) {
+        tableName = check.value(0).toString();
+    }
+    if (tableName.isEmpty()) {
+        return QString();
+    }
+
+    auto loadByName = [&](const QString &name) -> QString {
+        if (name.trimmed().isEmpty()) {
+            return QString();
+        }
+        QSqlQuery query(m_db);
+        query.prepare(QString("SELECT functionDescription FROM %1 WHERE name = :name LIMIT 1").arg(tableName));
+        query.bindValue(QString(":name"), name.trimmed());
+        if (!query.exec()) {
+            qWarning() << "DMatrixService failed to load functionDescription for model" << name << query.lastError();
+            return QString();
+        }
+        if (query.next()) {
+            return query.value(0).toString();
+        }
+        return QString();
+    };
+
+    QString description = loadByName(projectName);
+    if (description.trimmed().isEmpty()) {
+        QSqlQuery any(m_db);
+        if (any.exec(QString("SELECT functionDescription FROM %1 LIMIT 1").arg(tableName)) && any.next()) {
+            description = any.value(0).toString();
+        }
+    }
+    return description;
+}
+
+QMap<QString, FunctionInfo> DMatrixService::loadFunctionInfoMap(const QString &projectName) const
+{
+    const QString description = loadFunctionDescriptionFromModels(projectName);
+    if (description.trimmed().isEmpty()) {
+        return {};
+    }
+    const QMap<QString, FunctionInfo> functionMap = testability::FunctionCatalog::parse(description);
+    if (functionMap.isEmpty()) {
+        qWarning() << "DMatrixService parsed empty function map from models.functionDescription";
+    } else {
+        qDebug().noquote() << "[DMatrixService] loaded functionDescription from models, functions:"
+                           << functionMap.keys();
+    }
+    return functionMap;
+}
+
 bool DMatrixService::ensureTable() const
 {
     if (!m_db.isOpen()) return false;
     QSqlQuery query(m_db);
-    if (!query.exec(QStringLiteral(
+    if (!query.exec(QString(
             "CREATE TABLE IF NOT EXISTS dmatrix_meta ("
             " dmatrix_meta_id INTEGER PRIMARY KEY AUTOINCREMENT,"
             " container_id INTEGER NOT NULL,"
@@ -125,7 +211,7 @@ bool DMatrixService::ensureTable() const
         return false;
     }
     QSqlQuery index(m_db);
-    index.exec(QStringLiteral("CREATE INDEX IF NOT EXISTS idx_dmatrix_container ON dmatrix_meta(container_id, is_active)"));
+    index.exec(QString("CREATE INDEX IF NOT EXISTS idx_dmatrix_container ON dmatrix_meta(container_id, is_active)"));
     ensureBuiltinMacroFamilies(m_db);
     return true;
 }
@@ -152,8 +238,8 @@ QString DMatrixService::serializeState(const QVector<bool> &faultEnabled,
     QJsonArray tests;
     for (bool v : testEnabled)
         tests.append(v);
-    obj.insert(QStringLiteral("faultEnabled"), faults);
-    obj.insert(QStringLiteral("testEnabled"), tests);
+    obj.insert(QString("faultEnabled"), faults);
+    obj.insert(QString("testEnabled"), tests);
     return QString::fromUtf8(QJsonDocument(obj).toJson(QJsonDocument::Compact));
 }
 
@@ -170,10 +256,10 @@ bool DMatrixService::parseState(const QString &json,
     }
     const QJsonObject obj = doc.object();
     if (faultEnabled) {
-        fillVector(obj.value(QStringLiteral("faultEnabled")).toArray(), faultEnabled);
+        fillVector(obj.value(QString("faultEnabled")).toArray(), faultEnabled);
     }
     if (testEnabled) {
-        fillVector(obj.value(QStringLiteral("testEnabled")).toArray(), testEnabled);
+        fillVector(obj.value(QString("testEnabled")).toArray(), testEnabled);
     }
     return true;
 }
@@ -189,28 +275,28 @@ DMatrixBuildOptions DMatrixService::parseOptions(const QString &json) const
         return opts;
     }
     const QJsonObject obj = doc.object();
-    opts.mode = static_cast<DetectMode>(obj.value(QStringLiteral("mode")).toInt(static_cast<int>(DetectMode::Guaranteed)));
-    opts.timeoutMs = obj.value(QStringLiteral("timeoutMs")).toInt(-1);
-    opts.autoRange = obj.value(QStringLiteral("autoRange")).toBool(true);
-    opts.fallbackToTemplate = obj.value(QStringLiteral("fallbackToTemplate")).toBool(true);
-    opts.rangeTolerance = obj.value(QStringLiteral("rangeTolerance")).toDouble(0.05);
-    opts.searchMaxAbs = obj.value(QStringLiteral("searchMaxAbs")).toDouble(10000.0);
-    opts.includeFunctionInputs = obj.value(QStringLiteral("includeFunctionInputs")).toBool(true);
-    opts.outputDirectory = obj.value(QStringLiteral("outputDirectory")).toString();
+    opts.mode = static_cast<DetectMode>(obj.value(QString("mode")).toInt(static_cast<int>(DetectMode::Guaranteed)));
+    opts.timeoutMs = obj.value(QString("timeoutMs")).toInt(-1);
+    opts.autoRange = obj.value(QString("autoRange")).toBool(true);
+    opts.fallbackToTemplate = obj.value(QString("fallbackToTemplate")).toBool(true);
+    opts.rangeTolerance = obj.value(QString("rangeTolerance")).toDouble(0.05);
+    opts.searchMaxAbs = obj.value(QString("searchMaxAbs")).toDouble(10000.0);
+    opts.includeFunctionInputs = obj.value(QString("includeFunctionInputs")).toBool(true);
+    opts.outputDirectory = obj.value(QString("outputDirectory")).toString();
     return opts;
 }
 
 QString DMatrixService::serializeOptions(const DMatrixBuildOptions &options) const
 {
     QJsonObject obj;
-    obj.insert(QStringLiteral("mode"), static_cast<int>(options.mode));
-    obj.insert(QStringLiteral("timeoutMs"), options.timeoutMs);
-    obj.insert(QStringLiteral("autoRange"), options.autoRange);
-    obj.insert(QStringLiteral("fallbackToTemplate"), options.fallbackToTemplate);
-    obj.insert(QStringLiteral("rangeTolerance"), options.rangeTolerance);
-    obj.insert(QStringLiteral("searchMaxAbs"), options.searchMaxAbs);
-    obj.insert(QStringLiteral("includeFunctionInputs"), options.includeFunctionInputs);
-    obj.insert(QStringLiteral("outputDirectory"), options.outputDirectory);
+    obj.insert(QString("mode"), static_cast<int>(options.mode));
+    obj.insert(QString("timeoutMs"), options.timeoutMs);
+    obj.insert(QString("autoRange"), options.autoRange);
+    obj.insert(QString("fallbackToTemplate"), options.fallbackToTemplate);
+    obj.insert(QString("rangeTolerance"), options.rangeTolerance);
+    obj.insert(QString("searchMaxAbs"), options.searchMaxAbs);
+    obj.insert(QString("includeFunctionInputs"), options.includeFunctionInputs);
+    obj.insert(QString("outputDirectory"), options.outputDirectory);
     return QString::fromUtf8(QJsonDocument(obj).toJson(QJsonDocument::Compact));
 }
 
@@ -228,45 +314,76 @@ bool DMatrixService::parseMetadata(const QString &json, DMatrixBuildResult *resu
         return false;
     }
     const QJsonObject root = doc.object();
-    const QJsonArray faultsArray = root.value(QStringLiteral("faults")).toArray();
+    const QJsonArray faultsArray = root.value(QString("faults")).toArray();
     for (const auto &val : faultsArray) {
         const QJsonObject obj = val.toObject();
         FaultDefinition fault;
-        fault.id = obj.value(QStringLiteral("id")).toString();
-        fault.name = obj.value(QStringLiteral("name")).toString();
-        fault.kind = static_cast<FaultKind>(obj.value(QStringLiteral("kind")).toInt(static_cast<int>(FaultKind::Function)));
-        fault.relatedFunction = obj.value(QStringLiteral("relatedFunction")).toString();
-        fault.componentName = obj.value(QStringLiteral("componentName")).toString();
-        fault.failureModeName = obj.value(QStringLiteral("failureModeName")).toString();
-        const QJsonArray inputs = obj.value(QStringLiteral("inputAssertions")).toArray();
+        fault.id = obj.value(QString("id")).toString();
+        fault.name = obj.value(QString("name")).toString();
+        const QJsonValue kindVal = obj.value(QString("kind"));
+        if (kindVal.isString()) {
+            const QString kindStr = kindVal.toString().toLower();
+            if (kindStr == QStringLiteral("component")) {
+                fault.kind = FaultKind::Component;
+            } else {
+                fault.kind = FaultKind::Function;
+            }
+        } else {
+            fault.kind = static_cast<FaultKind>(kindVal.toInt(static_cast<int>(FaultKind::Function)));
+        }
+        fault.relatedFunction = obj.value(QString("relatedFunction")).toString();
+        fault.componentName = obj.value(QString("componentName")).toString();
+        fault.failureModeName = obj.value(QString("failureModeName")).toString();
+        const QJsonArray inputs = obj.value(QString("inputAssertions")).toArray();
         for (const auto &i : inputs) fault.inputAssertions.append(i.toString());
-        const QJsonArray faultA = obj.value(QStringLiteral("faultAssertions")).toArray();
+        const QJsonArray faultA = obj.value(QString("faultAssertions")).toArray();
         for (const auto &i : faultA) fault.faultAssertions.append(i.toString());
-        const QJsonArray actuators = obj.value(QStringLiteral("actuatorAssertions")).toArray();
+        const QJsonArray actuators = obj.value(QString("actuatorAssertions")).toArray();
         for (const auto &i : actuators) fault.actuatorAssertions.append(i.toString());
-        fault.enabled = obj.value(QStringLiteral("enabled")).toBool(true);
+        fault.enabled = obj.value(QString("enabled")).toBool(true);
         result->faults.append(fault);
     }
 
-    const QJsonArray testsArray = root.value(QStringLiteral("tests")).toArray();
+    const QJsonArray testsArray = root.value(QString("tests")).toArray();
     for (const auto &val : testsArray) {
         const QJsonObject obj = val.toObject();
         TestDefinition test;
-        test.id = obj.value(QStringLiteral("id")).toString();
-        test.name = obj.value(QStringLiteral("name")).toString();
-        test.kind = static_cast<TestKind>(obj.value(QStringLiteral("kind")).toInt(static_cast<int>(TestKind::Signal)));
-        test.relatedFunction = obj.value(QStringLiteral("relatedFunction")).toString();
-        test.componentName = obj.value(QStringLiteral("componentName")).toString();
-        test.failureModeName = obj.value(QStringLiteral("failureModeName")).toString();
-        test.predicate = obj.value(QStringLiteral("predicate")).toString();
-        test.negatedPredicate = obj.value(QStringLiteral("negatedPredicate")).toString();
-        test.note = obj.value(QStringLiteral("note")).toString();
-        test.signalVariable = obj.value(QStringLiteral("signalVariable")).toString();
-        test.enabled = obj.value(QStringLiteral("enabled")).toBool(true);
+        test.id = obj.value(QString("id")).toString();
+        test.name = obj.value(QString("name")).toString();
+        const QJsonValue kindVal = obj.value(QString("kind"));
+        if (kindVal.isString()) {
+            const QString kindStr = kindVal.toString().toLower();
+            if (kindStr == QStringLiteral("function")) {
+                test.kind = TestKind::Function;
+            } else if (kindStr == QStringLiteral("mode")) {
+                test.kind = TestKind::Mode;
+            } else {
+                test.kind = TestKind::Signal;
+            }
+        } else {
+            test.kind = static_cast<TestKind>(kindVal.toInt(static_cast<int>(TestKind::Signal)));
+        }
+        test.relatedFunction = obj.value(QString("relatedFunction")).toString();
+        test.componentName = obj.value(QString("componentName")).toString();
+        test.failureModeName = obj.value(QString("failureModeName")).toString();
+        test.predicate = obj.value(QString("predicate")).toString();
+        test.negatedPredicate = obj.value(QString("negatedPredicate")).toString();
+        test.description = obj.value(QString("description")).toString();
+        test.note = obj.value(QString("note")).toString();
+        const QString remark = obj.value(QString("remark")).toString();
+        if (test.note.isEmpty() && !remark.isEmpty()) {
+            test.note = remark;
+        }
+        test.complexity = optionalDouble(obj, QStringLiteral("complexity"));
+        test.cost = optionalDouble(obj, QStringLiteral("cost"));
+        test.duration = optionalDouble(obj, QStringLiteral("duration"));
+        test.successRate = optionalDouble(obj, QStringLiteral("successRate"));
+        test.signalVariable = obj.value(QString("signalVariable")).toString();
+        test.enabled = obj.value(QString("enabled")).toBool(true);
         result->tests.append(test);
     }
 
-    const QJsonArray cellRows = root.value(QStringLiteral("cells")).toArray();
+    const QJsonArray cellRows = root.value(QString("cells")).toArray();
     result->cells.resize(result->faults.size());
     for (int i = 0; i < cellRows.size() && i < result->faults.size(); ++i) {
         const QJsonArray row = cellRows.at(i).toArray();
@@ -275,14 +392,14 @@ bool DMatrixService::parseMetadata(const QString &json, DMatrixBuildResult *resu
         for (int j = 0; j < row.size() && j < result->tests.size(); ++j) {
             const QJsonObject obj = row.at(j).toObject();
             DetectabilityResult cell;
-            cell.normalSat = obj.value(QStringLiteral("normalSat")).toBool();
-            cell.faultSat = obj.value(QStringLiteral("faultSat")).toBool();
-            cell.normalPassSat = obj.value(QStringLiteral("normalPassSat")).toBool();
-            cell.faultFailSat = obj.value(QStringLiteral("faultFailSat")).toBool();
-            cell.guaranteed = obj.value(QStringLiteral("guaranteed")).toBool();
-            cell.detected = obj.value(QStringLiteral("detected")).toBool();
-            cell.method = obj.value(QStringLiteral("method")).toString();
-            cell.detail = obj.value(QStringLiteral("detail")).toString();
+            cell.normalSat = obj.value(QString("normalSat")).toBool();
+            cell.faultSat = obj.value(QString("faultSat")).toBool();
+            cell.normalPassSat = obj.value(QString("normalPassSat")).toBool();
+            cell.faultFailSat = obj.value(QString("faultFailSat")).toBool();
+            cell.guaranteed = obj.value(QString("guaranteed")).toBool();
+            cell.detected = obj.value(QString("detected")).toBool();
+            cell.method = obj.value(QString("method")).toString();
+            cell.detail = obj.value(QString("detail")).toString();
             rowVec.append(cell);
         }
         // pad if necessary
@@ -335,7 +452,15 @@ QString DMatrixService::serializeMetadata(const DMatrixBuildResult &result,
         obj["failureModeName"] = test.failureModeName;
         obj["predicate"] = test.predicate;
         obj["negatedPredicate"] = test.negatedPredicate;
+        if (!test.description.isEmpty()) {
+            obj["description"] = test.description;
+        }
         obj["note"] = test.note;
+        obj["remark"] = test.note;
+        insertIfFinite(obj, QStringLiteral("complexity"), test.complexity);
+        insertIfFinite(obj, QStringLiteral("cost"), test.cost);
+        insertIfFinite(obj, QStringLiteral("duration"), test.duration);
+        insertIfFinite(obj, QStringLiteral("successRate"), test.successRate);
         obj["signalVariable"] = test.signalVariable;
         obj["enabled"] = test.enabled;
         testsArray.append(obj);
@@ -412,8 +537,8 @@ QString DMatrixService::absoluteFromProject(const QString &projectDir, const QSt
 void DMatrixService::deactivateOld(int containerId) const
 {
     QSqlQuery query(m_db);
-    query.prepare(QStringLiteral("UPDATE dmatrix_meta SET is_active=0 WHERE container_id=:cid"));
-    query.bindValue(QStringLiteral(":cid"), containerId);
+    query.prepare(QString("UPDATE dmatrix_meta SET is_active=0 WHERE container_id=:cid"));
+    query.bindValue(QString(":cid"), containerId);
     query.exec();
 }
 
@@ -426,11 +551,11 @@ DMatrixLoadResult DMatrixService::loadLatest(int containerId,
         return load;
 
     QSqlQuery query(m_db);
-    query.prepare(QStringLiteral(
+    query.prepare(QString(
         "SELECT result_json, options_json, state_json, csv_path "
         "FROM dmatrix_meta WHERE container_id = :cid AND is_active = 1 "
         "ORDER BY updated_at DESC, dmatrix_meta_id DESC LIMIT 1"));
-    query.bindValue(QStringLiteral(":cid"), containerId);
+    query.bindValue(QString(":cid"), containerId);
     if (!query.exec()) {
         qWarning() << "DMatrixService loadLatest failed" << query.lastError();
         return load;
@@ -456,10 +581,10 @@ DMatrixLoadResult DMatrixService::loadLatest(int containerId,
     const QJsonDocument doc = QJsonDocument::fromJson(resultJson.toUtf8(), &error);
     if (error.error == QJsonParseError::NoError && doc.isObject()) {
         const QJsonObject obj = doc.object();
-        const QString metaPathJson = obj.value(QStringLiteral("metadataPath")).toString();
+        const QString metaPathJson = obj.value(QString("metadataPath")).toString();
         if (!metaPathJson.isEmpty())
             load.metadataPath = absoluteFromProject(projectDir, metaPathJson);
-        const QString csvPathJson = obj.value(QStringLiteral("csvPath")).toString();
+        const QString csvPathJson = obj.value(QString("csvPath")).toString();
         if (!csvPathJson.isEmpty())
             load.csvPath = absoluteFromProject(projectDir, csvPathJson);
     }
@@ -482,14 +607,14 @@ bool DMatrixService::saveResult(int containerId,
     deactivateOld(containerId);
 
     QSqlQuery insert(m_db);
-    insert.prepare(QStringLiteral(
+    insert.prepare(QString(
         "INSERT INTO dmatrix_meta(container_id, result_json, options_json, state_json, csv_path, is_active, updated_at) "
         "VALUES(:cid, :result, :options, :state, :csv, 1, CURRENT_TIMESTAMP)"));
-    insert.bindValue(QStringLiteral(":cid"), containerId);
-    insert.bindValue(QStringLiteral(":result"), resultJson);
-    insert.bindValue(QStringLiteral(":options"), optionsJson);
-    insert.bindValue(QStringLiteral(":state"), stateJson);
-    insert.bindValue(QStringLiteral(":csv"), csvPath);
+    insert.bindValue(QString(":cid"), containerId);
+    insert.bindValue(QString(":result"), resultJson);
+    insert.bindValue(QString(":options"), optionsJson);
+    insert.bindValue(QString(":state"), stateJson);
+    insert.bindValue(QString(":csv"), csvPath);
     if (!insert.exec()) {
         qWarning() << "DMatrixService saveResult failed" << insert.lastError();
         return false;
@@ -505,13 +630,13 @@ bool DMatrixService::saveState(int containerId,
     if (!m_db.isOpen() || containerId <= 0)
         return false;
     QSqlQuery query(m_db);
-    query.prepare(QStringLiteral(
+    query.prepare(QString(
         "UPDATE dmatrix_meta SET state_json=:state, "
         "csv_path=COALESCE(:csv, csv_path), "
         "updated_at=CURRENT_TIMESTAMP WHERE container_id=:cid AND is_active=1"));
-    query.bindValue(QStringLiteral(":state"), stateJson);
-    query.bindValue(QStringLiteral(":csv"), csvPath);
-    query.bindValue(QStringLiteral(":cid"), containerId);
+    query.bindValue(QString(":state"), stateJson);
+    query.bindValue(QString(":csv"), csvPath);
+    query.bindValue(QString(":cid"), containerId);
     if (!query.exec()) {
         qWarning() << "DMatrixService saveState failed" << query.lastError();
         return false;
@@ -531,22 +656,24 @@ bool DMatrixService::buildAndPersist(SystemEntity *systemEntity,
                                      QString *errorMessage) const
 {
     if (!systemEntity || !m_db.isOpen()) {
-        if (errorMessage) *errorMessage = QStringLiteral("系统实体或数据库不可用");
+        if (errorMessage) *errorMessage = QString("系统实体或数据库不可用");
         return false;
     }
     if (!ensureTable()) {
-        if (errorMessage) *errorMessage = QStringLiteral("dmatrix_meta 表不可用");
+        if (errorMessage) *errorMessage = QString("dmatrix_meta 表不可用");
         return false;
     }
 
-    // 准备功能定义
-    FunctionRepository repo(m_db);
-    repo.ensureTables();
-    QMap<QString, FunctionInfo> functionMap;
-    FunctionDocumentRecord doc = repo.loadDocument(containerId);
-    if (doc.id > 0 && !doc.xmlText.trimmed().isEmpty()) {
-        const FunctionDocumentParseResult parsed = repo.parseFunctionDocument(doc.xmlText);
-        functionMap = parsed.functionMap;
+    // 准备功能定义：优先使用 models.functionDescription，与 T-Solver 对齐
+    QMap<QString, FunctionInfo> functionMap = loadFunctionInfoMap(projectName);
+    if (functionMap.isEmpty()) {
+        FunctionRepository repo(m_db);
+        repo.ensureTables();
+        FunctionDocumentRecord doc = repo.loadDocument(containerId);
+        if (doc.id > 0 && !doc.xmlText.trimmed().isEmpty()) {
+            const FunctionDocumentParseResult parsed = repo.parseFunctionDocument(doc.xmlText);
+            functionMap = parsed.functionMap;
+        }
     }
     if (functionMap.isEmpty()) {
         functionMap = ContainerHierarchy::fetchFunctionInfoMap(m_db);
@@ -575,6 +702,14 @@ bool DMatrixService::buildAndPersist(SystemEntity *systemEntity,
     const QString projectMetadataPath = defaultMetadataPath(projectDir, projectName);
     const QString metadataContent = readFile(metadataPath);
     if (!metadataContent.isEmpty() && !projectMetadataPath.isEmpty()) {
+        // 确保项目目录存在
+        QDir projDir(QFileInfo(projectMetadataPath).absolutePath());
+        if (!projDir.exists()) {
+            qDebug() << "Creating project metadata directory:" << projDir.absolutePath();
+            if (!projDir.mkpath(QString("."))) {
+                qWarning() << "Failed to create project metadata directory:" << projDir.absolutePath();
+            }
+        }
         QFile f(projectMetadataPath);
         if (f.open(QIODevice::WriteOnly | QIODevice::Text)) {
             f.write(metadataContent.toUtf8());
@@ -585,6 +720,14 @@ bool DMatrixService::buildAndPersist(SystemEntity *systemEntity,
     // 同步 CSV (可选)
     const QString projectCsvPath = defaultCsvPath(projectDir, projectName);
     if (!csvPath.isEmpty() && !projectCsvPath.isEmpty()) {
+        // 确保项目目录存在
+        QDir projDir(QFileInfo(projectCsvPath).absolutePath());
+        if (!projDir.exists()) {
+            qDebug() << "Creating project CSV directory:" << projDir.absolutePath();
+            if (!projDir.mkpath(QString("."))) {
+                qWarning() << "Failed to create project CSV directory:" << projDir.absolutePath();
+            }
+        }
         QFile::remove(projectCsvPath);
         QFile::copy(csvPath, projectCsvPath);
         csvPath = projectCsvPath;

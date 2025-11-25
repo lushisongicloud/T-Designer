@@ -53,6 +53,14 @@ QString faultKindDisplay(FaultKind kind)
         return QObject::tr("功能故障");
     }
 }
+
+QString formatOptionalNumber(double value)
+{
+    if (std::isfinite(value)) {
+        return QString::number(value, 'g', 6);
+    }
+    return QObject::tr("未提供");
+}
 }
 
 DMatrixModel::DMatrixModel(QObject *parent)
@@ -128,6 +136,25 @@ QVariant DMatrixModel::data(const QModelIndex &index, int role) const
         lines << tr("测试: %1 (%2)").arg(test.name, test.id);
         lines << tr("测试类型: %1").arg(testKindDisplay(test.kind));
         lines << tr("测试启用: %1").arg(testEnabled ? tr("是") : tr("否"));
+        if (!test.description.trimmed().isEmpty()) {
+            lines << tr("测试描述: %1").arg(test.description.trimmed());
+        }
+        if (std::isfinite(test.complexity)) {
+            lines << tr("复杂性: %1").arg(formatOptionalNumber(test.complexity));
+        }
+        if (std::isfinite(test.cost)) {
+            lines << tr("测试费用: %1").arg(formatOptionalNumber(test.cost));
+        }
+        if (std::isfinite(test.duration)) {
+            lines << tr("测试时间: %1").arg(formatOptionalNumber(test.duration));
+        }
+        if (std::isfinite(test.successRate)) {
+            const double rate = test.successRate <= 1.0 ? test.successRate * 100.0 : test.successRate;
+            lines << tr("检测成功率: %1%").arg(rate, 0, 'f', 2);
+        }
+        if (!test.note.trimmed().isEmpty()) {
+            lines << tr("备注: %1").arg(test.note.trimmed());
+        }
         lines << tr("故障: %1 (%2)").arg(fault.name, fault.id);
         lines << tr("故障类型: %1").arg(faultKindDisplay(fault.kind));
         lines << tr("故障启用: %1").arg(faultEnabled ? tr("是") : tr("否"));
@@ -169,6 +196,25 @@ QVariant DMatrixModel::headerData(int section, Qt::Orientation orientation, int 
             }
             tooltip.append(QLatin1Char('\n')).append(tr("类型: %1").arg(testKindDisplay(test.kind)));
             tooltip.append(QLatin1Char('\n')).append(tr("启用: %1").arg(enabled ? tr("是") : tr("否")));
+            if (!test.description.trimmed().isEmpty()) {
+                tooltip.append(QLatin1Char('\n')).append(tr("描述: %1").arg(test.description.trimmed()));
+            }
+            if (std::isfinite(test.complexity)) {
+                tooltip.append(QLatin1Char('\n')).append(tr("复杂性: %1").arg(formatOptionalNumber(test.complexity)));
+            }
+            if (std::isfinite(test.cost)) {
+                tooltip.append(QLatin1Char('\n')).append(tr("费用: %1").arg(formatOptionalNumber(test.cost)));
+            }
+            if (std::isfinite(test.duration)) {
+                tooltip.append(QLatin1Char('\n')).append(tr("时间: %1").arg(formatOptionalNumber(test.duration)));
+            }
+            if (std::isfinite(test.successRate)) {
+                const double rate = test.successRate <= 1.0 ? test.successRate * 100.0 : test.successRate;
+                tooltip.append(QLatin1Char('\n')).append(tr("成功率: %1%").arg(rate, 0, 'f', 2));
+            }
+            if (!test.note.trimmed().isEmpty()) {
+                tooltip.append(QLatin1Char('\n')).append(tr("备注: %1").arg(test.note.trimmed()));
+            }
             return tooltip;
         }
         if (role == Qt::ForegroundRole && !enabled) {
