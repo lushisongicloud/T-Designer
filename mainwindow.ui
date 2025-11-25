@@ -420,7 +420,7 @@ rgba(17,255,255,128));
 </string>
             </property>
             <property name="currentIndex">
-             <number>1</number>
+             <number>6</number>
             </property>
             <widget class="QWidget" name="tab_8">
              <property name="styleSheet">
@@ -11189,32 +11189,32 @@ QDoubleSpinBox{
         <property name="topMargin">
          <number>5</number>
         </property>
-       <property name="bottomMargin">
-        <number>5</number>
-       </property>
-       <item>
-        <widget class="QToolButton" name="BtnDMatrix">
-         <property name="text">
-          <string>D矩阵</string>
-         </property>
-         <property name="iconSize">
-          <size>
-           <width>32</width>
-           <height>32</height>
-          </size>
-         </property>
-         <property name="toolButtonStyle">
-          <enum>Qt::ToolButtonTextUnderIcon</enum>
-         </property>
-         <property name="autoRaise">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QToolButton" name="BtnDiagnose">
-         <property name="text">
-          <string>故障诊断</string>
+        <property name="bottomMargin">
+         <number>5</number>
+        </property>
+        <item>
+         <widget class="QToolButton" name="BtnDMatrix">
+          <property name="text">
+           <string>D矩阵</string>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>32</width>
+            <height>32</height>
+           </size>
+          </property>
+          <property name="toolButtonStyle">
+           <enum>Qt::ToolButtonTextUnderIcon</enum>
+          </property>
+          <property name="autoRaise">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QToolButton" name="BtnDiagnose">
+          <property name="text">
+           <string>故障诊断</string>
           </property>
           <property name="iconSize">
            <size>

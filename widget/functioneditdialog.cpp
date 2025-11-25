@@ -11,6 +11,12 @@
 #include <QSet>
 #include <QtDebug>
 #include <QDomDocument>
+#include <QtGlobal>
+#include "BO/systementity.h"
+#include "DO/model.h"
+#include "testability/constraint_utils.h"
+
+using functionvalues::FunctionVariableRow;
 
 FunctionEditDialog::FunctionEditDialog(const QSqlDatabase &db, QWidget *parent)
     : QDialog(parent)
@@ -32,6 +38,7 @@ FunctionEditDialog::FunctionEditDialog(const QSqlDatabase &db, QWidget *parent)
     connect(ui->buttonBox, &QDialogButtonBox::accepted, this, &FunctionEditDialog::onAccepted);
     connect(ui->listExecs, &QListWidget::itemChanged, this, &FunctionEditDialog::updateExecList);
     connect(ui->btnAutoAnalyze, &QPushButton::clicked, this, &FunctionEditDialog::onAutoAnalyze);
+    connect(ui->btnAutoLink, &QPushButton::clicked, this, &FunctionEditDialog::onAutoLink);
     connect(ui->btnVariableValues, &QPushButton::clicked, this, &FunctionEditDialog::onEditVariableValues);
 
     ui->btnAutoAnalyze->setEnabled(false);
@@ -229,7 +236,12 @@ QVector<FunctionVariableRow> FunctionEditDialog::collectVariableRows() const
     for (const QString &variable : variables) {
         FunctionVariableRow row;
         row.variable = variable;
-        row.entry = m_variableConfig.entry(variable);
+        const auto entry = m_variableConfig.entry(variable);
+        row.typeKey = entry.type;
+        row.constraintValue = entry.constraintValue;
+        row.typicalValues = entry.typicalValues;
+        row.valueRange = entry.valueRange;
+        row.satSamples = entry.satSamples;
         rows.append(row);
         seen.insert(variable);
     }
@@ -241,9 +253,7 @@ QVector<FunctionVariableRow> FunctionEditDialog::collectVariableRows() const
             continue;
         FunctionVariableRow row;
         row.variable = variable;
-        functionvalues::VariableEntry entry;
-        entry.constraintValue = it.value();
-        row.entry = entry;
+        row.constraintValue = it.value();
         rows.append(row);
         seen.insert(variable);
     }
@@ -335,27 +345,66 @@ void FunctionEditDialog::onAutoAnalyze()
     applyAnalysis(result);
 }
 
+void FunctionEditDialog::onAutoLink()
+{
+    if (m_record.symbolId == 0) {
+        QMessageBox::information(this, tr("提示"), tr("请先选择功能子块"));
+        return;
+    }
+    const FunctionModelResult result = m_analysisService.analyzeSymbol(m_record.symbolId, ui->editName->text().trimmed());
+    if (result.record.link.trimmed().isEmpty()) {
+        QMessageBox::information(this, tr("提示"), tr("未能自动推导链路，请手动填写。"));
+        return;
+    }
+    const QString current = ui->editLink->text().trimmed();
+    ui->editLink->setText(result.record.link);
+    ui->editComponentDependency->setText(result.record.componentDependency);
+    ui->editAllComponents->setText(result.record.allComponents);
+    if (!current.isEmpty() && current != result.record.link) {
+        QMessageBox::information(this, tr("提示"), tr("已填入自动推导链路：%1\n原链路：%2").arg(result.record.link, current));
+    }
+}
+
 void FunctionEditDialog::analyzeCurrentSymbol()
 {
     onAutoAnalyze();
 }
 
+void FunctionEditDialog::setSystemContext(SystemEntity *systemEntity, const QString &systemDescription)
+{
+    m_systemEntity = systemEntity;
+    m_systemDescription = systemDescription;
+}
+
 void FunctionEditDialog::onEditVariableValues()
 {
     QVector<FunctionVariableRow> rows = collectVariableRows();
-    FunctionVariableValueDialog dialog(rows, this);
-    dialog.setConstraintMap(currentConstraintMap());
-    dialog.setVariableSuggestions(variableSuggestions());
-    if (dialog.exec() != QDialog::Accepted)
+    auto solver = [this](const QString &variable,
+                         const QString &typeKey,
+                         const QStringList &typicalValues,
+                         QString &errorMessage) {
+        return solveVariableRange(variable, typeKey, typicalValues, errorMessage);
+    };
+    FunctionVariableValueDialog dialog(rows, solver, this);
+    if (dialog.exec() != QDialog::Accepted) {
         return;
+    }
 
-    const QVector<FunctionVariableRow> resultRows = dialog.rows();
+    const QVector<FunctionVariableRow> resultRows = dialog.resultRows();
     functionvalues::FunctionVariableConfig config;
     for (const FunctionVariableRow &row : resultRows) {
         const QString variable = row.variable.trimmed();
         if (variable.isEmpty())
             continue;
-        config.setEntry(variable, row.entry);
+        functionvalues::VariableEntry entry;
+        entry.type = row.typeKey;
+        if (!row.constraintLocked) {
+            entry.constraintValue = row.constraintValue;
+        }
+        entry.typicalValues = row.typicalValues;
+        entry.valueRange = row.valueRange;
+        entry.satSamples = row.satSamples;
+        config.setEntry(variable, entry);
     }
     setCurrentVariableConfig(config);
 }
@@ -366,11 +415,6 @@ void FunctionEditDialog::onAccepted()
         QMessageBox::warning(this, tr("提示"), tr("功能名称不能为空"));
         return;
     }
-    if (m_record.symbolId == 0) {
-        QMessageBox::warning(this, tr("提示"), tr("请选择功能子块"));
-        return;
-    }
-
     m_record.name = ui->editName->text().trimmed();
     m_record.remark = ui->plainRemark->toPlainText();
     m_record.execsList = buildExecList();
@@ -384,4 +428,244 @@ void FunctionEditDialog::onAccepted()
     m_record.variableConfigXml = variableConfigToXml(m_variableConfig);
 
     accept();
+}
+
+QList<TestItem> FunctionEditDialog::buildBaseTestItems() const
+{
+    QList<TestItem> items;
+    const QMap<QString, QString> constraints = currentConstraintMap();
+    for (auto it = constraints.constBegin(); it != constraints.constEnd(); ++it) {
+        TestItem item;
+        item.variable = it.key().trimmed();
+        item.value = it.value().trimmed();
+        item.testType = QString("一般变量");
+        item.checkState = Qt::Checked;
+        item.confidence = 1.0;
+        items.append(item);
+    }
+    return items;
+}
+
+TestItem FunctionEditDialog::makeVariableSetterItem(const QString &variable, const QString &valueExpression) const
+{
+    TestItem setter;
+    setter.variable = variable;
+    setter.testType = QString("一般变量");
+    setter.confidence = 1.0;
+    setter.checkState = Qt::Checked;
+    const QString trimmed = valueExpression.trimmed();
+    const QString lowered = trimmed.toLower();
+    if (lowered == QString("true") || lowered == QString("false")) {
+        setter.value = lowered;
+    } else if (trimmed.startsWith(QString("smt("), Qt::CaseInsensitive)) {
+        setter.value = trimmed;
+    } else {
+        setter.value = QString("smt(= %1 %2)").arg(variable, trimmed);
+    }
+    return setter;
+}
+
+QString FunctionEditDialog::solveVariableRange(const QString &variable,
+                                               const QString &typeKey,
+                                               const QStringList &typicalValues,
+                                               QString &errorMessage) const
+{
+    errorMessage.clear();
+    if (!m_systemEntity) {
+        errorMessage = QString("未设置系统求解上下文，无法求解变量范围");
+        return QString();
+    }
+
+    const QString trimmedVariable = variable.trimmed();
+    if (trimmedVariable.isEmpty()) {
+        errorMessage = QString("变量名称为空");
+        return QString();
+    }
+
+    QString linkText = ui->editLink->text().trimmed();
+    SystemStructure structure(m_systemDescription, linkText);
+    if (!structure.isSystemConsistent()) {
+        errorMessage = QString("当前功能链路或系统描述不自洽");
+        return QString();
+    }
+    const QString croppedDescription = structure.getCroppedSystemDescription();
+    if (croppedDescription.isEmpty()) {
+        errorMessage = QString("无法构建裁剪后的系统描述");
+        return QString();
+    }
+
+    const QList<TestItem> baseItems = buildBaseTestItems();
+    const QString normalizedTypeKey = typeKey.trimmed();
+
+    auto buildItemsWithValue = [&](const QString &valueExpr) {
+        QList<TestItem> items = baseItems;
+        // remove existing setters for same variable
+        for (int i = items.size() - 1; i >= 0; --i) {
+            if (items.at(i).variable.trimmed() == trimmedVariable) {
+                items.removeAt(i);
+            }
+        }
+        items.append(makeVariableSetterItem(trimmedVariable, valueExpr));
+        return items;
+    };
+
+    auto checkSat = [&](const QString &valueExpr, QMap<QString, QString> *modelOut = nullptr) {
+        const QList<TestItem> items = buildItemsWithValue(valueExpr);
+        return m_systemEntity->satisfiabilitySolve(croppedDescription,
+                                                   items,
+                                                   QStringList() << trimmedVariable,
+                                                   modelOut);
+    };
+
+    const auto isBoolToken = [](const QString &text) {
+        const QString lowered = text.trimmed().toLower();
+        return lowered == QString("true") || lowered == QString("false");
+    };
+
+    bool looksBool = normalizedTypeKey.compare(QString("Bool"), Qt::CaseInsensitive) == 0;
+    if (!looksBool) {
+        for (const QString &val : typicalValues) {
+            if (isBoolToken(val)) {
+                looksBool = true;
+            } else {
+                looksBool = false;
+                break;
+            }
+        }
+    }
+
+    if (looksBool) {
+        QStringList boolTypicals;
+        for (const QString &val : typicalValues) {
+            if (isBoolToken(val)) {
+                boolTypicals.append(val.trimmed().toLower());
+            }
+        }
+        if (boolTypicals.isEmpty()) {
+            boolTypicals << QString("true") << QString("false");
+        }
+        for (const QString &typ : boolTypicals) {
+            if (!checkSat(typ)) {
+                errorMessage = QString("变量 %1 在典型值 %2 下无法满足约束").arg(trimmedVariable, typ);
+                return QString();
+            }
+        }
+        QStringList feasible;
+        for (const QString &candidate : QStringList() << QString("true") << QString("false")) {
+            if (checkSat(candidate)) {
+                feasible.append(candidate);
+            }
+        }
+        feasible.removeDuplicates();
+        if (feasible.isEmpty()) {
+            errorMessage = QString("变量 %1 在所有布尔取值下均无法满足约束").arg(trimmedVariable);
+            return QString();
+        }
+        if (feasible.size() == 2) {
+            return QString("true;false");
+        }
+        return feasible.join(QString(";"));
+    }
+
+    QVector<double> typicalNumbers;
+    for (const QString &val : typicalValues) {
+        bool ok = false;
+        double num = val.trimmed().toDouble(&ok);
+        if (!ok) {
+            errorMessage = QString("变量 %1 的典型值 %2 不是数值").arg(trimmedVariable, val.trimmed());
+            return QString();
+        }
+        typicalNumbers.append(num);
+    }
+    if (typicalNumbers.isEmpty()) {
+        errorMessage = QString("变量 %1 缺少数值典型值").arg(trimmedVariable);
+        return QString();
+    }
+
+    QMap<QString, QString> satModel;
+    if (!checkSat(QString::number(typicalNumbers.first(), 'g', 12), &satModel)) {
+        errorMessage = QString("变量 %1 在典型值 %2 下无法满足约束")
+                .arg(trimmedVariable, QString::number(typicalNumbers.first(), 'g', 12));
+        return QString();
+    }
+
+    rangeconfig::RangeValue baseRange = m_systemEntity->variableRangeConfigRef()
+            .effectiveRange(normalizedTypeKey, trimmedVariable);
+    if (!baseRange.isValid()) {
+        baseRange = rangeconfig::VariableRangeConfig::defaultRange();
+    }
+    if (baseRange.lower > baseRange.upper) {
+        std::swap(baseRange.lower, baseRange.upper);
+    }
+
+    auto isSatForValue = [&](double candidate, QString &failureMessage) {
+        const QString candidateText = QString::number(candidate, 'g', 12);
+        return checkSat(candidateText, nullptr) ? true : (failureMessage.clear(), false);
+    };
+
+    const double tolerance = 0.1;
+    const int iterations = 24;
+    QStringList intervals;
+
+    for (double typical : typicalNumbers) {
+        double clampedTypical = qBound(baseRange.lower, typical, baseRange.upper);
+
+        QString typicalError;
+        if (!isSatForValue(clampedTypical, typicalError)) {
+            if (!typicalError.isEmpty()) {
+                errorMessage = typicalError;
+            } else {
+                errorMessage = QString("变量 %1 在典型值 %2 下无法满足约束")
+                                   .arg(trimmedVariable, QString::number(clampedTypical, 'g', 12));
+            }
+            return QString();
+        }
+
+        double lowerBound = clampedTypical;
+        double upperBound = clampedTypical;
+
+        QString boundaryError;
+        if (isSatForValue(baseRange.lower, boundaryError)) {
+            lowerBound = baseRange.lower;
+        } else {
+            double low = baseRange.lower;
+            double high = clampedTypical;
+            for (int i = 0; i < iterations && (high - low) > tolerance; ++i) {
+                const double mid = (low + high) * 0.5;
+                QString midError;
+                if (isSatForValue(mid, midError)) {
+                    lowerBound = mid;
+                    high = mid;
+                } else {
+                    low = mid;
+                }
+            }
+        }
+
+        boundaryError.clear();
+        if (isSatForValue(baseRange.upper, boundaryError)) {
+            upperBound = baseRange.upper;
+        } else {
+            double low = clampedTypical;
+            double high = baseRange.upper;
+            for (int i = 0; i < iterations && (high - low) > tolerance; ++i) {
+                const double mid = (low + high) * 0.5;
+                QString midError;
+                if (isSatForValue(mid, midError)) {
+                    upperBound = mid;
+                    low = mid;
+                } else {
+                    high = mid;
+                }
+            }
+        }
+
+        if (lowerBound > upperBound) {
+            std::swap(lowerBound, upperBound);
+        }
+        intervals.append(QString("[%1, %2]").arg(QString::number(lowerBound, 'g', 6),
+                                                 QString::number(upperBound, 'g', 6)));
+    }
+
+    return intervals.join(QString(";"));
 }

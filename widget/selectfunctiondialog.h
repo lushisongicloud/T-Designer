@@ -18,21 +18,15 @@
 #include "mycombobox.h"
 #include "../BO/componententity.h"
 #include "BO/systementity.h"
-//#include "mainwindow.h"
-
-class NumericTableWidgetItem : public QTableWidgetItem
-{
-public:
-    NumericTableWidgetItem(const QString& txt = QString()):QTableWidgetItem(txt){}
-    bool operator <(const QTableWidgetItem &other) const
-    {
-        return this->text().toDouble() < other.text().toDouble();
-    }
-};
+#include "../variable_range_config.h"
+#include "../function_variable_config.h"
+#include "functionvariablevaluedialog.h"
 
 namespace Ui {
 class SelectFunctionDialog;
 }
+
+class MainWindow;
 
 class SelectFunctionDialog : public QDialog
 {
@@ -47,14 +41,18 @@ public:
     QString getLocalLink() const { return localLink; }
     QList<resultEntity> getLocalResultEntityList() const {return localResultEntityList;}
 
+    const rangeconfig::VariableRangeConfig &getVariableRangeConfig() const { return variableRangeConfig; }
+    const functionvalues::FunctionVariableConfig &getCurrentVariableConfig() const { return currentFunctionVariableConfig; }
+    QTreeWidget* GetTreeWidget() const;
+    void ShowSet();
+
 
     QString getCurrentfunctionName() const { return currentFunctionName;}//当前被诊断功能名
     QMap<QString, QString> getFunctionLinkMap()const { return functionLinkMap;}//功能名-链路信息
     QMap<QString, QString> getFunctionComponentDependencyMap() const {return functionComponentDependencyMap;}//功能名-器件依赖关系
     QMap<QString, QString> getFunctionDependencyMap() const {return functionDependencyMap;}//功能名-功能依赖关系
     QMap<QString, FunctionInfo> getFunctionInfoMap() const {return functionInfoMap;}
-    QTreeWidget* GetTreeWidget();
-    void ShowSet();
+    QString negateRange(const QString &input) const;
 protected:
     void keyPressEvent(QKeyEvent* event) override;
 
@@ -94,8 +92,6 @@ private slots:
     void on_btn_CalBoundaryConditions_clicked();
 
     void onSolvingStarted();
-    void onFunctionDependencyComboEdited();
-    void onFunctionDependencyItemChanged(QTableWidgetItem *item);
     void onSolvingFinished(QStringList ans);
     void onProgressUpdated(int progress);
     void onResultEntityListUpdated(const QList<resultEntity>& resultEntityList);
@@ -103,6 +99,43 @@ private slots:
     void on_btn_CheckConstraints_clicked();
 
 private:
+    void updateConstraintIntegrityLabel(const QString &status);
+    void markConstraintIntegrityUnknown();
+    QList<TestItem> buildConstraintCheckItems(bool invertActuator) const;
+    void showVariableRangeDialog();
+    void loadVariableRangeConfig(const QDomDocument &doc);
+    void updateFunctionIntegrityEntry(const QString &functionName, const QString &status);
+    void loadFunctionVariableConfig(const QString &functionName, const QDomElement &functionElement);
+    void saveCurrentVariableConfigToMap();
+    void ensureFunctionVariableConfig(const QString &functionName);
+    QStringList currentLinkElements() const;
+    QStringList currentAllComponentElements() const;
+    bool variableMatchesLink(const QString &variable, const QStringList &linkElements) const;
+    void updateSatSamplesFromModel(const QMap<QString, QString> &model, const QStringList &componentElements);
+    QString formatModelSample(const QString &valueText) const;
+    QMap<QString, QString> currentConstraintValueMap() const;
+    void showFunctionVariableValueDialog();
+    QVector<functionvalues::FunctionVariableRow> assembleVariableRows(const QStringList &linkElements) const;
+    QStringList collectFunctionVariables(const QStringList &componentElements) const;
+    QString solveVariableFeasibleRange(const QString &variable,
+                                       const QString &typeKey,
+                                       const QStringList &typicalValues,
+                                       QString &errorMessage);
+    QList<TestItem> buildPositiveSolveItems() const;
+    QList<TestItem> buildVariableSolveItems(const QList<TestItem> &baseItems,
+                                            const QString &variable,
+                                            const QString &valueExpression) const;
+    TestItem makeVariableSetterItem(const QString &variable, const QString &valueExpression) const;
+    bool checkSatisfiable(const QString &systemDescription,
+                          const QList<TestItem> &items);
+    QString formatInterval(double lower, double upper) const;
+    void applyVariableRowsToConfig(const QVector<functionvalues::FunctionVariableRow> &rows);
+    QString croppedSystemDescriptionForCurrentLink(const QStringList &linkElements) const;
+    void updateCurrentFunctionXml();
+    QList<QTreeWidgetItem*> findFunctionTreeItems(const QString &functionName) const;
+    void writeFunctionXml(const QString &functionName,
+                          const functionvalues::FunctionVariableConfig &config);
+
     SystemEntity* systemEntity;
     QString systemDescription;
     QString localFunctionDescription; // To hold the local version of the function description
@@ -124,9 +157,6 @@ private:
     QString CalFunctionDependency();
     QString CalComponentDependency(QString linkText, QString allComponent = "");
     QList<TestItem> processTestItemListForPenetrativeSolve(QList<TestItem> &currentTestItemList, QString& LinkText);
-    QList<TestItem> buildConstraintCheckItems(bool invertActuator) const;
-    void markConstraintIntegrityUnknown();
-    void writeCurrentFunctionToTree();
 
     QList<TestItem> testItemList; // To hold the local version of the test items
     QList<resultEntity> localResultEntityList;
@@ -142,7 +172,10 @@ private:
     QMap<QString, double> functionFaultProbabilityMap;//功能-失效概率
     QMap<QString,FunctionInfo> functionInfoMap;
     QMap<QString, QString> functionConstraintIntegrityMap;
-    QString currentConstraintIntegrityStatus = QString("未检查");
+    QString currentConstraintIntegrityStatus;
+    rangeconfig::VariableRangeConfig variableRangeConfig;
+    functionvalues::FunctionVariableConfig currentFunctionVariableConfig;
+    QMap<QString, functionvalues::FunctionVariableConfig> functionVariableConfigMap;
     bool isLoading = false;
 };
 

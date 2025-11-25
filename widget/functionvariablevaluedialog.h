@@ -2,50 +2,82 @@
 #define FUNCTIONVARIABLEVALUEDIALOG_H
 
 #include <QDialog>
-#include <QMap>
 #include <QVector>
+#include <QString>
+#include <QStringList>
+#include <functional>
+#include <utility>
 
-#include "BO/function/function_variable_config.h"
+class QTableWidget;
+class QPushButton;
+class QDialogButtonBox;
+class QProgressBar;
 
-namespace Ui {
-class FunctionVariableValueDialog;
-}
+namespace functionvalues {
 
 struct FunctionVariableRow
 {
     QString variable;
-    functionvalues::VariableEntry entry;
+    QString typeKey;
+    QString constraintValue;
+    bool typeLocked = false;
+    bool constraintLocked = false;
+    QString typicalValues;
+    QString valueRange;
+    QStringList satSamples;
 };
+
+} // namespace functionvalues
 
 class FunctionVariableValueDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit FunctionVariableValueDialog(const QVector<FunctionVariableRow> &rows,
-                                         QWidget *parent = nullptr);
-    ~FunctionVariableValueDialog() override;
+    using RangeSolver = std::function<QString(const QString &variable,
+                                              const QString &typeKey,
+                                              const QStringList &typicalValues,
+                                              QString &errorMessage)>;
 
-    QVector<FunctionVariableRow> rows() const;
-    void setConstraintMap(const QMap<QString, QString> &map) { constraintMap = map; }
-    void setVariableSuggestions(const QStringList &suggestions);
+    FunctionVariableValueDialog(const QVector<functionvalues::FunctionVariableRow> &rows,
+                                RangeSolver solver,
+                                QWidget *parent = nullptr);
+
+    QVector<functionvalues::FunctionVariableRow> resultRows() const { return workingRows; }
+
+protected:
+    void accept() override;
 
 private slots:
-    void onAddRow();
-    void onRemoveRow();
-    void onSyncConstraints();
+    void onFillFromSatClicked();
+    void onAutofillRangeClicked();
+    void onSolveRangeClicked();
+    void onSelectAllClicked();
+    void onInvertSelectionClicked();
+    void onSolveAllClicked();
 
 private:
-    void setupTable();
-    void populateTable(const QVector<FunctionVariableRow> &rows);
-    FunctionVariableRow rowFromTable(int row) const;
-    void ensureRowForVariable(const QString &variable);
-    QStringList suggestionList() const;
+    void setupUi();
+    void populateTable();
+    void syncRowsFromTable();
+    QVector<int> selectedRowIndexes() const;
+    QVector<int> allRowIndexes() const;
+    void solveRows(const QVector<int> &rows);
+    void setSolvingState(bool active, int maximum = 0);
+    static QString formatDouble(double value);
 
-    Ui::FunctionVariableValueDialog *ui;
-    QMap<QString, QString> constraintMap;
-    QStringList variableSuggestionList;
+    QTableWidget *table = nullptr;
+    QPushButton *btnFillFromSat = nullptr;
+    QPushButton *btnAutofillRange = nullptr;
+    QPushButton *btnSolveRange = nullptr;
+    QPushButton *btnSolveAll = nullptr;
+    QPushButton *btnSelectAll = nullptr;
+    QPushButton *btnInvertSelection = nullptr;
+    QDialogButtonBox *buttonBox = nullptr;
+    QProgressBar *progressBar = nullptr;
+
+    QVector<functionvalues::FunctionVariableRow> workingRows;
+    RangeSolver solverCallback;
 };
 
 #endif // FUNCTIONVARIABLEVALUEDIALOG_H
-

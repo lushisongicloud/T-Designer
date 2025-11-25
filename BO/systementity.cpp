@@ -10,6 +10,13 @@
 #include <QMessageBox>
 #include <QDebug>
 #include <QObject>
+#include <QMap>
+#include <QSqlDatabase>
+#include <QSqlQuery>
+#include <QSqlError>
+#include <QJsonDocument>
+#include <QJsonArray>
+#include <QJsonObject>
 #include <QRegularExpression>
 #include <QSet>
 #include <vector>
@@ -170,6 +177,156 @@ z3::sort parseSortString(z3::context &ctx, const QString &sortText)
         return ctx.array_sort(domain, range);
     }
     throw std::runtime_error(QString("unsupported sort: %1").arg(trimmed).toStdString());
+}
+
+QString builtInMacroName(const QString &family, int arity)
+{
+    if (family.compare(QStringLiteral("electric-connect"), Qt::CaseInsensitive) == 0) {
+        if (arity == 2) return QStringLiteral("connect2e");
+        if (arity == 3) return QStringLiteral("connect3e");
+    } else if (family.compare(QStringLiteral("hydraulic-connect"), Qt::CaseInsensitive) == 0) {
+        if (arity == 2) return QStringLiteral("connect2h");
+        if (arity == 3) return QStringLiteral("connect3h");
+    } else if (family.compare(QStringLiteral("mechanical-connect"), Qt::CaseInsensitive) == 0) {
+        if (arity == 2) return QStringLiteral("connect2m");
+        if (arity == 3) return QStringLiteral("connect3m");
+    }
+    return QString();
+}
+
+QString macroNameFromFamilyTable(const QString &familyName, int arity)
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    if (!db.isValid() || !db.isOpen())
+        return QString();
+    QSqlQuery q(db);
+    q.prepare(QStringLiteral("SELECT macros_json FROM port_connect_macro_family WHERE family_name = :name"));
+    q.bindValue(QStringLiteral(":name"), familyName);
+    if (!q.exec() || !q.next()) {
+        return QString();
+    }
+    const QString json = q.value(0).toString();
+    const QJsonDocument doc = QJsonDocument::fromJson(json.toUtf8());
+    if (!doc.isArray())
+        return QString();
+    for (const auto &val : doc.array()) {
+        const QJsonObject obj = val.toObject();
+        if (obj.value(QStringLiteral("arity")).toInt() == arity) {
+            return obj.value(QStringLiteral("macro_name")).toString();
+        }
+    }
+    return QString();
+}
+
+QString inferFamilyFromPort(const QString &port, QString *domainOut = nullptr)
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    if (!db.isValid() || !db.isOpen())
+        return QString();
+    const QStringList tokens = port.split('.', QString::SkipEmptyParts);
+    if (tokens.size() < 3)
+        return QString();
+    const QString componentName = tokens.at(0).trimmed();
+    const QString functionBlock = tokens.at(1).trimmed();
+    const QString portName = tokens.at(2).trimmed();
+
+    QSqlQuery findContainer(db);
+    findContainer.prepare(QStringLiteral("SELECT container_id FROM container WHERE name = :name LIMIT 1"));
+    findContainer.bindValue(QStringLiteral(":name"), componentName);
+    if (!findContainer.exec() || !findContainer.next())
+        return QString();
+    const int containerId = findContainer.value(0).toInt();
+    if (containerId <= 0)
+        return QString();
+
+    QSqlQuery query(db);
+    query.prepare(QStringLiteral("SELECT connect_macro, port_type FROM port_config "
+                                 "WHERE container_id = :cid AND function_block = :block AND port_name = :port LIMIT 1"));
+    query.bindValue(QStringLiteral(":cid"), containerId);
+    query.bindValue(QStringLiteral(":block"), functionBlock);
+    query.bindValue(QStringLiteral(":port"), portName);
+    if (!query.exec() || !query.next())
+        return QString();
+    if (domainOut)
+        *domainOut = query.value(1).toString();
+    return query.value(0).toString();
+}
+
+QString chooseFamilyByPorts(const QStringList &ports, QString *domainOut = nullptr)
+{
+    QMap<QString, int> familyCounter;
+    QString domainHint;
+    for (const QString &port : ports) {
+        QString domainLocal;
+        const QString family = inferFamilyFromPort(port, &domainLocal);
+        if (!family.isEmpty()) {
+            familyCounter[family] += 1;
+        }
+        if (domainHint.isEmpty() && !domainLocal.isEmpty()) {
+            domainHint = domainLocal;
+        }
+    }
+    if (domainOut)
+        *domainOut = domainHint;
+    if (!familyCounter.isEmpty()) {
+        QString chosen;
+        int maxCount = -1;
+        for (auto it = familyCounter.cbegin(); it != familyCounter.cend(); ++it) {
+            if (it.value() > maxCount) {
+                maxCount = it.value();
+                chosen = it.key();
+            }
+        }
+        return chosen;
+    }
+
+    if (!domainHint.isEmpty()) {
+        if (domainHint.compare(QStringLiteral("electric"), Qt::CaseInsensitive) == 0)
+            return QStringLiteral("electric-connect");
+        if (domainHint.compare(QStringLiteral("hydraulic"), Qt::CaseInsensitive) == 0)
+            return QStringLiteral("hydraulic-connect");
+        if (domainHint.compare(QStringLiteral("mechanical"), Qt::CaseInsensitive) == 0)
+            return QStringLiteral("mechanical-connect");
+    }
+    return QStringLiteral("electric-connect");
+}
+
+QString macroCallForConnectAuto(const QString &description)
+{
+    QString desc = description;
+    desc = desc.mid(QStringLiteral("connect_auto").size());
+    desc = desc.remove('(').remove(')').trimmed();
+    const QStringList rawParts = desc.split(',', QString::SkipEmptyParts);
+    if (rawParts.size() < 2)
+        return QString();
+    QString family;
+    QStringList ports = rawParts;
+    if (!rawParts.isEmpty() && !rawParts.first().contains('.')) {
+        family = rawParts.first().trimmed();
+        ports.removeFirst();
+    }
+    QString domain;
+    if (family.isEmpty()) {
+        family = chooseFamilyByPorts(ports, &domain);
+    }
+    if (family.isEmpty()) {
+        family = QStringLiteral("electric-connect");
+    }
+    QString macroName = macroNameFromFamilyTable(family, ports.size());
+    if (macroName.isEmpty()) {
+        macroName = builtInMacroName(family, ports.size());
+    }
+    if (macroName.isEmpty()) {
+        if (domain.compare(QStringLiteral("hydraulic"), Qt::CaseInsensitive) == 0)
+            macroName = builtInMacroName(QStringLiteral("hydraulic-connect"), ports.size());
+        else if (domain.compare(QStringLiteral("mechanical"), Qt::CaseInsensitive) == 0)
+            macroName = builtInMacroName(QStringLiteral("mechanical-connect"), ports.size());
+        else
+            macroName = builtInMacroName(QStringLiteral("electric-connect"), ports.size());
+    }
+    if (macroName.isEmpty())
+        return QString();
+    return QStringLiteral("%1(%2)").arg(macroName, ports.join(QStringLiteral(",")));
 }
 
 std::vector<std::pair<QString, QString>> collectFunctionDeclarations(const QString &logic)
@@ -772,6 +929,75 @@ bool SystemEntity::satisfiabilitySolve(const QString& modelDescription, const QL
         ans.append("存在冲突");
         return false;
     }
+}
+
+bool SystemEntity::satisfiabilitySolve(const QString& modelDescription,
+                                       const QList<TestItem>& testItemList,
+                                       const QStringList &variableWhitelist,
+                                       QMap<QString, QString> *modelOut)
+{
+    QStringList ans;
+    QString testCode;
+    firstFailurePairProbability= 0.0;
+    resultEntityList.clear();
+    prepareModel(modelDescription);
+
+    obsEntityList = creatObsEntity(testItemList);
+    for (const auto &obsEntity : obsEntityList) {
+        testCode += obsEntity.getDescription();
+    }
+    const QString rangeCode = buildVariableRangeCode(variableWhitelist, testItemList);
+    if (!rangeCode.isEmpty()) {
+        testCode += rangeCode;
+    }
+    allComponentCode = "";
+    for(int i=0; i<componentEntityList.count(); i++) {
+        allComponentCode += componentEntityList.at(i).getDescription();
+    }
+
+    const bool sat = z3Solve(unchangingCode + allComponentCode + testCode, -1, modelOut);
+    if(sat) {
+        qDebug()<<"无故障，求解结束";
+        return true;
+    }
+    ans.append("存在冲突");
+    if (modelOut) {
+        modelOut->clear();
+    }
+    return false;
+}
+
+bool SystemEntity::solveForModel(const QString& modelDescription,
+                                 const QList<TestItem>& testItemList,
+                                 QMap<QString, QString> &modelOut,
+                                 const QStringList &variableWhitelist)
+{
+    modelOut.clear();
+    QString testCode;
+    prepareModel(modelDescription);
+
+    obsEntityList = creatObsEntity(testItemList);
+    for (const auto &obsEntity : obsEntityList) {
+        testCode += obsEntity.getDescription();
+    }
+    const QString rangeCode = buildVariableRangeCode(variableWhitelist, testItemList);
+    if (!rangeCode.isEmpty()) {
+        testCode += rangeCode;
+    }
+
+    allComponentCode.clear();
+    for (int i = 0; i < componentEntityList.count(); ++i) {
+        allComponentCode += componentEntityList.at(i).getDescription();
+    }
+
+    QMap<QString, QString> rawModel;
+    const bool sat = z3Solve(unchangingCode + allComponentCode + testCode, -1, &rawModel);
+    if (sat) {
+        modelOut = rawModel;
+    } else {
+        modelOut.clear();
+    }
+    return sat;
 }
 //包含关系：currentResultEntityList中的项，器件名相同的情况下，故障模式为"未知故障"的包含其他的已知故障模式。项目中如果是多故障的情况，项中至少存在一个器件与故障模式包含另一项中每一器件与故障模式，且剩余项的器件名称与故障模式均相同，则整个多故障项也包含另一故障项，注意：多故障项中器件名称与故障模式是按顺序一一对应的（即排第2的故障模式对应排第2的器件名称）
 //举例：(格式为"器件名;故障模式")，实际格式并非这样，而是器件名存储于componentNameList，故障模式存储于failureModeList
@@ -1945,6 +2171,12 @@ QString SystemEntity::creatSystemLinkCode(const QString& systemLinkDescription)
             description = description.remove("rawsmt").simplified();
             systemLinkCode.append(description);
         }
+        else if(description.startsWith("connect_auto")){
+            const QString macroCall = macroCallForConnectAuto(description);
+            if (macroCall.isEmpty())
+                continue;
+            description = macroCall;
+        }
         else if(description.startsWith("(assert") || description.startsWith("(declare-fun")){
             systemLinkCode.append(description);
         }
@@ -2052,6 +2284,28 @@ QString SystemEntity::creatSystemLinkCode(const QString& systemLinkDescription)
             if(parameters.size()!=3)
                 continue;
             QString code = "(assert (= (+ %A%.F %B%.F %C%.F) 0))(assert (= %A%.M %B%.M %C%.M))";
+            code.replace("%A%", parameters[0]);
+            code.replace("%B%", parameters[1]);
+            code.replace("%C%", parameters[2]);
+            systemLinkCode.append(code);
+        }
+        else if(description.startsWith("connect2h")){
+            description = description.remove("connect2h").remove("(").remove(")").simplified();
+            QList<QString> parameters= description.split(',', QString::SkipEmptyParts);
+            if(parameters.size()!=2)
+                continue;
+            QString code = "(assert (= (+ %A%.q %B%.q) 0))(assert (= %A%.p %B%.p))";
+
+            code.replace("%A%", parameters[0]);
+            code.replace("%B%", parameters[1]);
+            systemLinkCode.append(code);
+        }
+        else if(description.startsWith("connect3h")){
+            description = description.remove("connect3h").remove("(").remove(")").simplified();
+            QList<QString> parameters= description.split(',', QString::SkipEmptyParts);
+            if(parameters.size()!=3)
+                continue;
+            QString code = "(assert (= (+ %A%.q %B%.q %C%.q) 0))(assert (= %A%.p %B%.p %C%.p))";
             code.replace("%A%", parameters[0]);
             code.replace("%B%", parameters[1]);
             code.replace("%C%", parameters[2]);

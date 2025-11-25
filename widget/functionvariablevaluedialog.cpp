@@ -1,213 +1,464 @@
-#include "widget/functionvariablevaluedialog.h"
-#include "ui_functionvariablevaluedialog.h"
+#include "functionvariablevaluedialog.h"
 
+#include <QCoreApplication>
+#include <QDialogButtonBox>
+#include <QEventLoop>
 #include <QHeaderView>
-#include <QLineEdit>
+#include <QHBoxLayout>
+#include <QItemSelectionModel>
 #include <QMessageBox>
+#include <QProgressBar>
+#include <QPushButton>
+#include <QTableWidget>
 #include <QTableWidgetItem>
-
+#include <QVBoxLayout>
 #include <algorithm>
-#include <functional>
+#include <cmath>
+
+using functionvalues::FunctionVariableRow;
 
 namespace {
 
-QString normalizedSamples(const QString &text)
+const int COLUMN_VARIABLE = 0;
+const int COLUMN_TYPE = 1;
+const int COLUMN_CONSTRAINT = 2;
+const int COLUMN_TYPICAL = 3;
+const int COLUMN_RANGE = 4;
+const int COLUMN_SAT = 5;
+
+QString joinSamples(const QStringList &samples)
 {
-    QString cleaned = text;
-    cleaned.replace('\n', ';');
-    cleaned.replace(',', ';');
-    while (cleaned.contains(";;")) {
-        cleaned.replace(";;", ";");
-    }
-    return cleaned.trimmed();
+    return samples.join(QString(";"));
 }
 
 QStringList splitSamples(const QString &text)
 {
-    const QString normalized = normalizedSamples(text);
-    if (normalized.isEmpty()) {
-        return {};
+    QStringList result;
+    const QStringList parts = text.split(QString(";"), QString::SkipEmptyParts);
+    for (const QString &part : parts) {
+        const QString trimmed = part.trimmed();
+        if (!trimmed.isEmpty()) {
+            result.append(trimmed);
+        }
     }
-    return normalized.split(';', QString::SkipEmptyParts);
+    return result;
+}
+
+bool parseDouble(const QString &text, double *value)
+{
+    if (!value) {
+        return false;
+    }
+    bool ok = false;
+    const double parsed = text.trimmed().toDouble(&ok);
+    if (ok) {
+        *value = parsed;
+    }
+    return ok;
 }
 
 } // namespace
 
 FunctionVariableValueDialog::FunctionVariableValueDialog(const QVector<FunctionVariableRow> &rows,
+                                                         RangeSolver solver,
                                                          QWidget *parent)
-    : QDialog(parent)
-    , ui(new Ui::FunctionVariableValueDialog)
+    : QDialog(parent),
+      workingRows(rows),
+      solverCallback(std::move(solver))
 {
-    ui->setupUi(this);
-    setupTable();
-    populateTable(rows);
-
-    connect(ui->btnAddRow, &QPushButton::clicked, this, &FunctionVariableValueDialog::onAddRow);
-    connect(ui->btnRemoveRow, &QPushButton::clicked, this, &FunctionVariableValueDialog::onRemoveRow);
-    connect(ui->btnSyncConstraints, &QPushButton::clicked, this, &FunctionVariableValueDialog::onSyncConstraints);
-    connect(ui->buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
-    connect(ui->buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+    setWindowTitle(QString("求解变量可行解范围"));
+    resize(920, 560);
+    setupUi();
+    populateTable();
 }
 
-FunctionVariableValueDialog::~FunctionVariableValueDialog()
+void FunctionVariableValueDialog::setupUi()
 {
-    delete ui;
+    auto *layout = new QVBoxLayout(this);
+
+    table = new QTableWidget(this);
+    table->setColumnCount(6);
+    table->setHorizontalHeaderLabels(QStringList()
+                                     << QString("变量名")
+                                     << QString("类型")
+                                     << QString("约束值")
+                                     << QString("典型值")
+                                     << QString("取值区间")
+                                     << QString("SAT模型可行解"));
+    table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    table->setSelectionBehavior(QAbstractItemView::SelectRows);
+    table->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    table->setEditTriggers(QAbstractItemView::DoubleClicked | QAbstractItemView::SelectedClicked | QAbstractItemView::EditKeyPressed);
+
+    layout->addWidget(table);
+
+    auto *selectionLayout = new QHBoxLayout();
+    btnSelectAll = new QPushButton(QString("全选"), this);
+    btnInvertSelection = new QPushButton(QString("反选"), this);
+    selectionLayout->addWidget(btnSelectAll);
+    selectionLayout->addWidget(btnInvertSelection);
+    selectionLayout->addStretch();
+    layout->addLayout(selectionLayout);
+    btnFillFromSat = new QPushButton(QString("自动填写选中行典型值"), this);
+    btnAutofillRange = new QPushButton(QString("自动填写选中行取值区间"), this);
+    btnSolveRange = new QPushButton(QString("求解选中变量的可行域范围"), this);
+    btnSolveAll = new QPushButton(QString("一键求取所有变量的可行解范围"), this);
+
+    auto *bulkLayout = new QHBoxLayout();
+    bulkLayout->addWidget(btnFillFromSat);
+    bulkLayout->addWidget(btnAutofillRange);
+    bulkLayout->addWidget(btnSolveRange);
+    bulkLayout->addWidget(btnSolveAll);
+    bulkLayout->addStretch();
+    layout->addLayout(bulkLayout);
+
+    progressBar = new QProgressBar(this);
+    progressBar->setVisible(false);
+    progressBar->setRange(0, 1);
+    progressBar->setValue(0);
+    progressBar->setFormat(QString("求解进度: %v/%m"));
+    layout->addWidget(progressBar);
+
+    buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
+    layout->addWidget(buttonBox);
+
+    connect(btnSelectAll, &QPushButton::clicked, this, &FunctionVariableValueDialog::onSelectAllClicked);
+    connect(btnInvertSelection, &QPushButton::clicked, this, &FunctionVariableValueDialog::onInvertSelectionClicked);
+    connect(btnFillFromSat, &QPushButton::clicked, this, &FunctionVariableValueDialog::onFillFromSatClicked);
+    connect(btnAutofillRange, &QPushButton::clicked, this, &FunctionVariableValueDialog::onAutofillRangeClicked);
+    connect(btnSolveRange, &QPushButton::clicked, this, &FunctionVariableValueDialog::onSolveRangeClicked);
+    connect(btnSolveAll, &QPushButton::clicked, this, &FunctionVariableValueDialog::onSolveAllClicked);
+    connect(buttonBox, &QDialogButtonBox::accepted, this, &FunctionVariableValueDialog::accept);
+    connect(buttonBox, &QDialogButtonBox::rejected, this, &FunctionVariableValueDialog::reject);
 }
 
-void FunctionVariableValueDialog::setupTable()
+void FunctionVariableValueDialog::populateTable()
 {
-    ui->tableVariables->setColumnCount(6);
-    ui->tableVariables->setSelectionBehavior(QAbstractItemView::SelectRows);
-    ui->tableVariables->setSelectionMode(QAbstractItemView::ExtendedSelection);
-    ui->tableVariables->setEditTriggers(QAbstractItemView::DoubleClicked | QAbstractItemView::SelectedClicked | QAbstractItemView::EditKeyPressed);
-    ui->tableVariables->horizontalHeader()->setStretchLastSection(true);
-    ui->tableVariables->verticalHeader()->setVisible(false);
-}
+    table->setRowCount(workingRows.size());
+    for (int row = 0; row < workingRows.size(); ++row) {
+        const FunctionVariableRow &entry = workingRows.at(row);
 
-void FunctionVariableValueDialog::populateTable(const QVector<FunctionVariableRow> &rows)
-{
-    ui->tableVariables->setRowCount(0);
-    for (const FunctionVariableRow &row : rows) {
-        const int tableRow = ui->tableVariables->rowCount();
-        ui->tableVariables->insertRow(tableRow);
-        auto createItem = [&](int column, const QString &text) {
-            QTableWidgetItem *item = new QTableWidgetItem(text);
-            item->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEditable | Qt::ItemIsEnabled);
-            ui->tableVariables->setItem(tableRow, column, item);
-        };
-        createItem(0, row.variable);
-        createItem(1, row.entry.type);
-        createItem(2, row.entry.constraintValue);
-        createItem(3, row.entry.typicalValues);
-        createItem(4, row.entry.valueRange);
-        createItem(5, row.entry.satSamples.join(QString(";")));
-    }
-}
+        auto *variableItem = new QTableWidgetItem(entry.variable);
+        variableItem->setFlags(variableItem->flags() & ~Qt::ItemIsEditable);
+        table->setItem(row, COLUMN_VARIABLE, variableItem);
 
-QVector<FunctionVariableRow> FunctionVariableValueDialog::rows() const
-{
-    QVector<FunctionVariableRow> result;
-    for (int row = 0; row < ui->tableVariables->rowCount(); ++row) {
-        FunctionVariableRow data = rowFromTable(row);
-        if (data.variable.trimmed().isEmpty())
-            continue;
-        result.append(data);
-    }
-    return result;
-}
-
-void FunctionVariableValueDialog::setVariableSuggestions(const QStringList &suggestions)
-{
-    variableSuggestionList = suggestions;
-}
-
-FunctionVariableRow FunctionVariableValueDialog::rowFromTable(int row) const
-{
-    FunctionVariableRow result;
-    if (row < 0 || row >= ui->tableVariables->rowCount())
-        return result;
-    auto itemText = [&](int column) -> QString {
-        QTableWidgetItem *item = ui->tableVariables->item(row, column);
-        return item ? item->text().trimmed() : QString();
-    };
-    result.variable = itemText(0);
-    result.entry.type = itemText(1);
-    result.entry.constraintValue = itemText(2);
-    result.entry.typicalValues = itemText(3);
-    result.entry.valueRange = itemText(4);
-    result.entry.satSamples = splitSamples(itemText(5));
-    return result;
-}
-
-void FunctionVariableValueDialog::onAddRow()
-{
-    const int row = ui->tableVariables->rowCount();
-    ui->tableVariables->insertRow(row);
-    auto createItem = [&](int column, const QString &text) {
-        QTableWidgetItem *item = new QTableWidgetItem(text);
-        item->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEditable | Qt::ItemIsEnabled);
-        ui->tableVariables->setItem(row, column, item);
-    };
-    QString variableSuggestion;
-    for (const QString &candidate : suggestionList()) {
-        bool exists = false;
-        for (int r = 0; r < ui->tableVariables->rowCount(); ++r) {
-            if (ui->tableVariables->item(r, 0) && ui->tableVariables->item(r, 0)->text().trimmed() == candidate) {
-                exists = true;
-                break;
-            }
+        auto *typeItem = new QTableWidgetItem(entry.typeKey);
+        if (entry.typeLocked) {
+            typeItem->setFlags(typeItem->flags() & ~Qt::ItemIsEditable);
         }
-        if (!exists) {
-            variableSuggestion = candidate;
-            break;
+        table->setItem(row, COLUMN_TYPE, typeItem);
+
+        auto *constraintItem = new QTableWidgetItem(entry.constraintValue);
+        if (entry.constraintLocked) {
+            constraintItem->setFlags(constraintItem->flags() & ~Qt::ItemIsEditable);
         }
+        table->setItem(row, COLUMN_CONSTRAINT, constraintItem);
+
+        table->setItem(row, COLUMN_TYPICAL, new QTableWidgetItem(entry.typicalValues));
+        table->setItem(row, COLUMN_RANGE, new QTableWidgetItem(entry.valueRange));
+
+        auto *satItem = new QTableWidgetItem(joinSamples(entry.satSamples));
+        satItem->setFlags(satItem->flags() & ~Qt::ItemIsEditable);
+        table->setItem(row, COLUMN_SAT, satItem);
     }
-    createItem(0, variableSuggestion);
-    createItem(1, QString());
-    createItem(2, QString());
-    createItem(3, QString());
-    createItem(4, QString());
-    createItem(5, QString());
-    ui->tableVariables->setCurrentCell(row, 0);
-    ui->tableVariables->editItem(ui->tableVariables->item(row, 0));
 }
 
-void FunctionVariableValueDialog::onRemoveRow()
+void FunctionVariableValueDialog::syncRowsFromTable()
 {
-    QList<int> rowsToRemove;
-    const auto selected = ui->tableVariables->selectionModel()->selectedRows();
+    if (!table) {
+        return;
+    }
+    const int rowCount = table->rowCount();
+    if (workingRows.size() != rowCount) {
+        workingRows.resize(rowCount);
+    }
+    for (int row = 0; row < rowCount; ++row) {
+        FunctionVariableRow entry = workingRows.value(row);
+        entry.variable = table->item(row, COLUMN_VARIABLE)->text().trimmed();
+        entry.typeKey = table->item(row, COLUMN_TYPE)->text().trimmed();
+        entry.constraintValue = table->item(row, COLUMN_CONSTRAINT)->text().trimmed();
+        entry.typicalValues = table->item(row, COLUMN_TYPICAL)->text().trimmed();
+        entry.valueRange = table->item(row, COLUMN_RANGE)->text().trimmed();
+        entry.satSamples = splitSamples(table->item(row, COLUMN_SAT)->text());
+        workingRows[row] = entry;
+    }
+}
+
+QVector<int> FunctionVariableValueDialog::selectedRowIndexes() const
+{
+    QVector<int> rows;
+    if (!table) {
+        return rows;
+    }
+    const QModelIndexList selected = table->selectionModel()->selectedRows();
+    rows.reserve(selected.size());
     for (const QModelIndex &index : selected) {
-        rowsToRemove.append(index.row());
+        rows.append(index.row());
     }
-    std::sort(rowsToRemove.begin(), rowsToRemove.end(), std::greater<int>());
-    for (int row : rowsToRemove) {
-        ui->tableVariables->removeRow(row);
+    return rows;
+}
+
+QVector<int> FunctionVariableValueDialog::allRowIndexes() const
+{
+    QVector<int> rows;
+    if (!table) {
+        return rows;
+    }
+    const int totalRows = table->rowCount();
+    rows.reserve(totalRows);
+    for (int row = 0; row < totalRows; ++row) {
+        rows.append(row);
+    }
+    return rows;
+}
+
+void FunctionVariableValueDialog::setSolvingState(bool active, int maximum)
+{
+    if (!progressBar) {
+        return;
+    }
+
+    if (active) {
+        const int maxValue = maximum > 0 ? maximum : 1;
+        progressBar->setRange(0, maxValue);
+        progressBar->setValue(0);
+    } else {
+        progressBar->setRange(0, 1);
+        progressBar->setValue(0);
+    }
+    progressBar->setVisible(active);
+
+    const bool enabled = !active;
+    if (table) {
+        table->setEnabled(enabled);
+    }
+    if (btnFillFromSat) {
+        btnFillFromSat->setEnabled(enabled);
+    }
+    if (btnAutofillRange) {
+        btnAutofillRange->setEnabled(enabled);
+    }
+    if (btnSolveRange) {
+        btnSolveRange->setEnabled(enabled);
+    }
+    if (btnSolveAll) {
+        btnSolveAll->setEnabled(enabled);
+    }
+    if (btnSelectAll) {
+        btnSelectAll->setEnabled(enabled);
+    }
+    if (btnInvertSelection) {
+        btnInvertSelection->setEnabled(enabled);
+    }
+    if (buttonBox) {
+        buttonBox->setEnabled(enabled);
     }
 }
 
-void FunctionVariableValueDialog::ensureRowForVariable(const QString &variable)
+void FunctionVariableValueDialog::solveRows(const QVector<int> &rows)
 {
-    if (variable.trimmed().isEmpty())
+    if (!solverCallback) {
+        QMessageBox::warning(this, QString("提示"), QString("缺少求解算法"));
         return;
-    for (int row = 0; row < ui->tableVariables->rowCount(); ++row) {
-        QTableWidgetItem *item = ui->tableVariables->item(row, 0);
-        if (item && item->text().trimmed() == variable) {
-            return;
-        }
     }
-    onAddRow();
-    int lastRow = ui->tableVariables->rowCount() - 1;
-    if (lastRow >= 0) {
-        ui->tableVariables->item(lastRow, 0)->setText(variable);
+    if (rows.isEmpty()) {
+        return;
     }
-}
 
-void FunctionVariableValueDialog::onSyncConstraints()
-{
-    if (constraintMap.isEmpty()) {
-        QMessageBox::information(this, tr("同步输入约束"), tr("当前没有可同步的约束。"));
-        return;
-    }
-    for (auto it = constraintMap.constBegin(); it != constraintMap.constEnd(); ++it) {
-        const QString variable = it.key().trimmed();
-        if (variable.isEmpty()) {
+    setSolvingState(true, rows.size());
+    QStringList errors;
+    int progress = 0;
+
+    for (int row : rows) {
+        if (!table || row < 0 || row >= table->rowCount()) {
+            ++progress;
+            if (progressBar) {
+                progressBar->setValue(progress);
+            }
+            QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
             continue;
         }
-        ensureRowForVariable(variable);
-        for (int row = 0; row < ui->tableVariables->rowCount(); ++row) {
-            QTableWidgetItem *item = ui->tableVariables->item(row, 0);
-            if (item && item->text().trimmed() == variable) {
-                QTableWidgetItem *constraintItem = ui->tableVariables->item(row, 2);
-                if (constraintItem) {
-                    constraintItem->setText(it.value());
-                }
-                break;
+
+        QTableWidgetItem *variableItem = table->item(row, COLUMN_VARIABLE);
+        QTableWidgetItem *typeItem = table->item(row, COLUMN_TYPE);
+        QTableWidgetItem *typicalItem = table->item(row, COLUMN_TYPICAL);
+        QTableWidgetItem *rangeItem = table->item(row, COLUMN_RANGE);
+
+        if (!variableItem || !typeItem || !typicalItem || !rangeItem) {
+            errors.append(QString("第 %1 行数据不完整，已跳过。").arg(row + 1));
+            ++progress;
+            if (progressBar) {
+                progressBar->setValue(progress);
+            }
+            QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+            continue;
+        }
+
+        const QString variable = variableItem->text().trimmed();
+        const QString typeKey = typeItem->text().trimmed();
+        const QString typicalText = typicalItem->text().trimmed();
+        QStringList typicalList = splitSamples(typicalText);
+        if (typicalList.isEmpty()) {
+            errors.append(QString("变量 %1 缺少典型值，无法求解。").arg(variable));
+            ++progress;
+            if (progressBar) {
+                progressBar->setValue(progress);
+            }
+            QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+            continue;
+        }
+
+        QString errorMessage;
+        QString rangeText = solverCallback(variable, typeKey, typicalList, errorMessage);
+        if (!rangeText.isEmpty()) {
+            rangeItem->setText(rangeText);
+        } else {
+            if (!errorMessage.isEmpty()) {
+                errors.append(errorMessage);
+            } else {
+                errors.append(QString("变量 %1 无法求解有效取值范围。").arg(variable));
             }
         }
+
+        ++progress;
+        if (progressBar) {
+            progressBar->setValue(progress);
+        }
+        QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+    }
+
+    setSolvingState(false);
+
+    if (!errors.isEmpty()) {
+        QMessageBox::warning(this, QString("提示"), errors.join(QString("\n")));
     }
 }
 
-QStringList FunctionVariableValueDialog::suggestionList() const
+QString FunctionVariableValueDialog::formatDouble(double value)
 {
-    return variableSuggestionList;
+    if (std::fabs(value) < 1e-12) {
+        value = 0.0;
+    }
+    QString text = QString::number(value, 'f', 3);
+    if (text.contains(QLatin1Char('.'))) {
+        while (text.endsWith(QLatin1Char('0'))) {
+            text.chop(1);
+        }
+        if (text.endsWith(QLatin1Char('.'))) {
+            text.chop(1);
+        }
+    }
+    if (text == QString("-0")) {
+        text = QString("0");
+    }
+    return text;
+}
+
+void FunctionVariableValueDialog::accept()
+{
+    syncRowsFromTable();
+    QDialog::accept();
+}
+
+void FunctionVariableValueDialog::onFillFromSatClicked()
+{
+    if (!table) {
+        return;
+    }
+    for (int row : selectedRowIndexes()) {
+        QTableWidgetItem *satItem = table->item(row, COLUMN_SAT);
+        QTableWidgetItem *typicalItem = table->item(row, COLUMN_TYPICAL);
+        if (!satItem || !typicalItem) {
+            continue;
+        }
+        const QString satSamples = satItem->text().trimmed();
+        if (satSamples.isEmpty()) {
+            continue;
+        }
+        typicalItem->setText(satSamples);
+    }
+}
+
+void FunctionVariableValueDialog::onAutofillRangeClicked()
+{
+    if (!table) {
+        return;
+    }
+    for (int row : selectedRowIndexes()) {
+        QTableWidgetItem *typicalItem = table->item(row, COLUMN_TYPICAL);
+        QTableWidgetItem *rangeItem = table->item(row, COLUMN_RANGE);
+        if (!typicalItem || !rangeItem) {
+            continue;
+        }
+        const QString typicalText = typicalItem->text().trimmed();
+        if (typicalText.isEmpty()) {
+            continue;
+        }
+        QStringList parts = splitSamples(typicalText);
+        if (parts.isEmpty()) {
+            continue;
+        }
+
+        QVector<double> numbers;
+        for (const QString &part : parts) {
+            double value = 0.0;
+            if (parseDouble(part, &value)) {
+                numbers.append(value);
+            }
+        }
+        if (numbers.isEmpty()) {
+            continue;
+        }
+
+        double minValue = numbers.first();
+        double maxValue = numbers.first();
+        for (double v : numbers) {
+            minValue = std::min(minValue, v);
+            maxValue = std::max(maxValue, v);
+        }
+
+        const double tolerance = 0.05 * std::max(std::fabs(maxValue), std::fabs(minValue));
+        minValue -= tolerance;
+        maxValue += tolerance;
+
+        rangeItem->setText(QString("[%1, %2]").arg(formatDouble(minValue), formatDouble(maxValue)));
+    }
+}
+
+void FunctionVariableValueDialog::onSolveRangeClicked()
+{
+    QVector<int> rows = selectedRowIndexes();
+    solveRows(rows);
+}
+
+void FunctionVariableValueDialog::onSelectAllClicked()
+{
+    if (!table) {
+        return;
+    }
+    table->selectAll();
+}
+
+void FunctionVariableValueDialog::onInvertSelectionClicked()
+{
+    if (!table) {
+        return;
+    }
+    QList<int> rowsToSelect;
+    const int totalRows = table->rowCount();
+    for (int row = 0; row < totalRows; ++row) {
+        if (!table->selectionModel()->isRowSelected(row, QModelIndex())) {
+            rowsToSelect.append(row);
+        }
+    }
+    table->clearSelection();
+    for (int row : rowsToSelect) {
+        table->selectRow(row);
+    }
+}
+
+void FunctionVariableValueDialog::onSolveAllClicked()
+{
+    QVector<int> rows = allRowIndexes();
+    solveRows(rows);
 }

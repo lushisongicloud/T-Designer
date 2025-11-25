@@ -47,11 +47,11 @@ TestManagementDialog::TestManagementDialog(int containerId, const QSqlDatabase &
     connect(btnViewDMatrix, &QPushButton::clicked, this, &TestManagementDialog::onViewDMatrix);
 
     // 隐藏除"决策树"外的所有tab页
-    ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->tabTests));
-    ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->tabMatrix));
-    ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->tabTargets));
-    ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->tabConstraints));
-    ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->tabPrediction));
+//    ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->tabTests));
+//    ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->tabMatrix));
+//    ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->tabTargets));
+//    ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->tabConstraints));
+//    ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->tabPrediction));
     ui->labelCoverage->setVisible(false);
 
     configureTables();

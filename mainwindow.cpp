@@ -11,6 +11,7 @@
 #include <QSet>
 #include <QInputDialog>
 #include <QShortcut>
+#include <QDomDocument>
 #include "BO/containerrepository.h"
 #include "widget/containertreedialog.h"
 #include "DO/containerentity.h"
@@ -18,9 +19,10 @@
 #include "widget/functionmanagerdialog.h"
 #include "widget/functioneditdialog.h"
 #include "BO/function/functionrepository.h"
+#include "testability/function_catalog.h"
 #include "demo_projectbuilder.h"
 bool isPenetrativeSolve=true;
-QMap<QString, QStringList> obsTemplates = {
+QMap<QString, QStringList> MainWindow::obsTemplates = {
     {"AC380_3P_u", {"AC380.u", "( 0 , 0 , 0 )", "( 380 , 0 , 0 )", "( 0 , 380 , 0 )", "( 0 , 0 , 380 )", "( 380 , 380 , 0 )", "( 380 , 0 , 380 )", "( 0 , 380 , 380 )", "( 380 , 380 , 380 )"}},
     {"AC380_3P_i", {"( 1.0 , 1.0 , 1.0 )", "( 0 , 0 , 0 )", "( 1.0 , 0 , 0 )", "( 0 , 1.0 , 0 )", "( 0 , 0 , 1.0 )", "( 1.0 , 1.0 , 0 )", "( 1.0 , 0 , 1.0 )", "( 0 , 1.0 , 1.0 )"}},
     {"AC380_1P_u", {"380","0"}},

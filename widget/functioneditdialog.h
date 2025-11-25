@@ -8,8 +8,12 @@
 #include "BO/function/functionrepository.h"
 #include "BO/function/functionanalysisservice.h"
 #include "BO/function/function_variable_config.h"
+#include "BO/componententity.h"
 
+namespace functionvalues {
 struct FunctionVariableRow;
+}
+class SystemEntity;
 
 struct PortOption
 {
@@ -30,6 +34,7 @@ public:
     void setInitialRecord(const FunctionRecord &record);
     void setSymbol(int symbolId, const QString &symbolName);
     void analyzeCurrentSymbol();
+    void setSystemContext(SystemEntity *systemEntity, const QString &systemDescription);
 
     FunctionRecord record() const { return m_record; }
 
@@ -40,6 +45,7 @@ private slots:
     void onAccepted();
     void updateExecList();
     void onAutoAnalyze();
+    void onAutoLink();
     void onEditVariableValues();
 
 private:
@@ -50,11 +56,17 @@ private:
     void applyAnalysis(const FunctionModelResult &result);
     functionvalues::FunctionVariableConfig currentVariableConfig() const;
     void setCurrentVariableConfig(const functionvalues::FunctionVariableConfig &config);
-    QVector<FunctionVariableRow> collectVariableRows() const;
+    QVector<functionvalues::FunctionVariableRow> collectVariableRows() const;
     QMap<QString, QString> currentConstraintMap() const;
     QString variableConfigToXml(const functionvalues::FunctionVariableConfig &config) const;
     functionvalues::FunctionVariableConfig variableConfigFromXml(const QString &xml) const;
     QStringList variableSuggestions() const;
+    QString solveVariableRange(const QString &variable,
+                               const QString &typeKey,
+                               const QStringList &typicalValues,
+                               QString &errorMessage) const;
+    QList<TestItem> buildBaseTestItems() const;
+    TestItem makeVariableSetterItem(const QString &variable, const QString &valueExpression) const;
 
     Ui::FunctionEditDialog *ui;
     QSqlDatabase m_db;
@@ -62,6 +74,8 @@ private:
     QVector<PortOption> m_ports;
     FunctionAnalysisService m_analysisService;
     functionvalues::FunctionVariableConfig m_variableConfig;
+    SystemEntity *m_systemEntity = nullptr;
+    QString m_systemDescription;
 };
 
 #endif // FUNCTIONEDITDIALOG_H

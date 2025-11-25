@@ -25,9 +25,6 @@
   <property name="windowTitle">
    <string>选择待诊断的功能</string>
   </property>
-  <property name="styleSheet">
-   <string notr="true"/>
-  </property>
   <property name="sizeGripEnabled">
    <bool>false</bool>
   </property>
@@ -50,7 +47,7 @@
      <property name="maximumSize">
       <size>
        <width>2000</width>
-       <height>18</height>
+       <height>16</height>
       </size>
      </property>
      <property name="inputMethodHints">
@@ -61,9 +58,6 @@
      </property>
      <property name="horizontalScrollBarPolicy">
       <enum>Qt::ScrollBarAlwaysOff</enum>
-     </property>
-     <property name="plainText">
-      <string/>
      </property>
     </widget>
    </item>
@@ -88,13 +82,6 @@
      </property>
      <property name="alignment">
       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-     </property>
-    </widget>
-   </item>
-   <item row="9" column="5">
-    <widget class="QPushButton" name="btn_DelObs">
-     <property name="text">
-      <string>删除约束</string>
      </property>
     </widget>
    </item>
@@ -151,6 +138,30 @@
      <property name="text">
       <string>取消</string>
      </property>
+    </widget>
+   </item>
+   <item row="8" column="0" colspan="2">
+    <widget class="QTreeWidget" name="functionTree">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>0</height>
+      </size>
+     </property>
+     <attribute name="headerVisible">
+      <bool>false</bool>
+     </attribute>
+     <column>
+      <property name="text">
+       <string notr="true">1</string>
+      </property>
+     </column>
     </widget>
    </item>
    <item row="5" column="0">
@@ -252,9 +263,6 @@
    </item>
    <item row="0" column="1">
     <widget class="QLabel" name="label_6">
-     <property name="styleSheet">
-      <string notr="true"/>
-     </property>
      <property name="text">
       <string>功能依赖关系</string>
      </property>
@@ -304,11 +312,7 @@
     </widget>
    </item>
    <item row="6" column="1">
-    <widget class="QTextEdit" name="textEditComponentDependency">
-     <property name="styleSheet">
-      <string notr="true"/>
-     </property>
-    </widget>
+    <widget class="QTextEdit" name="textEditComponentDependency"/>
    </item>
    <item row="6" column="0">
     <widget class="QPlainTextEdit" name="textEditLink">
@@ -342,11 +346,29 @@
     </widget>
    </item>
    <item row="9" column="3">
-    <widget class="QPushButton" name="btn_CheckConstraints">
-     <property name="text">
-      <string>检查约束完整性</string>
-     </property>
-    </widget>
+    <layout class="QHBoxLayout" name="layoutConstraintIntegrity">
+     <item>
+      <widget class="QPushButton" name="btn_CheckConstraints">
+       <property name="text">
+        <string>检查约束完整性</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="labelConstraintIntegrityTitle">
+       <property name="text">
+        <string>约束完整性：</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="labelConstraintIntegrityValue">
+       <property name="text">
+        <string>未检查</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
    <item row="3" column="5">
     <widget class="QGroupBox" name="groupBox">
@@ -408,52 +430,25 @@
      </widget>
     </widget>
    </item>
-   <item row="8" column="0" colspan="2">
-    <widget class="QWidget" name="widget" native="true">
-     <property name="styleSheet">
-      <string notr="true"/>
+   <item row="10" column="2">
+    <widget class="QPushButton" name="btn_VariableRanges">
+     <property name="text">
+      <string>变量取值范围</string>
      </property>
-     <layout class="QGridLayout" name="gridLayout_2">
-      <property name="leftMargin">
-       <number>0</number>
-      </property>
-      <property name="topMargin">
-       <number>0</number>
-      </property>
-      <property name="rightMargin">
-       <number>0</number>
-      </property>
-      <property name="bottomMargin">
-       <number>0</number>
-      </property>
-      <property name="spacing">
-       <number>0</number>
-      </property>
-      <item row="0" column="0">
-       <widget class="QTreeWidget" name="functionTree">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>0</height>
-         </size>
-        </property>
-        <attribute name="headerVisible">
-         <bool>false</bool>
-        </attribute>
-        <column>
-         <property name="text">
-          <string notr="true">1</string>
-         </property>
-        </column>
-       </widget>
-      </item>
-     </layout>
+    </widget>
+   </item>
+   <item row="10" column="3">
+    <widget class="QPushButton" name="btn_VariableValueSolve">
+     <property name="text">
+      <string>求解变量可行解范围</string>
+     </property>
+    </widget>
+   </item>
+   <item row="9" column="5">
+    <widget class="QPushButton" name="btn_DelObs">
+     <property name="text">
+      <string>删除约束</string>
+     </property>
     </widget>
    </item>
   </layout>

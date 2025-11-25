@@ -159,6 +159,14 @@ public slots:
     QList<resultEntity> completeSolve(const QString& modelDescription, const QList<TestItem>& testItemList, int truncateMode = 1, bool includeObs = true);
     void incrementalSolve(const QString& modelDescription, const QList<TestItem>& testItemList, QList<resultEntity>& currentResultEntityList,QList<resultEntity>& excludedResults);
     bool satisfiabilitySolve(const QString& modelDescription, const QList<TestItem>& testItemList);
+    bool satisfiabilitySolve(const QString& modelDescription,
+                             const QList<TestItem>& testItemList,
+                             const QStringList &variableWhitelist,
+                             QMap<QString, QString> *modelOut = nullptr);
+    bool solveForModel(const QString& modelDescription,
+                       const QList<TestItem>& testItemList,
+                       QMap<QString, QString> &modelOut,
+                       const QStringList &variableWhitelist);
 private slots:
     void onCommandThreadEnd();
 

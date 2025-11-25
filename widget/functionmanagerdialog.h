@@ -12,12 +12,16 @@ namespace Ui {
 class FunctionManagerDialog;
 }
 
+class SystemEntity;
+
 class FunctionManagerDialog : public QDialog
 {
     Q_OBJECT
 public:
     explicit FunctionManagerDialog(const QSqlDatabase &db,
+                                   int containerId,
                                    const QString &systemDescription = QString(),
+                                   SystemEntity *systemEntity = nullptr,
                                    QWidget *parent = nullptr);
     ~FunctionManagerDialog() override;
 
@@ -38,6 +42,10 @@ private slots:
 
 private:
     void loadData();
+    void loadFromFunctionDocument();
+    void persistFunctionDocument();
+    FunctionRecord fromFunctionInfo(const FunctionInfo &info) const;
+    FunctionInfo toFunctionInfo(const FunctionRecord &record) const;
     void updateButtons();
     FunctionRecord currentRecord() const;
     void displayRecord(const FunctionRecord &record);
@@ -59,10 +67,13 @@ private:
     Ui::FunctionManagerDialog *ui;
     QSqlDatabase m_db;
     FunctionRepository m_repo;
+    int m_containerId = 0;
     QList<FunctionRecord> m_records;
     FunctionRecord m_currentRecord;
     QVector<FunctionOfflineResult> m_offlineResults;
     QString m_systemDescription;
+    QMap<QString, FunctionInfo> m_functionMap;
+    SystemEntity *m_systemEntity = nullptr;
 };
 
 #endif // FUNCTIONMANAGERDIALOG_H

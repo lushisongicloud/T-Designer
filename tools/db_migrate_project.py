@@ -60,6 +60,17 @@ CREATE_TABLE_STATEMENTS = [
     )
     """,
     """
+    CREATE TABLE IF NOT EXISTS port_connect_macro_family (
+        family_name TEXT PRIMARY KEY,
+        domain TEXT NOT NULL,
+        description TEXT,
+        is_builtin INTEGER NOT NULL DEFAULT 0,
+        macros_json TEXT NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+    """,
+    """
     CREATE TABLE IF NOT EXISTS system_smt (
         system_smt_id INTEGER PRIMARY KEY AUTOINCREMENT,
         container_id INTEGER NOT NULL UNIQUE,
@@ -113,6 +124,7 @@ CREATE_INDEX_STATEMENTS = [
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_component_smt_container_scope ON component_smt(container_id, model_scope) WHERE container_id IS NOT NULL",
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_port_config_unique ON port_config(container_id, function_block, port_name)",
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_connect_macro_unique ON port_connect_macro(container_id, macro_name)",
+    "CREATE INDEX IF NOT EXISTS idx_macro_family_domain ON port_connect_macro_family(domain)",
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_function_document_container ON function_document(container_id)",
     "CREATE INDEX IF NOT EXISTS idx_dmatrix_container ON dmatrix_meta(container_id, is_active)",
 ]
@@ -121,12 +133,14 @@ DROP_INDEX_STATEMENTS = [
     "DROP INDEX IF EXISTS idx_dmatrix_container",
     "DROP INDEX IF EXISTS idx_function_document_container",
     "DROP INDEX IF EXISTS idx_connect_macro_unique",
+    "DROP INDEX IF EXISTS idx_macro_family_domain",
     "DROP INDEX IF EXISTS idx_port_config_unique",
     "DROP INDEX IF EXISTS idx_component_smt_container_scope",
     "DROP INDEX IF EXISTS idx_component_smt_equipment",
 ]
 
 DROP_TABLE_STATEMENTS = [
+    "DROP TABLE IF EXISTS port_connect_macro_family",
     "DROP TABLE IF EXISTS dmatrix_meta",
     "DROP TABLE IF EXISTS function_document",
     "DROP TABLE IF EXISTS system_smt",

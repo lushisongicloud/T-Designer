@@ -51,6 +51,7 @@ SOURCES += \
     qxlabel.cpp \
     DrawStyle.cpp \
     formaxwidget.cpp \
+    function_variable_config.cpp \
     dialognewproject.cpp \
     dialogloadsymbol.cpp \
     dialogsymbolattribute.cpp \
@@ -98,6 +99,8 @@ SOURCES += \
     bqgraphicsscene.cpp \
     bqgraphicsview.cpp \
     dialogtag.cpp \
+    variable_range_config.cpp \
+    widget/variablerangedialog.cpp \
     widget/codecheckdialog.cpp \
     widget/mycombobox.cpp \
     widget/mygraphicsview.cpp \
@@ -150,6 +153,7 @@ SOURCES += \
     BO/test/testgeneratorservice.cpp \
     BO/test/diagnosticmatrixbuilder.cpp \
     BO/test/dmatrixservice.cpp \
+    testability/function_catalog.cpp \
     testability/constraint_utils.cpp \
     testability/d_matrix_builder.cpp \
     testability/smt_facade.cpp \
@@ -184,6 +188,7 @@ HEADERS += \
     qxlabel.h \
     DrawStyle.h \
     formaxwidget.h \
+    function_variable_config.h \
     dialognewproject.h \
     dialogloadsymbol.h \
     dialogsymbolattribute.h \
@@ -232,6 +237,8 @@ HEADERS += \
     bqgraphicsscene.h \
     bqgraphicsview.h \
     dialogtag.h \
+    variable_range_config.h \
+    widget/variablerangedialog.h \
     widget/codecheckdialog.h \
     widget/mycombobox.h \
     widget/mygraphicsview.h \
@@ -279,6 +286,7 @@ HEADERS += \
     BO/test/testgeneratorservice.h \
     BO/test/diagnosticmatrixbuilder.h \
     BO/test/dmatrixservice.h \
+    testability/function_catalog.h \
     testability/constraint_utils.h \
     testability/d_matrix_builder.h \
     testability/smt_facade.h \

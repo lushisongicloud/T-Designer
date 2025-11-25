@@ -748,3 +748,96 @@ QStringList FunctionRepository::parseComponentList(const QString &text) const
 {
     return parseDelimitedListUnique(text);
 }
+
+QString FunctionRepository::buildFunctionDocument(const QMap<QString, FunctionInfo> &functions,
+                                                  const QList<FunctionTreeNode> &tree) const
+{
+    QDomDocument doc(QStringLiteral("root"));
+    QDomElement root = doc.createElement(QStringLiteral("root"));
+    doc.appendChild(root);
+
+    if (!tree.isEmpty()) {
+        QDomElement treeStruct = doc.createElement(QStringLiteral("treestruct"));
+        std::function<void(const FunctionTreeNode &, QDomElement &)> addNode =
+            [&](const FunctionTreeNode &node, QDomElement &parent) {
+                QDomElement item = doc.createElement(QStringLiteral("item"));
+                item.setAttribute(QStringLiteral("name"), node.name);
+                parent.appendChild(item);
+                for (const auto &child : node.children) {
+                    addNode(child, item);
+                }
+            };
+        for (const auto &n : tree) {
+            addNode(n, treeStruct);
+        }
+        root.appendChild(treeStruct);
+    }
+
+    for (auto it = functions.cbegin(); it != functions.cend(); ++it) {
+        const FunctionInfo &info = it.value();
+        QDomElement fn = doc.createElement(QStringLiteral("functiondefine"));
+
+        auto appendText = [&](const QString &tag, const QString &value) {
+            QDomElement el = doc.createElement(tag);
+            el.appendChild(doc.createTextNode(value));
+            fn.appendChild(el);
+        };
+
+        appendText(QStringLiteral("name"), info.functionName);
+        appendText(QStringLiteral("describe"), info.description);
+        appendText(QStringLiteral("link"), info.link);
+
+        QDomElement dependency = doc.createElement(QStringLiteral("dependency"));
+        QDomElement depFunc = doc.createElement(QStringLiteral("function"));
+        depFunc.appendChild(doc.createTextNode(info.functionDependency));
+        dependency.appendChild(depFunc);
+        QDomElement depComp = doc.createElement(QStringLiteral("component"));
+        depComp.appendChild(doc.createTextNode(info.componentDependency));
+        dependency.appendChild(depComp);
+        QDomElement depAll = doc.createElement(QStringLiteral("allComponent"));
+        depAll.appendChild(doc.createTextNode(info.allRelatedComponent.isEmpty() ? info.allComponentList.join(QStringLiteral(",")) : info.allRelatedComponent));
+        dependency.appendChild(depAll);
+        fn.appendChild(dependency);
+
+        QString attrText = QString("%1,%2")
+                               .arg(info.persistent ? QStringLiteral("Persistent") : QStringLiteral("NotPersistent"))
+                               .arg(info.faultProbability, 0, 'g', 6);
+        appendText(QStringLiteral("attribute"), attrText);
+        appendText(QStringLiteral("constraintIntegrity"), info.constraintIntegrity.isEmpty() ? QStringLiteral("未检查") : info.constraintIntegrity);
+
+        for (const TestItem &item : info.constraintList) {
+            QDomElement c = doc.createElement(QStringLiteral("constraint"));
+            auto appendChild = [&](const QString &tag, const QString &val) {
+                QDomElement el = doc.createElement(tag);
+                el.appendChild(doc.createTextNode(val));
+                c.appendChild(el);
+            };
+            appendChild(QStringLiteral("variable"), item.variable);
+            appendChild(QStringLiteral("value"), item.value);
+            appendChild(QStringLiteral("confidence"), QString::number(item.confidence));
+            appendChild(QStringLiteral("type"), item.testType);
+            fn.appendChild(c);
+        }
+
+        for (const FunctionOfflineResult &offline : info.offlineResults) {
+            QDomElement off = doc.createElement(QStringLiteral("offlineSolveResult"));
+            appendText(QStringLiteral("componentNames"), offline.componentNames.join(QStringLiteral(",")));
+            appendText(QStringLiteral("failureModes"), offline.failureModes.join(QStringLiteral(",")));
+            appendText(QStringLiteral("probability"), QString::number(offline.probability, 'g', 6));
+            fn.appendChild(off);
+        }
+
+        if (!info.variableConfigXml.trimmed().isEmpty()) {
+            QDomDocument tmp;
+            tmp.setContent(info.variableConfigXml);
+            if (!tmp.documentElement().isNull()) {
+                QDomNode imported = doc.importNode(tmp.documentElement(), true);
+                fn.appendChild(imported);
+            }
+        }
+
+        root.appendChild(fn);
+    }
+
+    return doc.toString();
+}

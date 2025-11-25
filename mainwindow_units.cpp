@@ -2209,6 +2209,9 @@ void MainWindow::createFunctionForSymbol()
     const QString symbolName = index.data(Qt::DisplayRole).toString();
 
     FunctionEditDialog editor(T_ProjectDatabase, this);
+    editor.setSystemContext(systemEntity, ui->textEditSystemDiscription
+                                           ? ui->textEditSystemDiscription->toPlainText()
+                                           : QString());
     editor.setSymbol(symbolId, symbolName);
     editor.analyzeCurrentSymbol();
     if (editor.exec() != QDialog::Accepted)
@@ -2240,10 +2243,17 @@ void MainWindow::on_Btn_ContainerTree_clicked()
 
 void MainWindow::on_BtnFunctionManage_clicked()
 {
+    ContainerRepository repo(T_ProjectDatabase);
+    repo.ensureTables();
+    int containerId = 0;
+    const QList<ContainerEntity> roots = repo.fetchRoots();
+    if (!roots.isEmpty())
+        containerId = roots.first().id();
+
     const QString systemDescription = ui->textEditSystemDiscription
             ? ui->textEditSystemDiscription->toPlainText()
             : QString();
-    FunctionManagerDialog dialog(T_ProjectDatabase, systemDescription, this);
+    FunctionManagerDialog dialog(T_ProjectDatabase, containerId, systemDescription, systemEntity, this);
     dialog.exec();
     UpdateFuncTable();
     LoadAllFunction();

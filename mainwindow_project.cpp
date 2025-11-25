@@ -13,6 +13,7 @@
 #include <QInputDialog>
 #include <QShortcut>
 #include <QMap>
+#include <QDomDocument>
 #include <QSqlError>
 #include <algorithm>
 #include <functional>
@@ -32,6 +33,8 @@
 #include "equipmenttablemodel.h"
 #include "connectiontreemodel.h"
 #include "connectionbyunittreemodel.h"
+#include "widget/selectfunctiondialog.h"
+#include "testability/function_catalog.h"
 
 using namespace ContainerHierarchy;
 
@@ -3415,6 +3418,30 @@ void MainWindow::LoadProjectSystemDescription()
     timer.checkpoint("系统描述生成完成");
 }
 
+void MainWindow::refreshFunctionStateFromModel()
+{
+    // Parse function definitions for actuator/constraint metadata
+    functionInfoMap = testability::FunctionCatalog::parse(functionDescription);
+    if (systemEntity) {
+        systemEntity->setFunctionInfoMap(functionInfoMap);
+    }
+
+    // Extract variable range configuration from function XML
+    rangeconfig::VariableRangeConfig config;
+    QDomDocument doc;
+    if (doc.setContent(functionDescription)) {
+        QDomElement root = doc.firstChildElement(QString("root"));
+        if (!root.isNull()) {
+            config = rangeconfig::VariableRangeConfig::fromXml(
+                        root.firstChildElement(QString("variableRangeConfig")));
+        }
+    }
+    variableRangeConfig = config;
+    if (systemEntity) {
+        systemEntity->setVariableRangeConfig(variableRangeConfig);
+    }
+}
+
 void MainWindow::LoadModel()
 {
     //移除功能管理Tab中的QTreeWidget
@@ -3445,6 +3472,7 @@ void MainWindow::LoadModel()
     //qDebug()<<"systemDescription="<<systemDescription;
     functionDescription = currentModel.getFunctionDiscription();
     //qDebug()<<"functionDescription="<<functionDescription;
+    refreshFunctionStateFromModel();
     systemEntity->updateObsVarsMap(systemEntity->prepareModel(systemDescription));
     //QString savedObsCode= currentModel.getTestDiscription();
     //ui->textEditTestDiscription->setText(savedObsCode);

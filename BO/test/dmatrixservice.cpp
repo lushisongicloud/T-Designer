@@ -35,6 +35,68 @@ QString defaultCsvPath(const QString &projectDir, const QString &projectName)
     return QDir(projectDir).filePath(QString("%1.csv").arg(projectName));
 }
 
+bool ensureBuiltinMacroFamilies(const QSqlDatabase &db)
+{
+    if (!db.isOpen())
+        return false;
+    QSqlQuery count(db);
+    if (count.exec(QStringLiteral("SELECT COUNT(1) FROM sqlite_master WHERE type='table' AND name='port_connect_macro_family'"))
+        && count.next() && count.value(0).toInt() == 0) {
+        return false;
+    }
+
+    QSqlQuery exists(db);
+    exists.exec(QStringLiteral("SELECT COUNT(1) FROM port_connect_macro_family WHERE is_builtin = 1"));
+    if (exists.next() && exists.value(0).toInt() > 0) {
+        return true;
+    }
+
+    auto makeMacros = [](const QString &domain) {
+        QJsonArray arr;
+        auto add = [&](int arity, const QString &name, const QString &expansion) {
+            QJsonObject obj;
+            obj.insert(QStringLiteral("arity"), arity);
+            obj.insert(QStringLiteral("macro_name"), name);
+            obj.insert(QStringLiteral("expansion"), expansion);
+            arr.append(obj);
+        };
+        if (domain == QStringLiteral("electric")) {
+            add(2, QStringLiteral("connect2e"), QStringLiteral("(assert (= (+ %1.i %2.i) 0)) (assert (= %1.u %2.u))"));
+            add(3, QStringLiteral("connect3e"), QStringLiteral("(assert (= (+ %1.i %2.i %3.i) 0)) (assert (= %1.u %2.u %3.u))"));
+        } else if (domain == QStringLiteral("hydraulic")) {
+            add(2, QStringLiteral("connect2h"), QStringLiteral("(assert (= (+ %1.q %2.q) 0)) (assert (= %1.p %2.p))"));
+            add(3, QStringLiteral("connect3h"), QStringLiteral("(assert (= (+ %1.q %2.q %3.q) 0)) (assert (= %1.p %2.p %3.p))"));
+        } else if (domain == QStringLiteral("mechanical")) {
+            add(2, QStringLiteral("connect2m"), QStringLiteral("(assert (= (+ %1.F %2.F) 0)) (assert (= %1.M %2.M))"));
+            add(3, QStringLiteral("connect3m"), QStringLiteral("(assert (= (+ %1.F %2.F %3.F) 0)) (assert (= %1.M %2.M %3.M))"));
+        }
+        return arr;
+    };
+
+    struct BuiltinFamily {
+        QString name;
+        QString domain;
+        QString description;
+    };
+    const QVector<BuiltinFamily> families = {
+        {QStringLiteral("electric-connect"), QStringLiteral("electric"), QStringLiteral("电气连接宏族")},
+        {QStringLiteral("hydraulic-connect"), QStringLiteral("hydraulic"), QStringLiteral("液压连接宏族")},
+        {QStringLiteral("mechanical-connect"), QStringLiteral("mechanical"), QStringLiteral("机械连接宏族")}
+    };
+
+    for (const auto &fam : families) {
+        QSqlQuery ins(db);
+        ins.prepare(QStringLiteral("INSERT OR IGNORE INTO port_connect_macro_family(family_name, domain, description, is_builtin, macros_json) "
+                                   "VALUES(:name, :domain, :desc, 1, :json)"));
+        ins.bindValue(QStringLiteral(":name"), fam.name);
+        ins.bindValue(QStringLiteral(":domain"), fam.domain);
+        ins.bindValue(QStringLiteral(":desc"), fam.description);
+        ins.bindValue(QStringLiteral(":json"), QString::fromUtf8(QJsonDocument(makeMacros(fam.domain)).toJson(QJsonDocument::Compact)));
+        ins.exec();
+    }
+    return true;
+}
+
 } // namespace
 
 DMatrixService::DMatrixService(const QSqlDatabase &db)
@@ -64,6 +126,7 @@ bool DMatrixService::ensureTable() const
     }
     QSqlQuery index(m_db);
     index.exec(QStringLiteral("CREATE INDEX IF NOT EXISTS idx_dmatrix_container ON dmatrix_meta(container_id, is_active)"));
+    ensureBuiltinMacroFamilies(m_db);
     return true;
 }
 

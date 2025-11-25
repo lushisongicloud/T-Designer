@@ -6,6 +6,7 @@
 #include <QList>
 #include <QVector>
 #include "BO/componententity.h"
+#include "function_variable_config.h"
 
 struct FunctionOfflineResult {
     QStringList componentNames;
@@ -30,6 +31,7 @@ struct FunctionInfo {
     QString constraintIntegrity; // 约束完整性状态
     QVector<FunctionOfflineResult> offlineResults; // 离线求解结果
     QString variableConfigXml; // 变量取值范围配置片段（XML）
+    functionvalues::FunctionVariableConfig variableConfig; // 变量取值范围配置对象
 };
 
 #endif // FUNCTIONINFO_H

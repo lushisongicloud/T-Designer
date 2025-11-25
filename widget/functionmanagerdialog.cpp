@@ -43,13 +43,17 @@ QString componentFromExec(const QString &exec)
 } // namespace
 
 FunctionManagerDialog::FunctionManagerDialog(const QSqlDatabase &db,
+                                             int containerId,
                                              const QString &systemDescription,
+                                             SystemEntity *systemEntity,
                                              QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::FunctionManagerDialog)
     , m_db(db)
     , m_repo(db)
+    , m_containerId(containerId)
     , m_systemDescription(systemDescription)
+    , m_systemEntity(systemEntity)
 {
     ui->setupUi(this);
     setWindowTitle(tr("系统功能管理"));
@@ -107,7 +111,7 @@ FunctionManagerDialog::~FunctionManagerDialog()
 
 void FunctionManagerDialog::loadData()
 {
-    m_records = m_repo.fetchAll();
+    loadFromFunctionDocument();
     ui->tableFunctions->setRowCount(m_records.size());
     for (int row = 0; row < m_records.size(); ++row) {
         const FunctionRecord &rec = m_records.at(row);
@@ -159,6 +163,133 @@ void FunctionManagerDialog::displayRecord(const FunctionRecord &record)
     populateOfflineTable();
 }
 
+FunctionRecord FunctionManagerDialog::fromFunctionInfo(const FunctionInfo &info) const
+{
+    FunctionRecord rec;
+    rec.name = info.functionName;
+    rec.remark = info.description;
+    rec.link = info.link;
+    rec.componentDependency = info.componentDependency;
+    rec.allComponents = info.allRelatedComponent.isEmpty() ? info.allComponentList.join(QStringLiteral(",")) : info.allRelatedComponent;
+    rec.functionDependency = info.functionDependency;
+    rec.persistent = info.persistent;
+    rec.faultProbability = info.faultProbability;
+    rec.variableConfigXml = info.variableConfigXml;
+
+    QStringList execs;
+    if (!info.actuatorConstraint.variable.trimmed().isEmpty()) {
+        execs << info.actuatorConstraint.variable;
+    } else if (!info.actuatorName.trimmed().isEmpty()) {
+        execs << info.actuatorName;
+    }
+    rec.execsList = execs.join(QStringLiteral(","));
+
+    QStringList cmdPairs;
+    for (const TestItem &item : info.constraintList) {
+        if (item.testType.contains(QStringLiteral("执行器")))
+            continue;
+        if (item.variable.trimmed().isEmpty() || item.value.trimmed().isEmpty())
+            continue;
+        cmdPairs << QStringLiteral("%1=%2").arg(item.variable, item.value);
+    }
+    rec.cmdValList = cmdPairs.join(QStringLiteral(","));
+
+    return rec;
+}
+
+FunctionInfo FunctionManagerDialog::toFunctionInfo(const FunctionRecord &record) const
+{
+    FunctionInfo info;
+    info.functionName = record.name;
+    info.description = record.remark;
+    info.link = record.link;
+    info.linkElements = parseList(record.link);
+    info.componentDependency = record.componentDependency;
+    info.allRelatedComponent = record.allComponents;
+    info.allComponentList = parseList(record.allComponents);
+    info.functionDependency = record.functionDependency;
+    info.persistent = record.persistent;
+    info.faultProbability = record.faultProbability;
+    info.constraintIntegrity = QStringLiteral("未检查");
+    info.variableConfigXml = record.variableConfigXml;
+
+    QList<QPair<QString, QString>> pairs = parseCmdValList(record.cmdValList);
+    for (const auto &p : pairs) {
+        TestItem item;
+        item.variable = p.first;
+        item.value = p.second;
+        item.confidence = 0.1;
+        item.testType = QStringLiteral("一般变量");
+        item.checkState = Qt::Unchecked;
+        info.constraintList.append(item);
+    }
+
+    if (!record.execsList.trimmed().isEmpty()) {
+        QString actuatorVar = record.execsList.split(QStringLiteral(","), QString::SkipEmptyParts).value(0).trimmed();
+        if (!actuatorVar.isEmpty()) {
+            info.actuatorConstraint.variable = actuatorVar;
+            info.actuatorConstraint.value = QStringLiteral("true");
+            info.actuatorConstraint.confidence = 1.0;
+            info.actuatorConstraint.testType = QStringLiteral("功能执行器");
+            info.actuatorConstraint.checkState = Qt::Unchecked;
+            info.actuatorName = actuatorVariable(record);
+            info.constraintList.prepend(info.actuatorConstraint);
+        }
+    }
+
+    if (info.allComponentList.isEmpty()) {
+        info.allComponentList = info.linkElements;
+    }
+
+    return info;
+}
+
+void FunctionManagerDialog::loadFromFunctionDocument()
+{
+    m_records.clear();
+    m_functionMap.clear();
+
+    if (m_containerId > 0) {
+        FunctionDocumentRecord doc = m_repo.loadDocument(m_containerId);
+        if (doc.id > 0 && !doc.xmlText.trimmed().isEmpty()) {
+            const FunctionDocumentParseResult parsed = m_repo.parseFunctionDocument(doc.xmlText);
+            if (parsed.success) {
+                m_functionMap = parsed.functionMap;
+            }
+        }
+    }
+
+    if (m_functionMap.isEmpty()) {
+        // 回退到旧表
+        const QList<FunctionRecord> legacy = m_repo.fetchAll();
+        for (const auto &rec : legacy) {
+            m_functionMap.insert(rec.name, toFunctionInfo(rec));
+        }
+    }
+
+    for (auto it = m_functionMap.cbegin(); it != m_functionMap.cend(); ++it) {
+        m_records.append(fromFunctionInfo(it.value()));
+    }
+}
+
+void FunctionManagerDialog::persistFunctionDocument()
+{
+    if (m_containerId <= 0)
+        return;
+    FunctionDocumentRecord doc = m_repo.loadDocument(m_containerId);
+    doc.containerId = m_containerId;
+    doc.xmlText = m_repo.buildFunctionDocument(m_functionMap);
+    doc.sourceHint = QStringLiteral("FunctionManagerDialog");
+    m_repo.saveDocument(doc);
+
+    // 兼容性：重写 Function 表摘要
+    QSqlQuery clear(m_db);
+    clear.exec(QStringLiteral("DELETE FROM Function"));
+    for (const auto &rec : m_records) {
+        m_repo.insert(rec);
+    }
+}
+
 void FunctionManagerDialog::onSelectionChanged()
 {
     const FunctionRecord rec = currentRecord();
@@ -183,57 +314,61 @@ void FunctionManagerDialog::onSelectionChanged()
 void FunctionManagerDialog::onAdd()
 {
     FunctionEditDialog editor(m_db, this);
+    editor.setSystemContext(m_systemEntity, m_systemDescription);
     if (editor.exec() != QDialog::Accepted)
         return;
 
     FunctionRecord rec = editor.record();
-    const int id = m_repo.insert(rec);
-    if (id == 0) {
-        QMessageBox::warning(this, tr("提示"), tr("保存失败"));
+    FunctionInfo info = toFunctionInfo(rec);
+    if (info.functionName.isEmpty()) {
+        QMessageBox::warning(this, tr("提示"), tr("功能名称不能为空"));
         return;
     }
+    m_functionMap.insert(info.functionName, info);
+    m_records.append(fromFunctionInfo(info));
+    persistFunctionDocument();
     loadData();
-    for (int row = 0; row < m_records.size(); ++row) {
-        if (m_records.at(row).id == id) {
-            ui->tableFunctions->setCurrentCell(row, 0);
-            break;
-        }
-    }
+    ui->tableFunctions->setCurrentCell(m_records.size() - 1, 0);
 }
 
 void FunctionManagerDialog::onEdit()
 {
     FunctionRecord rec = currentRecord();
-    if (rec.id == 0)
+    if (rec.name.isEmpty())
         return;
 
     FunctionEditDialog editor(m_db, this);
+    editor.setSystemContext(m_systemEntity, m_systemDescription);
     editor.setInitialRecord(rec);
     if (editor.exec() != QDialog::Accepted)
         return;
 
     rec = editor.record();
-    rec.id = currentRecord().id;
-    if (!m_repo.update(rec)) {
-        QMessageBox::warning(this, tr("提示"), tr("保存失败"));
+    const QString oldName = currentRecord().name;
+    FunctionInfo info = toFunctionInfo(rec);
+    if (info.functionName.isEmpty()) {
+        QMessageBox::warning(this, tr("提示"), tr("功能名称不能为空"));
         return;
     }
+    if (oldName != info.functionName) {
+        m_functionMap.remove(oldName);
+    }
+    m_functionMap.insert(info.functionName, info);
+    persistFunctionDocument();
     loadData();
 }
 
 void FunctionManagerDialog::onDelete()
 {
     const FunctionRecord rec = currentRecord();
-    if (rec.id == 0)
+    if (rec.name.isEmpty())
         return;
 
     if (QMessageBox::question(this, tr("确认"), tr("是否删除选中的功能？")) != QMessageBox::Yes)
         return;
 
-    if (!m_repo.remove(rec.id)) {
-        QMessageBox::warning(this, tr("提示"), tr("删除失败"));
-        return;
-    }
+    m_functionMap.remove(rec.name);
+    persistFunctionDocument();
     loadData();
 }
 
@@ -251,7 +386,7 @@ void FunctionManagerDialog::onTableDoubleClicked(int row, int column)
 
 void FunctionManagerDialog::onAutoDependency()
 {
-    if (m_currentRecord.id == 0)
+    if (m_currentRecord.name.isEmpty())
         return;
 
     syncCurrentRecordFromUi();
@@ -261,7 +396,7 @@ void FunctionManagerDialog::onAutoDependency()
 
 void FunctionManagerDialog::onAutoBoundary()
 {
-    if (m_currentRecord.id == 0)
+    if (m_currentRecord.name.isEmpty())
         return;
 
     syncCurrentRecordFromUi();
@@ -302,7 +437,7 @@ void FunctionManagerDialog::onAutoBoundary()
 
 void FunctionManagerDialog::onCheckIntegrity()
 {
-    if (m_currentRecord.id == 0)
+    if (m_currentRecord.name.isEmpty())
         return;
 
     syncCurrentRecordFromUi();
@@ -370,7 +505,7 @@ void FunctionManagerDialog::onSaveOffline()
 
 void FunctionManagerDialog::onSaveRecord()
 {
-    if (m_currentRecord.id == 0) {
+    if (m_currentRecord.name.isEmpty()) {
         QMessageBox::information(this, tr("保存更改"), tr("请选择功能。"));
         return;
     }
@@ -382,16 +517,15 @@ void FunctionManagerDialog::onSaveRecord()
     syncOfflineFromTable();
     applyOfflineResultsToRecord(m_currentRecord);
 
-    if (!m_repo.update(m_currentRecord)) {
-        QMessageBox::warning(this, tr("提示"), tr("保存失败"));
-        return;
-    }
+    FunctionInfo info = toFunctionInfo(m_currentRecord);
+    m_functionMap.insert(info.functionName, info);
+    persistFunctionDocument();
 
     QMessageBox::information(this, tr("保存更改"), tr("功能已更新。"));
-    const int savedId = m_currentRecord.id;
+    const QString savedName = m_currentRecord.name;
     loadData();
     for (int row = 0; row < m_records.size(); ++row) {
-        if (m_records.at(row).id == savedId) {
+        if (m_records.at(row).name == savedName) {
             ui->tableFunctions->setCurrentCell(row, 0);
             break;
         }
@@ -400,7 +534,7 @@ void FunctionManagerDialog::onSaveRecord()
 
 void FunctionManagerDialog::updateButtons()
 {
-    const bool hasSelection = (m_currentRecord.id != 0);
+    const bool hasSelection = !m_currentRecord.name.isEmpty();
     ui->btnEdit->setEnabled(hasSelection);
     ui->btnDelete->setEnabled(hasSelection);
     ui->btnAutoDependency->setEnabled(hasSelection);
@@ -577,7 +711,7 @@ void FunctionManagerDialog::deserializeOfflineResults(const QString &serialized)
 
 void FunctionManagerDialog::syncCurrentRecordFromUi()
 {
-    if (m_currentRecord.id == 0)
+    if (m_currentRecord.name.isEmpty())
         return;
     m_currentRecord.link = trimmedText(ui->lineLink->text());
     m_currentRecord.componentDependency = trimmedText(ui->lineComponentDependency->text());

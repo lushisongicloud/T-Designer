@@ -15,6 +15,7 @@
 #include <cmath>
 #include <algorithm>
 #include <initializer_list>
+#include "widget/selectfunctiondialog.h"
 #include "BO/containerrepository.h"
 #include "widget/containertreedialog.h"
 #include "DO/containerentity.h"

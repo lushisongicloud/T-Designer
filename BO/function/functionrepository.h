@@ -80,6 +80,8 @@ public:
     bool saveDocument(FunctionDocumentRecord &record);
     bool deleteDocument(int containerId);
     FunctionDocumentParseResult parseFunctionDocument(const QString &xml) const;
+    QString buildFunctionDocument(const QMap<QString, FunctionInfo> &functions,
+                                  const QList<FunctionTreeNode> &tree = {}) const;
 
 private:
     QSqlDatabase m_db;

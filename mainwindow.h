@@ -35,9 +35,12 @@
 #include "qscilexercppattach.h"
 #include <QProcess>
 #include <QMultiMap>
+#include <QMap>
 #include "graphadjlist.h"
-#include "widget/selectfunctiondialog.h"
 #include "BO/diagnosisengine.h"
+#include "BO/function/functioninfo.h"
+#include "BO/function/variable_range_config.h"
+#include "BO/systementity.h"
 #include "projectdatacache.h"
 #include "projectdatamodel.h"
 
@@ -49,6 +52,7 @@ class EquipmentTreeModel;
 class EquipmentTableModel;
 class ConnectionTreeModel;
 class ConnectionByUnitTreeModel;
+class SelectFunctionDialog;
 
 extern QSqlDatabase  T_ProjectDatabase;
 extern QString CurProjectPath;
@@ -60,6 +64,7 @@ extern int SelectTerminalStrip_ID;
 extern int SelectTerminal_ID;
 extern int SelectPage_ID;
 extern QStringList RemovedUnitsInfo;
+extern bool isPenetrativeSolve;
 
 struct CandidateData
 {
@@ -108,6 +113,7 @@ public:
     void FilterUnit();
     void FilterLines();
     void FilterTerminal();
+    bool getIsPenetrativeSolve() const { return isPenetrativeSolve; }
     void OpenDwgPageByPageID(int PageID);   
     QString resolvePageFilePath(const QString &displayName) const;
     formaxwidget* GetOpenedDwgaxwidget(QString Symbol_Handle,int Category);
@@ -208,9 +214,11 @@ public:
     SystemEntity *systemEntity = nullptr;
     QString currentModelName;
     QString functionDescription;
+    rangeconfig::VariableRangeConfig variableRangeConfig;
+    QMap<QString, FunctionInfo> functionInfoMap;
     model currentModel;
 
-    //static QMap<QString, QStringList> obsTemplates;
+    static QMap<QString, QStringList> obsTemplates;
     SelectFunctionDialog *pDlgSelectFunctionDialog = nullptr;
     
     // 故障诊断引擎
@@ -218,6 +226,7 @@ public:
 
 private:
     void initializeMxModules();
+    void refreshFunctionStateFromModel();
     TestReportMetrics buildTestReportMetrics() const;
     bool tryGetPrecomputedMetrics(const QString &projectName, TestReportMetrics &metrics) const;
     QString buildStructureTag(int projectStructureId) const;
