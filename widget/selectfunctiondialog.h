@@ -100,6 +100,7 @@ private slots:
     void onOutlierObsUpdated(const QMap<QString, double>& outlierObs);
     void on_btn_CheckConstraints_clicked();
 
+
 private:
     void updateConstraintIntegrityLabel(const QString &status);
     void markConstraintIntegrityUnknown();

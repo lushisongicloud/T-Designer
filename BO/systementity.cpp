@@ -395,30 +395,12 @@ QString formatModelExpr(const z3::expr &value)
         }
     }
     if (value.is_int() || value.is_real()) {
-        const std::string text = value.to_string();
-        bool ok = false;
-        double number = QString::fromStdString(text).toDouble(&ok);
-        if (ok) {
-            return formatRangeValue(number);
+        Z3_context rawCtx = value.ctx();
+        Z3_ast rawAst = value;
+        const double numeric = Z3_get_numeral_double(rawCtx, rawAst);
+        if (!std::isnan(numeric) && !std::isinf(numeric)) {
+            return QString::number(numeric, 'g', 12);
         }
-        return QString::fromStdString(text);
-    }
-    if (value.is_app() && value.num_args() == 0) {
-        return QString::fromStdString(value.to_string());
-    }
-    if (value.is_array()) {
-        QStringList entries;
-        z3::expr asArray = value;
-        while (asArray.is_app() && asArray.decl().decl_kind() == Z3_OP_STORE) {
-            z3::expr index = asArray.arg(1);
-            z3::expr val = asArray.arg(2);
-            entries.append(QString("(%1 -> %2)")
-                               .arg(QString::fromStdString(index.to_string()),
-                                    QString::fromStdString(val.to_string())));
-            asArray = asArray.arg(0);
-        }
-        entries.append(QString("else -> %1").arg(QString::fromStdString(asArray.to_string())));
-        return QString("{%1}").arg(entries.join(QString(", ")));
     }
     return QString::fromStdString(value.to_string());
 }
@@ -477,6 +459,8 @@ QList<ComponentEntity> SystemEntity::prepareModel(const QString& modelDescriptio
     unchangingCode = "";
     unchangingCode.append(VariablesCode);
     unchangingCode.append(systemLinkCode);
+
+    updateObsVarsMap(componentEntityList);
 
     //QString out = "PrepareTime:"+QString::number(time.elapsed()/1000.0);
     //qDebug() << out << endl;
@@ -697,9 +681,142 @@ bool SystemEntity::checkIncrementalSession(IncrementalSolveSession &session,
 
 QString SystemEntity::buildVariableRangeCode(const QStringList &variables, const QList<TestItem> &testItemList) const
 {
-    Q_UNUSED(variables);
-    Q_UNUSED(testItemList);
-    return QString();
+    if (variableRangeTypeMap.isEmpty()) {
+        return QString();
+    }
+    struct Bounds {
+        bool hasLower = false;
+        double lower = 0.0;
+        bool hasUpper = false;
+        double upper = 0.0;
+    };
+
+    QMap<QString, Bounds> tightened;
+
+    for (const TestItem &item : testItemList) {
+        const QString variable = item.variable.trimmed();
+        if (variable.isEmpty()) {
+            continue;
+        }
+        QString normalized = item.value.trimmed();
+        if (normalized.startsWith(QStringLiteral("smt(")) && normalized.endsWith(QChar(')'))) {
+            normalized = normalized.mid(4, normalized.length() - 5).trimmed();
+        }
+        const QString escapedVar = QRegularExpression::escape(variable);
+        Bounds &bound = tightened[variable];
+
+        QRegularExpression rangeRe(QStringLiteral(R"(\(and\s*\(>=\s*%1\s*([-+]?\d*\.?\d+)\)\s*\(<=\s*%1\s*([-+]?\d*\.?\d+)\)\))").arg(escapedVar));
+        QRegularExpressionMatch match = rangeRe.match(normalized);
+        if (match.hasMatch()) {
+            bool okLower = false;
+            bool okUpper = false;
+            double lower = match.captured(1).toDouble(&okLower);
+            double upper = match.captured(2).toDouble(&okUpper);
+            if (okLower && okUpper) {
+                bound.hasLower = true;
+                bound.lower = lower;
+                bound.hasUpper = true;
+                bound.upper = upper;
+                continue;
+            }
+        }
+
+        QRegularExpression geRe(QStringLiteral(R"(\(>=\s*%1\s*([-+]?\d*\.?\d+)\))").arg(escapedVar));
+        match = geRe.match(normalized);
+        if (match.hasMatch()) {
+            bool ok = false;
+            double lower = match.captured(1).toDouble(&ok);
+            if (ok) {
+                bound.hasLower = true;
+                bound.lower = lower;
+            }
+        }
+
+        QRegularExpression gtRe(QStringLiteral(R"(\(>\s*%1\s*([-+]?\d*\.?\d+)\))").arg(escapedVar));
+        match = gtRe.match(normalized);
+        if (match.hasMatch()) {
+            bool ok = false;
+            double lower = match.captured(1).toDouble(&ok);
+            if (ok) {
+                bound.hasLower = true;
+                bound.lower = lower;
+            }
+        }
+
+        QRegularExpression leRe(QStringLiteral(R"(\(<=\s*%1\s*([-+]?\d*\.?\d+)\))").arg(escapedVar));
+        match = leRe.match(normalized);
+        if (match.hasMatch()) {
+            bool ok = false;
+            double upper = match.captured(1).toDouble(&ok);
+            if (ok) {
+                bound.hasUpper = true;
+                bound.upper = upper;
+            }
+        }
+
+        QRegularExpression ltRe(QStringLiteral(R"(\(<\s*%1\s*([-+]?\d*\.?\d+)\))").arg(escapedVar));
+        match = ltRe.match(normalized);
+        if (match.hasMatch()) {
+            bool ok = false;
+            double upper = match.captured(1).toDouble(&ok);
+            if (ok) {
+                bound.hasUpper = true;
+                bound.upper = upper;
+            }
+        }
+
+        QRegularExpression eqRe(QStringLiteral(R"(\(=\s*%1\s*([-+]?\d*\.?\d+)\))").arg(escapedVar));
+        match = eqRe.match(normalized);
+        if (match.hasMatch()) {
+            bool ok = false;
+            double value = match.captured(1).toDouble(&ok);
+            if (ok) {
+                bound.hasLower = true;
+                bound.lower = value;
+                bound.hasUpper = true;
+                bound.upper = value;
+            }
+        }
+    }
+
+    QString code;
+    const QSet<QString> whitelist = QSet<QString>::fromList(variables);
+    constexpr double eps = 1e-9;
+    for (auto it = variableRangeTypeMap.constBegin(); it != variableRangeTypeMap.constEnd(); ++it) {
+        const QString &variable = it.key();
+        if (!whitelist.isEmpty() && !whitelist.contains(variable)) {
+            continue;
+        }
+        const QString &typeKey = it.value();
+        rangeconfig::RangeValue range = variableRangeConfig.effectiveRange(typeKey, variable);
+
+        const Bounds bound = tightened.value(variable);
+        double lower = range.lower;
+        double upper = range.upper;
+        if (bound.hasLower) {
+            lower = std::max(lower, bound.lower);
+        }
+        if (bound.hasUpper) {
+            upper = std::min(upper, bound.upper);
+        }
+
+        if (bound.hasLower && bound.hasUpper) {
+            const bool redundant = (std::fabs(lower - bound.lower) < eps) && (std::fabs(upper - bound.upper) < eps);
+            if (redundant) {
+                continue;
+            }
+        }
+
+        if (lower > upper) {
+            continue;
+        }
+
+        code += QString("(assert (and (>= %1 %2) (<= %1 %3)))")
+                    .arg(variable,
+                         formatRangeValue(lower),
+                         formatRangeValue(upper));
+    }
+    return code;
 }
 
 QMap<QString, double> SystemEntity::solveOutlierObs(QList<obsEntity>& obsEntityList,QList<resultEntity>& resultEntityList) const {
@@ -1636,6 +1753,7 @@ void SystemEntity::updateObsVarsMap(const QList<ComponentEntity>& componentEntit
     obsVarsList.clear();
     componentNameList.clear();
     componentFailureProbability.clear();
+    variableRangeTypeMap.clear();
     for(ComponentEntity code: componentEntityList){
         componentNameList.append(code.getName());//器件名称
         componentFailureProbability.insert(code.getName(),code.getFailureProbability());
@@ -1650,6 +1768,10 @@ void SystemEntity::updateObsVarsMap(const QList<ComponentEntity>& componentEntit
                 type = type.trimmed(); // Remove leading/trailing spaces
                 obsVarsMap.insert(name, type);
                 obsVarsList.append(name);
+                QString typeKey = rangeconfig::VariableRangeConfig::inferTypeKey(name, type);
+                if (!typeKey.isEmpty()) {
+                    variableRangeTypeMap.insert(name, typeKey);
+                }
             }
         }
     }
