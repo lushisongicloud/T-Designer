@@ -4,6 +4,8 @@
 #include "testability/function_catalog.h"
 #include "variablerangedialog.h"
 #include "mainwindow.h"
+#include "widget/functioneditdialog.h"
+#include "BO/function/functionrepository.h"
 
 #include <QMessageBox>
 #include <QPlainTextEdit>
@@ -15,6 +17,8 @@
 #include <QtGlobal>
 #include <QSet>
 #include <QTextDocument>
+
+extern QSqlDatabase T_ProjectDatabase;
 
 class NumericTableWidgetItem : public QTableWidgetItem
 {
@@ -964,7 +968,124 @@ void SelectFunctionDialog::addFunction(bool isSubFunction) {
 
 void SelectFunctionDialog::on_btn_AddFunc_clicked()
 {
-    addFunction(false);
+    // 1. Generate default name
+    QStringList functionNames;
+    for (int i = 0; i < ui->functionTree->topLevelItemCount(); ++i) {
+        getAllFunctionNames(ui->functionTree->topLevelItem(i), functionNames);
+    }
+    QString defaultName = "功能" + QString::number(functionNames.count() + 1) + "_";
+
+    // 2. Prepare initial record
+    FunctionRecord initialRecord;
+    initialRecord.name = defaultName;
+
+    // 3. Launch FunctionEditDialog
+    FunctionEditDialog dialog(T_ProjectDatabase, this);
+    dialog.setSystemContext(systemEntity, systemDescription);
+    dialog.setInitialRecord(initialRecord);
+
+    while (true) {
+        if (dialog.exec() != QDialog::Accepted) return;
+
+        FunctionRecord record = dialog.record();
+
+        // Check for duplicate name
+        if (functionNames.contains(record.name)) {
+             QMessageBox::warning(this, "提示", "功能名已存在，请修改名称");
+             continue; // Re-open dialog
+        }
+
+        // 4. Convert Record to XML Data
+        
+        // Parse Variable Config
+        functionvalues::FunctionVariableConfig varConfig;
+        QDomDocument varDoc;
+        if (varDoc.setContent(record.variableConfigXml)) {
+            varConfig = functionvalues::FunctionVariableConfig::fromXml(varDoc.documentElement());
+        }
+        
+        // Build TestItemList
+        QList<TestItem> newTestItemList;
+        
+        // Inputs
+        QStringList inputs = record.cmdValList.split(',', QString::SkipEmptyParts);
+        for (const QString &pair : inputs) {
+            QStringList parts = pair.split('=');
+            if (parts.size() != 2) continue;
+            QString var = parts[0].trimmed();
+            QString val = parts[1].trimmed();
+            
+            TestItem item;
+            item.variable = var;
+            item.value = val;
+            
+            QString type = varConfig.type(var);
+            if (type.isEmpty()) type = "一般变量";
+            item.testType = type;
+            
+            if (type == "功能执行器") item.confidence = 1.0;
+            else if (type == "Bool") item.confidence = 0.5;
+            else item.confidence = 0.1;
+            
+            item.checkState = (type == "功能执行器") ? Qt::Checked : Qt::Unchecked;
+            newTestItemList.append(item);
+        }
+        
+        // Executors
+        QStringList execs = record.execsList.split(',', QString::SkipEmptyParts);
+        for (const QString &exec : execs) {
+            QString var = exec.trimmed();
+            // Avoid duplicates
+            bool found = false;
+            for(const auto& it : newTestItemList) if(it.variable == var) found = true;
+            if(found) continue;
+
+            TestItem item;
+            item.variable = var;
+            item.value = "功能正常";
+            item.testType = "功能执行器";
+            item.confidence = 1.0;
+            item.checkState = Qt::Checked;
+            newTestItemList.append(item);
+        }
+
+        // Attribute String
+        QString attributeString = record.persistent ? "Persistent" : "NotPersistent";
+        attributeString += "," + QString::number(record.faultProbability);
+
+        // 5. Create XML
+        QString constraintStatus = QString("未检查");
+        functionConstraintIntegrityMap.insert(record.name, constraintStatus);
+        if (functionInfoMap.contains(record.name)) {
+            functionInfoMap[record.name].constraintIntegrity = constraintStatus;
+        }
+        functionVariableConfigMap.insert(record.name, varConfig);
+
+        QDomDocument doc = createFunctionXML(record.name,
+                                             record.remark,
+                                             record.link,
+                                             record.functionDependency,
+                                             record.componentDependency,
+                                             record.allComponents,
+                                             attributeString,
+                                             constraintStatus,
+                                             newTestItemList,
+                                             QList<resultEntity>(), // No offline results
+                                             varConfig);
+
+        // 6. Add to Tree
+        QTreeWidgetItem *newItem = new QTreeWidgetItem();
+        newItem->setText(0, record.name);
+        newItem->setData(0, Qt::UserRole, doc.toString());
+        
+        ui->functionTree->addTopLevelItem(newItem);
+        
+        // Select the new item
+        ui->functionTree->setCurrentItem(newItem);
+        on_functionTree_itemClicked(newItem, 0);
+
+        break;
+    }
 }
 
 void SelectFunctionDialog::on_btn_UpdateSubFunc_clicked()

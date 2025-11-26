@@ -25,7 +25,7 @@ struct FunctionRecord
     QString allComponents;
     QString functionDependency;
     bool persistent = true;
-    double faultProbability = 0.0;
+    double faultProbability = 0.00001;
     int symbolId = 0;
     QString symbolName;
     QString variableConfigXml;
