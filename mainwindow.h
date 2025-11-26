@@ -108,6 +108,7 @@ public:
     void reloadProjectDataModel();
     QStringList selectSystemUnitStripLineInfo();
     QStringList selectSystemConnections();
+    QStringList buildAutoConnectionsFromCad();
     //void MakeListFinalLinkInfo();
     void DrawArrow(QStringList ListTermID);
     void InitNavigatorTree();

@@ -130,6 +130,7 @@ SystemStructure::SystemStructure(const QString& systemDescription, const QString
         // 拼接新的系统描述
         croppedSystemDescription = QString("DEF BEGIN\n%1\nDEF END\n%2").arg(newComponentLines.join("\n"), newConnectionLines.join("\n"));
         //qDebug().noquote()<<"croppedSystemDescription:\n"<<croppedSystemDescription;
+        qDebug().noquote() << "[SystemDescription] Cropped system description:\n" << croppedSystemDescription;
 
         // 存储边界条件设备
         for (const QString &connectionLine : newConnectionLines) {
@@ -168,6 +169,9 @@ SystemStructure::SystemStructure(const QString& systemDescription, const QString
                 break;
             }
         }
+    }
+    if (linkTextforCrop.trimmed().isEmpty()) {
+        qDebug().noquote() << "[SystemDescription] Using full system description:\n" << inputSystemDescription;
     }
 
 }

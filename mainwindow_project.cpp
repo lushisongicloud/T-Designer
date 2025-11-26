@@ -15,6 +15,7 @@
 #include <QMap>
 #include <QDomDocument>
 #include <QSqlError>
+#include <QSqlRecord>
 #include <algorithm>
 #include <functional>
 #include <QLabel>
@@ -3378,6 +3379,118 @@ QStringList MainWindow::selectSystemConnections()
     return ListConnections;
 }
 
+QStringList MainWindow::buildAutoConnectionsFromCad()
+{
+    QStringList connections;
+    if (!T_ProjectDatabase.isOpen()) {
+        qWarning() << "[SystemDescription] project database is not open, skip auto connections.";
+        return connections;
+    }
+
+    auto collectColumns = [](const QString &table) -> QSet<QString> {
+        QSet<QString> columns;
+        QSqlQuery schemaQuery(T_ProjectDatabase);
+        if (schemaQuery.exec(QStringLiteral("PRAGMA table_info(%1)").arg(table))) {
+            while (schemaQuery.next()) {
+                columns.insert(schemaQuery.value(1).toString());
+            }
+        }
+        return columns;
+    };
+
+    const QSet<QString> columnSet = collectColumns(QStringLiteral("JXB"));
+    const QString symb1Column = columnSet.contains(QStringLiteral("Start_Symbol_ID")) ? QStringLiteral("Start_Symbol_ID") : QStringLiteral("Symb1_ID");
+    const QString symb2Column = columnSet.contains(QStringLiteral("End_Symbol_ID")) ? QStringLiteral("End_Symbol_ID") : QStringLiteral("Symb2_ID");
+
+    QStringList selectColumns;
+    selectColumns << QStringLiteral("ConnectionNumber");
+    selectColumns << QStringLiteral("%1 AS Symb1_ID").arg(symb1Column);
+    selectColumns << QStringLiteral("%1 AS Symb2_ID").arg(symb2Column);
+    if (columnSet.contains(QStringLiteral("Symb1_Category"))) {
+        selectColumns << QStringLiteral("Symb1_Category");
+    }
+    if (columnSet.contains(QStringLiteral("Symb2_Category"))) {
+        selectColumns << QStringLiteral("Symb2_Category");
+    }
+
+    QSqlQuery query(T_ProjectDatabase);
+    const QString sql = QStringLiteral("SELECT %1 FROM JXB").arg(selectColumns.join(QStringLiteral(", ")));
+    if (!query.exec(sql)) {
+        qWarning() << "[SystemDescription] Failed to load JXB:" << query.lastError().text();
+        return connections;
+    }
+
+    QHash<QString, QStringList> netPorts;
+    auto appendPort = [&](const QString &connNum, const QString &symbId, const QString &category) {
+        if (connNum.trimmed().isEmpty() || symbId.trimmed().isEmpty())
+            return;
+        if (symbId.contains(":C") || symbId.contains(":G") || symbId.contains(":1") || symbId.contains(":2") || symbId.contains(":3"))
+            return;
+        const QString resolvedCategory = category.trimmed().isEmpty() ? QStringLiteral("0") : category.trimmed();
+        bool ok = false;
+        const int termId = symbId.toInt(&ok);
+        if (!ok)
+            return;
+
+        QString dt;
+        GetUnitStripIDByTermID(resolvedCategory.toInt(), termId, dt);
+        if (dt.trimmed().isEmpty())
+            return;
+
+        QString port;
+        QSqlQuery portQuery(T_ProjectDatabase);
+        bool prepared = false;
+        if (resolvedCategory == QStringLiteral("0")) {
+            portQuery.prepare(QStringLiteral("SELECT ConnNum FROM Symb2TermInfo WHERE Symb2TermInfo_ID = :id"));
+            prepared = true;
+        } else if (resolvedCategory == QStringLiteral("1")) {
+            portQuery.prepare(QStringLiteral("SELECT ConnNum FROM TerminalTerm WHERE TerminalTerm_ID = :id"));
+            prepared = true;
+        }
+        if (prepared) {
+            portQuery.bindValue(QStringLiteral(":id"), termId);
+            if (portQuery.exec() && portQuery.next()) {
+                port = portQuery.value(0).toString();
+            }
+        }
+        if (port.trimmed().isEmpty())
+            return;
+
+        QString fullPort = QString("%1.%2").arg(dt.trimmed(), port.trimmed());
+        QStringList &list = netPorts[connNum.trimmed()];
+        if (!list.contains(fullPort)) {
+            list.append(fullPort);
+        }
+    };
+
+    while (query.next()) {
+        const QString connNum = query.value(0).toString();
+        const QString symb1Id = query.value(1).toString();
+        const QString symb2Id = query.value(2).toString();
+        QString cat1;
+        QString cat2;
+        if (query.record().count() > 3) {
+            cat1 = query.value(3).toString();
+        }
+        if (query.record().count() > 4) {
+            cat2 = query.value(4).toString();
+        }
+        appendPort(connNum, symb1Id, cat1);
+        appendPort(connNum, symb2Id, cat2);
+    }
+
+    for (auto it = netPorts.constBegin(); it != netPorts.constEnd(); ++it) {
+        if (it.value().size() < 2)
+            continue;
+        if (it.value().size() > 4) {
+            qWarning() << "[SystemDescription] 跳过端口数量超出的连接" << it.key() << "size" << it.value().size();
+            continue;
+        }
+        connections.append(QStringLiteral("connect_auto(%1)").arg(it.value().join(QStringLiteral(","))));
+    }
+    return connections;
+}
+
 void MainWindow::LoadProjectSystemDescription()
 {
     PerformanceTimer timer("LoadProjectSystemDescription");
@@ -3386,12 +3499,13 @@ void MainWindow::LoadProjectSystemDescription()
     if (!m_projectDataModel || !m_projectDataModel->isLoaded()) {
         qWarning() << "[LoadProjectSystemDescription] ProjectDataModel 未就绪，使用旧SQL方法";
         QStringList ListEquipmentsInfo = selectSystemUnitStripLineInfo();
-        QStringList ListSystemConnections = selectSystemConnections();
+        QStringList ListSystemConnections = buildAutoConnectionsFromCad();
         QString SystemDescription = "DEF BEGIN\n";
         for (QString EquipmentsInfo : ListEquipmentsInfo) SystemDescription += EquipmentsInfo + "\n";
         SystemDescription += "DEF END\n\n";
         for (QString SystemConnections : ListSystemConnections) SystemDescription += SystemConnections + "\n";
         ui->textEditSystemDiscription->setText(SystemDescription);
+        qDebug().noquote() << "[SystemDescription] Generated:\n" << SystemDescription;
         return;
     }
 
@@ -3406,12 +3520,13 @@ void MainWindow::LoadProjectSystemDescription()
     if (!connMgr || !symbolMgr || !equipmentMgr) {
         qWarning() << "[LoadProjectSystemDescription] Manager未初始化，使用旧方法";
         QStringList ListEquipmentsInfo = selectSystemUnitStripLineInfo();
-        QStringList ListSystemConnections = selectSystemConnections();
+        QStringList ListSystemConnections = buildAutoConnectionsFromCad();
         QString SystemDescription = "DEF BEGIN\n";
         for (QString EquipmentsInfo : ListEquipmentsInfo) SystemDescription += EquipmentsInfo + "\n";
         SystemDescription += "DEF END\n\n";
         for (QString SystemConnections : ListSystemConnections) SystemDescription += SystemConnections + "\n";
         ui->textEditSystemDiscription->setText(SystemDescription);
+        qDebug().noquote() << "[SystemDescription] Generated:\n" << SystemDescription;
         return;
     }
 
@@ -3473,9 +3588,8 @@ void MainWindow::LoadProjectSystemDescription()
             }
         }
 
-        // 添加连线信息
-        ListSystemConnections.append("导线 " + connection->connectionNumber);
     }
+    ListSystemConnections = buildAutoConnectionsFromCad();
 
     QString SystemDescription = "DEF BEGIN\n";
     for (QString EquipmentsInfo : ListEquipmentsInfo) SystemDescription += EquipmentsInfo + "\n";
@@ -3484,6 +3598,7 @@ void MainWindow::LoadProjectSystemDescription()
 
     ui->textEditSystemDiscription->setText(SystemDescription);
     timer.checkpoint("系统描述生成完成");
+    qDebug().noquote() << "[SystemDescription] Generated:\n" << SystemDescription;
 }
 
 void MainWindow::refreshFunctionStateFromModel()
@@ -3531,15 +3646,55 @@ void MainWindow::LoadModel()
     systemEntity = new SystemEntity(database);
     systemEntity->setMainWindow(this);
     systemEntity->setCurrentModel(&currentModel);
+    systemEntity->setProjectDatabase(T_ProjectDatabase);
 
     //=========================open model============
     currentModelName = "QBT";
     currentModel = database->selectModelByName(currentModelName);
+
+    int equipmentCount = 0;
+    if (m_projectDataModel && m_projectDataModel->isLoaded() && m_projectDataModel->equipmentManager()) {
+        equipmentCount = m_projectDataModel->equipmentManager()->count();
+    } else if (T_ProjectDatabase.isOpen()) {
+        QSqlQuery countQuery(T_ProjectDatabase);
+        if (countQuery.exec(QStringLiteral("SELECT COUNT(*) FROM Equipment")) && countQuery.next()) {
+            equipmentCount = countQuery.value(0).toInt();
+        }
+    }
+    if (T_ProjectDatabase.isOpen()) {
+        QSqlQuery terminalCount(T_ProjectDatabase);
+        if (terminalCount.exec(QStringLiteral("SELECT COUNT(*) FROM TerminalStrip")) && terminalCount.next()) {
+            equipmentCount += terminalCount.value(0).toInt();
+        }
+    }
+    const bool useProjectSmt = equipmentCount > 0 && equipmentCount <= 100;
+    systemEntity->setUseProjectModels(useProjectSmt);
+    systemEntity->setForceLegacyMode(!useProjectSmt);
+
     QString systemDescription = currentModel.getSystemDescription();
-    ui->textEditSystemDiscription->setText(systemDescription);
-    //qDebug()<<"systemDescription="<<systemDescription;
     functionDescription = currentModel.getFunctionDiscription();
-    //qDebug()<<"functionDescription="<<functionDescription;
+
+    if (useProjectSmt) {
+        LoadProjectSystemDescription();
+        systemDescription = ui->textEditSystemDiscription->toPlainText();
+        currentModel.setName(currentModelName);
+        currentModel.setSystemDescription(systemDescription);
+        currentModel.setFunctionDiscription(functionDescription);
+        if (database->modelExist(currentModelName)) {
+            database->updateModel(currentModel);
+        } else {
+            database->saveModel(currentModel);
+        }
+        qDebug() << "[LoadModel] 使用项目TModel生成SMT，器件数量" << equipmentCount;
+    } else {
+        qDebug() << "[LoadModel] 器件数量超限或缺失，保持models表数据，使用legacy组件路径。count=" << equipmentCount;
+    }
+
+    currentModel = database->selectModelByName(currentModelName);
+    systemDescription = currentModel.getSystemDescription();
+    ui->textEditSystemDiscription->setText(systemDescription);
+    functionDescription = currentModel.getFunctionDiscription();
+
     refreshFunctionStateFromModel();
     systemEntity->updateObsVarsMap(systemEntity->prepareModel(systemDescription));
     //QString savedObsCode= currentModel.getTestDiscription();

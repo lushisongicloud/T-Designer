@@ -24,6 +24,8 @@
 #include <stdexcept>
 #include <cmath>
 #include <z3_api.h>
+#include "BO/function/tmodelparser.h"
+#include "BO/function/tmodelhelper.h"
 
 namespace {
 
@@ -224,11 +226,18 @@ QString inferFamilyFromPort(const QString &port, QString *domainOut = nullptr)
     if (!db.isValid() || !db.isOpen())
         return QString();
     const QStringList tokens = port.split('.', QString::SkipEmptyParts);
-    if (tokens.size() < 3)
+    if (tokens.size() < 2)
         return QString();
     const QString componentName = tokens.at(0).trimmed();
-    const QString functionBlock = tokens.at(1).trimmed();
-    const QString portName = tokens.at(2).trimmed();
+    QString functionBlock;
+    QString portName;
+    if (tokens.size() >= 3) {
+        functionBlock = tokens.at(1).trimmed();
+        portName = tokens.at(2).trimmed();
+    } else {
+        functionBlock = QString();
+        portName = tokens.at(1).trimmed();
+    }
 
     QSqlQuery findContainer(db);
     findContainer.prepare(QStringLiteral("SELECT container_id FROM container WHERE name = :name LIMIT 1"));
@@ -241,7 +250,9 @@ QString inferFamilyFromPort(const QString &port, QString *domainOut = nullptr)
 
     QSqlQuery query(db);
     query.prepare(QStringLiteral("SELECT connect_macro, port_type FROM port_config "
-                                 "WHERE container_id = :cid AND function_block = :block AND port_name = :port LIMIT 1"));
+                                 "WHERE container_id = :cid AND port_name = :port "
+                                 "AND (function_block = :block OR :block = '' OR function_block IS NULL OR function_block = '') "
+                                 "LIMIT 1"));
     query.bindValue(QStringLiteral(":cid"), containerId);
     query.bindValue(QStringLiteral(":block"), functionBlock);
     query.bindValue(QStringLiteral(":port"), portName);
@@ -405,6 +416,157 @@ QString formatModelExpr(const z3::expr &value)
     return QString::fromStdString(value.to_string());
 }
 
+struct ProjectComponentSource
+{
+    QString instanceName;
+    QString dt;
+    QString category; // "0" equipment, "1" terminal strip
+    int entityId = 0;
+    QString tmodel;
+    QString repairInfo;
+    QMap<QString, QString> constants;
+
+    bool isValid() const { return !tmodel.trimmed().isEmpty() && !dt.trimmed().isEmpty(); }
+};
+
+double parseProbabilityOrDefault(const QString &text, double fallback)
+{
+    bool ok = false;
+    const double value = text.toDouble(&ok);
+    if (!ok || value <= 0.0)
+        return fallback;
+    return value;
+}
+
+QMap<QString, QString> loadDiagnoseConstants(const QSqlDatabase &db,
+                                             const QString &tableName,
+                                             const QString &idColumn,
+                                             int id)
+{
+    QMap<QString, QString> constants;
+    if (!db.isValid() || !db.isOpen() || id <= 0)
+        return constants;
+
+    QSqlQuery query(db);
+    query.prepare(QString("SELECT Name, CurValue, DefaultValue, Unit FROM %1 WHERE %2 = :id").arg(tableName, idColumn));
+    query.bindValue(QStringLiteral(":id"), id);
+    if (!query.exec()) {
+        qWarning() << "[ProjectModel] Failed to load constants from" << tableName << ":" << query.lastError().text();
+        return constants;
+    }
+
+    while (query.next()) {
+        const QString name = query.value(0).toString().trimmed();
+        if (name.isEmpty())
+            continue;
+        QString value = query.value(1).toString().trimmed();
+        if (value.isEmpty())
+            value = query.value(2).toString().trimmed();
+        if (value.isEmpty())
+            continue;
+        constants.insert(name, value);
+    }
+    return constants;
+}
+
+ProjectComponentSource fetchComponentSourceByDt(const QSqlDatabase &db,
+                                                const QString &dt)
+{
+    ProjectComponentSource source;
+    if (!db.isValid() || !db.isOpen())
+        return source;
+
+    const QString trimmedDt = dt.trimmed();
+    if (trimmedDt.isEmpty())
+        return source;
+
+    QSqlQuery query(db);
+    query.prepare(QStringLiteral("SELECT Equipment_ID, TModel, RepairInfo FROM Equipment WHERE DT = :dt LIMIT 1"));
+    query.bindValue(QStringLiteral(":dt"), trimmedDt);
+    if (query.exec() && query.next()) {
+        source.dt = trimmedDt;
+        source.entityId = query.value(0).toInt();
+        source.tmodel = query.value(1).toString();
+        source.repairInfo = query.value(2).toString();
+        source.category = QStringLiteral("0");
+        source.constants = loadDiagnoseConstants(db, QStringLiteral("EquipmentDiagnosePara"), QStringLiteral("Equipment_ID"), source.entityId);
+        return source;
+    }
+
+    QSqlQuery termQuery(db);
+    termQuery.prepare(QStringLiteral("SELECT TerminalStrip_ID, TModel FROM TerminalStrip WHERE DT = :dt LIMIT 1"));
+    termQuery.bindValue(QStringLiteral(":dt"), trimmedDt);
+    if (termQuery.exec() && termQuery.next()) {
+        source.dt = trimmedDt;
+        source.entityId = termQuery.value(0).toInt();
+        source.tmodel = termQuery.value(1).toString();
+        source.category = QStringLiteral("1");
+        source.constants = loadDiagnoseConstants(db, QStringLiteral("TerminalStripDiagnosePara"), QStringLiteral("TerminalStrip_ID"), source.entityId);
+        return source;
+    }
+
+    return source;
+}
+
+double resolveUnknownProbability(const QMap<QString, double> &probMap, double fallback)
+{
+    const QStringList candidates = {
+        QString(),
+        QStringLiteral("未知故障"),
+        QStringLiteral("unknown"),
+        QStringLiteral("unknownfault")
+    };
+    for (const QString &key : candidates) {
+        if (probMap.contains(key)) {
+            return probMap.value(key, fallback);
+        }
+    }
+    return fallback;
+}
+
+QMap<QString, double> parseRepairProbabilities(const QString &repairInfo,
+                                               double defaultUnknown,
+                                               double defaultKnown)
+{
+    QMap<QString, double> probMap;
+    if (repairInfo.trimmed().isEmpty())
+        return probMap;
+
+    const QMap<QString, QStringList> parsed = TModelHelper::parseRepairInfo(repairInfo);
+    for (auto it = parsed.constBegin(); it != parsed.constEnd(); ++it) {
+        const QString key = it.key().trimmed();
+        const QString probText = it.value().value(0);
+        const double fallback = key.isEmpty() ? defaultUnknown : defaultKnown;
+        probMap.insert(key, parseProbabilityOrDefault(probText, fallback));
+    }
+    return probMap;
+}
+
+QList<FailureMode> buildFailureModes(const QList<TModelParser::FailureMode> &parsedModes,
+                                     const QMap<QString, double> &probMap,
+                                     double defaultUnknown,
+                                     double defaultKnown,
+                                     double &combinedProbabilityOut)
+{
+    QList<FailureMode> modes;
+    double product = 1.0;
+
+    for (const TModelParser::FailureMode &fm : parsedModes) {
+        const double p = probMap.value(fm.name, defaultKnown);
+        FailureMode mode(fm.name, fm.description.trimmed(), p);
+        modes.append(mode);
+        product *= (1.0 - p);
+    }
+
+    const double unknownProb = resolveUnknownProbability(probMap, defaultUnknown);
+    FailureMode unknownMode(unknownProb);
+    modes.prepend(unknownMode);
+    product *= (1.0 - unknownProb);
+
+    combinedProbabilityOut = 1.0 - product;
+    return modes;
+}
+
 } // namespace
 
 QList<QList<ComponentEntity>> candidateConflictList ;
@@ -433,6 +595,7 @@ void SystemEntity::setMainWindow(MainWindow* window)
 
 QList<ComponentEntity> SystemEntity::prepareModel(const QString& modelDescription) {
     num = 0;
+    componentFailureProbability.clear();
     //QTime time;
     //time.start();
 
@@ -1790,6 +1953,18 @@ QString SystemEntity::creatVariablesCode(const QList<ComponentEntity>& component
 
 QList<ComponentEntity> SystemEntity::creatComponentEntity(const QString& componentDescription)
 {
+    if (useProjectModels && !forceLegacyMode) {
+        const QList<ComponentEntity> projectEntities = creatComponentEntityFromProject(componentDescription);
+        if (!projectEntities.isEmpty()) {
+            return projectEntities;
+        }
+        qWarning() << "[ProjectModel] project-based component generation failed, fallback to legacy templates.";
+    }
+    return creatComponentEntityLegacy(componentDescription);
+}
+
+QList<ComponentEntity> SystemEntity::creatComponentEntityLegacy(const QString& componentDescription)
+{
     QList<ComponentEntity> ans;
 
     QList<QString> ListRow= componentDescription.split('\n', QString::SkipEmptyParts);
@@ -1880,6 +2055,95 @@ QList<ComponentEntity> SystemEntity::creatComponentEntity(const QString& compone
         ans.append(componentEntity);
     }
     return ans;
+}
+
+QList<ComponentEntity> SystemEntity::creatComponentEntityFromProject(const QString& componentDescription)
+{
+    QList<ComponentEntity> entities;
+    if (!projectDb.isValid() || !projectDb.isOpen()) {
+        qWarning() << "[ProjectModel] project database is not available for SMT generation.";
+        return entities;
+    }
+
+    const QList<QString> rows = componentDescription.split('\n', QString::SkipEmptyParts);
+    for (const QString &description : rows) {
+        QList<QString> parts = description.simplified().split(' ', QString::SkipEmptyParts);
+        if (parts.size() != 2)
+            continue;
+        QString mark = parts[0].trimmed();
+
+        QStringList nameAndParams = parts[1].remove(")").split("(");
+        if (nameAndParams.size() != 2)
+            continue;
+        const QString instanceName = nameAndParams[0].trimmed();
+
+        ProjectComponentSource source = fetchComponentSourceByDt(projectDb, instanceName);
+        if (!source.isValid()) {
+            source = fetchComponentSourceByDt(projectDb, mark);
+        }
+        if (!source.isValid()) {
+            qWarning() << "[ProjectModel] 未找到TModel，跳过实例" << instanceName << "mark" << mark;
+            continue;
+        }
+        source.instanceName = instanceName;
+
+        QMap<QString, QString> parameterMap;
+        const QStringList paramTokens = nameAndParams[1].split(",", QString::SkipEmptyParts);
+        for (const QString &token : paramTokens) {
+            const QStringList kv = token.split("=", QString::SkipEmptyParts);
+            if (kv.size() != 2)
+                continue;
+            parameterMap.insert(kv[0].trimmed(), kv[1].trimmed());
+        }
+        for (auto it = parameterMap.constBegin(); it != parameterMap.constEnd(); ++it) {
+            source.constants.insert(it.key(), it.value());
+        }
+
+        TModelParser parser;
+        if (!parser.parse(source.tmodel)) {
+            qWarning() << "[ProjectModel] TModel parse failed for" << source.dt << "instance" << instanceName;
+            const QList<ComponentEntity> legacy = creatComponentEntityLegacy(description);
+            entities.append(legacy);
+            continue;
+        }
+
+        QString portVars;
+        QString internalVars;
+        QString normalMode;
+        QList<TModelParser::FailureMode> parsedModes;
+        if (!parser.compile(instanceName, source.constants, portVars, internalVars, normalMode, parsedModes)) {
+            qWarning() << "[ProjectModel] TModel compile failed for" << source.dt << "instance" << instanceName;
+            const QList<ComponentEntity> legacy = creatComponentEntityLegacy(description);
+            entities.append(legacy);
+            continue;
+        }
+
+        QString variableBlock = portVars.trimmed();
+        if (!internalVars.trimmed().isEmpty()) {
+            if (!variableBlock.isEmpty())
+                variableBlock.append("\n");
+            variableBlock.append(internalVars.trimmed());
+        }
+
+        const double defaultUnknown = 0.000001;
+        const double defaultKnown = 0.0001;
+        const QMap<QString, double> probMap = parseRepairProbabilities(source.repairInfo, defaultUnknown, defaultKnown);
+
+        double combinedProb = 0.0;
+        QList<FailureMode> failureModes = buildFailureModes(parsedModes, probMap, defaultUnknown, defaultKnown, combinedProb);
+
+        ComponentEntity entity;
+        entity.setName(instanceName);
+        entity.setVariable(variableBlock);
+        entity.setDescription(normalMode.trimmed());
+        entity.setFailMode(failureModes);
+        entity.setFailureProbability(combinedProb);
+
+        componentFailureProbability.insert(instanceName, combinedProb);
+        entities.append(entity);
+    }
+
+    return entities;
 }
 
 QString SystemEntity::creatTestsCode(const QString& testString)

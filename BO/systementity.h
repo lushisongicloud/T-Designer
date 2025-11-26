@@ -91,6 +91,9 @@ public:
     void setFunctionInfoMap(QMap<QString,FunctionInfo>& funcMap){functionInfoMap = funcMap;}
     void setVariableRangeConfig(const rangeconfig::VariableRangeConfig &config);
     const rangeconfig::VariableRangeConfig &variableRangeConfigRef() const { return variableRangeConfig; }
+    void setProjectDatabase(const QSqlDatabase &db) { projectDb = db; }
+    void setUseProjectModels(bool enable) { useProjectModels = enable; }
+    void setForceLegacyMode(bool enable) { forceLegacyMode = enable; }
     QMap<QString, double> solveOutlierObs(QList<obsEntity>& obsEntityList,QList<resultEntity>& resultEntityList) const;
     QList<TestItem> RecommendObs(QString currentfunctionName, QList<QStringList> portListInConnectionList, QMap<QString, QString> functionLinkMap, QMap<QString, QString> functionComponentDependencyMap, QMap<QString, QString> functionDependencyMap, QMap<QString, double> componentFailureProbability, QList<resultEntity> currentResultEntityList);
 
@@ -147,6 +150,9 @@ public:
     QString systemLinkCode;
     QString unchangingCode;
     QString allComponentCode;
+    QSqlDatabase projectDb;
+    bool useProjectModels = false;
+    bool forceLegacyMode = false;
     rangeconfig::VariableRangeConfig variableRangeConfig;
     QHash<QString, QString> variableRangeTypeMap;
 
@@ -154,6 +160,8 @@ public:
     bool singleFailureSolve(const FailureEntity& entity, const QString& testCode, QStringList& ans,  QList<resultEntity>& resultEntityList);
     bool doubleFailureSolve(const FailureEntity& entity1, const FailureEntity& entity2, const QString& testCode, QStringList& ans,  QList<resultEntity>& resultEntityList);
     QString buildVariableRangeCode(const QStringList &variables, const QList<TestItem> &testItemList) const;
+    QList<ComponentEntity> creatComponentEntityLegacy(const QString& componentDescription);
+    QList<ComponentEntity> creatComponentEntityFromProject(const QString& componentDescription);
 
 public slots:
     QList<resultEntity> completeSolve(const QString& modelDescription, const QList<TestItem>& testItemList, int truncateMode = 1, bool includeObs = true);
