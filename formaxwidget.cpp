@@ -500,6 +500,47 @@ void formaxwidget::DoDrawStructBox()
     emit(UpdateProjectUnits());
 }
 
+void formaxwidget::UpdateSymbolXData()
+{
+    IMxDrawSelectionSet *ss = (IMxDrawSelectionSet *)ui->axWidget->querySubObject("NewSelectionSet()");
+    IMxDrawResbuf *filter = (IMxDrawResbuf *)ui->axWidget->querySubObject("NewResbuf()");
+    filter->AddStringEx("INSERT", 5020);
+    ss->dynamicCall("AllSelect(QVariant)", filter->asVariant());
+    int count = ss->dynamicCall("Count()").toInt();
+    for (int i = 0; i < count; ++i) {
+        IMxDrawEntity *ent = (IMxDrawEntity *)ss->querySubObject("Item(int)", i);
+        if (!ent)
+            continue;
+        if (EntyIsErased(ui->axWidget, ent))
+            continue;
+        if (ent->dynamicCall("ObjectName()").toString() != "McDbBlockReference")
+            continue;
+        IMxDrawBlockReference *blk = (IMxDrawBlockReference *)ent;
+        QString dbId = blk->dynamicCall("GetxDataString2(QString,int)", "DbId", 0).toString();
+        if (dbId.isEmpty())
+            dbId = blk->dynamicCall("GetxDataString2(QString,int)", "DbID", 0).toString();
+        if (dbId.isEmpty())
+            continue;
+        QSqlQuery qSym(T_ProjectDatabase);
+        qSym.prepare("SELECT Equipment_ID FROM Symbol WHERE Symbol_ID = :id");
+        qSym.bindValue(":id", dbId);
+        if (!qSym.exec() || !qSym.next())
+            continue;
+        const QString eqId = qSym.value(0).toString();
+        QSqlQuery qEq(T_ProjectDatabase);
+        qEq.prepare("SELECT DT,PartCode FROM Equipment WHERE Equipment_ID = :id");
+        qEq.bindValue(":id", eqId);
+        if (!qEq.exec() || !qEq.next())
+            continue;
+        const QString dt = qEq.value("DT").toString();
+        const QString partCode = qEq.value("PartCode").toString();
+        if (!dt.isEmpty())
+            blk->dynamicCall("SetxDataString(QString,int,QString)", "Designation", 0, dt);
+        if (!partCode.isEmpty())
+            blk->dynamicCall("SetxDataString(QString,int,QString)", "PartCode", 0, partCode);
+    }
+}
+
 void formaxwidget::DoDrawBlackBox()//黑盒
 {
     MxDrawUiPrPoint getPt;
@@ -7662,6 +7703,5 @@ void formaxwidget::DoLoadText()
     DTMText->dynamicCall("setColorIndex(int)",McColor::mcWhite);
     DTMText->SetAttachment(mcAttachmentPointTopLeft);
 }
-
 
 

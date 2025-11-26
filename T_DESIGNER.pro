@@ -99,6 +99,7 @@ SOURCES += \
     bqgraphicsview.cpp \
     dialogtag.cpp \
     widget/variablerangedialog.cpp \
+    widget/cadimportdialog.cpp \
     widget/codecheckdialog.cpp \
     widget/mycombobox.cpp \
     widget/mygraphicsview.cpp \
@@ -235,6 +236,7 @@ HEADERS += \
     bqgraphicsview.h \
     dialogtag.h \
     widget/variablerangedialog.h \
+    widget/cadimportdialog.h \
     widget/codecheckdialog.h \
     widget/mycombobox.h \
     widget/mygraphicsview.h \

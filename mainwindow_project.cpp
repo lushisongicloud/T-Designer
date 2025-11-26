@@ -34,6 +34,7 @@
 #include "connectiontreemodel.h"
 #include "connectionbyunittreemodel.h"
 #include "widget/selectfunctiondialog.h"
+#include "widget/cadimportdialog.h"
 #include "testability/function_catalog.h"
 
 using namespace ContainerHierarchy;
@@ -562,6 +563,73 @@ void MainWindow::AddExistPage()
         LoadProjectPages();
     }
     delete dlg;
+}
+
+void MainWindow::on_BtnImportDwg_clicked()
+{
+    QFileDialog fileDialog(this);
+    fileDialog.setWindowTitle("导入图纸");
+    fileDialog.setDirectory(LocalProjectDefaultPath);
+    fileDialog.setNameFilter("dwg(*.dwg)");
+    fileDialog.setViewMode(QFileDialog::Detail);
+    if (!fileDialog.exec())
+        return;
+
+    const QString filePath = fileDialog.selectedFiles().first();
+
+    initializeMxModules();
+
+    CadImportDialog dlg(filePath,
+                        [this](const QString &source, QString *target, int *pageId) {
+                            return createPageForImportedDwg(source, target, pageId);
+                        },
+                        this);
+    if (dlg.exec() == QDialog::Accepted) {
+        on_Btn_RemakeConnectLine_clicked();
+        LoadProjectUnits();
+        LoadProjectLines();
+        LoadProjectTerminals();
+    }
+}
+
+bool MainWindow::createPageForImportedDwg(const QString &sourcePath, QString *targetPath, int *pageId)
+{
+    QFileInfo selectedInfo(sourcePath);
+    if (!selectedInfo.exists())
+        return false;
+
+    QString fileStem = selectedInfo.completeBaseName();
+    QString baseName = ExtractPageBaseName(fileStem);
+    if (baseName.isEmpty())
+        baseName = fileStem;
+    QString prefix = GetCurIndexProTag(1);
+    if (prefix.isEmpty())
+        prefix = ExtractPagePrefix(fileStem);
+    QString pageName = BuildCanonicalPageName(prefix, baseName, baseName);
+
+    DialogPageAttr dlg(this);
+    dlg.Mode = 1; // add page
+    dlg.PageInitName = pageName;
+    dlg.SetPageName();
+    dlg.LoadPageInfo();
+    dlg.setModal(true);
+    dlg.show();
+    dlg.exec();
+    if (dlg.Canceled)
+        return false;
+
+    QString destPath = CurProjectPath + "/" + dlg.PageInitName + ".dwg";
+    if (QFile::exists(destPath))
+        QFile::remove(destPath);
+    QFile::copy(sourcePath, destPath);
+
+    if (targetPath)
+        *targetPath = destPath;
+    if (pageId)
+        *pageId = dlg.Page_ID;
+    SelectPage_ID = dlg.Page_ID;
+    LoadProjectPages();
+    return true;
 }
 
 //Mode=0:Add new  Mode=1:Add exist

@@ -10073,7 +10073,7 @@ QDoubleSpinBox{
          </widget>
         </item>
         <item>
-         <widget class="QToolButton" name="BtnSaveDwg">
+        <widget class="QToolButton" name="BtnSaveDwg">
           <property name="minimumSize">
            <size>
             <width>100</width>
@@ -10082,6 +10082,31 @@ QDoubleSpinBox{
           </property>
           <property name="text">
            <string>保存图纸</string>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>32</width>
+            <height>27</height>
+           </size>
+          </property>
+          <property name="toolButtonStyle">
+           <enum>Qt::ToolButtonTextUnderIcon</enum>
+          </property>
+          <property name="autoRaise">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QToolButton" name="BtnImportDwg">
+          <property name="minimumSize">
+           <size>
+            <width>100</width>
+            <height>30</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>导入图纸</string>
           </property>
           <property name="iconSize">
            <size>

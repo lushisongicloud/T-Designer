@@ -1,0 +1,3103 @@
+<root>
+ <treestruct>
+  <item name="功能1_压力卸荷功能"/>
+  <item name="功能2_压力控制功能"/>
+  <item name="功能3_应急停机功能"/>
+  <item name="功能4_油温控制功能"/>
+  <item name="功能5_泵组切换功能"/>
+  <item name="功能6_液位监测报警功能"/>
+  <item name="功能7_液压油质量监测功能"/>
+  <item name="功能8_液压泵站启动功能"/>
+  <item name="功能9_滤芯堵塞监测功能"/>
+  <item name="功能10_电机过载保护功能"/>
+ </treestruct>
+ <functiondefine>
+  <name>功能1_压力卸荷功能</name>
+  <link>HM722</link>
+  <dependency>
+   <function/>
+   <component>HM722</component>
+   <allComponent>HM722</allComponent>
+  </dependency>
+  <describe>马达正转（A口高压）</describe>
+  <attribute>Persistent,1.000e-06</attribute>
+  <constraintIntegrity>未检查</constraintIntegrity>
+  <constraint>
+   <variable>HM722.M1.n</variable>
+   <value>>0</value>
+   <confidence>1</confidence>
+   <type>功能执行器</type>
+  </constraint>
+  <constraint>
+   <variable>HM722.A.p</variable>
+   <value>11</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>HM722.B.p</variable>
+   <value>[0,0.5]</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>HM722.M1.LoadTorque</variable>
+   <value>[-40,40]</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <offlineSolveResult>
+   <componentNames>HM722</componentNames>
+   <failureModes>内泄漏过大</failureModes>
+   <probability>5e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>HM722</componentNames>
+   <failureModes>马达卡滞</failureModes>
+   <probability>4e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>HM722</componentNames>
+   <failureModes>未知故障</failureModes>
+   <probability>1e-07</probability>
+  </offlineSolveResult>
+  <variableValueConfig>
+   <variable name="HM722.A.f">
+    <type>f</type>
+    <typical>470</typical>
+    <range>[292.587, 470.218]</range>
+    <satSamples>470</satSamples>
+   </variable>
+   <variable name="HM722.A.p">
+    <type>p</type>
+    <typical>11</typical>
+    <range>[10.465, 11.533]</range>
+    <satSamples>11</satSamples>
+   </variable>
+   <variable name="HM722.B.f">
+    <type>f</type>
+    <typical>-470</typical>
+    <range>[-470.218, -292.587]</range>
+    <satSamples>-470</satSamples>
+   </variable>
+   <variable name="HM722.B.p">
+    <type>p</type>
+    <typical>0.25</typical>
+    <range>[0.021, 0.479]</range>
+    <satSamples>0.25</satSamples>
+   </variable>
+   <variable name="HM722.DeltaPressure">
+    <type>DeltaPressure</type>
+    <typical>10.75</typical>
+    <range>[9.986, 11.512]</range>
+    <satSamples>10.75</satSamples>
+   </variable>
+   <variable name="HM722.FrictionTorque">
+    <type>FrictionTorque</type>
+    <typical>0</typical>
+    <range>[0, 0]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="HM722.LeakageCoef">
+    <type>LeakageCoef</type>
+    <typical>0.14</typical>
+    <range>[0.14, 0.14]</range>
+    <satSamples>0.14</satSamples>
+   </variable>
+   <variable name="HM722.M1.KineticTorque">
+    <type>KineticTorque</type>
+    <typical>32.74278</typical>
+    <range>[27.997, 39.967]</range>
+    <satSamples>32.74278</satSamples>
+   </variable>
+   <variable name="HM722.M1.LoadTorque">
+    <type>LoadTorque</type>
+    <typical>-32.74278</typical>
+    <range>[-39.967, -27.997]</range>
+    <satSamples>-32.74278</satSamples>
+   </variable>
+   <variable name="HM722.M1.StartingTorque">
+    <type>StartingTorque</type>
+    <typical>51.7075</typical>
+    <range>[47.873, 55.502]</range>
+    <satSamples>51.7075</satSamples>
+   </variable>
+   <variable name="HM722.M1.n">
+    <type>n</type>
+    <typical>9997.6833</typical>
+    <range>[6212.721, 10000]</range>
+    <satSamples>9997.6833</satSamples>
+   </variable>
+   <variable name="HM722.PressureLossCoef">
+    <type>PressureLossCoef</type>
+    <typical>0.0113</typical>
+    <range>[0.011, 0.011]</range>
+    <satSamples>0.0113</satSamples>
+   </variable>
+  </variableValueConfig>
+ </functiondefine>
+ <functiondefine>
+  <name>功能2_压力控制功能</name>
+  <link>HM722</link>
+  <dependency>
+   <function/>
+   <component>HM722</component>
+   <allComponent>HM722</allComponent>
+  </dependency>
+  <describe>马达反转（B口高压）</describe>
+  <attribute>Persistent,1.000e-06</attribute>
+  <constraintIntegrity>完整</constraintIntegrity>
+  <constraint>
+   <variable>HM722.M1.n</variable>
+   <value>&lt;0</value>
+   <confidence>1</confidence>
+   <type>功能执行器</type>
+  </constraint>
+  <constraint>
+   <variable>HM722.B.p</variable>
+   <value>11</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>HM722.A.p</variable>
+   <value>[0,0.5]</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>HM722.M1.LoadTorque</variable>
+   <value>[-40,40]</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <offlineSolveResult>
+   <componentNames>HM722</componentNames>
+   <failureModes>内泄漏过大</failureModes>
+   <probability>5e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>HM722</componentNames>
+   <failureModes>马达卡滞</failureModes>
+   <probability>4e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>HM722</componentNames>
+   <failureModes>未知故障</failureModes>
+   <probability>1e-07</probability>
+  </offlineSolveResult>
+  <variableValueConfig>
+   <variable name="HM722.A.f">
+    <type>f</type>
+    <typical>-364</typical>
+    <range>[-470.158, -292.599]</range>
+    <satSamples>-364</satSamples>
+   </variable>
+   <variable name="HM722.A.p">
+    <type>p</type>
+    <typical>0.25</typical>
+    <range>[0.021, 0.479]</range>
+    <satSamples>0.25</satSamples>
+   </variable>
+   <variable name="HM722.B.f">
+    <type>f</type>
+    <typical>364</typical>
+    <range>[292.599, 470.158]</range>
+    <satSamples>364</satSamples>
+   </variable>
+   <variable name="HM722.B.p">
+    <type>p</type>
+    <typical>11</typical>
+    <range>[10.465, 11.533]</range>
+    <satSamples>11</satSamples>
+   </variable>
+   <variable name="HM722.DeltaPressure">
+    <type>DeltaPressure</type>
+    <typical>-10.75</typical>
+    <range>[-11.512, -9.986]</range>
+    <satSamples>-10.75</satSamples>
+   </variable>
+   <variable name="HM722.FrictionTorque">
+    <type>FrictionTorque</type>
+    <typical>0</typical>
+    <range>[0, 0]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="HM722.LeakageCoef">
+    <type>LeakageCoef</type>
+    <typical>0.14</typical>
+    <range>[0.14, 0.14]</range>
+    <satSamples>0.14</satSamples>
+   </variable>
+   <variable name="HM722.M1.KineticTorque">
+    <type>KineticTorque</type>
+    <typical>-39.953536</typical>
+    <range>[-39.954, -27.928]</range>
+    <satSamples>-39.953536</satSamples>
+   </variable>
+   <variable name="HM722.M1.LoadTorque">
+    <type>LoadTorque</type>
+    <typical>39.953536</typical>
+    <range>[27.928, 39.954]</range>
+    <satSamples>39.953536</satSamples>
+   </variable>
+   <variable name="HM722.M1.StartingTorque">
+    <type>StartingTorque</type>
+    <typical>-51.7075</typical>
+    <range>[-55.502, -47.873]</range>
+    <satSamples>-51.7075</satSamples>
+   </variable>
+   <variable name="HM722.M1.n">
+    <type>n</type>
+    <typical>-7735.6433</typical>
+    <range>[-10000, -6212.704]</range>
+    <satSamples>-7735.6433</satSamples>
+   </variable>
+   <variable name="HM722.PressureLossCoef">
+    <type>PressureLossCoef</type>
+    <typical>0.0113</typical>
+    <range>[0.011, 0.011]</range>
+    <satSamples>0.0113</satSamples>
+   </variable>
+  </variableValueConfig>
+ </functiondefine>
+ <functiondefine>
+  <name>功能3_应急停机功能</name>
+  <link>HM722</link>
+  <dependency>
+   <function/>
+   <component>HM722</component>
+   <allComponent>HM722</allComponent>
+  </dependency>
+  <describe>马达停车</describe>
+  <attribute>Persistent,6.000e-07</attribute>
+  <constraintIntegrity>完整</constraintIntegrity>
+  <constraint>
+   <variable>HM722.M1.n</variable>
+   <value>(-3,3)</value>
+   <confidence>1</confidence>
+   <type>功能执行器</type>
+  </constraint>
+  <constraint>
+   <variable>HM722.A.f</variable>
+   <value>0</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>HM722.M1.LoadTorque</variable>
+   <value>[-5,5]</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>HM722.A.p</variable>
+   <value>(0,11)</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>HM722.B.p</variable>
+   <value>(0,11)</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <offlineSolveResult>
+   <componentNames>HM722</componentNames>
+   <failureModes>内泄漏过大</failureModes>
+   <probability>5e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>HM722</componentNames>
+   <failureModes>未知故障</failureModes>
+   <probability>1e-07</probability>
+  </offlineSolveResult>
+  <variableValueConfig>
+   <variable name="HM722.A.f">
+    <type>f</type>
+    <typical>0</typical>
+    <range>[0, 0]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="HM722.A.p">
+    <type>p</type>
+    <typical>1</typical>
+    <range>[0.008, 10.994]</range>
+    <satSamples>1</satSamples>
+   </variable>
+   <variable name="HM722.B.f">
+    <type>f</type>
+    <typical>0</typical>
+    <range>[0, 0]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="HM722.B.p">
+    <type>p</type>
+    <typical>1</typical>
+    <range>[0.008, 10.994]</range>
+    <satSamples>1</satSamples>
+   </variable>
+   <variable name="HM722.DeltaPressure">
+    <type>DeltaPressure</type>
+    <typical>0</typical>
+    <range>[-0.763, 0.763]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="HM722.FrictionTorque">
+    <type>FrictionTorque</type>
+    <typical>0</typical>
+    <range>[0, 0]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="HM722.LeakageCoef">
+    <type>LeakageCoef</type>
+    <typical>0.14</typical>
+    <range>[0.14, 0.14]</range>
+    <satSamples>0.14</satSamples>
+   </variable>
+   <variable name="HM722.M1.KineticTorque">
+    <type>KineticTorque</type>
+    <typical>0</typical>
+    <range>[-4.959, 4.959]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="HM722.M1.LoadTorque">
+    <type>LoadTorque</type>
+    <typical>-4</typical>
+    <range>[-4.991, 4.93]</range>
+    <satSamples>-4</satSamples>
+   </variable>
+   <variable name="HM722.M1.StartingTorque">
+    <type>StartingTorque</type>
+    <typical>0</typical>
+    <range>[-3.967, 3.967]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="HM722.M1.n">
+    <type>n</type>
+    <typical>0</typical>
+    <range>[-2.441, 2.441]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="HM722.PressureLossCoef">
+    <type>PressureLossCoef</type>
+    <typical>0.0113</typical>
+    <range>[0.011, 0.011]</range>
+    <satSamples>0.0113</satSamples>
+   </variable>
+  </variableValueConfig>
+ </functiondefine>
+ <functiondefine>
+  <name>功能4_油温控制功能</name>
+  <link>VB2.RVP,RV721.P,VB2.RVA,RV721.A,VB2.RVR,RV721.R,VB2.FVP,FV723.P,VB2.FVA,FV723.A,VB2.DVP,DV711.P,VB2.DVT,DV711.T,VB2.DVA,DV711.A,VB2.DVB,DV711.B,VB2.PA,P01.2,VB2.PB,P02.2,P01.1,HM722.A1,P02.1,HM722.B1</link>
+  <dependency>
+   <function/>
+   <component>HM722,DV711,FV723,RV721,P01,P02,VB2</component>
+   <allComponent>DV711,RV721,FV723,VB2,HM722,P01,P02</allComponent>
+  </dependency>
+  <describe>排缆左移</describe>
+  <attribute>Persistent,1.340e-05</attribute>
+  <constraintIntegrity>完整</constraintIntegrity>
+  <constraint>
+   <variable>HM722.M1.n</variable>
+   <value>>50</value>
+   <confidence>1</confidence>
+   <type>功能执行器</type>
+  </constraint>
+  <constraint>
+   <variable>HM722.M1.LoadTorque</variable>
+   <value>[-40,40]</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>VB2.X.p</variable>
+   <value>12</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>VB2.X.f</variable>
+   <value>(0,50)</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>VB2.Y.p</variable>
+   <value>(0,1.0)</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>RV721.M.pos</variable>
+   <value>(2.9,3.0)</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>FV723.a1_a2.i</variable>
+   <value>1.0</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>DV711.a1_a2.u</variable>
+   <value>0</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>DV711.b1_b2.u</variable>
+   <value>24</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <offlineSolveResult>
+   <componentNames>DV711</componentNames>
+   <failureModes>右位电磁铁失效</failureModes>
+   <probability>3e-06</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>DV711</componentNames>
+   <failureModes>阀芯卡在中位</failureModes>
+   <probability>2e-06</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>RV721</componentNames>
+   <failureModes>A口无输出压力</failureModes>
+   <probability>2e-06</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>DV711</componentNames>
+   <failureModes>阀芯卡在左位</failureModes>
+   <probability>1e-06</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>FV723</componentNames>
+   <failureModes>阀芯卡滞</failureModes>
+   <probability>1e-06</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>VB2</componentNames>
+   <failureModes>X口油道压损过大</failureModes>
+   <probability>5e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>VB2</componentNames>
+   <failureModes>Y口油道压损过大</failureModes>
+   <probability>5e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>VB2</componentNames>
+   <failureModes>PA口油道压损过大</failureModes>
+   <probability>5e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>VB2</componentNames>
+   <failureModes>PB口油道压损过大</failureModes>
+   <probability>5e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>HM722</componentNames>
+   <failureModes>内泄漏过大</failureModes>
+   <probability>5e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>HM722</componentNames>
+   <failureModes>马达卡滞</failureModes>
+   <probability>4e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>P01</componentNames>
+   <failureModes>油管泄漏</failureModes>
+   <probability>2e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>P01</componentNames>
+   <failureModes>油管堵塞</failureModes>
+   <probability>2e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>P02</componentNames>
+   <failureModes>油管泄漏</failureModes>
+   <probability>2e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>P02</componentNames>
+   <failureModes>油管堵塞</failureModes>
+   <probability>2e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>DV711</componentNames>
+   <failureModes>未知故障</failureModes>
+   <probability>1e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>RV721</componentNames>
+   <failureModes>未知故障</failureModes>
+   <probability>1e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>FV723</componentNames>
+   <failureModes>未知故障</failureModes>
+   <probability>1e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>VB2</componentNames>
+   <failureModes>未知故障</failureModes>
+   <probability>1e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>HM722</componentNames>
+   <failureModes>未知故障</failureModes>
+   <probability>1e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>P01</componentNames>
+   <failureModes>未知故障</failureModes>
+   <probability>1e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>P02</componentNames>
+   <failureModes>未知故障</failureModes>
+   <probability>1e-07</probability>
+  </offlineSolveResult>
+  <variableValueConfig>
+   <variable name="DV711.A.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-42.278, -28.342]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="DV711.A.p">
+    <type>p</type>
+    <typical>-5.92889327243</typical>
+    <range>[-5.929, 8.27]</range>
+    <satSamples>-5.92889327243</satSamples>
+   </variable>
+   <variable name="DV711.B.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.342, 42.278]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="DV711.B.p">
+    <type>p</type>
+    <typical>0.3625</typical>
+    <range>[0.362, 1.354]</range>
+    <satSamples>0.3625</satSamples>
+   </variable>
+   <variable name="DV711.P.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.342, 42.278]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="DV711.P.p">
+    <type>p</type>
+    <typical>-5.61639327243</typical>
+    <range>[-5.616, 8.582]</range>
+    <satSamples>-5.61639327243</satSamples>
+   </variable>
+   <variable name="DV711.T.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-42.278, -28.342]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="DV711.T.p">
+    <type>p</type>
+    <typical>0.05</typical>
+    <range>[0.05, 0.966]</range>
+    <satSamples>0.05</satSamples>
+   </variable>
+   <variable name="DV711.a1_a2.Activated">
+    <typical>false</typical>
+    <range>false</range>
+    <satSamples>false</satSamples>
+   </variable>
+   <variable name="DV711.a1_a2.R">
+    <type>R</type>
+    <typical>20</typical>
+    <range>[20, 20]</range>
+    <satSamples>20</satSamples>
+   </variable>
+   <variable name="DV711.a1_a2.i">
+    <type>i</type>
+    <typical>0</typical>
+    <range>[0, 0]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="DV711.a1_a2.u">
+    <type>u</type>
+    <typical>0</typical>
+    <range>[-0.229, 0.229]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="DV711.b1_b2.Activated">
+    <typical>true</typical>
+    <range>true</range>
+    <satSamples>true</satSamples>
+   </variable>
+   <variable name="DV711.b1_b2.R">
+    <type>R</type>
+    <typical>20</typical>
+    <range>[20, 20]</range>
+    <satSamples>20</satSamples>
+   </variable>
+   <variable name="DV711.b1_b2.i">
+    <type>i</type>
+    <typical>1.128</typical>
+    <range>[1.128, 1.204]</range>
+    <satSamples>1.128</satSamples>
+   </variable>
+   <variable name="DV711.b1_b2.u">
+    <type>u</type>
+    <typical>22.56</typical>
+    <range>[22.56, 25.377]</range>
+    <satSamples>22.56</satSamples>
+   </variable>
+   <variable name="DV711.spoolPos">
+    <typical>1</typical>
+    <range>[-10000, 10000]</range>
+    <satSamples>1</satSamples>
+   </variable>
+   <variable name="FV723.A.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-42.278, -28.342]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="FV723.A.p">
+    <type>p</type>
+    <typical>-5.61639327243</typical>
+    <range>[-5.616, 8.582]</range>
+    <satSamples>-5.61639327243</satSamples>
+   </variable>
+   <variable name="FV723.ControlPercent">
+    <type>ControlPercent</type>
+    <typical>0.625</typical>
+    <range>[0.625, 0.778]</range>
+    <satSamples>0.625</satSamples>
+   </variable>
+   <variable name="FV723.DeltaPressure">
+    <type>DeltaPressure</type>
+    <typical>14.5182487412</typical>
+    <range>[0.46, 14.671]</range>
+    <satSamples>14.5182487412</satSamples>
+   </variable>
+   <variable name="FV723.Ig">
+    <type>Ig</type>
+    <typical>0.625</typical>
+    <range>[0.625, 0.778]</range>
+    <satSamples>0.625</satSamples>
+   </variable>
+   <variable name="FV723.P.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.342, 42.278]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="FV723.P.p">
+    <type>p</type>
+    <typical>8.90185546875</typical>
+    <range>[8.062, 9.054]</range>
+    <satSamples>8.90185546875</satSamples>
+   </variable>
+   <variable name="FV723.SetFlow">
+    <type>SetFlow</type>
+    <typical>31.25</typical>
+    <range>[31.25, 42.278]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="FV723.a1_a2.R">
+    <type>R</type>
+    <typical>17.6</typical>
+    <range>[17.6, 17.6]</range>
+    <satSamples>17.6</satSamples>
+   </variable>
+   <variable name="FV723.a1_a2.i">
+    <type>i</type>
+    <typical>0.85</typical>
+    <range>[0.85, 1.079]</range>
+    <satSamples>0.85</satSamples>
+   </variable>
+   <variable name="FV723.a1_a2.u">
+    <type>u</type>
+    <typical>14.96</typical>
+    <range>[14.96, 20.216]</range>
+    <satSamples>14.96</satSamples>
+   </variable>
+   <variable name="HM722.A.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.342, 42.278]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="HM722.A.p">
+    <type>p</type>
+    <typical>-5.92889327243</typical>
+    <range>[-5.929, 8.27]</range>
+    <satSamples>-5.92889327243</satSamples>
+   </variable>
+   <variable name="HM722.B.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-42.278, -28.342]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="HM722.B.p">
+    <type>p</type>
+    <typical>0.3625</typical>
+    <range>[0.362, 1.354]</range>
+    <satSamples>0.3625</satSamples>
+   </variable>
+   <variable name="HM722.DeltaPressure">
+    <type>DeltaPressure</type>
+    <typical>-6.29139327243</typical>
+    <range>[-7.55, -5.033]</range>
+    <satSamples>-6.29139327243</satSamples>
+   </variable>
+   <variable name="HM722.FrictionTorque">
+    <type>FrictionTorque</type>
+    <typical>0</typical>
+    <range>[0, 0]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="HM722.LeakageCoef">
+    <type>LeakageCoef</type>
+    <typical>0.14</typical>
+    <range>[0.14, 0.14]</range>
+    <satSamples>0.14</satSamples>
+   </variable>
+   <variable name="HM722.M1.KineticTorque">
+    <type>KineticTorque</type>
+    <typical>-40</typical>
+    <range>[-40, 39.969]</range>
+    <satSamples>-40</satSamples>
+   </variable>
+   <variable name="HM722.M1.LoadTorque">
+    <type>LoadTorque</type>
+    <typical>40</typical>
+    <range>[-39.969, 40]</range>
+    <satSamples>40</satSamples>
+   </variable>
+   <variable name="HM722.M1.StartingTorque">
+    <type>StartingTorque</type>
+    <typical>-30.2616016404</typical>
+    <range>[-36.314, -24.209]</range>
+    <satSamples>-30.2616016404</satSamples>
+   </variable>
+   <variable name="HM722.M1.n">
+    <type>n</type>
+    <typical>685.671166541</typical>
+    <range>[582.542, 920.604]</range>
+    <satSamples>685.671166541</satSamples>
+   </variable>
+   <variable name="HM722.PressureLossCoef">
+    <type>PressureLossCoef</type>
+    <typical>0.0113</typical>
+    <range>[0.011, 0.011]</range>
+    <satSamples>0.0113</satSamples>
+   </variable>
+   <variable name="P01.1.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-42.278, -28.342]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="P01.1.p">
+    <type>p</type>
+    <typical>-5.92889327243</typical>
+    <range>[-5.929, 8.27]</range>
+    <satSamples>-5.92889327243</satSamples>
+   </variable>
+   <variable name="P01.2.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.342, 42.278]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="P01.2.p">
+    <type>p</type>
+    <typical>-5.92889327243</typical>
+    <range>[-5.929, 8.27]</range>
+    <satSamples>-5.92889327243</satSamples>
+   </variable>
+   <variable name="P02.1.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.342, 42.278]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="P02.1.p">
+    <type>p</type>
+    <typical>0.3625</typical>
+    <range>[0.362, 1.354]</range>
+    <satSamples>0.3625</satSamples>
+   </variable>
+   <variable name="P02.2.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-42.278, -28.342]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="P02.2.p">
+    <type>p</type>
+    <typical>0.3625</typical>
+    <range>[0.362, 1.354]</range>
+    <satSamples>0.3625</satSamples>
+   </variable>
+   <variable name="RV721.A.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-42.278, -28.342]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="RV721.A.p">
+    <type>p</type>
+    <typical>8.90185546875</typical>
+    <range>[8.062, 9.054]</range>
+    <satSamples>8.90185546875</satSamples>
+   </variable>
+   <variable name="RV721.M.pos">
+    <type>pos</type>
+    <typical>2.95</typical>
+    <range>[2.95, 2.95]</range>
+    <satSamples>2.95</satSamples>
+   </variable>
+   <variable name="RV721.P.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.342, 49.96]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="RV721.P.p">
+    <type>p</type>
+    <typical>11.4</typical>
+    <range>[11.4, 12.543]</range>
+    <satSamples>11.4</satSamples>
+   </variable>
+   <variable name="RV721.R.f">
+    <type>f</type>
+    <typical>0</typical>
+    <range>[-21.667, 0]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="RV721.R.p">
+    <type>p</type>
+    <typical>0.05</typical>
+    <range>[0.05, 0.966]</range>
+    <satSamples>0.05</satSamples>
+   </variable>
+   <variable name="RV721.SetPressure">
+    <type>SetPressure</type>
+    <typical>11.0625</typical>
+    <range>[10.91, 11.215]</range>
+    <satSamples>11.0625</satSamples>
+   </variable>
+   <variable name="RV721.WorkPressure">
+    <type>WorkPressure</type>
+    <typical>11.0625</typical>
+    <range>[10.91, 11.215]</range>
+    <satSamples>11.0625</satSamples>
+   </variable>
+   <variable name="VB2.DVA.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.342, 42.278]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="VB2.DVA.p">
+    <type>p</type>
+    <typical>-5.92889327243</typical>
+    <range>[-5.929, 8.27]</range>
+    <satSamples>-5.92889327243</satSamples>
+   </variable>
+   <variable name="VB2.DVB.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-42.278, -28.342]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="VB2.DVB.p">
+    <type>p</type>
+    <typical>0.3625</typical>
+    <range>[0.362, 1.354]</range>
+    <satSamples>0.3625</satSamples>
+   </variable>
+   <variable name="VB2.DVP.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-42.278, -28.342]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="VB2.DVP.p">
+    <type>p</type>
+    <typical>-5.61639327243</typical>
+    <range>[-5.616, 8.582]</range>
+    <satSamples>-5.61639327243</satSamples>
+   </variable>
+   <variable name="VB2.DVT.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.342, 42.278]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="VB2.DVT.p">
+    <type>p</type>
+    <typical>0.05</typical>
+    <range>[0.05, 0.966]</range>
+    <satSamples>0.05</satSamples>
+   </variable>
+   <variable name="VB2.FVA.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.342, 42.278]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="VB2.FVA.p">
+    <type>p</type>
+    <typical>-5.61639327243</typical>
+    <range>[-5.616, 8.582]</range>
+    <satSamples>-5.61639327243</satSamples>
+   </variable>
+   <variable name="VB2.FVP.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-42.278, -28.342]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="VB2.FVP.p">
+    <type>p</type>
+    <typical>8.90185546875</typical>
+    <range>[8.062, 9.054]</range>
+    <satSamples>8.90185546875</satSamples>
+   </variable>
+   <variable name="VB2.PA.EQp">
+    <type>EQp</type>
+    <typical>-5.92889327243</typical>
+    <range>[-5.929, 8.27]</range>
+    <satSamples>-5.92889327243</satSamples>
+   </variable>
+   <variable name="VB2.PA.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-42.278, -28.342]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="VB2.PA.p">
+    <type>p</type>
+    <typical>-5.92889327243</typical>
+    <range>[-5.929, 8.27]</range>
+    <satSamples>-5.92889327243</satSamples>
+   </variable>
+   <variable name="VB2.PB.EQp">
+    <type>EQp</type>
+    <typical>0.3625</typical>
+    <range>[0.362, 1.354]</range>
+    <satSamples>0.3625</satSamples>
+   </variable>
+   <variable name="VB2.PB.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.342, 42.278]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="VB2.PB.p">
+    <type>p</type>
+    <typical>0.3625</typical>
+    <range>[0.362, 1.354]</range>
+    <satSamples>0.3625</satSamples>
+   </variable>
+   <variable name="VB2.RVA.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.342, 42.278]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="VB2.RVA.p">
+    <type>p</type>
+    <typical>8.90185546875</typical>
+    <range>[8.062, 9.054]</range>
+    <satSamples>8.90185546875</satSamples>
+   </variable>
+   <variable name="VB2.RVP.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-49.96, -28.342]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="VB2.RVP.p">
+    <type>p</type>
+    <typical>11.4</typical>
+    <range>[11.4, 12.543]</range>
+    <satSamples>11.4</satSamples>
+   </variable>
+   <variable name="VB2.RVR.f">
+    <type>f</type>
+    <typical>0</typical>
+    <range>[0, 21.667]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="VB2.RVR.p">
+    <type>p</type>
+    <typical>0.05</typical>
+    <range>[0.05, 0.966]</range>
+    <satSamples>0.05</satSamples>
+   </variable>
+   <variable name="VB2.T1.f">
+    <type>f</type>
+    <typical>0</typical>
+    <range>[0, 0]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="VB2.T1.p">
+    <type>p</type>
+    <typical>-5.92889327243</typical>
+    <range>[-5.929, 8.27]</range>
+    <satSamples>-5.92889327243</satSamples>
+   </variable>
+   <variable name="VB2.T2.f">
+    <type>f</type>
+    <typical>0</typical>
+    <range>[0, 0]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="VB2.T2.p">
+    <type>p</type>
+    <typical>0.3625</typical>
+    <range>[0.362, 1.354]</range>
+    <satSamples>0.3625</satSamples>
+   </variable>
+   <variable name="VB2.T3.f">
+    <type>f</type>
+    <typical>0</typical>
+    <range>[0, 0]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="VB2.T3.p">
+    <type>p</type>
+    <typical>8.90185546875</typical>
+    <range>[8.062, 9.054]</range>
+    <satSamples>8.90185546875</satSamples>
+   </variable>
+   <variable name="VB2.T4.f">
+    <type>f</type>
+    <typical>0</typical>
+    <range>[0, 0]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="VB2.T4.p">
+    <type>p</type>
+    <typical>11.4</typical>
+    <range>[11.4, 12.543]</range>
+    <satSamples>11.4</satSamples>
+   </variable>
+   <variable name="VB2.T5.f">
+    <type>f</type>
+    <typical>0</typical>
+    <range>[0, 0]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="VB2.T5.p">
+    <type>p</type>
+    <typical>0.05</typical>
+    <range>[0.05, 0.966]</range>
+    <satSamples>0.05</satSamples>
+   </variable>
+   <variable name="VB2.X.EQp">
+    <type>EQp</type>
+    <typical>11.4</typical>
+    <range>[11.4, 12.543]</range>
+    <satSamples>11.4</satSamples>
+   </variable>
+   <variable name="VB2.X.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.342, 49.96]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="VB2.X.p">
+    <type>p</type>
+    <typical>11.4</typical>
+    <range>[11.4, 12.543]</range>
+    <satSamples>11.4</satSamples>
+   </variable>
+   <variable name="VB2.Y.EQp">
+    <type>EQp</type>
+    <typical>0.05</typical>
+    <range>[0.05, 0.966]</range>
+    <satSamples>0.05</satSamples>
+   </variable>
+   <variable name="VB2.Y.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-49.96, -28.342]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="VB2.Y.p">
+    <type>p</type>
+    <typical>0.05</typical>
+    <range>[0.05, 0.966]</range>
+    <satSamples>0.05</satSamples>
+   </variable>
+  </variableValueConfig>
+ </functiondefine>
+ <functiondefine>
+  <name>功能5_泵组切换功能</name>
+  <link>VB2.RVP,RV721.P,VB2.RVA,RV721.A,VB2.RVR,RV721.R,VB2.FVP,FV723.P,VB2.FVA,FV723.A,VB2.DVP,DV711.P,VB2.DVT,DV711.T,VB2.DVA,DV711.A,VB2.DVB,DV711.B,VB2.PA,P01.2,VB2.PB,P02.2,P01.1,HM722.A1,P02.1,HM722.B1</link>
+  <dependency>
+   <function/>
+   <component>HM722,DV711,FV723,RV721,P01,P02,VB2</component>
+   <allComponent>DV711,RV721,FV723,VB2,HM722,P01,P02</allComponent>
+  </dependency>
+  <describe>排缆右移</describe>
+  <attribute>Persistent,1.340e-05</attribute>
+  <constraintIntegrity>完整</constraintIntegrity>
+  <constraint>
+   <variable>HM722.M1.n</variable>
+   <value>&lt;-50</value>
+   <confidence>1</confidence>
+   <type>功能执行器</type>
+  </constraint>
+  <constraint>
+   <variable>HM722.M1.LoadTorque</variable>
+   <value>[-40,40]</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>VB2.X.p</variable>
+   <value>12</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>VB2.X.f</variable>
+   <value>(0,50)</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>VB2.Y.p</variable>
+   <value>(0,1.0)</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>RV721.M.pos</variable>
+   <value>(2.9,3.0)</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>FV723.a1_a2.i</variable>
+   <value>1.0</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>DV711.a1_a2.u</variable>
+   <value>24</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>DV711.b1_b2.u</variable>
+   <value>0</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <offlineSolveResult>
+   <componentNames>DV711</componentNames>
+   <failureModes>左位电磁铁失效</failureModes>
+   <probability>3e-06</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>DV711</componentNames>
+   <failureModes>阀芯卡在中位</failureModes>
+   <probability>2e-06</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>RV721</componentNames>
+   <failureModes>A口无输出压力</failureModes>
+   <probability>2e-06</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>DV711</componentNames>
+   <failureModes>阀芯卡在右位</failureModes>
+   <probability>1e-06</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>FV723</componentNames>
+   <failureModes>阀芯卡滞</failureModes>
+   <probability>1e-06</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>VB2</componentNames>
+   <failureModes>X口油道压损过大</failureModes>
+   <probability>5e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>VB2</componentNames>
+   <failureModes>Y口油道压损过大</failureModes>
+   <probability>5e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>VB2</componentNames>
+   <failureModes>PA口油道压损过大</failureModes>
+   <probability>5e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>VB2</componentNames>
+   <failureModes>PB口油道压损过大</failureModes>
+   <probability>5e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>HM722</componentNames>
+   <failureModes>内泄漏过大</failureModes>
+   <probability>5e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>HM722</componentNames>
+   <failureModes>马达卡滞</failureModes>
+   <probability>4e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>P01</componentNames>
+   <failureModes>油管泄漏</failureModes>
+   <probability>2e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>P01</componentNames>
+   <failureModes>油管堵塞</failureModes>
+   <probability>2e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>P02</componentNames>
+   <failureModes>油管泄漏</failureModes>
+   <probability>2e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>P02</componentNames>
+   <failureModes>油管堵塞</failureModes>
+   <probability>2e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>DV711</componentNames>
+   <failureModes>未知故障</failureModes>
+   <probability>1e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>RV721</componentNames>
+   <failureModes>未知故障</failureModes>
+   <probability>1e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>FV723</componentNames>
+   <failureModes>未知故障</failureModes>
+   <probability>1e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>VB2</componentNames>
+   <failureModes>未知故障</failureModes>
+   <probability>1e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>HM722</componentNames>
+   <failureModes>未知故障</failureModes>
+   <probability>1e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>P01</componentNames>
+   <failureModes>未知故障</failureModes>
+   <probability>1e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>P02</componentNames>
+   <failureModes>未知故障</failureModes>
+   <probability>1e-07</probability>
+  </offlineSolveResult>
+  <variableValueConfig>
+   <variable name="DV711.A.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.571, 42.278]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="DV711.A.p">
+    <type>p</type>
+    <typical>0.33125</typical>
+    <range>[0.331, 1.323]</range>
+    <satSamples>0.33125</satSamples>
+   </variable>
+   <variable name="DV711.B.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-42.278, -28.571]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="DV711.B.p">
+    <type>p</type>
+    <typical>-5.96014327243</typical>
+    <range>[-5.96, 8.239]</range>
+    <satSamples>-5.96014327243</satSamples>
+   </variable>
+   <variable name="DV711.P.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.571, 42.278]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="DV711.P.p">
+    <type>p</type>
+    <typical>-5.64764327243</typical>
+    <range>[-5.648, 8.551]</range>
+    <satSamples>-5.64764327243</satSamples>
+   </variable>
+   <variable name="DV711.T.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-42.278, -28.571]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="DV711.T.p">
+    <type>p</type>
+    <typical>0.05</typical>
+    <range>[0.05, 0.966]</range>
+    <satSamples>0.05</satSamples>
+   </variable>
+   <variable name="DV711.a1_a2.Activated">
+    <typical>true</typical>
+    <range>true</range>
+    <satSamples>true</satSamples>
+   </variable>
+   <variable name="DV711.a1_a2.R">
+    <type>R</type>
+    <typical>20</typical>
+    <range>[20, 20]</range>
+    <satSamples>20</satSamples>
+   </variable>
+   <variable name="DV711.a1_a2.i">
+    <type>i</type>
+    <typical>1.128</typical>
+    <range>[1.128, 1.204]</range>
+    <satSamples>1.128</satSamples>
+   </variable>
+   <variable name="DV711.a1_a2.u">
+    <type>u</type>
+    <typical>22.56</typical>
+    <range>[22.56, 25.377]</range>
+    <satSamples>22.56</satSamples>
+   </variable>
+   <variable name="DV711.b1_b2.Activated">
+    <typical>false</typical>
+    <range>false</range>
+    <satSamples>false</satSamples>
+   </variable>
+   <variable name="DV711.b1_b2.R">
+    <type>R</type>
+    <typical>20</typical>
+    <range>[20, 20]</range>
+    <satSamples>20</satSamples>
+   </variable>
+   <variable name="DV711.b1_b2.i">
+    <type>i</type>
+    <typical>0</typical>
+    <range>[0, 0]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="DV711.b1_b2.u">
+    <type>u</type>
+    <typical>0</typical>
+    <range>[-0.229, 0.229]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="DV711.spoolPos">
+    <typical>-1</typical>
+    <range>[-10000, 10000]</range>
+    <satSamples>-1</satSamples>
+   </variable>
+   <variable name="FV723.A.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-42.278, -28.571]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="FV723.A.p">
+    <type>p</type>
+    <typical>-5.64764327243</typical>
+    <range>[-5.648, 8.551]</range>
+    <satSamples>-5.64764327243</satSamples>
+   </variable>
+   <variable name="FV723.ControlPercent">
+    <type>ControlPercent</type>
+    <typical>0.625</typical>
+    <range>[0.625, 0.778]</range>
+    <satSamples>0.625</satSamples>
+   </variable>
+   <variable name="FV723.DeltaPressure">
+    <type>DeltaPressure</type>
+    <typical>14.5494987412</typical>
+    <range>[0.491, 14.702]</range>
+    <satSamples>14.5494987412</satSamples>
+   </variable>
+   <variable name="FV723.Ig">
+    <type>Ig</type>
+    <typical>0.625</typical>
+    <range>[0.625, 0.778]</range>
+    <satSamples>0.625</satSamples>
+   </variable>
+   <variable name="FV723.P.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.571, 42.278]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="FV723.P.p">
+    <type>p</type>
+    <typical>8.90185546875</typical>
+    <range>[8.062, 9.054]</range>
+    <satSamples>8.90185546875</satSamples>
+   </variable>
+   <variable name="FV723.SetFlow">
+    <type>SetFlow</type>
+    <typical>31.25</typical>
+    <range>[31.25, 42.278]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="FV723.a1_a2.R">
+    <type>R</type>
+    <typical>17.6</typical>
+    <range>[17.6, 17.6]</range>
+    <satSamples>17.6</satSamples>
+   </variable>
+   <variable name="FV723.a1_a2.i">
+    <type>i</type>
+    <typical>0.85</typical>
+    <range>[0.85, 1.079]</range>
+    <satSamples>0.85</satSamples>
+   </variable>
+   <variable name="FV723.a1_a2.u">
+    <type>u</type>
+    <typical>14.96</typical>
+    <range>[14.96, 20.216]</range>
+    <satSamples>14.96</satSamples>
+   </variable>
+   <variable name="HM722.A.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-42.278, -28.571]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="HM722.A.p">
+    <type>p</type>
+    <typical>0.33125</typical>
+    <range>[0.331, 1.323]</range>
+    <satSamples>0.33125</satSamples>
+   </variable>
+   <variable name="HM722.B.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.571, 42.278]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="HM722.B.p">
+    <type>p</type>
+    <typical>-5.96014327243</typical>
+    <range>[-5.96, 8.239]</range>
+    <satSamples>-5.96014327243</satSamples>
+   </variable>
+   <variable name="HM722.DeltaPressure">
+    <type>DeltaPressure</type>
+    <typical>6.29139327243</typical>
+    <range>[5.033, 7.55]</range>
+    <satSamples>6.29139327243</satSamples>
+   </variable>
+   <variable name="HM722.FrictionTorque">
+    <type>FrictionTorque</type>
+    <typical>0</typical>
+    <range>[0, 0]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="HM722.LeakageCoef">
+    <type>LeakageCoef</type>
+    <typical>0.14</typical>
+    <range>[0.14, 0.14]</range>
+    <satSamples>0.14</satSamples>
+   </variable>
+   <variable name="HM722.M1.KineticTorque">
+    <type>KineticTorque</type>
+    <typical>40</typical>
+    <range>[-39.969, 40]</range>
+    <satSamples>40</satSamples>
+   </variable>
+   <variable name="HM722.M1.LoadTorque">
+    <type>LoadTorque</type>
+    <typical>-40</typical>
+    <range>[-40, 39.969]</range>
+    <satSamples>-40</satSamples>
+   </variable>
+   <variable name="HM722.M1.StartingTorque">
+    <type>StartingTorque</type>
+    <typical>30.2616016404</typical>
+    <range>[24.209, 36.314]</range>
+    <satSamples>30.2616016404</satSamples>
+   </variable>
+   <variable name="HM722.M1.n">
+    <type>n</type>
+    <typical>-685.671166541</typical>
+    <range>[-920.604, -587.841]</range>
+    <satSamples>-685.671166541</satSamples>
+   </variable>
+   <variable name="HM722.PressureLossCoef">
+    <type>PressureLossCoef</type>
+    <typical>0.0113</typical>
+    <range>[0.011, 0.011]</range>
+    <satSamples>0.0113</satSamples>
+   </variable>
+   <variable name="P01.1.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.571, 42.278]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="P01.1.p">
+    <type>p</type>
+    <typical>0.33125</typical>
+    <range>[0.331, 1.323]</range>
+    <satSamples>0.33125</satSamples>
+   </variable>
+   <variable name="P01.2.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-42.278, -28.571]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="P01.2.p">
+    <type>p</type>
+    <typical>0.33125</typical>
+    <range>[0.331, 1.323]</range>
+    <satSamples>0.33125</satSamples>
+   </variable>
+   <variable name="P02.1.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-42.278, -28.571]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="P02.1.p">
+    <type>p</type>
+    <typical>-5.96014327243</typical>
+    <range>[-5.96, 8.239]</range>
+    <satSamples>-5.96014327243</satSamples>
+   </variable>
+   <variable name="P02.2.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.571, 42.278]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="P02.2.p">
+    <type>p</type>
+    <typical>-5.96014327243</typical>
+    <range>[-5.96, 8.239]</range>
+    <satSamples>-5.96014327243</satSamples>
+   </variable>
+   <variable name="RV721.A.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-42.278, -28.571]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="RV721.A.p">
+    <type>p</type>
+    <typical>8.90185546875</typical>
+    <range>[8.062, 9.054]</range>
+    <satSamples>8.90185546875</satSamples>
+   </variable>
+   <variable name="RV721.M.pos">
+    <type>pos</type>
+    <typical>2.95</typical>
+    <range>[2.95, 2.95]</range>
+    <satSamples>2.95</satSamples>
+   </variable>
+   <variable name="RV721.P.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.571, 49.96]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="RV721.P.p">
+    <type>p</type>
+    <typical>11.4</typical>
+    <range>[11.4, 12.543]</range>
+    <satSamples>11.4</satSamples>
+   </variable>
+   <variable name="RV721.R.f">
+    <type>f</type>
+    <typical>0</typical>
+    <range>[-21.439, 0]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="RV721.R.p">
+    <type>p</type>
+    <typical>0.05</typical>
+    <range>[0.05, 0.966]</range>
+    <satSamples>0.05</satSamples>
+   </variable>
+   <variable name="RV721.SetPressure">
+    <type>SetPressure</type>
+    <typical>11.0625</typical>
+    <range>[10.91, 11.215]</range>
+    <satSamples>11.0625</satSamples>
+   </variable>
+   <variable name="RV721.WorkPressure">
+    <type>WorkPressure</type>
+    <typical>11.0625</typical>
+    <range>[10.91, 11.215]</range>
+    <satSamples>11.0625</satSamples>
+   </variable>
+   <variable name="VB2.DVA.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-42.278, -28.571]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="VB2.DVA.p">
+    <type>p</type>
+    <typical>0.33125</typical>
+    <range>[0.331, 1.323]</range>
+    <satSamples>0.33125</satSamples>
+   </variable>
+   <variable name="VB2.DVB.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.571, 42.278]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="VB2.DVB.p">
+    <type>p</type>
+    <typical>-5.96014327243</typical>
+    <range>[-5.96, 8.239]</range>
+    <satSamples>-5.96014327243</satSamples>
+   </variable>
+   <variable name="VB2.DVP.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-42.278, -28.571]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="VB2.DVP.p">
+    <type>p</type>
+    <typical>-5.64764327243</typical>
+    <range>[-5.648, 8.551]</range>
+    <satSamples>-5.64764327243</satSamples>
+   </variable>
+   <variable name="VB2.DVT.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.571, 42.278]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="VB2.DVT.p">
+    <type>p</type>
+    <typical>0.05</typical>
+    <range>[0.05, 0.966]</range>
+    <satSamples>0.05</satSamples>
+   </variable>
+   <variable name="VB2.FVA.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.571, 42.278]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="VB2.FVA.p">
+    <type>p</type>
+    <typical>-5.64764327243</typical>
+    <range>[-5.648, 8.551]</range>
+    <satSamples>-5.64764327243</satSamples>
+   </variable>
+   <variable name="VB2.FVP.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-42.278, -28.571]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="VB2.FVP.p">
+    <type>p</type>
+    <typical>8.90185546875</typical>
+    <range>[8.062, 9.054]</range>
+    <satSamples>8.90185546875</satSamples>
+   </variable>
+   <variable name="VB2.PA.EQp">
+    <type>EQp</type>
+    <typical>0.33125</typical>
+    <range>[0.331, 1.323]</range>
+    <satSamples>0.33125</satSamples>
+   </variable>
+   <variable name="VB2.PA.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.571, 42.278]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="VB2.PA.p">
+    <type>p</type>
+    <typical>0.33125</typical>
+    <range>[0.331, 1.323]</range>
+    <satSamples>0.33125</satSamples>
+   </variable>
+   <variable name="VB2.PB.EQp">
+    <type>EQp</type>
+    <typical>-5.96014327243</typical>
+    <range>[-5.96, 8.239]</range>
+    <satSamples>-5.96014327243</satSamples>
+   </variable>
+   <variable name="VB2.PB.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-42.278, -28.571]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="VB2.PB.p">
+    <type>p</type>
+    <typical>-5.96014327243</typical>
+    <range>[-5.96, 8.239]</range>
+    <satSamples>-5.96014327243</satSamples>
+   </variable>
+   <variable name="VB2.RVA.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.571, 42.278]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="VB2.RVA.p">
+    <type>p</type>
+    <typical>8.90185546875</typical>
+    <range>[8.062, 9.054]</range>
+    <satSamples>8.90185546875</satSamples>
+   </variable>
+   <variable name="VB2.RVP.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-49.96, -28.571]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="VB2.RVP.p">
+    <type>p</type>
+    <typical>11.4</typical>
+    <range>[11.4, 12.543]</range>
+    <satSamples>11.4</satSamples>
+   </variable>
+   <variable name="VB2.RVR.f">
+    <type>f</type>
+    <typical>0</typical>
+    <range>[0, 21.439]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="VB2.RVR.p">
+    <type>p</type>
+    <typical>0.05</typical>
+    <range>[0.05, 0.966]</range>
+    <satSamples>0.05</satSamples>
+   </variable>
+   <variable name="VB2.T1.f">
+    <type>f</type>
+    <typical>0</typical>
+    <range>[0, 0]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="VB2.T1.p">
+    <type>p</type>
+    <typical>0.33125</typical>
+    <range>[0.331, 1.323]</range>
+    <satSamples>0.33125</satSamples>
+   </variable>
+   <variable name="VB2.T2.f">
+    <type>f</type>
+    <typical>0</typical>
+    <range>[0, 0]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="VB2.T2.p">
+    <type>p</type>
+    <typical>-5.96014327243</typical>
+    <range>[-5.96, 8.239]</range>
+    <satSamples>-5.96014327243</satSamples>
+   </variable>
+   <variable name="VB2.T3.f">
+    <type>f</type>
+    <typical>0</typical>
+    <range>[0, 0]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="VB2.T3.p">
+    <type>p</type>
+    <typical>8.90185546875</typical>
+    <range>[8.062, 9.054]</range>
+    <satSamples>8.90185546875</satSamples>
+   </variable>
+   <variable name="VB2.T4.f">
+    <type>f</type>
+    <typical>0</typical>
+    <range>[0, 0]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="VB2.T4.p">
+    <type>p</type>
+    <typical>11.4</typical>
+    <range>[11.4, 12.543]</range>
+    <satSamples>11.4</satSamples>
+   </variable>
+   <variable name="VB2.T5.f">
+    <type>f</type>
+    <typical>0</typical>
+    <range>[0, 0]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="VB2.T5.p">
+    <type>p</type>
+    <typical>0.05</typical>
+    <range>[0.05, 0.966]</range>
+    <satSamples>0.05</satSamples>
+   </variable>
+   <variable name="VB2.X.EQp">
+    <type>EQp</type>
+    <typical>11.4</typical>
+    <range>[11.4, 12.543]</range>
+    <satSamples>11.4</satSamples>
+   </variable>
+   <variable name="VB2.X.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.571, 49.96]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="VB2.X.p">
+    <type>p</type>
+    <typical>11.4</typical>
+    <range>[11.4, 12.543]</range>
+    <satSamples>11.4</satSamples>
+   </variable>
+   <variable name="VB2.Y.EQp">
+    <type>EQp</type>
+    <typical>0.05</typical>
+    <range>[0.05, 0.966]</range>
+    <satSamples>0.05</satSamples>
+   </variable>
+   <variable name="VB2.Y.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-49.96, -28.571]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="VB2.Y.p">
+    <type>p</type>
+    <typical>0.05</typical>
+    <range>[0.05, 0.966]</range>
+    <satSamples>0.05</satSamples>
+   </variable>
+  </variableValueConfig>
+ </functiondefine>
+ <functiondefine>
+  <name>功能6_液位监测报警功能</name>
+  <link>VB2.RVP,RV721.P,VB2.RVA,RV721.A,VB2.RVR,RV721.R,VB2.FVP,FV723.P,VB2.FVA,FV723.A,VB2.DVP,DV711.P,VB2.DVT,DV711.T,VB2.DVA,DV711.A,VB2.DVB,DV711.B,VB2.PA,P01.2,VB2.PB,P02.2,P01.1,HM722.A1,P02.1,HM722.B1</link>
+  <dependency>
+   <function/>
+   <component>HM722,DV711,FV723,RV721,P01,P02,VB2</component>
+   <allComponent/>
+  </dependency>
+  <describe>排缆停车</describe>
+  <attribute>Persistent,0.000e+00</attribute>
+  <constraintIntegrity>不完整</constraintIntegrity>
+  <constraint>
+   <variable>HM722.M1.n</variable>
+   <value>(-1,1)</value>
+   <confidence>1</confidence>
+   <type>功能执行器</type>
+  </constraint>
+  <constraint>
+   <variable>HM722.M1.LoadTorque</variable>
+   <value>[-40,40]</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>VB2.X.p</variable>
+   <value>12</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>VB2.X.f</variable>
+   <value>(0,50)</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>VB2.Y.p</variable>
+   <value>(0,1.0)</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>RV721.M.pos</variable>
+   <value>(2.9,3.0)</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>FV723.a1_a2.i</variable>
+   <value>1.0</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>DV711.a1_a2.u</variable>
+   <value>0</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>DV711.b1_b2.u</variable>
+   <value>0</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+ </functiondefine>
+ <functiondefine>
+  <name>功能7_液压油质量监测功能</name>
+  <link>HM722</link>
+  <dependency>
+   <function/>
+   <component>HM722</component>
+   <allComponent>HM722</allComponent>
+  </dependency>
+  <describe>马达正转（A口高压）</describe>
+  <attribute>Persistent,1.000e-06</attribute>
+  <constraintIntegrity>未检查</constraintIntegrity>
+  <constraint>
+   <variable>HM722.M1.n</variable>
+   <value>>0</value>
+   <confidence>1</confidence>
+   <type>功能执行器</type>
+  </constraint>
+  <constraint>
+   <variable>HM722.A.p</variable>
+   <value>11</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>HM722.B.p</variable>
+   <value>[0,0.5]</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>HM722.M1.LoadTorque</variable>
+   <value>[-40,40]</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <offlineSolveResult>
+   <componentNames>HM722</componentNames>
+   <failureModes>内泄漏过大</failureModes>
+   <probability>5e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>HM722</componentNames>
+   <failureModes>马达卡滞</failureModes>
+   <probability>4e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>HM722</componentNames>
+   <failureModes>未知故障</failureModes>
+   <probability>1e-07</probability>
+  </offlineSolveResult>
+  <variableValueConfig>
+   <variable name="HM722.A.f">
+    <type>f</type>
+    <typical>470</typical>
+    <range>[292.587, 470.218]</range>
+    <satSamples>470</satSamples>
+   </variable>
+   <variable name="HM722.A.p">
+    <type>p</type>
+    <typical>11</typical>
+    <range>[10.465, 11.533]</range>
+    <satSamples>11</satSamples>
+   </variable>
+   <variable name="HM722.B.f">
+    <type>f</type>
+    <typical>-470</typical>
+    <range>[-470.218, -292.587]</range>
+    <satSamples>-470</satSamples>
+   </variable>
+   <variable name="HM722.B.p">
+    <type>p</type>
+    <typical>0.25</typical>
+    <range>[0.021, 0.479]</range>
+    <satSamples>0.25</satSamples>
+   </variable>
+   <variable name="HM722.DeltaPressure">
+    <type>DeltaPressure</type>
+    <typical>10.75</typical>
+    <range>[9.986, 11.512]</range>
+    <satSamples>10.75</satSamples>
+   </variable>
+   <variable name="HM722.FrictionTorque">
+    <type>FrictionTorque</type>
+    <typical>0</typical>
+    <range>[0, 0]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="HM722.LeakageCoef">
+    <type>LeakageCoef</type>
+    <typical>0.14</typical>
+    <range>[0.14, 0.14]</range>
+    <satSamples>0.14</satSamples>
+   </variable>
+   <variable name="HM722.M1.KineticTorque">
+    <type>KineticTorque</type>
+    <typical>32.74278</typical>
+    <range>[27.997, 39.967]</range>
+    <satSamples>32.74278</satSamples>
+   </variable>
+   <variable name="HM722.M1.LoadTorque">
+    <type>LoadTorque</type>
+    <typical>-32.74278</typical>
+    <range>[-39.967, -27.997]</range>
+    <satSamples>-32.74278</satSamples>
+   </variable>
+   <variable name="HM722.M1.StartingTorque">
+    <type>StartingTorque</type>
+    <typical>51.7075</typical>
+    <range>[47.873, 55.502]</range>
+    <satSamples>51.7075</satSamples>
+   </variable>
+   <variable name="HM722.M1.n">
+    <type>n</type>
+    <typical>9997.6833</typical>
+    <range>[6212.721, 10000]</range>
+    <satSamples>9997.6833</satSamples>
+   </variable>
+   <variable name="HM722.PressureLossCoef">
+    <type>PressureLossCoef</type>
+    <typical>0.0113</typical>
+    <range>[0.011, 0.011]</range>
+    <satSamples>0.0113</satSamples>
+   </variable>
+  </variableValueConfig>
+ </functiondefine>
+ <functiondefine>
+  <name>功能8_液压泵站启动功能</name>
+  <link>HM722</link>
+  <dependency>
+   <function/>
+   <component>HM722</component>
+   <allComponent>HM722</allComponent>
+  </dependency>
+  <describe>马达反转（B口高压）</describe>
+  <attribute>Persistent,1.000e-06</attribute>
+  <constraintIntegrity>完整</constraintIntegrity>
+  <constraint>
+   <variable>HM722.M1.n</variable>
+   <value>&lt;0</value>
+   <confidence>1</confidence>
+   <type>功能执行器</type>
+  </constraint>
+  <constraint>
+   <variable>HM722.B.p</variable>
+   <value>11</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>HM722.A.p</variable>
+   <value>[0,0.5]</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>HM722.M1.LoadTorque</variable>
+   <value>[-40,40]</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <offlineSolveResult>
+   <componentNames>HM722</componentNames>
+   <failureModes>内泄漏过大</failureModes>
+   <probability>5e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>HM722</componentNames>
+   <failureModes>马达卡滞</failureModes>
+   <probability>4e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>HM722</componentNames>
+   <failureModes>未知故障</failureModes>
+   <probability>1e-07</probability>
+  </offlineSolveResult>
+  <variableValueConfig>
+   <variable name="HM722.A.f">
+    <type>f</type>
+    <typical>-364</typical>
+    <range>[-470.158, -292.599]</range>
+    <satSamples>-364</satSamples>
+   </variable>
+   <variable name="HM722.A.p">
+    <type>p</type>
+    <typical>0.25</typical>
+    <range>[0.021, 0.479]</range>
+    <satSamples>0.25</satSamples>
+   </variable>
+   <variable name="HM722.B.f">
+    <type>f</type>
+    <typical>364</typical>
+    <range>[292.599, 470.158]</range>
+    <satSamples>364</satSamples>
+   </variable>
+   <variable name="HM722.B.p">
+    <type>p</type>
+    <typical>11</typical>
+    <range>[10.465, 11.533]</range>
+    <satSamples>11</satSamples>
+   </variable>
+   <variable name="HM722.DeltaPressure">
+    <type>DeltaPressure</type>
+    <typical>-10.75</typical>
+    <range>[-11.512, -9.986]</range>
+    <satSamples>-10.75</satSamples>
+   </variable>
+   <variable name="HM722.FrictionTorque">
+    <type>FrictionTorque</type>
+    <typical>0</typical>
+    <range>[0, 0]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="HM722.LeakageCoef">
+    <type>LeakageCoef</type>
+    <typical>0.14</typical>
+    <range>[0.14, 0.14]</range>
+    <satSamples>0.14</satSamples>
+   </variable>
+   <variable name="HM722.M1.KineticTorque">
+    <type>KineticTorque</type>
+    <typical>-39.953536</typical>
+    <range>[-39.954, -27.928]</range>
+    <satSamples>-39.953536</satSamples>
+   </variable>
+   <variable name="HM722.M1.LoadTorque">
+    <type>LoadTorque</type>
+    <typical>39.953536</typical>
+    <range>[27.928, 39.954]</range>
+    <satSamples>39.953536</satSamples>
+   </variable>
+   <variable name="HM722.M1.StartingTorque">
+    <type>StartingTorque</type>
+    <typical>-51.7075</typical>
+    <range>[-55.502, -47.873]</range>
+    <satSamples>-51.7075</satSamples>
+   </variable>
+   <variable name="HM722.M1.n">
+    <type>n</type>
+    <typical>-7735.6433</typical>
+    <range>[-10000, -6212.704]</range>
+    <satSamples>-7735.6433</satSamples>
+   </variable>
+   <variable name="HM722.PressureLossCoef">
+    <type>PressureLossCoef</type>
+    <typical>0.0113</typical>
+    <range>[0.011, 0.011]</range>
+    <satSamples>0.0113</satSamples>
+   </variable>
+  </variableValueConfig>
+ </functiondefine>
+ <functiondefine>
+  <name>功能9_滤芯堵塞监测功能</name>
+  <link>HM722</link>
+  <dependency>
+   <function/>
+   <component>HM722</component>
+   <allComponent>HM722</allComponent>
+  </dependency>
+  <describe>马达停车</describe>
+  <attribute>Persistent,6.000e-07</attribute>
+  <constraintIntegrity>完整</constraintIntegrity>
+  <constraint>
+   <variable>HM722.M1.n</variable>
+   <value>(-3,3)</value>
+   <confidence>1</confidence>
+   <type>功能执行器</type>
+  </constraint>
+  <constraint>
+   <variable>HM722.A.f</variable>
+   <value>0</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>HM722.M1.LoadTorque</variable>
+   <value>[-5,5]</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>HM722.A.p</variable>
+   <value>(0,11)</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>HM722.B.p</variable>
+   <value>(0,11)</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <offlineSolveResult>
+   <componentNames>HM722</componentNames>
+   <failureModes>内泄漏过大</failureModes>
+   <probability>5e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>HM722</componentNames>
+   <failureModes>未知故障</failureModes>
+   <probability>1e-07</probability>
+  </offlineSolveResult>
+  <variableValueConfig>
+   <variable name="HM722.A.f">
+    <type>f</type>
+    <typical>0</typical>
+    <range>[0, 0]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="HM722.A.p">
+    <type>p</type>
+    <typical>1</typical>
+    <range>[0.008, 10.994]</range>
+    <satSamples>1</satSamples>
+   </variable>
+   <variable name="HM722.B.f">
+    <type>f</type>
+    <typical>0</typical>
+    <range>[0, 0]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="HM722.B.p">
+    <type>p</type>
+    <typical>1</typical>
+    <range>[0.008, 10.994]</range>
+    <satSamples>1</satSamples>
+   </variable>
+   <variable name="HM722.DeltaPressure">
+    <type>DeltaPressure</type>
+    <typical>0</typical>
+    <range>[-0.763, 0.763]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="HM722.FrictionTorque">
+    <type>FrictionTorque</type>
+    <typical>0</typical>
+    <range>[0, 0]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="HM722.LeakageCoef">
+    <type>LeakageCoef</type>
+    <typical>0.14</typical>
+    <range>[0.14, 0.14]</range>
+    <satSamples>0.14</satSamples>
+   </variable>
+   <variable name="HM722.M1.KineticTorque">
+    <type>KineticTorque</type>
+    <typical>0</typical>
+    <range>[-4.959, 4.959]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="HM722.M1.LoadTorque">
+    <type>LoadTorque</type>
+    <typical>-4</typical>
+    <range>[-4.991, 4.93]</range>
+    <satSamples>-4</satSamples>
+   </variable>
+   <variable name="HM722.M1.StartingTorque">
+    <type>StartingTorque</type>
+    <typical>0</typical>
+    <range>[-3.967, 3.967]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="HM722.M1.n">
+    <type>n</type>
+    <typical>0</typical>
+    <range>[-2.441, 2.441]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="HM722.PressureLossCoef">
+    <type>PressureLossCoef</type>
+    <typical>0.0113</typical>
+    <range>[0.011, 0.011]</range>
+    <satSamples>0.0113</satSamples>
+   </variable>
+  </variableValueConfig>
+ </functiondefine>
+ <functiondefine>
+  <name>功能10_电机过载保护功能</name>
+  <link>VB2.RVP,RV721.P,VB2.RVA,RV721.A,VB2.RVR,RV721.R,VB2.FVP,FV723.P,VB2.FVA,FV723.A,VB2.DVP,DV711.P,VB2.DVT,DV711.T,VB2.DVA,DV711.A,VB2.DVB,DV711.B,VB2.PA,P01.2,VB2.PB,P02.2,P01.1,HM722.A1,P02.1,HM722.B1</link>
+  <dependency>
+   <function/>
+   <component>HM722,DV711,FV723,RV721,P01,P02,VB2</component>
+   <allComponent>DV711,RV721,FV723,VB2,HM722,P01,P02</allComponent>
+  </dependency>
+  <describe>排缆左移</describe>
+  <attribute>Persistent,1.340e-05</attribute>
+  <constraintIntegrity>完整</constraintIntegrity>
+  <constraint>
+   <variable>HM722.M1.n</variable>
+   <value>>50</value>
+   <confidence>1</confidence>
+   <type>功能执行器</type>
+  </constraint>
+  <constraint>
+   <variable>HM722.M1.LoadTorque</variable>
+   <value>[-40,40]</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>VB2.X.p</variable>
+   <value>12</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>VB2.X.f</variable>
+   <value>(0,50)</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>VB2.Y.p</variable>
+   <value>(0,1.0)</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>RV721.M.pos</variable>
+   <value>(2.9,3.0)</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>FV723.a1_a2.i</variable>
+   <value>1.0</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>DV711.a1_a2.u</variable>
+   <value>0</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <constraint>
+   <variable>DV711.b1_b2.u</variable>
+   <value>24</value>
+   <confidence>0.1</confidence>
+   <type>一般变量</type>
+  </constraint>
+  <offlineSolveResult>
+   <componentNames>DV711</componentNames>
+   <failureModes>右位电磁铁失效</failureModes>
+   <probability>3e-06</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>DV711</componentNames>
+   <failureModes>阀芯卡在中位</failureModes>
+   <probability>2e-06</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>RV721</componentNames>
+   <failureModes>A口无输出压力</failureModes>
+   <probability>2e-06</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>DV711</componentNames>
+   <failureModes>阀芯卡在左位</failureModes>
+   <probability>1e-06</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>FV723</componentNames>
+   <failureModes>阀芯卡滞</failureModes>
+   <probability>1e-06</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>VB2</componentNames>
+   <failureModes>X口油道压损过大</failureModes>
+   <probability>5e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>VB2</componentNames>
+   <failureModes>Y口油道压损过大</failureModes>
+   <probability>5e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>VB2</componentNames>
+   <failureModes>PA口油道压损过大</failureModes>
+   <probability>5e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>VB2</componentNames>
+   <failureModes>PB口油道压损过大</failureModes>
+   <probability>5e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>HM722</componentNames>
+   <failureModes>内泄漏过大</failureModes>
+   <probability>5e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>HM722</componentNames>
+   <failureModes>马达卡滞</failureModes>
+   <probability>4e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>P01</componentNames>
+   <failureModes>油管泄漏</failureModes>
+   <probability>2e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>P01</componentNames>
+   <failureModes>油管堵塞</failureModes>
+   <probability>2e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>P02</componentNames>
+   <failureModes>油管泄漏</failureModes>
+   <probability>2e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>P02</componentNames>
+   <failureModes>油管堵塞</failureModes>
+   <probability>2e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>DV711</componentNames>
+   <failureModes>未知故障</failureModes>
+   <probability>1e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>RV721</componentNames>
+   <failureModes>未知故障</failureModes>
+   <probability>1e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>FV723</componentNames>
+   <failureModes>未知故障</failureModes>
+   <probability>1e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>VB2</componentNames>
+   <failureModes>未知故障</failureModes>
+   <probability>1e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>HM722</componentNames>
+   <failureModes>未知故障</failureModes>
+   <probability>1e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>P01</componentNames>
+   <failureModes>未知故障</failureModes>
+   <probability>1e-07</probability>
+  </offlineSolveResult>
+  <offlineSolveResult>
+   <componentNames>P02</componentNames>
+   <failureModes>未知故障</failureModes>
+   <probability>1e-07</probability>
+  </offlineSolveResult>
+  <variableValueConfig>
+   <variable name="DV711.A.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-42.278, -28.342]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="DV711.A.p">
+    <type>p</type>
+    <typical>-5.92889327243</typical>
+    <range>[-5.929, 8.27]</range>
+    <satSamples>-5.92889327243</satSamples>
+   </variable>
+   <variable name="DV711.B.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.342, 42.278]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="DV711.B.p">
+    <type>p</type>
+    <typical>0.3625</typical>
+    <range>[0.362, 1.354]</range>
+    <satSamples>0.3625</satSamples>
+   </variable>
+   <variable name="DV711.P.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.342, 42.278]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="DV711.P.p">
+    <type>p</type>
+    <typical>-5.61639327243</typical>
+    <range>[-5.616, 8.582]</range>
+    <satSamples>-5.61639327243</satSamples>
+   </variable>
+   <variable name="DV711.T.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-42.278, -28.342]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="DV711.T.p">
+    <type>p</type>
+    <typical>0.05</typical>
+    <range>[0.05, 0.966]</range>
+    <satSamples>0.05</satSamples>
+   </variable>
+   <variable name="DV711.a1_a2.Activated">
+    <typical>false</typical>
+    <range>false</range>
+    <satSamples>false</satSamples>
+   </variable>
+   <variable name="DV711.a1_a2.R">
+    <type>R</type>
+    <typical>20</typical>
+    <range>[20, 20]</range>
+    <satSamples>20</satSamples>
+   </variable>
+   <variable name="DV711.a1_a2.i">
+    <type>i</type>
+    <typical>0</typical>
+    <range>[0, 0]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="DV711.a1_a2.u">
+    <type>u</type>
+    <typical>0</typical>
+    <range>[-0.229, 0.229]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="DV711.b1_b2.Activated">
+    <typical>true</typical>
+    <range>true</range>
+    <satSamples>true</satSamples>
+   </variable>
+   <variable name="DV711.b1_b2.R">
+    <type>R</type>
+    <typical>20</typical>
+    <range>[20, 20]</range>
+    <satSamples>20</satSamples>
+   </variable>
+   <variable name="DV711.b1_b2.i">
+    <type>i</type>
+    <typical>1.128</typical>
+    <range>[1.128, 1.204]</range>
+    <satSamples>1.128</satSamples>
+   </variable>
+   <variable name="DV711.b1_b2.u">
+    <type>u</type>
+    <typical>22.56</typical>
+    <range>[22.56, 25.377]</range>
+    <satSamples>22.56</satSamples>
+   </variable>
+   <variable name="DV711.spoolPos">
+    <typical>1</typical>
+    <range>[-10000, 10000]</range>
+    <satSamples>1</satSamples>
+   </variable>
+   <variable name="FV723.A.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-42.278, -28.342]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="FV723.A.p">
+    <type>p</type>
+    <typical>-5.61639327243</typical>
+    <range>[-5.616, 8.582]</range>
+    <satSamples>-5.61639327243</satSamples>
+   </variable>
+   <variable name="FV723.ControlPercent">
+    <type>ControlPercent</type>
+    <typical>0.625</typical>
+    <range>[0.625, 0.778]</range>
+    <satSamples>0.625</satSamples>
+   </variable>
+   <variable name="FV723.DeltaPressure">
+    <type>DeltaPressure</type>
+    <typical>14.5182487412</typical>
+    <range>[0.46, 14.671]</range>
+    <satSamples>14.5182487412</satSamples>
+   </variable>
+   <variable name="FV723.Ig">
+    <type>Ig</type>
+    <typical>0.625</typical>
+    <range>[0.625, 0.778]</range>
+    <satSamples>0.625</satSamples>
+   </variable>
+   <variable name="FV723.P.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.342, 42.278]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="FV723.P.p">
+    <type>p</type>
+    <typical>8.90185546875</typical>
+    <range>[8.062, 9.054]</range>
+    <satSamples>8.90185546875</satSamples>
+   </variable>
+   <variable name="FV723.SetFlow">
+    <type>SetFlow</type>
+    <typical>31.25</typical>
+    <range>[31.25, 42.278]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="FV723.a1_a2.R">
+    <type>R</type>
+    <typical>17.6</typical>
+    <range>[17.6, 17.6]</range>
+    <satSamples>17.6</satSamples>
+   </variable>
+   <variable name="FV723.a1_a2.i">
+    <type>i</type>
+    <typical>0.85</typical>
+    <range>[0.85, 1.079]</range>
+    <satSamples>0.85</satSamples>
+   </variable>
+   <variable name="FV723.a1_a2.u">
+    <type>u</type>
+    <typical>14.96</typical>
+    <range>[14.96, 20.216]</range>
+    <satSamples>14.96</satSamples>
+   </variable>
+   <variable name="HM722.A.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.342, 42.278]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="HM722.A.p">
+    <type>p</type>
+    <typical>-5.92889327243</typical>
+    <range>[-5.929, 8.27]</range>
+    <satSamples>-5.92889327243</satSamples>
+   </variable>
+   <variable name="HM722.B.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-42.278, -28.342]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="HM722.B.p">
+    <type>p</type>
+    <typical>0.3625</typical>
+    <range>[0.362, 1.354]</range>
+    <satSamples>0.3625</satSamples>
+   </variable>
+   <variable name="HM722.DeltaPressure">
+    <type>DeltaPressure</type>
+    <typical>-6.29139327243</typical>
+    <range>[-7.55, -5.033]</range>
+    <satSamples>-6.29139327243</satSamples>
+   </variable>
+   <variable name="HM722.FrictionTorque">
+    <type>FrictionTorque</type>
+    <typical>0</typical>
+    <range>[0, 0]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="HM722.LeakageCoef">
+    <type>LeakageCoef</type>
+    <typical>0.14</typical>
+    <range>[0.14, 0.14]</range>
+    <satSamples>0.14</satSamples>
+   </variable>
+   <variable name="HM722.M1.KineticTorque">
+    <type>KineticTorque</type>
+    <typical>-40</typical>
+    <range>[-40, 39.969]</range>
+    <satSamples>-40</satSamples>
+   </variable>
+   <variable name="HM722.M1.LoadTorque">
+    <type>LoadTorque</type>
+    <typical>40</typical>
+    <range>[-39.969, 40]</range>
+    <satSamples>40</satSamples>
+   </variable>
+   <variable name="HM722.M1.StartingTorque">
+    <type>StartingTorque</type>
+    <typical>-30.2616016404</typical>
+    <range>[-36.314, -24.209]</range>
+    <satSamples>-30.2616016404</satSamples>
+   </variable>
+   <variable name="HM722.M1.n">
+    <type>n</type>
+    <typical>685.671166541</typical>
+    <range>[582.542, 920.604]</range>
+    <satSamples>685.671166541</satSamples>
+   </variable>
+   <variable name="HM722.PressureLossCoef">
+    <type>PressureLossCoef</type>
+    <typical>0.0113</typical>
+    <range>[0.011, 0.011]</range>
+    <satSamples>0.0113</satSamples>
+   </variable>
+   <variable name="P01.1.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-42.278, -28.342]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="P01.1.p">
+    <type>p</type>
+    <typical>-5.92889327243</typical>
+    <range>[-5.929, 8.27]</range>
+    <satSamples>-5.92889327243</satSamples>
+   </variable>
+   <variable name="P01.2.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.342, 42.278]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="P01.2.p">
+    <type>p</type>
+    <typical>-5.92889327243</typical>
+    <range>[-5.929, 8.27]</range>
+    <satSamples>-5.92889327243</satSamples>
+   </variable>
+   <variable name="P02.1.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.342, 42.278]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="P02.1.p">
+    <type>p</type>
+    <typical>0.3625</typical>
+    <range>[0.362, 1.354]</range>
+    <satSamples>0.3625</satSamples>
+   </variable>
+   <variable name="P02.2.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-42.278, -28.342]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="P02.2.p">
+    <type>p</type>
+    <typical>0.3625</typical>
+    <range>[0.362, 1.354]</range>
+    <satSamples>0.3625</satSamples>
+   </variable>
+   <variable name="RV721.A.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-42.278, -28.342]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="RV721.A.p">
+    <type>p</type>
+    <typical>8.90185546875</typical>
+    <range>[8.062, 9.054]</range>
+    <satSamples>8.90185546875</satSamples>
+   </variable>
+   <variable name="RV721.M.pos">
+    <type>pos</type>
+    <typical>2.95</typical>
+    <range>[2.95, 2.95]</range>
+    <satSamples>2.95</satSamples>
+   </variable>
+   <variable name="RV721.P.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.342, 49.96]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="RV721.P.p">
+    <type>p</type>
+    <typical>11.4</typical>
+    <range>[11.4, 12.543]</range>
+    <satSamples>11.4</satSamples>
+   </variable>
+   <variable name="RV721.R.f">
+    <type>f</type>
+    <typical>0</typical>
+    <range>[-21.667, 0]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="RV721.R.p">
+    <type>p</type>
+    <typical>0.05</typical>
+    <range>[0.05, 0.966]</range>
+    <satSamples>0.05</satSamples>
+   </variable>
+   <variable name="RV721.SetPressure">
+    <type>SetPressure</type>
+    <typical>11.0625</typical>
+    <range>[10.91, 11.215]</range>
+    <satSamples>11.0625</satSamples>
+   </variable>
+   <variable name="RV721.WorkPressure">
+    <type>WorkPressure</type>
+    <typical>11.0625</typical>
+    <range>[10.91, 11.215]</range>
+    <satSamples>11.0625</satSamples>
+   </variable>
+   <variable name="VB2.DVA.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.342, 42.278]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="VB2.DVA.p">
+    <type>p</type>
+    <typical>-5.92889327243</typical>
+    <range>[-5.929, 8.27]</range>
+    <satSamples>-5.92889327243</satSamples>
+   </variable>
+   <variable name="VB2.DVB.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-42.278, -28.342]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="VB2.DVB.p">
+    <type>p</type>
+    <typical>0.3625</typical>
+    <range>[0.362, 1.354]</range>
+    <satSamples>0.3625</satSamples>
+   </variable>
+   <variable name="VB2.DVP.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-42.278, -28.342]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="VB2.DVP.p">
+    <type>p</type>
+    <typical>-5.61639327243</typical>
+    <range>[-5.616, 8.582]</range>
+    <satSamples>-5.61639327243</satSamples>
+   </variable>
+   <variable name="VB2.DVT.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.342, 42.278]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="VB2.DVT.p">
+    <type>p</type>
+    <typical>0.05</typical>
+    <range>[0.05, 0.966]</range>
+    <satSamples>0.05</satSamples>
+   </variable>
+   <variable name="VB2.FVA.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.342, 42.278]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="VB2.FVA.p">
+    <type>p</type>
+    <typical>-5.61639327243</typical>
+    <range>[-5.616, 8.582]</range>
+    <satSamples>-5.61639327243</satSamples>
+   </variable>
+   <variable name="VB2.FVP.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-42.278, -28.342]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="VB2.FVP.p">
+    <type>p</type>
+    <typical>8.90185546875</typical>
+    <range>[8.062, 9.054]</range>
+    <satSamples>8.90185546875</satSamples>
+   </variable>
+   <variable name="VB2.PA.EQp">
+    <type>EQp</type>
+    <typical>-5.92889327243</typical>
+    <range>[-5.929, 8.27]</range>
+    <satSamples>-5.92889327243</satSamples>
+   </variable>
+   <variable name="VB2.PA.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-42.278, -28.342]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="VB2.PA.p">
+    <type>p</type>
+    <typical>-5.92889327243</typical>
+    <range>[-5.929, 8.27]</range>
+    <satSamples>-5.92889327243</satSamples>
+   </variable>
+   <variable name="VB2.PB.EQp">
+    <type>EQp</type>
+    <typical>0.3625</typical>
+    <range>[0.362, 1.354]</range>
+    <satSamples>0.3625</satSamples>
+   </variable>
+   <variable name="VB2.PB.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.342, 42.278]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="VB2.PB.p">
+    <type>p</type>
+    <typical>0.3625</typical>
+    <range>[0.362, 1.354]</range>
+    <satSamples>0.3625</satSamples>
+   </variable>
+   <variable name="VB2.RVA.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.342, 42.278]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="VB2.RVA.p">
+    <type>p</type>
+    <typical>8.90185546875</typical>
+    <range>[8.062, 9.054]</range>
+    <satSamples>8.90185546875</satSamples>
+   </variable>
+   <variable name="VB2.RVP.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-49.96, -28.342]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="VB2.RVP.p">
+    <type>p</type>
+    <typical>11.4</typical>
+    <range>[11.4, 12.543]</range>
+    <satSamples>11.4</satSamples>
+   </variable>
+   <variable name="VB2.RVR.f">
+    <type>f</type>
+    <typical>0</typical>
+    <range>[0, 21.667]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="VB2.RVR.p">
+    <type>p</type>
+    <typical>0.05</typical>
+    <range>[0.05, 0.966]</range>
+    <satSamples>0.05</satSamples>
+   </variable>
+   <variable name="VB2.T1.f">
+    <type>f</type>
+    <typical>0</typical>
+    <range>[0, 0]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="VB2.T1.p">
+    <type>p</type>
+    <typical>-5.92889327243</typical>
+    <range>[-5.929, 8.27]</range>
+    <satSamples>-5.92889327243</satSamples>
+   </variable>
+   <variable name="VB2.T2.f">
+    <type>f</type>
+    <typical>0</typical>
+    <range>[0, 0]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="VB2.T2.p">
+    <type>p</type>
+    <typical>0.3625</typical>
+    <range>[0.362, 1.354]</range>
+    <satSamples>0.3625</satSamples>
+   </variable>
+   <variable name="VB2.T3.f">
+    <type>f</type>
+    <typical>0</typical>
+    <range>[0, 0]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="VB2.T3.p">
+    <type>p</type>
+    <typical>8.90185546875</typical>
+    <range>[8.062, 9.054]</range>
+    <satSamples>8.90185546875</satSamples>
+   </variable>
+   <variable name="VB2.T4.f">
+    <type>f</type>
+    <typical>0</typical>
+    <range>[0, 0]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="VB2.T4.p">
+    <type>p</type>
+    <typical>11.4</typical>
+    <range>[11.4, 12.543]</range>
+    <satSamples>11.4</satSamples>
+   </variable>
+   <variable name="VB2.T5.f">
+    <type>f</type>
+    <typical>0</typical>
+    <range>[0, 0]</range>
+    <satSamples>0</satSamples>
+   </variable>
+   <variable name="VB2.T5.p">
+    <type>p</type>
+    <typical>0.05</typical>
+    <range>[0.05, 0.966]</range>
+    <satSamples>0.05</satSamples>
+   </variable>
+   <variable name="VB2.X.EQp">
+    <type>EQp</type>
+    <typical>11.4</typical>
+    <range>[11.4, 12.543]</range>
+    <satSamples>11.4</satSamples>
+   </variable>
+   <variable name="VB2.X.f">
+    <type>f</type>
+    <typical>31.25</typical>
+    <range>[28.342, 49.96]</range>
+    <satSamples>31.25</satSamples>
+   </variable>
+   <variable name="VB2.X.p">
+    <type>p</type>
+    <typical>11.4</typical>
+    <range>[11.4, 12.543]</range>
+    <satSamples>11.4</satSamples>
+   </variable>
+   <variable name="VB2.Y.EQp">
+    <type>EQp</type>
+    <typical>0.05</typical>
+    <range>[0.05, 0.966]</range>
+    <satSamples>0.05</satSamples>
+   </variable>
+   <variable name="VB2.Y.f">
+    <type>f</type>
+    <typical>-31.25</typical>
+    <range>[-49.96, -28.342]</range>
+    <satSamples>-31.25</satSamples>
+   </variable>
+   <variable name="VB2.Y.p">
+    <type>p</type>
+    <typical>0.05</typical>
+    <range>[0.05, 0.966]</range>
+    <satSamples>0.05</satSamples>
+   </variable>
+  </variableValueConfig>
+ </functiondefine>
+</root>

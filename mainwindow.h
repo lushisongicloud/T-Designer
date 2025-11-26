@@ -550,6 +550,7 @@ private slots:
     void on_tableWidgetDiagResult_clicked(const QModelIndex &index);
 
     void on_BtnSaveDwg_clicked();
+    void on_BtnImportDwg_clicked();
 
     void UpdateUnitAttrLib();
 
@@ -686,6 +687,8 @@ private:
     QList<CandidateData> candidate_list;
     GraphAdjList* graph_list;
     QList<TestPoint>   test_point;
+
+    bool createPageForImportedDwg(const QString &sourcePath, QString *targetPath, int *pageId);
 
     QMap<QString, int>  input_test_point;  //测试输入的测点，记录下来避免测点推荐时重复推荐已经测过的点
 

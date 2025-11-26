@@ -128,6 +128,7 @@ public:
     void PasteEnty(qlonglong EntyID);
     void UndoEnty(QString EntyHandle);
     QString GetSymbolTag(IMxDrawBlockReference *BlkModifyed);
+    void UpdateSymbolXData();
     void LoadEqualDistance(QList<int> List_DbID,int Mode);//Mode=0 Symbol  Mode=1 Terminals
     void DoLoadEqualDistance();//等距绘制
     void DealSymbolSpurBlock(double Posx,double Posy);

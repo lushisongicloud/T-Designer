@@ -2314,6 +2314,7 @@ void MainWindow::on_BtnSaveDwg_clicked()
     {
         //if(ui->mdiArea->subWindowList().at(i)->windowTitle().contains("故障诊断")) continue;
         formaxwidget *formMxdraw=(formaxwidget *)ui->mdiArea->subWindowList().at(i)->widget();
+        if(formMxdraw!=nullptr) formMxdraw->UpdateSymbolXData();
         formMxdraw->GetAxWidget()->dynamicCall("SaveDwgFile(QString)",formMxdraw->dwgFileName);
     }
 }

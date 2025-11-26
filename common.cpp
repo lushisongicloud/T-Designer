@@ -390,6 +390,8 @@ IMxDrawPoint* GetSymbolBlockTermPos(QAxWidget *mAxwidget,IMxDrawBlockReference *
     IMxDrawPoint *ptx=(IMxDrawPoint *)pt;
     QList<IMxDrawPolyline*> listTermEnty=GetTermEnty(mAxwidget,BlkEnty->dynamicCall("GetBlockName()").toString());
     IMxDrawBlockTableRecord* blkRec =(IMxDrawBlockTableRecord* )BlkEnty->querySubObject("BlockTableRecord()");
+    if (blkRec == nullptr)
+        return ptx;
     for(int i=0;i<listTermEnty.count();i++)
     {
         if(listTermEnty.at(i)->dynamicCall("GetxDataString2(QString,int)","LD_SYMB1LIB_TERMPOINT",0).toString()==LD_SYMB1LIB_TERMPOINT)
@@ -419,6 +421,8 @@ QList<IMxDrawPolyline*> GetTermEnty(QAxWidget *mAxwidget,QString BlkName)
     IMxDrawBlockTable* blkTable = (IMxDrawBlockTable*)database->querySubObject("GetBlockTable()");
     //IMxDrawBlockTableRecord* blkRec =(IMxDrawBlockTableRecord* )Enty->querySubObject("BlockTableRecord()"); //blkTable->querySubObject("GetAt(QString,bool)",BlkName ,true);
     IMxDrawBlockTableRecord* blkRec =(IMxDrawBlockTableRecord* ) blkTable->querySubObject("GetAt(QString,bool)",BlkName ,true);
+    if (blkRec == nullptr)
+        return listTermEnty;
 
     IMxDrawBlockTableRecordIterator* iter = (IMxDrawBlockTableRecordIterator*)blkRec->querySubObject("NewIterator()");
     // 循环得到所有实体
@@ -2322,6 +2326,14 @@ int InsertDBSymbolInfoByBlkEnty(QAxWidget* tmp_MxDrawWidget,IMxDrawBlockReferenc
     QuerySymbol.exec();
     //将DbId写入到blkEnty的拓展数据中
     blkEnty->dynamicCall("SetxDataString(QString,int,QString)","DbId",0,QString::number(Symbol_ID));
+    // 将元件代号/物料编码写入xdata，便于后续导入识别
+    QSqlQuery QueryEq(T_ProjectDatabase);
+    QueryEq.prepare("SELECT DT,PartCode FROM Equipment WHERE Equipment_ID = :id");
+    QueryEq.bindValue(":id", Equipment_ID);
+    if (QueryEq.exec() && QueryEq.next()) {
+        blkEnty->dynamicCall("SetxDataString(QString,int,QString)", "Designation", 0, QueryEq.value("DT").toString());
+        blkEnty->dynamicCall("SetxDataString(QString,int,QString)", "PartCode", 0, QueryEq.value("PartCode").toString());
+    }
 
     //根据Symbol dwg文件确定连接点数量
     int TermCount=GetTermEnty(tmp_MxDrawWidget,blkEnty->dynamicCall("GetBlockName()").toString()).count();
@@ -2361,7 +2373,14 @@ int InsertDBSymbolInfoByBlkEnty(QAxWidget* tmp_MxDrawWidget,IMxDrawBlockReferenc
             QuerySymb2TermInfo.bindValue(":Internal",0);
         }
         QuerySymb2TermInfo.bindValue(":ConnDesc",GetBlockAttrTextString(blkEnty,"符号的连接点描述["+QString::number(i+1)+"]"));
-        QuerySymb2TermInfo.bindValue(":TestCost",blkEnty->dynamicCall("GetxDataString2(QString,int)","TestCost",0).toString().split(",").at(i));
+        QString testCostStr = blkEnty->dynamicCall("GetxDataString2(QString,int)","TestCost",0).toString();
+        QStringList testCostList = testCostStr.split(",");
+        QString testCost = "";
+        if (i < testCostList.size())
+            testCost = testCostList.at(i);
+        else if (!testCostList.isEmpty())
+            testCost = testCostList.last();
+        QuerySymb2TermInfo.bindValue(":TestCost", testCost);
         QuerySymb2TermInfo.exec();
     }
     return Symbol_ID;
