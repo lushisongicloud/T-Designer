@@ -3,6 +3,8 @@
 
 #include <QtMath>
 #include <algorithm>
+#include <QGraphicsLayout>
+#include <QMargins>
 
 
 DialogTestReport::DialogTestReport(const TestReportMetrics &metrics, QWidget *parent) :
@@ -14,6 +16,8 @@ actualElapsedTime_(0),
 metrics_(metrics)
 {
     ui->setupUi(this);
+    setWindowFlags(windowFlags() | Qt::WindowMinMaxButtonsHint | Qt::WindowSystemMenuHint);
+    setSizeGripEnabled(true);
     iniBarChart();
     InitUI();
 }
@@ -27,6 +31,8 @@ actualElapsedTime_(0),
 metrics_(metrics)
 {
     ui->setupUi(this);
+    setWindowFlags(windowFlags() | Qt::WindowMinMaxButtonsHint | Qt::WindowSystemMenuHint);
+    setSizeGripEnabled(true);
     // 计算实际耗时
     actualElapsedTime_ = QDateTime::currentMSecsSinceEpoch() - startTimestamp_;
     
@@ -121,6 +127,14 @@ void DialogTestReport::build_FIR_Chart()//构建诊断模糊组图表
 
     QBarCategoryAxis *axisX = new QBarCategoryAxis();
     axisX->append(categories);
+    axisX->setLabelsVisible(true);
+    QFont axisFont = axisX->labelsFont();
+    if (axisFont.pointSize() > 0 && axisFont.pointSize() > 9)
+        axisFont.setPointSize(axisFont.pointSize() - 1);
+    else
+        axisFont.setPointSize(9);
+    axisX->setLabelsFont(axisFont);
+    axisX->setLabelsAngle(-35);
     chart->addAxis(axisX, Qt::AlignBottom);
     series->attachAxis(axisX);
 
@@ -139,6 +153,9 @@ void DialogTestReport::build_FIR_Chart()//构建诊断模糊组图表
 
     chart->legend()->setVisible(true);
     chart->legend()->setAlignment(Qt::AlignBottom);
+    chart->setMargins(QMargins(8, 8, 8, 18));
+    if (chart->layout())
+        chart->layout()->setContentsMargins(6, 6, 6, 18);
 }
 
 void DialogTestReport::iniBarChart()
@@ -150,6 +167,7 @@ void DialogTestReport::iniBarChart()
     //chart_FIR->setBackgroundVisible(false);
     ui->chartView->setChart(chart_FIR); //为ChartView设置chart
     ui->chartView->setRenderHint(QPainter::Antialiasing);
+    ui->chartView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     build_FIR_Chart();
 
 }

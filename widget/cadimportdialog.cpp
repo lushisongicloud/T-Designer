@@ -76,9 +76,9 @@ void CadImportDialog::buildUi()
     m_axWidget->setProperty("ShowRulerWindow", false);
     m_axWidget->setMinimumHeight(420);
     m_table = new QTableWidget(this);
-    m_table->setColumnCount(6);
+    m_table->setColumnCount(5);
     QStringList headers;
-    headers << "导入" << "序号" << "标识/型号" << "物料编码" << "块名" << "匹配/来源";
+    headers << "导入" << "序号" << "标识/型号" << "物料编码" << "块名";
     m_table->setHorizontalHeaderLabels(headers);
     m_table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     m_table->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
@@ -312,7 +312,8 @@ void CadImportDialog::scanCandidates()
         m_table->setItem(row, 3, new QTableWidgetItem(c.partCode));
         m_table->setItem(row, 4, new QTableWidgetItem(c.blockName));
         QString matchDesc = c.libMatch.valid() ? c.libMatch.displayText() : QString("未匹配 · %1").arg(c.source);
-        m_table->setItem(row, 5, new QTableWidgetItem(matchDesc));
+        if (QTableWidgetItem *seqItem = m_table->item(row, 1))
+            seqItem->setToolTip(matchDesc);
     }
     m_updatingSelection = false;
 
@@ -873,8 +874,9 @@ void CadImportDialog::onApplyDetailChanges()
         item->setText(c.designation);
     if (QTableWidgetItem *item = m_table->item(m_currentRow, 3))
         item->setText(c.partCode);
-    if (QTableWidgetItem *item = m_table->item(m_currentRow, 5))
-        item->setText(c.libMatch.valid() ? c.libMatch.displayText() : QString("未匹配 · %1").arg(c.source));
+    QString matchDesc = c.libMatch.valid() ? c.libMatch.displayText() : QString("未匹配 · %1").arg(c.source);
+    if (QTableWidgetItem *seqItem = m_table->item(m_currentRow, 1))
+        seqItem->setToolTip(matchDesc);
     m_updatingSelection = false;
     syncDetailPanel(c);
     updateSummary();
